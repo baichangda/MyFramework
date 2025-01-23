@@ -1,5 +1,5 @@
 dependencies {
-    implementation project(":Parser")
+    implementation project(":Lib-ParserBase")
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "+"
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: "+"

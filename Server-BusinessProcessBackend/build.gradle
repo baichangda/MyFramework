@@ -24,7 +24,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation project(":Base")
+    implementation project(":Lib-Base")
 
     //springboot支持
     implementation("org.springframework.boot:spring-boot-starter")
