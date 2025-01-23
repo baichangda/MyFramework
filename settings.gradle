@@ -1,0 +1,8 @@
+rootProject.name = 'MyFramework'
+include 'Base'
+include 'Parser'
+include 'Parser-gb32960'
+include 'DataProcess-parse'
+include 'BusinessProcess-backend'
+include 'DataProcess-gateway'
+

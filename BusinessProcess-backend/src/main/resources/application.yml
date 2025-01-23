@@ -1,0 +1,168 @@
+server:
+  port: 8888
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,application/xhtml+xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  servlet:
+    session:
+      timeout: 1800
+spring:
+  application:
+    name: bcd
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  web:
+    resources:
+      chain:
+        cache: false
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
+  datasource:
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 15
+    #mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.23.129:3306/bcd?characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&serverTimezone=GMT%2B8&generateSimpleParameterMetadata=true&allowPublicKeyRetrieval=True
+    username: root
+    password: bcd
+    #pgsql:
+#    driver-class-name: org.postgresql.Driver
+#    url: jdbc:postgresql://127.0.0.1:5432/msbf
+#    username: root
+#    password: 123456
+
+  #  jdbcTemplate配置
+  jdbc:
+    template:
+      fetch-size: -1
+      max-rows: -1
+      query-timeout:
+  data:
+    #mongodb配置
+    mongodb.uri: mongodb://bcd:bcd@192.168.23.129:27017/bcd
+    #redis配置
+    #如果都进行了配置,加载的先后顺序为:
+    #sentinel>cluster>single
+    redis:
+      ssl:
+        enabled: false
+      repositories:
+        enabled: false
+      #公用配置
+      database: 0
+      timeout: 60000
+      password: bcd
+      #异步lettuce连接池(默认)
+      lettuce:
+        pool:
+          maxIdle: 8
+          minIdle: 0
+          maxActive: 8
+          maxWait: -1
+        shutdown-timeout: 100ms
+      #主从配置
+      #     sentinel:
+      #       master: myMaster
+      #       nodes: 127.0.0.1:23679,127.0.0.1:23680,127.0.0.1:23681
+      #集群配置
+      cluster:
+        maxRedirects: 3
+        nodes:
+          - 192.168.23.129:7001
+          - 192.168.23.129:7002
+          - 192.168.23.129:7003
+          - 192.168.23.129:7004
+          - 192.168.23.129:7005
+          - 192.168.23.129:7006
+
+      #单机配置
+#      host: 192.168.23.129
+#      port: 6379
+
+  #  kafka配置
+  kafka:
+    consumer:
+      #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
+      #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
+      bootstrap-servers: 192.168.23.129:9092
+      group-id: bcd
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
+      #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
+      bootstrap-servers: 192.168.23.129:9092
+      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+    listener:
+      # topic不存在时候是否正常启动
+      missing-topics-fatal: false
+  mail:
+    host: smtp.qq.com
+    username:
+    password:
+    default-encoding: UTF-8
+  cloud:
+    sentinel:
+      log:
+        dir: logs/csp
+      transport:
+        port: 8889
+        dashboard: 127.0.0.1:33333
+
+
+springdoc:
+  packages-to-scan:
+    - cn.bcd.business.backend
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+# knife4j的增强配置，不需要增强可以不配
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# Sa-Token配置
+sa-token:
+  # token名称 (同时也是cookie名称)、在前面加上前缀、可以区分系统、影响存储到redis中的key
+  token-name: token
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 2592000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: false
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: false
+  # 同一账号可同时在线的最大数量
+  max-login-count: -1
+  # 配置token读取的位置
+  is-read-body: false
+  is-read-header: false
+  is-read-cookie: true
+
+
+register:
+  host: 127.0.0.1
+  servers: test1,test2
+
+notify:
+  id: bcd

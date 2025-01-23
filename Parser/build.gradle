@@ -1,0 +1,7 @@
+dependencies {
+    api project(":Base")
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    api group: 'io.netty', name: 'netty-buffer', version: "4.1.117.Final"
+    // https://mvnrepository.com/artifact/org.javassist/javassist
+    api group: 'org.javassist', name: 'javassist', version: "3.30.2-GA"
+}

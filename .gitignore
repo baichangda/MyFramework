@@ -1,0 +1,9 @@
+build
+.idea
+.gradle
+### Mac OS ###
+.DS_Store
+*.class
+gradle-bcd.properties
+gradle
+gradlew*

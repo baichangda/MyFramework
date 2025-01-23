@@ -1,0 +1,63 @@
+buildscript {
+    ext {
+        aliyunPublic = 'https://maven.aliyun.com/repository/public'
+    }
+    repositories {
+        mavenLocal()
+        maven { url "${aliyunPublic}" }
+        mavenCentral()
+    }
+}
+
+subprojects {
+    group 'cn.bcd'
+    version '1.0'
+
+    apply plugin: 'java-library'
+    apply plugin: 'java'
+    apply plugin: 'idea'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    repositories {
+        mavenLocal()
+        maven { url "${aliyunPublic}" }
+        mavenCentral()
+    }
+
+    dependencies {
+        // https://mvnrepository.com/artifact/org.projectlombok/lombok
+        compileOnly group: 'org.projectlombok', name: 'lombok', version: "+"
+        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "+"
+    }
+
+    //下载源码和文档
+    //gradle cleanIdea idea
+    idea {
+        module {
+            downloadSources = true
+            downloadJavadoc = true
+        }
+    }
+
+    //生成jar时打包源码
+    tasks.register('sourceJar', Jar) {
+        from sourceSets.main.java.srcDirs
+        archiveClassifier = "sources"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+}
+
+
+
+
+
+
+
