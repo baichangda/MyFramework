@@ -7,6 +7,13 @@ buildscript {
         maven { url "${aliyunPublic}" }
         mavenCentral()
     }
+
+    dependencies {
+        // https://mvnrepository.com/artifact/io.spring.gradle/dependency-management-plugin
+        classpath group: 'io.spring.gradle', name: 'dependency-management-plugin', version: '1.1.7'
+        // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-gradle-plugin
+        classpath group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: "3.2.12"
+    }
 }
 
 subprojects {

@@ -1,6 +1,6 @@
 dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api group: 'org.slf4j', name: 'slf4j-api', version: "+"
+    api group: 'org.slf4j', name: 'slf4j-api', version: "2.0.16"
     // https://mvnrepository.com/artifact/com.google.guava/guava
-    api group: 'com.google.guava', name: 'guava', version: "+"
+    api group: 'com.google.guava', name: 'guava', version: "33.4.0-jre"
 }

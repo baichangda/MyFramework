@@ -1,0 +1,57 @@
+apply plugin: "io.spring.dependency-management"
+apply plugin: "org.springframework.boot"
+
+configurations.configureEach {
+    //去除springboot默认的logback
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    exclude module: 'logback-classic'
+    exclude module: 'logback-core'
+    //指定快照jar的更新策略
+    resolutionStrategy {
+        //缓存依赖时间、0代表不缓存
+        cacheChangingModulesFor 0, 'seconds'
+    }
+}
+
+dependencies {
+    implementation project(":Lib-Parser-Protocol-GB32960")
+
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    //spring kafka支持
+    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.1"
+
+    //springboot log4j2支持
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+}
+
+bootJar {
+    exclude "**/*-dev.yml"
+    exclude "**/*-test.yml"
+    manifest {
+        attributes 'Start-Class': 'cn.bcd.Application'
+    }
+    //指定jar文件的名称
+    archiveBaseName = "${project.name}"
+    version = ""
+}
+
+bootRun {
+    /**
+     * 启动时候带入jvm的参数;如下(启动jvisualvm监控)
+     * nohup gradle bootRun -PjvmArgs="-Djava.rmi.server.hostname=172.16.24.36 -Dcom.sun.management.jmxremote.port=10001 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=true" &
+     */
+    if (project.hasProperty('jvmArgs')) {
+        jvmArgs(project.jvmArgs.split("\\s+") as List)
+    }
+    //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
+    //开启缓存行补齐
+    jvmArgs('-XX:-RestrictContended')
+    jvmArgs('-Dfile.encoding=UTF-8')
+    jvmArgs('-Dsun.jnu.encoding=UTF-8')
+//    jvmArgs('--add-opens=java.base/java.nio=ALL-UNNAMED')
+}

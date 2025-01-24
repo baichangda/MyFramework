@@ -1,0 +1,8 @@
+dependencies {
+    implementation project(":Lib-Base")
+
+    var jacksonVersion = "2.18.2"
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: "${jacksonVersion}"
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${jacksonVersion}"
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${jacksonVersion}"
+}
