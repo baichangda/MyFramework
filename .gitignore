@@ -7,5 +7,4 @@ build
 gradle-bcd.properties
 gradle
 gradlew*
-logs
-*.log
+*/logs
