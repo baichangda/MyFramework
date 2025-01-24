@@ -1,5 +1,5 @@
 dependencies {
-    implementation project(":Lib-Base")
+    api project(":Lib-Base")
 
     var jacksonVersion = "2.18.2"
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: "${jacksonVersion}"
