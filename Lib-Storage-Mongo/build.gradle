@@ -2,7 +2,7 @@ apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
 
 dependencies {
-    implementation project(":Lib-Base-Json")
+    api project(":Lib-Base-Json")
     //springboot mongodb支持
     api("org.springframework.boot:spring-boot-starter-data-mongodb")
 }
