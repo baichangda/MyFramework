@@ -8,4 +8,7 @@ include 'Server-DataProcess-Gateway'
 include 'Server-DataProcess-Parse'
 include 'Server-Monitor-Collector'
 include 'Lib-Base-Json'
+include 'Lib-Storage-Mongo'
+include 'Server-Simulator-SingleVehicle'
+include 'Server-Simulator-PressTest'
 

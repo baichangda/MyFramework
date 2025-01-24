@@ -19,6 +19,9 @@ dependencies {
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'
 
+    //springboot mongodb支持
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+
     //spring kafka支持
     implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.1"
 
