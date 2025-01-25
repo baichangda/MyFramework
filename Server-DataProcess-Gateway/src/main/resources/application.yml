@@ -1,0 +1,19 @@
+gateway:
+  id: gw1
+  tcp:
+    port: 51234
+    maxBeforeOffline: 15s
+    sessionTopic: gw-session
+  parseTopic: gw-parse
+
+spring:
+  kafka:
+    consumer:
+      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      group-id: ${gateway.id}
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer

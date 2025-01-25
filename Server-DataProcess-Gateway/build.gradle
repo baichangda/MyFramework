@@ -18,15 +18,15 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'
-
-    //springboot mongodb支持
-    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    //springboot redis支持
+    //lettuce异步客户端(默认使用lettuce)
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
     //spring kafka支持
     implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.1"
 
     // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-buffer', version: "4.1.117.Final"
+    implementation group: 'io.netty', name: 'netty-all', version: "4.1.117.Final"
 
     //springboot log4j2支持
     implementation('org.springframework.boot:spring-boot-starter-log4j2')
