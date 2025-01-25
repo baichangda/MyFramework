@@ -3,7 +3,7 @@ package cn.bcd.businessProcess.backend.base.result;
 
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.util.ExceptionUtil;
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serial;

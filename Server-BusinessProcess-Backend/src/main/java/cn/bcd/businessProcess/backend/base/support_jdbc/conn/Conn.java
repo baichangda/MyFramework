@@ -2,7 +2,7 @@ package cn.bcd.businessProcess.backend.base.support_jdbc.conn;
 
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.util.StringUtil;
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

@@ -1,6 +1,6 @@
 package cn.bcd.businessProcess.backend.base.support_disruptor;
 
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import cn.bcd.businessProcess.backend.sys.bean.UserBean;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventTranslatorOneArg;

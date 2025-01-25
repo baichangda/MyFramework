@@ -1,6 +1,6 @@
 package cn.bcd.businessProcess.backend.base.support_spring_cache;
 
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import org.springframework.lang.Nullable;
 
 import java.io.Serializable;

@@ -3,7 +3,7 @@ package cn.bcd.businessProcess.backend.base.support_redis;
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.businessProcess.backend.base.support_redis.serializer.RedisSerializer_key_string;
 import cn.bcd.businessProcess.backend.base.support_redis.serializer.RedisSerializer_value_integer;
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;

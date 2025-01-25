@@ -22,7 +22,7 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation project(":Lib-Base")
+    implementation project(":Lib-Base-Json")
 
     //springboot支持
     implementation("org.springframework.boot:spring-boot-starter")

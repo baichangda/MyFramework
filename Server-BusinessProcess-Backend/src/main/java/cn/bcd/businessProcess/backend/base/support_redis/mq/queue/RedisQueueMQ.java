@@ -5,7 +5,7 @@ import cn.bcd.base.util.ClassUtil;
 import cn.bcd.base.util.ExecutorUtil;
 import cn.bcd.businessProcess.backend.base.support_redis.RedisUtil;
 import cn.bcd.businessProcess.backend.base.support_redis.mq.ValueSerializerType;
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

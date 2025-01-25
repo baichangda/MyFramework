@@ -2,7 +2,7 @@ package cn.bcd.businessProcess.backend.base.support_redis.mq.example;
 
 import cn.bcd.businessProcess.backend.base.support_redis.mq.ValueSerializerType;
 import cn.bcd.businessProcess.backend.base.support_redis.mq.topic.RedisTopicMQ;
-import cn.bcd.businessProcess.backend.base.util.JsonUtil;
+import cn.bcd.base.json.JsonUtil;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
