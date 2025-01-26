@@ -1,0 +1,54 @@
+gateway:
+  id: gw1
+  tcpPort: 51234
+  heartBeatPeriod: 3s
+  sessionTopic: gw-session
+  parseTopic: gw-parse
+
+spring:
+  data:
+    #redis配置
+    #如果都进行了配置,加载的先后顺序为:
+    #sentinel>cluster>single
+    redis:
+      #公用配置
+      database: 0
+      timeout: 60000
+      password: incar@2023
+      #异步lettuce连接池(默认)
+      lettuce:
+        pool:
+          maxIdle: 8
+          minIdle: 0
+          maxActive: 8
+          maxWait: -1
+        shutdown-timeout: 100ms
+      #主从配置
+      #     sentinel:
+      #       master: myMaster
+      #       nodes: 127.0.0.1:23679,127.0.0.1:23680,127.0.0.1:23681
+      #    #集群配置
+      #     cluster:
+      #       maxRedirects: 3
+      #       nodes:
+      #         - 114.116.107.184:7001
+      #         - 114.116.107.184:7002
+      #         - 114.116.107.184:7003
+      #         - 114.115.141.139:7004
+      #         - 114.115.141.139:7005
+      #         - 114.115.141.139:7006
+      #单机配置
+      host: ${server_host:127.0.0.1}
+      port: 6379
+      ssl:
+        enabled: false
+  kafka:
+    consumer:
+      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      group-id: ${gateway.id}
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer

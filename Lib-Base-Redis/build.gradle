@@ -1,0 +1,16 @@
+apply plugin: "io.spring.dependency-management"
+apply plugin: "org.springframework.boot"
+
+dependencies {
+    api project(":Lib-Base-Json")
+    //springboot mongodb支持
+    api("org.springframework.boot:spring-boot-starter-data-redis")
+}
+
+bootJar {
+    enabled = false
+}
+
+bootRun {
+    enabled = false
+}
