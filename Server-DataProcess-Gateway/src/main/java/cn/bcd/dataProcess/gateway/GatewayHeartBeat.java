@@ -1,6 +1,6 @@
 package cn.bcd.dataProcess.gateway;
 
-import cn.bcd.dataProcess.gateway.prop.GatewayProp;
+import cn.bcd.base.util.DateZoneUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
@@ -8,7 +8,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
+import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,13 +23,18 @@ public class GatewayHeartBeat implements ApplicationListener<ContextRefreshedEve
     @Qualifier("string_string_redisTemplate")
     RedisTemplate<String, String> redisTemplate;
 
+    /**
+     * set key gatewayId val
+     */
+    static String gatewayOnline_redisHashKey = "gw-online";
+
     private void startHeartBeatToRedis() {
-        final Duration maxBeforeOffline = gatewayProp.tcp.maxBeforeOffline;
-        final String key = RedisKeyConst.gatewayOnline_redisKeyPre + gatewayProp.id;
-        final long period = maxBeforeOffline.getSeconds() / 2 - 1;
+        long seconds = gatewayProp.heartBeatPeriod.getSeconds();
         pool_saveRedis_heartBeat.scheduleAtFixedRate(() -> {
-            redisTemplate.opsForValue().set(key, "", maxBeforeOffline);
-        }, period, period, TimeUnit.SECONDS);
+            redisTemplate.opsForHash().put(gatewayOnline_redisHashKey,
+                    gatewayProp.id,
+                    DateZoneUtil.dateToString_second(new Date()));
+        }, seconds, seconds, TimeUnit.SECONDS);
     }
 
     @Override

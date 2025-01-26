@@ -3,9 +3,6 @@ package cn.bcd;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * @author liqi
- */
 @SpringBootApplication(scanBasePackages = {"cn.bcd"})
 public class Application {
 

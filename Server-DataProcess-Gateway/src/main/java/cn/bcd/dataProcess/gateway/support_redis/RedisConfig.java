@@ -38,6 +38,18 @@ public class RedisConfig {
         return RedisUtil.newString_StringRedisTemplate(redisConnectionFactory);
     }
 
+    /**
+     * key 用 {@link RedisUtil#SERIALIZER_VALUE_STRING}
+     * value 用 {@link RedisUtil#SERIALIZER_VALUE_INTEGER}
+     * 的 RedisTemplate
+     *
+     * @return
+     */
+    @Bean(name = "string_int_redisTemplate")
+    public RedisTemplate<String, Integer> string_int_redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        return RedisUtil.newString_IntegerRedisTemplate(redisConnectionFactory);
+    }
+
     @Bean
     @Lazy
     public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory factory) {

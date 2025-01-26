@@ -1,6 +1,5 @@
 package cn.bcd.dataProcess.gateway;
 
-import cn.bcd.dataProcess.gateway.prop.GatewayProp;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -25,7 +24,7 @@ public class SessionClusterManager {
     @Autowired
     KafkaTemplate<byte[], byte[]> kafkaTemplate;
 
-    @KafkaListener(topics = "${gateway.tcp.sessionTopic}")
+    @KafkaListener(topics = "${gateway.sessionTopic}")
     public void listen(ConsumerRecord<byte[], byte[]> consumerRecord) {
         //格式为 session类型,sessionId,网关id,连接的时间戳(毫秒)
         final String value = new String(consumerRecord.value());
@@ -47,7 +46,7 @@ public class SessionClusterManager {
     }
 
     public void send(Session session) {
-        String sessionTopic = gatewayProp.tcp.sessionTopic;
+        String sessionTopic = gatewayProp.sessionTopic;
         String id = gatewayProp.id;
         pool_sendKafka_sessionNotify.execute(() -> {
             String msg = session.type + "," + session.id + "," + id + "," + session.createTs;

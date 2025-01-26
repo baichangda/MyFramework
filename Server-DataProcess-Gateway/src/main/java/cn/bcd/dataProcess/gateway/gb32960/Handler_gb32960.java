@@ -1,7 +1,7 @@
 package cn.bcd.dataProcess.gateway.gb32960;
 
 import cn.bcd.dataProcess.gateway.SessionClusterManager;
-import cn.bcd.dataProcess.gateway.prop.GatewayProp;
+import cn.bcd.dataProcess.gateway.GatewayProp;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;

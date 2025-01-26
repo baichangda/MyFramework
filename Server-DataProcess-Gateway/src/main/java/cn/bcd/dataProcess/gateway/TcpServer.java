@@ -1,7 +1,5 @@
 package cn.bcd.dataProcess.gateway;
 
-import cn.bcd.dataProcess.gateway.prop.GatewayProp;
-import cn.bcd.dataProcess.gateway.prop.TcpProp;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -37,7 +35,6 @@ public class TcpServer implements CommandLineRunner {
     List<Monitor> monitorList;
 
     public void run(String... args) throws Exception {
-        TcpProp tcpProp = gatewayProp.tcp;
         Thread.startVirtualThread(() -> {
             startMonitor();
             final EventLoopGroup boosGroup = new NioEventLoopGroup();
@@ -53,8 +50,8 @@ public class TcpServer implements CommandLineRunner {
                             }
                         }
                 );
-                final ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress(tcpProp.port)).sync();
-                logger.info("server listen tcp port[{}]", tcpProp.port);
+                final ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress(gatewayProp.tcpPort)).sync();
+                logger.info("server listen tcp port[{}]", gatewayProp.tcpPort);
                 channelFuture.channel().closeFuture().sync();
             } catch (Exception e) {
                 logger.error("run error", e);

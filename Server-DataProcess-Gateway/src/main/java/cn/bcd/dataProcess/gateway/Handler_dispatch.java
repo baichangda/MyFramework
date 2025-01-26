@@ -1,7 +1,6 @@
 package cn.bcd.dataProcess.gateway;
 
 import cn.bcd.dataProcess.gateway.gb32960.Handler_gb32960;
-import cn.bcd.dataProcess.gateway.prop.GatewayProp;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
