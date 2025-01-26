@@ -1,10 +1,10 @@
 package cn.bcd.dataProcess.parse.kafka.ext.threaddriven;
 
-import com.wq.base.exception.BaseException;
-import com.wq.base.util.ExecutorUtil;
-import com.wq.base.util.StringUtil;
-import com.wq.dataProcess.parse.kafka.ext.ConsumerProp;
-import com.wq.dataProcess.parse.kafka.ext.ConsumerRebalanceLogger;
+import cn.bcd.base.exception.BaseException;
+import cn.bcd.base.util.ExecutorUtil;
+import cn.bcd.base.util.StringUtil;
+import cn.bcd.dataProcess.parse.kafka.ext.ConsumerProp;
+import cn.bcd.dataProcess.parse.kafka.ext.ConsumerRebalanceLogger;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

@@ -1,4 +1,4 @@
-package cn.bcd.storage.mongo.rawData;
+package cn.bcd.storage.mongo.gb32960;
 
 import java.util.Date;
 

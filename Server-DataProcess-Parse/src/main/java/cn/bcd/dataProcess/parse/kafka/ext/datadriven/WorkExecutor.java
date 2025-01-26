@@ -1,8 +1,8 @@
 package cn.bcd.dataProcess.parse.kafka.ext.datadriven;
 
-import com.wq.base.exception.BaseException;
-import com.wq.base.util.DateUtil;
-import com.wq.base.util.ExecutorUtil;
+import cn.bcd.base.exception.BaseException;
+import cn.bcd.base.util.DateUtil;
+import cn.bcd.base.util.ExecutorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

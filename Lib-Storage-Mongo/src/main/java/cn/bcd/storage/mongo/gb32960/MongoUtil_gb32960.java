@@ -1,4 +1,4 @@
-package cn.bcd.storage.mongo.rawData;
+package cn.bcd.storage.mongo.gb32960;
 
 import cn.bcd.base.util.DateZoneUtil;
 import cn.bcd.storage.mongo.MongoUtil;
@@ -15,8 +15,8 @@ import org.springframework.data.util.Pair;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+public class MongoUtil_gb32960 {
 
-public class RawDataUtil {
     /**
      * 范围查询
      *
@@ -28,7 +28,7 @@ public class RawDataUtil {
      * @param desc      是否主键逆序
      * @return
      */
-    public static List<SaveRawData> list_rawData(String vin, Date beginTime, Date endTime, int skip, int limit, boolean desc) {
+    public static List<QueryRawData> list_rawData(String vin, Date beginTime, Date endTime, int skip, int limit, boolean desc) {
         String startRowKey = toId_rawData(vin, beginTime, 0);
         String endRowKey = toId_rawData(vin, endTime, 0);
         return list_rawData(vin, startRowKey, endRowKey, skip, limit, desc);
@@ -45,7 +45,7 @@ public class RawDataUtil {
      * @param desc
      * @return
      */
-    public static List<SaveRawData> list_rawData(String vin, String startRowKey, String endRowKey, int skip, int limit, boolean desc) {
+    public static List<QueryRawData> list_rawData(String vin, String startRowKey, String endRowKey, int skip, int limit, boolean desc) {
         MongoTemplate mongoTemplate = MongoUtil.getMongoTemplate(vin);
         Query query = new Query();
         query.skip(skip);
@@ -55,7 +55,7 @@ public class RawDataUtil {
         criteria.gte(startRowKey);
         criteria.lt(endRowKey);
         query.addCriteria(criteria);
-        return mongoTemplate.find(query, SaveRawData.class);
+        return mongoTemplate.find(query, QueryRawData.class);
     }
 
     /**
@@ -66,8 +66,8 @@ public class RawDataUtil {
      * @param collectTime
      * @return
      */
-    public static byte[] get_rawData(String vin, Date collectTime, int type) {
-        return MongoUtil.getMongoTemplate(vin).findById(toId_rawData(vin, collectTime, type), byte[].class);
+    public static QueryRawData get_rawData(String vin, Date collectTime, int type) {
+        return MongoUtil.getMongoTemplate(vin).findById(toId_rawData(vin, collectTime, type), QueryRawData.class);
     }
 
 
@@ -105,4 +105,5 @@ public class RawDataUtil {
                 + DateZoneUtil.dateToString_second(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
+
 }

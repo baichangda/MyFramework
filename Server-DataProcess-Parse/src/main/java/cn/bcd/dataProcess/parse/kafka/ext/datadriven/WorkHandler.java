@@ -1,6 +1,6 @@
 package cn.bcd.dataProcess.parse.kafka.ext.datadriven;
 
-import com.wq.base.util.DateUtil;
+import cn.bcd.base.util.DateUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**

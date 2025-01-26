@@ -21,7 +21,8 @@ public class ExecutorUtil {
      * @param queue    阻塞队列
      * @param except   期望数量
      * @param callback 回调方法
-     * @param running  是否运行中、通过设置此为false打断循环
+     * @param running  是否运行中、通过设置此为false打断循环、仅在从队列取不到数据时候退出
+     *                 null代表不检测退出
      */
     public static <T> void loop(BlockingQueue<T> queue, int except, Consumer<ArrayList<T>> callback, AtomicBoolean running) {
         try {
@@ -29,7 +30,7 @@ public class ExecutorUtil {
             while (true) {
                 T t = queue.poll(3, TimeUnit.SECONDS);
                 if (t == null) {
-                    if (running.get()) {
+                    if (running == null || running.get()) {
                         continue;
                     } else {
                         break;
