@@ -1,8 +1,5 @@
-package cn.bcd.base.redis;
+package cn.bcd.dataProcess.gateway.tcp.support_redis;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -13,8 +10,8 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import java.io.Serializable;
 import java.util.concurrent.Executors;
 
-@ConditionalOnSingleCandidate(RedisConnectionFactory.class)
 @Configuration
+@SuppressWarnings("unchecked")
 public class RedisConfig {
 
     /**

@@ -1,7 +1,6 @@
 rootProject.name = 'MyFramework'
 include 'Lib-Base'
 include 'Lib-Base-Json'
-include 'Lib-Base-Redis'
 include 'Lib-Monitor-Client'
 include 'Lib-Parser-Base'
 include 'Lib-Parser-Protocol-GB32960'

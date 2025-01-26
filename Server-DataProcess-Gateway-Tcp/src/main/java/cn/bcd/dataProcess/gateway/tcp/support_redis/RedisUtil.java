@@ -1,7 +1,9 @@
-package cn.bcd.base.redis;
+package cn.bcd.dataProcess.gateway.tcp.support_redis;
 
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.json.JsonUtil;
+import cn.bcd.dataProcess.gateway.tcp.support_redis.serializer.RedisSerializer_key_string;
+import cn.bcd.dataProcess.gateway.tcp.support_redis.serializer.RedisSerializer_value_integer;
 import com.fasterxml.jackson.databind.JavaType;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;

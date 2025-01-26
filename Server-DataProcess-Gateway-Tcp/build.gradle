@@ -14,7 +14,7 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation project(":Lib-Base-Redis")
+    implementation project(":Lib-Base-Json")
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'
