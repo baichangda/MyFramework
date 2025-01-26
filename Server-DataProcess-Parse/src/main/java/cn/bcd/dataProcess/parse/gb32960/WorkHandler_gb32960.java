@@ -15,6 +15,7 @@ import java.util.Date;
 public class WorkHandler_gb32960 extends WorkHandler {
     public WorkHandler_gb32960(String id, WorkExecutor executor) {
         super(id, executor);
+        SaveHandler_gb32960.init();
     }
 
     @Override
