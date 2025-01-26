@@ -1,4 +1,4 @@
-package cn.bcd.dataProcess.gateway.tcp.support_redis;
+package cn.bcd.dataProcess.gateway.tcp.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

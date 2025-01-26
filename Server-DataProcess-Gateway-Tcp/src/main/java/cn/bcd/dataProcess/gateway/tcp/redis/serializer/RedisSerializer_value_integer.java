@@ -1,4 +1,4 @@
-package cn.bcd.dataProcess.gateway.tcp.support_redis.serializer;
+package cn.bcd.dataProcess.gateway.tcp.redis.serializer;
 
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;

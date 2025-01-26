@@ -19,10 +19,4 @@ public enum Protocol {
     static {
         sessionMap[Protocol.gb32960.type] = new ConcurrentHashMap<>();
     }
-
-    public final static ArrayBlockingQueue<byte[]>[] queues = new ArrayBlockingQueue[protocolCount];
-    static {
-        queues[Protocol.gb32960.type] = new ArrayBlockingQueue<>(1000);
-    }
-
 }

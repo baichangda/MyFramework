@@ -1,10 +1,3 @@
-gateway:
-  id: tcp-gateway-1
-  tcpPort: 51234
-  heartBeatPeriod: 3s
-  sessionTopic: gw-session
-  parseTopic: gw-parse
-
 spring:
   data:
     #redis配置
@@ -42,13 +35,28 @@ spring:
       port: 6379
       ssl:
         enabled: false
+  profiles.active: dev
+  freemarker.cache: false
+  #  kafka配置
   kafka:
     consumer:
-      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
-      group-id: ${gateway.id}
-      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      bootstrap-servers: 10.0.11.50:19092
+      group-id: tsp-gateway
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:
-      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
-      key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      bootstrap-servers: 10.0.11.50:19092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+  main:
+    allow-circular-references: true
+
+gateway:
+  id: mqtt-gateway-1
+  mqttHost: 10.0.11.50
+  mqttPort: 11883
+  mqttTopic: vin/+
+  mqttRespTopicPrefix: vin/resp/
+  mqttConsumeThreadNum: 4
+  heartBeatPeriod: 3s
+  parseTopic: gw-parse

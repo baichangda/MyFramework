@@ -81,16 +81,27 @@ public class Handler_gb32960 extends ChannelInboundHandlerAdapter {
 
     }
 
-    private byte[] response_succeed(byte[] src) {
-        byte[] dest = new byte[25];
-        System.arraycopy(src, 0, dest, 0, 3);
-        dest[3] = 0x01;
-        System.arraycopy(src, 4, dest, 4, 18);
+    public static byte[] response_succeed(byte[] data) {
+        byte[] response = new byte[31];
+        System.arraycopy(data, 0, response, 0, 30);
+        response[3] = 1;
+        response[22] = 0;
+        response[23] = 6;
+        fixCode(response);
+        return response;
+    }
+
+    /**
+     * 修正异或校验位
+     *
+     * @param data 只包含一条数据的数据包
+     */
+    public static void fixCode(byte[] data) {
         byte xor = 0;
-        for (int i = 0; i < 24; i++) {
-            xor ^= src[i];
+        int codeIndex = data.length - 1;
+        for (int i = 0; i < codeIndex; i++) {
+            xor ^= data[i];
         }
-        dest[24] = xor;
-        return dest;
+        data[codeIndex] = xor;
     }
 }
