@@ -2,6 +2,7 @@ package cn.bcd.dataProcess.parse;
 
 import cn.bcd.dataProcess.parse.gb32960.WorkHandler_gb32960;
 import cn.bcd.dataProcess.parse.kafka.ext.ConsumerProp;
+import cn.bcd.dataProcess.parse.kafka.ext.KafkaProp;
 import cn.bcd.dataProcess.parse.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkExecutor;
 import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkHandler;
@@ -10,9 +11,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataConsumer extends DataDrivenKafkaConsumer {
 
-    public DataConsumer(ParseProp parseProp) {
+    public DataConsumer(ParseProp parseProp,KafkaProp kafkaProp) {
         super("dataConsumer",
-                new ConsumerProp(),
+                kafkaProp.consumer,
                 Runtime.getRuntime().availableProcessors(),
                 0,
                 null,
