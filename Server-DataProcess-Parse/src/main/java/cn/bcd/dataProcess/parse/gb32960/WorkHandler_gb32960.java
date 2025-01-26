@@ -13,9 +13,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import java.util.Date;
 
 public class WorkHandler_gb32960 extends WorkHandler {
+    static {
+        SaveHandler_gb32960.init();
+    }
     public WorkHandler_gb32960(String id, WorkExecutor executor) {
         super(id, executor);
-        SaveHandler_gb32960.init();
     }
 
     @Override
