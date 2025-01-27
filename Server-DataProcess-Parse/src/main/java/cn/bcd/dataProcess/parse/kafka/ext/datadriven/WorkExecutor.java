@@ -75,7 +75,7 @@ public class WorkExecutor {
     /**
      * 构造任务执行器
      *
-     * @param threadName
+     * @param threadName      线程名称
      * @param queueSize       无阻塞任务线程池队列大小
      *                        0则使用{@link LinkedBlockingQueue}
      *                        否则使用{@link ArrayBlockingQueue}

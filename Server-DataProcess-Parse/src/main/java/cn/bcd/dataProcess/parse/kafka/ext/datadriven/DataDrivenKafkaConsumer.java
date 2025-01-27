@@ -291,13 +291,12 @@ public abstract class DataDrivenKafkaConsumer {
     }
 
     /**
-     * 根据id和分配的执行器构造WorkHandler
+     * 根据id构造workHandler
      *
      * @param id
-     * @param executor
      * @return
      */
-    public abstract WorkHandler newHandler(String id, WorkExecutor executor);
+    public abstract WorkHandler newHandler(String id, WorkExecutor workExecutor);
 
     /**
      * 移除workHandler

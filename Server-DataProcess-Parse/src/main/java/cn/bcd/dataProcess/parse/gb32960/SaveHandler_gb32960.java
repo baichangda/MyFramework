@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SaveHandler_gb32960 {
-    static ArrayBlockingQueue<SaveRawData> queue;
+    public static ArrayBlockingQueue<SaveRawData> queue;
     static ExecutorService pool = Executors.newSingleThreadExecutor();
 
     static {
