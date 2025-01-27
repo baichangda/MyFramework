@@ -5,10 +5,12 @@ import cn.bcd.base.redis.mq.topic.RedisTopicMQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+@EnableConfigurationProperties(MonitorProp.class)
 @Component
 public class MonitorRedisTopicMQ extends RedisTopicMQ<String> {
 
@@ -20,8 +22,12 @@ public class MonitorRedisTopicMQ extends RedisTopicMQ<String> {
     @Autowired(required = false)
     MonitorExtCollector monitorExtCollector;
 
-    public MonitorRedisTopicMQ(RedisConnectionFactory connectionFactory) {
-        super(connectionFactory, 1, 1, ValueSerializerType.STRING, "monitorRequest");
+    final MonitorProp monitorProp;
+
+    public MonitorRedisTopicMQ(RedisConnectionFactory connectionFactory, MonitorProp monitorProp) {
+        super(connectionFactory, 1, 1, ValueSerializerType.STRING,
+                monitorProp.monitorRequestTopic);
+        this.monitorProp = monitorProp;
     }
 
     @Override
@@ -33,7 +39,7 @@ public class MonitorRedisTopicMQ extends RedisTopicMQ<String> {
         if (monitorExtCollector != null) {
             monitorData.extData = monitorExtCollector.collect();
         }
-        redisTemplate.opsForList().leftPush("monitorResponseList", monitorData);
+        redisTemplate.opsForList().leftPush(monitorProp.monitorResponseList, monitorData);
         logger.info("finish monitor request[{}]", data);
     }
 }
