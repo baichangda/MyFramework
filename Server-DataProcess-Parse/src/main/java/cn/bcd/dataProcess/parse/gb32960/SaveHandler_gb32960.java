@@ -12,6 +12,10 @@ public class SaveHandler_gb32960 {
     static ArrayBlockingQueue<SaveRawData> queue;
     static ExecutorService pool = Executors.newSingleThreadExecutor();
 
+    static {
+        SaveHandler_gb32960.init();
+    }
+
     public static void init() {
         queue = new ArrayBlockingQueue<>(10000);
         pool = Executors.newSingleThreadExecutor();
