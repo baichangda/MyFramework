@@ -1,7 +1,7 @@
 package cn.bcd.businessProcess.backend.sys.keys;
 
+import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.base.util.RSAUtil;
-import cn.bcd.businessProcess.backend.base.support_redis.RedisUtil;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;

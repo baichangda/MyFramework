@@ -68,7 +68,6 @@ public abstract class DataDrivenKafkaConsumer {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
-    public final Map<String,Object> properties;
 
     /**
      * 消费线程
@@ -183,7 +182,6 @@ public abstract class DataDrivenKafkaConsumer {
 
     /**
      * @param name                  当前消费者的名称(用于标定线程名称)
-     * @param consumerProp          消费者属性
      * @param workExecutorNum       工作任务执行器个数
      * @param workExecutorQueueSize 工作任务执行器无阻塞任务线程池队列大小
      *                              <=0代表不限制、此时使用{@link LinkedBlockingQueue}
@@ -212,7 +210,6 @@ public abstract class DataDrivenKafkaConsumer {
      *                              其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
      */
     public DataDrivenKafkaConsumer(String name,
-                                   KafkaProperties.Consumer consumerProp,
                                    int workExecutorNum,
                                    int workExecutorQueueSize,
                                    WorkExecutor.BlockingChecker blockingChecker,
@@ -224,7 +221,6 @@ public abstract class DataDrivenKafkaConsumer {
                                    String topic,
                                    int... partitions) {
         this.name = name;
-        this.properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
         this.workExecutorNum = workExecutorNum;
         this.workExecutorQueueSize = workExecutorQueueSize;
         this.blockingChecker = blockingChecker;
@@ -350,8 +346,9 @@ public abstract class DataDrivenKafkaConsumer {
      *
      * @param consumer
      * @param ps
+     * @param properties
      */
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps,Map<String,Object> properties) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -392,12 +389,14 @@ public abstract class DataDrivenKafkaConsumer {
      * 构造线程池
      * 启动线程
      * 注册销毁狗子
+     * @param consumerProp
      */
-    public void init() {
+    public void init(KafkaProperties.Consumer consumerProp) {
         if (!available) {
             synchronized (this) {
                 if (!available) {
                     try {
+                        Map<String, Object> properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
                         //标记可用
                         available = true;
                         //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
@@ -435,12 +434,12 @@ public abstract class DataDrivenKafkaConsumer {
                             case 2: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
                                 int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps);
+                                startConsumePartitions(consumer, ps,properties);
                                 break;
                             }
                             default: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
-                                startConsumePartitions(consumer, partitions);
+                                startConsumePartitions(consumer, partitions,properties);
                                 break;
                             }
                         }

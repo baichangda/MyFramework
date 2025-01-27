@@ -16,7 +16,10 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -57,7 +60,6 @@ public abstract class ThreadDrivenKafkaConsumer {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
-    public final Map<String,Object> properties;
     /**
      * 消费线程
      */
@@ -147,7 +149,6 @@ public abstract class ThreadDrivenKafkaConsumer {
 
     /**
      * @param name                  当前消费者的名称(用于标定线程名称)
-     * @param consumerProp          消费者属性
      * @param oneWorkThreadOneQueue 一个工作线程一个队列
      *                              true时候
      *                              每个工作线程都有自己的队列
@@ -172,7 +173,6 @@ public abstract class ThreadDrivenKafkaConsumer {
      *                              其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
      */
     public ThreadDrivenKafkaConsumer(String name,
-                                     KafkaProperties.Consumer consumerProp,
                                      boolean oneWorkThreadOneQueue,
                                      int workThreadNum,
                                      int workThreadQueueSize,
@@ -183,7 +183,6 @@ public abstract class ThreadDrivenKafkaConsumer {
                                      String topic,
                                      int... partitions) {
         this.name = name;
-        this.properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
         this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;
         this.workThreadNum = workThreadNum;
         this.workThreadQueueSize = workThreadQueueSize;
@@ -249,7 +248,7 @@ public abstract class ThreadDrivenKafkaConsumer {
 
     }
 
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> properties) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -285,11 +284,16 @@ public abstract class ThreadDrivenKafkaConsumer {
         logger.info("start consumers[{}] for partitions[{}]", partitions.length, Arrays.stream(partitions).mapToObj(e -> topic + ":" + e).collect(Collectors.joining(",")));
     }
 
-    public void init() {
+    /**
+     * 初始化
+     * @param consumerProp
+     */
+    public void init(KafkaProperties.Consumer consumerProp) {
         if (!available) {
             synchronized (this) {
                 if (!available) {
                     try {
+                        Map<String, Object> properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
                         //标记可用
                         available = true;
                         //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
@@ -322,12 +326,12 @@ public abstract class ThreadDrivenKafkaConsumer {
                             case 2: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
                                 int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps);
+                                startConsumePartitions(consumer, ps, properties);
                                 break;
                             }
                             default: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
-                                startConsumePartitions(consumer, partitions);
+                                startConsumePartitions(consumer, partitions, properties);
                                 break;
                             }
                         }

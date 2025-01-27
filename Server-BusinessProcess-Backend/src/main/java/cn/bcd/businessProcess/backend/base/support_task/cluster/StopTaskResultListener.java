@@ -1,7 +1,7 @@
 package cn.bcd.businessProcess.backend.base.support_task.cluster;
 
-import cn.bcd.businessProcess.backend.base.support_redis.mq.ValueSerializerType;
-import cn.bcd.businessProcess.backend.base.support_redis.mq.topic.RedisTopicMQ;
+import cn.bcd.base.redis.mq.ValueSerializerType;
+import cn.bcd.base.redis.mq.topic.RedisTopicMQ;
 import cn.bcd.businessProcess.backend.base.support_task.StopResult;
 import cn.bcd.businessProcess.backend.base.support_task.Task;
 import com.google.common.collect.Maps;

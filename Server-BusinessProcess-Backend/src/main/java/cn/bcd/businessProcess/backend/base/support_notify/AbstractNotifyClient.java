@@ -1,21 +1,21 @@
 package cn.bcd.businessProcess.backend.base.support_notify;
 
+import cn.bcd.base.kafka.ext.ProducerFactory;
+import cn.bcd.base.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
+import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.base.util.ExecutorUtil;
-import cn.bcd.businessProcess.backend.base.support_kafka.ext.ConsumerProp;
-import cn.bcd.businessProcess.backend.base.support_kafka.ext.ProducerFactory;
-import cn.bcd.businessProcess.backend.base.support_kafka.ext.ProducerProp;
-import cn.bcd.businessProcess.backend.base.support_kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
-import cn.bcd.businessProcess.backend.base.support_redis.RedisUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -35,10 +35,10 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     public final Map<String, Map<String, ListenerInfo>> type_id_listenerInfo = new ConcurrentHashMap<>();
     private final String subscribeTopic;
     private final String notifyTopic;
+    private final KafkaProperties.Consumer consumerProp;
 
     public AbstractNotifyClient(String type, RedisConnectionFactory redisConnectionFactory, NotifyProp notifyProp) {
         super("notifyClient(" + type + ")",
-                new ConsumerProp(notifyProp.bootstrapServers, type + "_" + notifyProp.id),
                 false,
                 1,
                 100,
@@ -47,9 +47,14 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 0,
                 0,
                 "notify_" + type);
+        this.consumerProp = new KafkaProperties.Consumer();
+        this.consumerProp.setBootstrapServers(Arrays.stream(notifyProp.bootstrapServers.split(",")).toList());
+        this.consumerProp.setGroupId(type + "_" + notifyProp.id);
+        KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
+        producerProp.setBootstrapServers(this.consumerProp.getBootstrapServers());
         this.subscribeTopic = "subscribe_" + type;
         this.notifyTopic = "notify_" + type;
-        this.producer = ProducerFactory.newProducer(new ProducerProp(notifyProp.bootstrapServers));
+        this.producer = ProducerFactory.newProducer(producerProp);
         this.notifyProp = notifyProp;
         this.boundHashOperations = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory).boundHashOps(this.notifyTopic);
     }
@@ -57,7 +62,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
 
     public void init() {
         //开始消费
-        super.init();
+        super.init(consumerProp);
         workPool = Executors.newSingleThreadScheduledExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();

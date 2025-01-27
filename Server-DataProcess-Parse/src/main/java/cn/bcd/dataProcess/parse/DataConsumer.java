@@ -5,16 +5,21 @@ import cn.bcd.base.kafka.ext.datadriven.WorkExecutor;
 import cn.bcd.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.dataProcess.parse.gb32960.SaveHandler_gb32960;
 import cn.bcd.dataProcess.parse.gb32960.WorkHandler_gb32960;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+@EnableConfigurationProperties({ParseProp.class, KafkaProperties.class})
 @Component
 public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLineRunner {
 
-    public DataConsumer(ParseProp parseProp, KafkaProperties kafkaProp) {
+    @Autowired
+    KafkaProperties kafkaProperties;
+
+    public DataConsumer(ParseProp parseProp) {
         super("dataConsumer",
-                kafkaProp.getConsumer(),
                 Runtime.getRuntime().availableProcessors(),
                 0,
                 null,
@@ -39,6 +44,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
 
     @Override
     public void run(String... args) throws Exception {
-        init();
+        init(kafkaProperties.getConsumer());
     }
 }

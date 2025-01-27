@@ -1,6 +1,6 @@
 package cn.bcd.businessProcess.backend.base.support_spring_cache;
 
-import cn.bcd.businessProcess.backend.base.support_redis.RedisUtil;
+import cn.bcd.base.redis.RedisUtil;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cache.Cache;
 import org.springframework.context.annotation.Bean;
