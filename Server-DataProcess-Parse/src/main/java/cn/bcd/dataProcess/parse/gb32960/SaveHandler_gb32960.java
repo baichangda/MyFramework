@@ -13,7 +13,6 @@ public class SaveHandler_gb32960 {
     public static ArrayBlockingQueue<SaveRawData> queue;
     static ExecutorService pool = Executors.newSingleThreadExecutor();
     public final static LongAdder saveCount = new LongAdder();
-
     static {
         SaveHandler_gb32960.init();
     }
