@@ -1,3 +1,13 @@
+gateway:
+  id: mqtt-gateway-1
+  mqtt-host: 10.0.11.50
+  mqtt-port: 11883
+  mqtt-topic: vin/+
+  mqtt-resp-topic-prefix: vin/resp/
+  mqtt-consume-thread-num: 4
+  heart-beat-period: 3s
+  parse-topic: gw-parse
+
 spring:
   data:
     #redis配置
@@ -51,12 +61,4 @@ spring:
   main:
     allow-circular-references: true
 
-gateway:
-  id: mqtt-gateway-1
-  mqttHost: 10.0.11.50
-  mqttPort: 11883
-  mqttTopic: vin/+
-  mqttRespTopicPrefix: vin/resp/
-  mqttConsumeThreadNum: 4
-  heartBeatPeriod: 3s
-  parseTopic: gw-parse
+
