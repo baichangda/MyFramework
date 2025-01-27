@@ -22,7 +22,8 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation project(":Lib-Base-Json")
+    implementation project(":Lib-Base-Redis")
+    implementation project(":Lib-Base-Kafka")
 
     //springboot支持
     implementation("org.springframework.boot:spring-boot-starter")
@@ -54,9 +55,6 @@ dependencies {
 
     //springboot mongodb支持
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-
-    //spring kafka支持
-    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.+"
 
     // https://mvnrepository.com/artifact/com.alibaba/easyexcel
     implementation(group: 'com.alibaba', name: 'easyexcel', version: "+")

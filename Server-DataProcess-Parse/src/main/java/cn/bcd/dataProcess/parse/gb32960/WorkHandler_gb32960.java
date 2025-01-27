@@ -1,8 +1,8 @@
 package cn.bcd.dataProcess.parse.gb32960;
 
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.DataDrivenKafkaConsumer;
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkExecutor;
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkHandler;
+import cn.bcd.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
+import cn.bcd.base.kafka.ext.datadriven.WorkExecutor;
+import cn.bcd.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.parser.protocol.gb32960.data.Packet;
 import cn.bcd.parser.protocol.gb32960.data.VehicleLoginData;
 import cn.bcd.parser.protocol.gb32960.data.VehicleLogoutData;

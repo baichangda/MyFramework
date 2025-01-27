@@ -1,7 +1,7 @@
 package cn.bcd.businessProcess.backend.base.support_redis.schedule.handler;
 
 import cn.bcd.base.exception.BaseException;
-import cn.bcd.businessProcess.backend.base.support_redis.RedisUtil;
+import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.businessProcess.backend.base.support_redis.schedule.anno.SingleFailedSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

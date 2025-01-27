@@ -12,4 +12,6 @@ include 'Lib-Storage-Mongo'
 include 'Server-Simulator-SingleVehicle'
 include 'Server-Simulator-PressTest'
 include 'Server-DataProcess-Gateway-Mqtt'
+include 'Lib-Base-Redis'
+include 'Lib-Base-Kafka'
 

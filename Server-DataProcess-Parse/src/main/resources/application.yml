@@ -1,4 +1,5 @@
 parse:
+  id: parse-1
   topic: parseTopic
 
 spring:
@@ -41,7 +42,7 @@ spring:
   kafka:
     consumer:
       bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
-      group-id: ${gateway.id}
+      group-id: ${parse.id}
       key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:

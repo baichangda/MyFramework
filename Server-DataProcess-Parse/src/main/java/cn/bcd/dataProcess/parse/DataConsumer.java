@@ -1,20 +1,20 @@
 package cn.bcd.dataProcess.parse;
 
+import cn.bcd.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
+import cn.bcd.base.kafka.ext.datadriven.WorkExecutor;
+import cn.bcd.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.dataProcess.parse.gb32960.SaveHandler_gb32960;
 import cn.bcd.dataProcess.parse.gb32960.WorkHandler_gb32960;
-import cn.bcd.dataProcess.parse.kafka.ext.KafkaProp;
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.DataDrivenKafkaConsumer;
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkExecutor;
-import cn.bcd.dataProcess.parse.kafka.ext.datadriven.WorkHandler;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLineRunner {
 
-    public DataConsumer(ParseProp parseProp, KafkaProp kafkaProp) {
+    public DataConsumer(ParseProp parseProp, KafkaProperties kafkaProp) {
         super("dataConsumer",
-                kafkaProp.consumer,
+                kafkaProp.getConsumer(),
                 Runtime.getRuntime().availableProcessors(),
                 0,
                 null,

@@ -1,0 +1,16 @@
+apply plugin: "io.spring.dependency-management"
+apply plugin: "org.springframework.boot"
+
+dependencies {
+    api project(":Lib-Base-Redis")
+    // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
+    api group: 'com.github.oshi', name: 'oshi-core-java11', version: "6.6.6"
+}
+
+bootJar {
+    enabled = false
+}
+
+bootRun {
+    enabled = false
+}

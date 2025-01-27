@@ -14,19 +14,14 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation project(":Lib-Base-Json")
+    implementation project(":Lib-Base-Redis")
+    implementation project(":Lib-Base-Kafka")
 
     // https://mvnrepository.com/artifact/com.hivemq/hivemq-mqtt-client
     implementation 'com.hivemq:hivemq-mqtt-client:1.3.4'
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'
-    //springboot redis支持
-    //lettuce异步客户端(默认使用lettuce)
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-
-    //spring kafka支持
-    implementation group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.1"
 
     //springboot log4j2支持
     implementation('org.springframework.boot:spring-boot-starter-log4j2')

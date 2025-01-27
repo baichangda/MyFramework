@@ -8,5 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "parse")
 public class ParseProp {
+    public String id;
     public String topic;
 }
