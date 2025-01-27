@@ -1,6 +1,7 @@
 package cn.bcd.base.redis.mq;
 
 import java.lang.reflect.Type;
+import cn.bcd.base.redis.RedisUtil;
 
 public enum ValueSerializerType {
     /**
