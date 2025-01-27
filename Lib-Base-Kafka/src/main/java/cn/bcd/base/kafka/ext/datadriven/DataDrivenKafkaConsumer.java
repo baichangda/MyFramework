@@ -4,6 +4,7 @@ import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.kafka.ext.ConsumerRebalanceLogger;
 import cn.bcd.base.util.DateUtil;
 import cn.bcd.base.util.ExecutorUtil;
+import cn.bcd.base.util.FloatUtil;
 import cn.bcd.base.util.StringUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -348,7 +349,7 @@ public abstract class DataDrivenKafkaConsumer {
      * @param ps
      * @param properties
      */
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps,Map<String,Object> properties) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> properties) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -389,6 +390,7 @@ public abstract class DataDrivenKafkaConsumer {
      * 构造线程池
      * 启动线程
      * 注册销毁狗子
+     *
      * @param consumerProp
      */
     public void init(KafkaProperties.Consumer consumerProp) {
@@ -434,12 +436,12 @@ public abstract class DataDrivenKafkaConsumer {
                             case 2: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
                                 int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps,properties);
+                                startConsumePartitions(consumer, ps, properties);
                                 break;
                             }
                             default: {
                                 final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
-                                startConsumePartitions(consumer, partitions,properties);
+                                startConsumePartitions(consumer, partitions, properties);
                                 break;
                             }
                         }
@@ -597,10 +599,6 @@ public abstract class DataDrivenKafkaConsumer {
 
     }
 
-    private String getQueueLog(WorkExecutor executor) {
-        return executor.blockingQueue.size() + (workExecutorQueueSize > 0 ? ("/" + workExecutorQueueSize) : "");
-    }
-
     /**
      * 监控日志
      * 如果需要修改日志、可以重写此方法
@@ -608,25 +606,40 @@ public abstract class DataDrivenKafkaConsumer {
      * workExecutor 任务执行器个数
      * workHandler 任务处理器个数
      * blocking 当前阻塞数量/最大阻塞数量
-     * consume 周期内所有的消费者合计消费数量
+     * consumeSpeed 每秒消费速度
+     * workQueueTaskNum 消费任务和工作任务之间所有执行器的队列中任务总和
      * queues 所有执行器的队列情况、每个执行器 当前队列大小/最大队列大小(如果有最大队列大小)
-     * work 周期内所有的任务执行器合计处理数量
+     * workSpeed 每秒工作速度
      */
     public String monitor_log() {
+        int workExecutorCount = workExecutors.length;
+        long workHandlerCount = monitor_workHandlerCount.sum();
+        long curBlockingNum = blockingNum.sum();
+        double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
+        int workQueueTaskNum = 0;
+        StringJoiner workQueueStatus = new StringJoiner(" ");
+        for (WorkExecutor workExecutor : workExecutors) {
+            int size = workExecutor.blockingQueue.size();
+            workQueueTaskNum += size;
+            workQueueStatus.add(size + (workExecutorQueueSize > 0 ? ("/" + workExecutorQueueSize) : ""));
+        }
+        double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
                         "workHandler[{}] " +
                         "blocking[{}/{}] " +
-                        "consume[{}/{}s] " +
+                        "consumeSpeed[{}/s] " +
+                        "workQueueTaskNum[{}] " +
                         "queues[{}] " +
-                        "work[{}/{}s]",
+                        "workSpeed[{}/s]",
                 name,
-                workExecutors.length,
-                monitor_workHandlerCount.sum(),
-                blockingNum.sum(), maxBlockingNum,
-                monitor_consumeCount.sumThenReset(), monitor_period,
-                Arrays.stream(workExecutors).map(this::getQueueLog).collect(Collectors.joining(" ")),
-                monitor_workCount.sumThenReset(), monitor_period);
+                workExecutorCount,
+                workHandlerCount,
+                curBlockingNum, maxBlockingNum,
+                consumeSpeed,
+                workQueueTaskNum,
+                workQueueStatus.toString(),
+                workSpeed);
     }
 
     /**
