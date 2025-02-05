@@ -129,7 +129,7 @@ public class RedisTopicMQ<V> {
         return data;
     }
 
-    public void init() {
+    public void initConsumer() {
         if (!consumerAvailable) {
             synchronized (this) {
                 if (!consumerAvailable) {

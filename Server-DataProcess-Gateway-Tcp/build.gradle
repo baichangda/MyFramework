@@ -16,6 +16,7 @@ configurations.configureEach {
 dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
+    implementation project(":Lib-Monitor-Client")
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'

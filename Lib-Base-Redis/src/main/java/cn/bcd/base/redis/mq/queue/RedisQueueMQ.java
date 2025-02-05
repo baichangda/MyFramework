@@ -104,7 +104,7 @@ public class RedisQueueMQ<V> {
         boundListOperations.leftPushAll(bytesArr);
     }
 
-    public void init() {
+    public void initConsumer() {
         if (!consumerAvailable) {
             synchronized (this) {
                 if (!consumerAvailable) {

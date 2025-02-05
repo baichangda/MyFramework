@@ -39,7 +39,7 @@ public class ClusterTaskBuilder<T extends Task<K>, K extends Serializable> exten
         this.stopTaskListener = new StopTaskListener<>(name, connectionFactory, this);
         this.taskRedisQueue = new TaskRedisQueue<>(name, connectionFactory, this);
         taskRedisQueue.init();
-        stopTaskListener.init();
+        stopTaskListener.initConsumer();
     }
 
     public void destroy() {

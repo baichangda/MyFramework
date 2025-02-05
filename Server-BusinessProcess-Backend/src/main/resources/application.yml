@@ -9,7 +9,7 @@ server:
       timeout: 1800
 spring:
   application:
-    name: bcd
+    name: businessProcess-backend-1
   threads:
     virtual:
       enabled: true
@@ -166,3 +166,9 @@ register:
 
 notify:
   id: bcd
+
+monitor:
+  request-topic: monitorRequest
+  response-list: monitorResponse
+  server-id: ${spring.application.name}
+  server-type: 3

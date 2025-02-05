@@ -20,9 +20,9 @@ public class StopTaskListener<T extends Task<K>, K extends Serializable> extends
     }
 
     @Override
-    public void init() {
+    public void initConsumer() {
         this.stopTaskResultListener = taskBuilder.getStopTaskResultListener();
-        super.init();
+        super.initConsumer();
     }
 
     @Override

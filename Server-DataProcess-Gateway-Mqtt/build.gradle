@@ -16,6 +16,7 @@ configurations.configureEach {
 dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
+    implementation project(":Lib-Monitor-Client")
 
     // https://mvnrepository.com/artifact/com.hivemq/hivemq-mqtt-client
     implementation 'com.hivemq:hivemq-mqtt-client:1.3.4'

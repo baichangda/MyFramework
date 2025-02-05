@@ -61,4 +61,8 @@ spring:
   main:
     allow-circular-references: true
 
-
+monitor:
+  request-topic: monitorRequest
+  response-list: monitorResponse
+  server-id: ${gateway.id}
+  server-type: 1

@@ -52,3 +52,9 @@ spring:
       bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
       key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+
+monitor:
+  request-topic: monitorRequest
+  response-list: monitorResponse
+  server-id: ${gateway.id}
+  server-type: 1

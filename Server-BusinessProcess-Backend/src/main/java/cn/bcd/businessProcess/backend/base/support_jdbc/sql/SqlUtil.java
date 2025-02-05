@@ -1,8 +1,8 @@
 package cn.bcd.businessProcess.backend.base.support_jdbc.sql;
 
 import cn.bcd.base.exception.BaseException;
+import cn.bcd.base.util.ClassUtil;
 import cn.bcd.base.util.StringUtil;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -71,7 +71,7 @@ public class SqlUtil {
      * @return
      */
     public static <T> InsertSqlResult<T> toInsertSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter) {
-        final Field[] allFields = FieldUtils.getAllFields(clazz);
+        final List<Field> allFields = ClassUtil.getAllFields(clazz);
         final List<Field> insertFieldList = new ArrayList<>();
         for (Field field : allFields) {
             if (!Modifier.isStatic(field.getModifiers()) && (fieldFilter == null || fieldFilter.apply(field))) {
@@ -109,7 +109,7 @@ public class SqlUtil {
      * @return
      */
     public static <T> UpdateSqlResult<T> toUpdateSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter, String... whereFieldNames) {
-        final Field[] allFields = FieldUtils.getAllFields(clazz);
+        final List<Field> allFields = ClassUtil.getAllFields(clazz);
         final List<Field> updateFieldList = new ArrayList<>();
         final Map<String, Field> whereMap = new HashMap<>();
         final Set<String> whereColumnSet = Set.of(whereFieldNames);

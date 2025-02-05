@@ -8,6 +8,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "monitor")
 public class MonitorProp {
-    public String monitorRequestTopic;
-    public String monitorResponseList;
+    public String requestTopic;
+    public String responseList;
+
+    //客户端属性
+    public String serverId;
+    public int serverType;
+
+    //服务端属性
+    public String collectCron;
 }
