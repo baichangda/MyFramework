@@ -24,6 +24,7 @@ dependencyManagement {
 dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
+    implementation project(":Lib-Monitor-Client")
 
     //springboot支持
     implementation("org.springframework.boot:spring-boot-starter")
@@ -87,9 +88,6 @@ dependencies {
     // define any required OkHttp artifacts without version
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")
-
-    // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
-    implementation group: 'com.github.oshi', name: 'oshi-core-java11', version: "+"
 
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: "3.+"

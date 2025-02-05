@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -16,8 +17,10 @@ import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings("unchecked")
 public class RedisUtil {
-    public final static String KEY_PREFIX = "";
-    public final static RedisSerializer<String> SERIALIZER_KEY_STRING = new RedisSerializer_key_string(KEY_PREFIX, StandardCharsets.UTF_8);
+    public final static String KEY_PREFIX = null;
+    public final static RedisSerializer<String> SERIALIZER_KEY_STRING = KEY_PREFIX == null ?
+            new StringRedisSerializer() :
+            new RedisSerializer_key_string(KEY_PREFIX, StandardCharsets.UTF_8);
     public final static RedisSerializer<Object> SERIALIZER_VALUE_JDK = RedisSerializer.java();
     public final static RedisSerializer<String> SERIALIZER_VALUE_STRING = RedisSerializer.string();
     public final static RedisSerializer<Integer> SERIALIZER_VALUE_INTEGER = new RedisSerializer_value_integer();
