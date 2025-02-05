@@ -1,25 +1,23 @@
 package cn.bcd.businessProcess.backend.base.support_mongodb.test.controller;
 
 import cn.bcd.businessProcess.backend.base.condition.Condition;
-import cn.bcd.businessProcess.backend.base.condition.impl.DateCondition;
-import cn.bcd.businessProcess.backend.base.condition.impl.StringCondition;
+import cn.bcd.businessProcess.backend.base.condition.impl.*;
 import cn.bcd.businessProcess.backend.base.controller.BaseController;
 import cn.bcd.businessProcess.backend.base.result.Result;
-import cn.bcd.businessProcess.backend.base.support_mongodb.test.bean.TestBean;
-import cn.bcd.businessProcess.backend.base.support_mongodb.test.service.TestService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Date;
 import java.util.List;
+import org.springframework.validation.annotation.Validated;
+import cn.bcd.businessProcess.backend.base.support_mongodb.test.bean.TestBean;
+import cn.bcd.businessProcess.backend.base.support_mongodb.test.service.TestService;
 
 @RestController
 @RequestMapping("/api/test/test")

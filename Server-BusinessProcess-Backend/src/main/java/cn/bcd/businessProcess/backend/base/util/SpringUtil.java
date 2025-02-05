@@ -31,13 +31,13 @@ public class SpringUtil implements ApplicationListener<ContextRefreshedEvent> {
      * @return
      * @throws IOException
      */
-    public static JsonNode[] getSpringPropsInYml(String... keys) throws IOException {
+    public static JsonNode[] getSpringPropsInYml(String propertiesPath,String... keys) throws IOException {
         YAMLMapper yamlMapper = YAMLMapper.builder().build();
-        final JsonNode base = yamlMapper.readTree(new File(SPRING_PROPERTIES_PATH));
+        final JsonNode base = yamlMapper.readTree(new File(propertiesPath));
         final JsonNode suffix = Optional.ofNullable(base.get("spring")).map(e -> e.get("profiles")).map(e -> e.get("active")).orElse(null);
         JsonNode active = null;
         if (suffix != null) {
-            String activePathStr = SPRING_PROPERTIES_PATH.substring(0, SPRING_PROPERTIES_PATH.lastIndexOf('.')) + "-" + suffix.asText() + "." + SPRING_PROPERTIES_PATH.substring(SPRING_PROPERTIES_PATH.indexOf('.') + 1);
+            String activePathStr = propertiesPath.substring(0, propertiesPath.lastIndexOf('.')) + "-" + suffix.asText() + "." + propertiesPath.substring(propertiesPath.indexOf('.') + 1);
             if (Files.exists(Paths.get(activePathStr))) {
                 active = yamlMapper.readTree(new File(activePathStr));
             }

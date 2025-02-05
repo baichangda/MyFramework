@@ -1,6 +1,7 @@
 package cn.bcd.businessProcess.backend.base.support_jdbc.dbinfo.pgsql.util;
 
 import cn.bcd.base.exception.BaseException;
+import cn.bcd.businessProcess.backend.base.support_jdbc.code.CodeConst;
 import cn.bcd.businessProcess.backend.base.support_jdbc.dbinfo.data.DBInfo;
 import cn.bcd.businessProcess.backend.base.support_jdbc.dbinfo.pgsql.bean.ColumnsBean;
 import cn.bcd.businessProcess.backend.base.support_jdbc.dbinfo.pgsql.bean.TablesBean;
@@ -41,7 +42,9 @@ public class DBInfoUtil {
      */
     public static DBInfo getDBInfo() {
         try {
-            final JsonNode[] props = SpringUtil.getSpringPropsInYml("spring.datasource.url"
+            final JsonNode[] props = SpringUtil.getSpringPropsInYml(
+                    CodeConst.SPRING_PROPERTIES_PATH,
+                    "spring.datasource.url"
                     , "spring.datasource.username"
                     , "spring.datasource.password");
             String url = props[0].asText();
