@@ -10,12 +10,6 @@ dependencies {
 
     implementation 'info.picocli:picocli:4.7.6'
 
-    var undertowVersion = "2.3.18.Final"
-    // https://mvnrepository.com/artifact/io.undertow/undertow-core
-    implementation group: 'io.undertow', name: 'undertow-core', version: "${undertowVersion}"
-    // https://mvnrepository.com/artifact/io.undertow/undertow-websockets-jsr
-    implementation group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
-
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.24.3'
 }
