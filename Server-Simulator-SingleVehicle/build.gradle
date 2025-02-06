@@ -1,19 +1,35 @@
-plugins {
-    id 'java'
-}
-
-group = 'org.example'
-version = 'unspecified'
-
-repositories {
-    mavenCentral()
-}
+apply plugin: "io.spring.dependency-management"
+apply plugin: "org.springframework.boot"
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation project(":Lib-Parser-Protocol-GB32960")
+    implementation project(":Lib-Base-Json")
+
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation group: 'io.netty', name: 'netty-all', version: "4.1.117.Final"
+
+    implementation 'info.picocli:picocli:4.7.6'
+
+    var undertowVersion = "2.3.18.Final"
+    // https://mvnrepository.com/artifact/io.undertow/undertow-core
+    implementation group: 'io.undertow', name: 'undertow-core', version: "${undertowVersion}"
+    // https://mvnrepository.com/artifact/io.undertow/undertow-websockets-jsr
+    implementation group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
+
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: '2.24.3'
 }
 
-test {
-    useJUnitPlatform()
+/**
+ * SpringBoot 2开始,使用gradle bootJar进行打包,并要配置入口类
+ */
+bootJar {
+    exclude "**/*-dev.yml"
+    exclude "**/*-test.yml"
+    manifest {
+        attributes 'Start-Class': 'com.wq.Application'
+    }
+    //指定jar文件的名称
+    archiveBaseName = "${rootProject.name}"
+    version = ""
 }

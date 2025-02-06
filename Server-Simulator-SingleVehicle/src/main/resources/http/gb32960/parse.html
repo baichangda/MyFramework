@@ -1,0 +1,160 @@
+<html>
+<link href="/common/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="/common/jquery.min.js"></script>
+<script src="/common/jsoneditor.min.js"></script>
+
+<body>
+<table style="width: 100%;height: 100%">
+    <tr>
+        <td style="width:30%;border: solid 1px">
+            <table style="width: 100%;height: 100%">
+                <tr style="height: 50%">
+                    <td>
+                        <textarea id="hex_textarea" style="width: 100%;height: 100%"
+                                  placeholder="在这里输入gb32960报文">232302FE4C534A4533363039364D53313430343935010141170608100A10010103010040000003520F2827811C012E2000000002010101594FDB4E2F4A0F3227100500073944E501DD620A0601090E1B01370E14010145010444070300021387000000000801010F282781006C00016C0E180E190E1A0E190E190E180E180E1A0E1B0E180E190E1A0E180E180E190E1A0E1A0E190E180E1A0E180E1A0E1A0E180E170E190E170E190E170E190E1B0E190E190E190E180E180E170E170E180E170E170E170E190E170E180E170E190E170E170E170E180E180E190E190E140E180E180E170E170E150E160E160E180E190E170E180E170E180E170E180E170E160E190E150E180E160E180E170E160E160E170E150E170E170E140E170E160E160E170E170E170E170E160E170E160E170E140E170E170E160E160E170E170E170E160E160E160E16090101000C454545444544444445444544F5</textarea>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td>
+                        <button id="parse_btn" onclick="parse()"
+                                style="width: 100%;font-size: 18px;color: green">解析
+                        </button>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td>
+                        <button onclick="clearOutput()">清除日志
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="output" readonly style="width: 100%;height: 100%"></textarea>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+        <td style="border: solid 1px">
+            <div id="jsoneditor" style="width: 100%; height: 100%;overflow:scroll"></div>
+        </td>
+    </tr>
+</table>
+
+</body>
+<script type="text/javascript">
+
+    // create the editor
+    const container = document.getElementById("jsoneditor")
+    // const options = {mode:'view'}
+    const options = {mode:'code'}
+    const editor = new JSONEditor(container, options)
+
+    function parse() {
+        editor.set({})
+        let val = $("#hex_textarea").val().trim();
+        if (val === "") {
+            appendToOutput("报文不能为空",1)
+        } else {
+            $.ajax({
+                url: "/parse/gb32960?hex="+val,
+                success:function (res){
+                    if(res.succeed){
+                        editor.set(JSON.parse(res.data))
+                        appendToOutput("解析成功",2)
+                    }else{
+                        appendToOutput(res.msg,2)
+                    }
+                }
+            })
+            appendToOutput("发送http解析请求成功",1)
+        }
+    }
+    let outputCount = 0
+    const maxOutputCount = 20
+
+    function clearOutput() {
+        $("#output").val("")
+        outputCount = 0
+    }
+
+    function appendToOutput(msg, type) {
+        let output = $("#output");
+        if (outputCount >= maxOutputCount) {
+            output.val("")
+            outputCount = 0;
+        }
+        outputCount++
+        let val = output.val();
+        let date = new Date();
+        let pre = getNowDateStr(date)
+        if (type === 1) {
+            pre += "(client)"
+        } else {
+            pre += "(server)"
+        }
+        const curMsg = pre + "\n" + msg + "\n"
+        if (val === "") {
+            output.val(curMsg)
+        } else {
+            output.val(curMsg + "\n" + val)
+        }
+    }
+
+
+    function getNowDateStr(date) {
+        const fullYear = date.getFullYear();
+        const month = date.getMonth() + 1;
+        let monthStr
+        if (month < 10) {
+            monthStr = "0" + month
+        } else {
+            monthStr = month
+        }
+
+        const day = date.getDate();
+        let dayStr
+        if (day < 10) {
+            dayStr = "0" + day
+        } else {
+            dayStr = day
+        }
+
+        const hour = date.getHours();
+        let hourStr
+        if (hour < 10) {
+            hourStr = "0" + hour
+        } else {
+            hourStr = hour
+        }
+
+        const minute = date.getMinutes();
+        let minuteStr
+        if (minute < 10) {
+            minuteStr = "0" + minute
+        } else {
+            minuteStr = minute
+        }
+
+        const second = date.getSeconds();
+        let secondStr
+        if (second < 10) {
+            secondStr = "0" + second
+        } else {
+            secondStr = second
+        }
+
+        const ms = date.getMilliseconds();
+        let msStr
+        if (ms < 10) {
+            msStr = "00" + ms;
+        } else if (ms < 100) {
+            msStr = "0" + ms;
+        } else {
+            msStr = ms;
+        }
+        return fullYear + "-" + monthStr + "-" + dayStr + " " + hourStr + ":" + minuteStr + ":" + secondStr + "." + msStr
+
+    }
+</script>
+</html>

@@ -1,0 +1,309 @@
+<html lang="">
+<link href="/common/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="/common/jquery.min.js"></script>
+<script src="/common/jsoneditor.min.js"></script>
+
+<style>
+    input {
+        width: 200px;
+    }
+
+    select {
+        width: 200px;
+    }
+
+    .dataDiv {
+        border: 1px dotted;
+        height: 100%;
+        margin: 1px;
+        float: left;
+        display: inline-block;
+    }
+
+    .dataDiv > table > tbody > tr > td {
+        border: solid 1px;
+    }
+</style>
+<body>
+<div style="width: 100%;height:850px">
+    <div class="dataDiv" style="width: 280px">
+        <table>
+            <tbody>
+            <tr>
+                <td style="text-align: right;width: 50px">vin</td>
+                <td>
+                    <input id="vin" value="LSJE36096MS140495"/>
+                </td>
+            </tr>
+            <tr>
+                <td style="border-bottom: 1px dotted;text-align: center" colspan="2">
+                    <button onclick="connectWs()" style="color: red" id="ws_connect_btn">连接ws服务器
+                    </button>
+
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right;width: 50px">网关</td>
+                <td>
+                    <input id="tcpAddress" value="127.0.0.1:6666"/>
+                </td>
+            </tr>
+            <tr>
+                <td style="border-bottom: 1px dotted;text-align: center" colspan="2">
+                    <button onclick="connectGw()" style="color: red" id="gw_connect_btn">连接tcp网关
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="dataDiv" style="width: 900px;">
+        <table style="width: 100%">
+            <tbody>
+            <tr>
+                <td style="text-align: center;height: 30px">
+                    <button onclick="updateRun()" id="update_run_btn" style="color: red" disabled>更新运行信息
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 100%;height: 810px">
+                    <div id="jsoneditor" style="width: 100%; height: 100%;overflow:scroll"></div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="dataDiv" style="width: 350px">
+        <div style="height: 30px">
+            <div style="width: 100%;float: left">
+                <button onclick="clearOutput()">清除日志
+                </button>
+            </div>
+        </div>
+        <div style="height: 820px">
+            <div style="width: 100%;float: left">
+                <textarea id="output" readonly style="width: 100%;height: 100%"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript">
+    // create the editor
+    const container = document.getElementById("jsoneditor")
+    // const options = {}
+    const options = {mode: 'code'}
+    const editor = new JSONEditor(container, options)
+
+    function getWsUrl() {
+        let loc = window.location, new_uri;
+        if (loc.protocol === "https:") {
+            new_uri = "wss:";
+        } else {
+            new_uri = "ws:";
+        }
+        return new_uri + "//" + loc.host + "/ws/gb32960";
+    }
+
+    let ws
+    let isConnectWs = false
+    let isConnectGw = false
+
+    function connectWs() {
+        let vin = $("#vin").val();
+        ws = new WebSocket(getWsUrl() + "?vin=" + vin);
+        ws.onopen = function () {
+            isConnectWs = true
+            $("#ws_connect_btn").css("color", "green")
+            $("#ws_connect_btn").prop("disabled", true)
+            $("#update_run_btn").css("color", "green")
+            $("#update_run_btn").prop("disabled", false)
+            appendToOutput("连接ws服务器成功,vin[" + vin + "]", 1)
+        };
+
+        ws.onmessage = function (evt) {
+            onMsg(evt.data)
+        };
+
+        ws.onclose = function () {
+            isConnectWs = false
+            isConnectGw = false
+            $("#ws_connect_btn").css("color", "red")
+            $("#ws_connect_btn").prop("disabled", false)
+            $("#gw_connect_btn").css("color", "red")
+            $("#gw_connect_btn").prop("disabled", false)
+            $("#update_run_btn").css("color", "red")
+            $("#update_run_btn").prop("disabled", true)
+            appendToOutput("ws服务断开,vin[" + vin + "]", 1)
+        };
+    }
+
+    function onMsg(msg) {
+        let parse = JSON.parse(msg);
+        switch (parse.flag) {
+            case 1: {
+                if (parse.succeed) {
+                    isConnectGw = true
+                    $("#gw_connect_btn").css("color", "green")
+                    $("#gw_connect_btn").prop("disabled", true)
+                    appendToOutput("连接tcp网关成功,开始发送运行数据", 2)
+                } else {
+                    appendToOutput("连接tcp网关失败", 2)
+                }
+                break
+            }
+            case 2: {
+                if (parse.succeed) {
+                    if (parse.data === undefined) {
+                        appendToOutput("更新运行信息到ws成功", 2)
+                    } else {
+                        editor.set(JSON.parse(parse.data))
+                        appendToOutput("更新运行信息到ws成功、检测数据不符合格式、刷新客户端运行数据", 2)
+                    }
+                } else {
+                    appendToOutput("更新运行信息到ws失败", 2)
+                }
+                break
+            }
+            case 101: {
+                editor.set(JSON.parse(parse.data))
+                appendToOutput("接收到ws服务器运行数据,更新客户端运行信息", 2)
+                break
+            }
+            case 102: {
+                appendToOutput("发送数据到tcp网关成功:\n" + parse.data, 2)
+                break
+            }
+            case 103: {
+                appendToOutput("接收到tcp网关数据:\n" + parse.data, 2)
+                break
+            }
+            case 104: {
+                isConnectGw = false
+                $("#gw_connect_btn").css("color", "red")
+                $("#gw_connect_btn").prop("disabled", false)
+                appendToOutput("tcp网关断开")
+                break
+            }
+        }
+    }
+
+    function connectGw() {
+        if (!isConnectWs) {
+            appendToOutput("请先连接ws服务器", 1)
+            return
+        }
+        ws.send(JSON.stringify(
+            {
+                flag: 1,
+                data: $("#tcpAddress").val()
+            }
+        ))
+        appendToOutput("发送连接tcp网关到ws成功", 1)
+    }
+
+    function updateRun() {
+        if (!isConnectWs) {
+            appendToOutput("请先连接ws服务器", 1)
+            return
+        }
+        ws.send(JSON.stringify(
+            {
+                flag: 2,
+                data: JSON.stringify(editor.get())
+            }
+        ))
+        appendToOutput("发送更新运行信息到ws成功", 1)
+    }
+
+    let outputCount = 0
+    const maxOutputCount = 20
+
+    function clearOutput() {
+        $("#output").val("")
+        outputCount = 0
+    }
+
+    function appendToOutput(msg, type) {
+        let output = $("#output");
+        if (outputCount >= maxOutputCount) {
+            output.val("")
+            outputCount = 0;
+        }
+        outputCount++
+        let val = output.val();
+        let date = new Date();
+        let pre = getNowDateStr(date)
+        if (type === 1) {
+            pre += "(client)"
+        } else {
+            pre += "(server)"
+        }
+        const curMsg = pre + "\n" + msg + "\n"
+        if (val === "") {
+            output.val(curMsg)
+        } else {
+            output.val(curMsg + "\n" + val)
+        }
+    }
+
+
+    function getNowDateStr(date) {
+        const fullYear = date.getFullYear();
+        const month = date.getMonth() + 1;
+        let monthStr
+        if (month < 10) {
+            monthStr = "0" + month
+        } else {
+            monthStr = month
+        }
+
+        const day = date.getDate();
+        let dayStr
+        if (day < 10) {
+            dayStr = "0" + day
+        } else {
+            dayStr = day
+        }
+
+        const hour = date.getHours();
+        let hourStr
+        if (hour < 10) {
+            hourStr = "0" + hour
+        } else {
+            hourStr = hour
+        }
+
+        const minute = date.getMinutes();
+        let minuteStr
+        if (minute < 10) {
+            minuteStr = "0" + minute
+        } else {
+            minuteStr = minute
+        }
+
+        const second = date.getSeconds();
+        let secondStr
+        if (second < 10) {
+            secondStr = "0" + second
+        } else {
+            secondStr = second
+        }
+
+        const ms = date.getMilliseconds();
+        let msStr
+        if (ms < 10) {
+            msStr = "00" + ms;
+        } else if (ms < 100) {
+            msStr = "0" + ms;
+        } else {
+            msStr = ms;
+        }
+        return fullYear + "-" + monthStr + "-" + dayStr + " " + hourStr + ":" + minuteStr + ":" + secondStr + "." + msStr
+
+    }
+</script>
+</html>
+
