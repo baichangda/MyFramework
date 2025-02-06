@@ -1,11 +1,11 @@
-package cn.bcd.simulator.singleVehicle.gb32960;
+package cn.bcd.simulator.singleVehicle.tcp.gb32960;
 
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.json.JsonUtil;
 import cn.bcd.parser.protocol.gb32960.data.Packet;
-import cn.bcd.simulator.singleVehicle.HttpServer;
-import cn.bcd.simulator.singleVehicle.HttpServerBuilder;
-import cn.bcd.simulator.singleVehicle.WsInMsg;
+import cn.bcd.simulator.singleVehicle.tcp.HttpServer;
+import cn.bcd.simulator.singleVehicle.tcp.HttpServerBuilder;
+import cn.bcd.simulator.singleVehicle.tcp.WsInMsg;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.undertow.server.handlers.PathHandler;
@@ -30,7 +30,7 @@ public class HttpServerBuilder_gb32960 implements HttpServerBuilder {
     static Logger logger = LoggerFactory.getLogger(HttpServerBuilder_gb32960.class);
 
     public void build(PathHandler pathHandler) {
-        try (ResourceManager resourceManager = new ClassPathResourceManager(HttpServer.class.getClassLoader(), "http/gb32960")) {
+        try (ResourceManager resourceManager = new ClassPathResourceManager(HttpServer.class.getClassLoader(), "simulator/singleVehicle/tcp/gb32960")) {
             MimeMappings mimeMappings = MimeMappings.builder().addMapping("html", "text/html;charset=utf-8").build();
             ResourceHandler resourceHandler = new ResourceHandler(resourceManager).setMimeMappings(mimeMappings);
             pathHandler.addPrefixPath("/gb32960", resourceHandler);

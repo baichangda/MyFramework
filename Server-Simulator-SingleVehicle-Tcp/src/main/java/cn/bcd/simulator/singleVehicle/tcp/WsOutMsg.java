@@ -1,4 +1,4 @@
-package cn.bcd.simulator.singleVehicle;
+package cn.bcd.simulator.singleVehicle.tcp;
 
 /**
  * @param flag    1、连接tcp网关

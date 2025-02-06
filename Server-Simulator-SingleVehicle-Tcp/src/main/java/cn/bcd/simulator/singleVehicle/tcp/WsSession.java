@@ -1,4 +1,4 @@
-package cn.bcd.simulator.singleVehicle;
+package cn.bcd.simulator.singleVehicle.tcp;
 
 import cn.bcd.base.exception.BaseException;
 import cn.bcd.base.json.JsonUtil;

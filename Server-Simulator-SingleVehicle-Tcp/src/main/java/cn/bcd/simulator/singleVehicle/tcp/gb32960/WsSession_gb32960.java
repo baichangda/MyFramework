@@ -1,9 +1,9 @@
-package cn.bcd.simulator.singleVehicle.gb32960;
+package cn.bcd.simulator.singleVehicle.tcp.gb32960;
 
 import cn.bcd.parser.protocol.gb32960.data.Packet;
 import cn.bcd.parser.protocol.gb32960.data.VehicleRunData;
-import cn.bcd.simulator.singleVehicle.TcpClientHandler;
-import cn.bcd.simulator.singleVehicle.WsSession;
+import cn.bcd.simulator.singleVehicle.tcp.TcpClientHandler;
+import cn.bcd.simulator.singleVehicle.tcp.WsSession;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;

@@ -1,4 +1,4 @@
-package cn.bcd.simulator.singleVehicle;
+package cn.bcd.simulator.singleVehicle.tcp;
 
 import io.undertow.server.handlers.PathHandler;
 

@@ -1,7 +1,7 @@
-package cn.bcd.simulator.singleVehicle;
+package cn.bcd.simulator.singleVehicle.tcp;
 
 import cn.bcd.base.exception.BaseException;
-import cn.bcd.simulator.singleVehicle.gb32960.HttpServerBuilder_gb32960;
+import cn.bcd.simulator.singleVehicle.tcp.gb32960.HttpServerBuilder_gb32960;
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.server.HandlerWrapper;
@@ -32,7 +32,7 @@ public class HttpServer implements Runnable {
 
     @Override
     public void run() {
-        try (ResourceManager resourceManager = new ClassPathResourceManager(HttpServer.class.getClassLoader(), "http/common")) {
+        try (ResourceManager resourceManager = new ClassPathResourceManager(HttpServer.class.getClassLoader(), "simulator/singleVehicle/tcp/common")) {
             ResourceHandler resourceHandler = new ResourceHandler(resourceManager);
             PathHandler pathHandler = Handlers.path()
                     .addPrefixPath("/common", resourceHandler);

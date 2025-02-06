@@ -1,4 +1,4 @@
-package cn.bcd.simulator.singleVehicle;
+package cn.bcd.simulator.singleVehicle.tcp;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
