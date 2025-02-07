@@ -1,7 +1,5 @@
 package cn.bcd.dataProcess.parse.gb32960;
 
-import cn.bcd.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
-import cn.bcd.base.kafka.ext.datadriven.WorkExecutor;
 import cn.bcd.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.parser.protocol.gb32960.data.Packet;
 import cn.bcd.parser.protocol.gb32960.data.VehicleLoginData;
@@ -15,8 +13,8 @@ import java.util.Date;
 
 public class WorkHandler_gb32960 extends WorkHandler {
 
-    public WorkHandler_gb32960(String id, WorkExecutor workExecutor, DataDrivenKafkaConsumer consumer) {
-        super(id, workExecutor, consumer);
+    public WorkHandler_gb32960(String id) {
+        super(id);
     }
 
     @Override

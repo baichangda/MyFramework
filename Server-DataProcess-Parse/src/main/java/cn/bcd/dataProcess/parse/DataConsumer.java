@@ -36,8 +36,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     }
 
     @Override
-    public WorkHandler newHandler(String id, WorkExecutor executor) {
-        return new WorkHandler_gb32960(id, executor, this);
+    public WorkHandler newHandler(String id) {
+        return new WorkHandler_gb32960(id);
     }
 
     @Override

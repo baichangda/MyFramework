@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**
  * 本类中所有的方法为了保证数据并发安全，都是在executor中执行的、包括
- * {@link #WorkHandler(String, WorkExecutor,DataDrivenKafkaConsumer)}
+ * {@link #WorkHandler(String)}
  * {@link #init()}
  * {@link #destroy()}
  * {@link #onMessage(ConsumerRecord)}
@@ -19,12 +19,12 @@ public abstract class WorkHandler {
     /**
      * 所属执行器
      */
-    public final WorkExecutor executor;
+    public WorkExecutor executor;
 
     /**
      * 所属的消费者
      */
-    public final DataDrivenKafkaConsumer consumer;
+    public DataDrivenKafkaConsumer consumer;
 
     /**
      * 创建时间(秒)
@@ -36,19 +36,25 @@ public abstract class WorkHandler {
     public long lastMessageTime;
 
     /**
-     *
      * @param id id
-     * @param executor  关联的执行器
-     * @param consumer 关联的消费者
      */
-    public WorkHandler(String id, WorkExecutor executor, DataDrivenKafkaConsumer consumer) {
+    public WorkHandler(String id) {
         this.id = id;
-        this.executor = executor;
-        this.consumer = consumer;
         this.createTime = DateUtil.CacheSecond.current();
     }
 
+    /**
+     * @param executor 关联的执行器
+     * @param consumer 关联的消费者
+     */
+    void afterConstruct(WorkExecutor executor, DataDrivenKafkaConsumer consumer){
+        this.executor = executor;
+        this.consumer = consumer;
+    }
+
+
     public abstract void onMessage(ConsumerRecord<String, byte[]> msg) throws Exception;
+
 
     public void init() throws Exception {
 
