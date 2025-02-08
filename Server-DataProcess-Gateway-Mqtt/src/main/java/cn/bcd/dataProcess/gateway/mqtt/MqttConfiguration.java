@@ -28,13 +28,7 @@ public class MqttConfiguration implements ApplicationListener<ContextRefreshedEv
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        client.connect().whenCompleteAsync((connAck, throwable) -> {
-            if (throwable == null) {
-                logger.info("mqtt connect succeed");
-            } else {
-                logger.info("error", throwable);
-            }
-        });
+        client.connect().join();
     }
 
     @Bean
@@ -45,6 +39,14 @@ public class MqttConfiguration implements ApplicationListener<ContextRefreshedEv
                 .identifier(gatewayProp.getId())
                 .serverHost(gatewayProp.getMqttHost())
                 .serverPort(gatewayProp.getMqttPort())
+                .sslConfig(MqttSslSupport.getMqttClientSslConfig(gatewayProp.getMqttSslCertFilePath(), gatewayProp.getMqttSslCertPassword()))
+                .automaticReconnectWithDefaultConfig()
+                .addConnectedListener(ctx -> {
+                    logger.info("mqtt connected");
+                })
+                .addDisconnectedListener(ctx -> {
+                    logger.info("mqtt disconnected");
+                })
                 .buildAsync();
         Mqtt5Subscribe subscribe = Mqtt5Subscribe.builder().addSubscription(
                 Mqtt5Subscription.builder().topicFilter(gatewayProp.getMqttTopic()).qos(MqttQos.AT_MOST_ONCE).build()

@@ -12,7 +12,7 @@ public class JVTest {
     @Test
     public void cprofileOutputToXlsx() throws IOException {
         List<ArrayList<Object>> res = new ArrayList<>();
-        List<String> lines = Files.readAllLines(Paths.get("d:/a.txt"));
+        List<String> lines = Files.readAllLines(Paths.get("d:/c.txt"));
         for (int x = 0; x < lines.size(); x++) {
             String line = lines.get(x);
             ArrayList<Object> list = new ArrayList<>();
@@ -44,6 +44,6 @@ public class JVTest {
             }
             res.add(list);
         }
-        EasyExcel.write(Paths.get("d:/b.xlsx").toFile()).sheet(0).doWrite(res);
+        EasyExcel.write(Paths.get("d:/d.xlsx").toFile()).sheet(0).doWrite(res);
     }
 }

@@ -17,6 +17,8 @@ public class GatewayProp {
     public String mqttTopic;
     public String mqttRespTopicPrefix;
     public int mqttConsumeThreadNum;
+    private String mqttSslCertFilePath;
+    private String mqttSslCertPassword;
 
     public Duration heartBeatPeriod;
     public String parseTopic;
