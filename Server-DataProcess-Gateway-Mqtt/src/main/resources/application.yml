@@ -3,7 +3,7 @@ gateway:
   mqtt-host: 10.0.11.50
   mqtt-port: 11883
   mqtt-topic: vin/+
-  mqtt-resp-topic-prefix: vin/resp/
+  mqtt-resp-topic-prefix: vin-resp/
   mqtt-consume-thread-num: 4
   mqtt-ssl-cert-file-path: mqtt/ssl/cert.p12
   mqtt-ssl-cert-password: incar
