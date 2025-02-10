@@ -10,9 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
@@ -34,13 +32,10 @@ import java.util.concurrent.*;
  * <p>
  * 通过调用{@link #notify(byte[])}发送通知
  */
-@ConditionalOnProperty("server.id")
-@EnableConfigurationProperties(NotifyProp.class)
 public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     static Logger logger = LoggerFactory.getLogger(AbstractNotifyServer.class);
     public final String type;
     public final BoundHashOperations<String, String, String> boundHashOperations;
-    public final NotifyProp notifyProp;
     public ExecutorService workPool;
     public ScheduledExecutorService scheduledPool;
     private final Producer<String, byte[]> producer;
@@ -50,19 +45,30 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     private Map<String, ListenerInfo> cache = new HashMap<>();
     private final KafkaProperties.Consumer consumerProp;
 
-    public AbstractNotifyServer(String type, RedisConnectionFactory redisConnectionFactory, NotifyProp notifyProp) {
+    /**
+     * @param kafkaBootstrapServers  监听kafka地址
+     * @param redisConnectionFactory redis
+     * @param type                   所监听的业务的类型名称
+     * @param serverId               当前服务的id
+     *                               必须是全局唯一、即时同一集群的也不能一样
+     *                               例如两个业务后端的客户端id、设置为bus1、bus2
+     */
+    public AbstractNotifyServer(String kafkaBootstrapServers,
+                                RedisConnectionFactory redisConnectionFactory,
+                                String type,
+                                String serverId) {
         super("notifyServer(" + type + ")",
                 false,
                 1,
                 100,
-                100,
+                1000,
                 true,
                 0,
                 0,
                 "subscribe_" + type);
         this.consumerProp = new KafkaProperties.Consumer();
-        this.consumerProp.setBootstrapServers(Arrays.stream(notifyProp.bootstrapServers.split(",")).toList());
-        this.consumerProp.setGroupId(type + "_" + notifyProp.id);
+        this.consumerProp.setBootstrapServers(Arrays.stream(kafkaBootstrapServers.split(",")).toList());
+        this.consumerProp.setGroupId(type + "_" + serverId);
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
         producerProp.setBootstrapServers(this.consumerProp.getBootstrapServers());
         this.subscribeTopic = "subscribe_" + type;
@@ -70,7 +76,6 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         this.type = type;
         this.boundHashOperations = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory).boundHashOps(this.notifyTopic);
         this.producer = ProducerFactory.newProducer(producerProp);
-        this.notifyProp = notifyProp;
     }
 
 
@@ -97,25 +102,25 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
         final byte[] value = consumerRecord.value();
-        final char type = (char) value[0];
+        final char flag = (char) value[0];
         final String content = new String(value, 1, value.length - 1);
-        if (type == '1') {
-            try {
-                final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
+        try {
+            final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
+            if (flag == '1') {
                 workPool.execute(() -> {
                     cache.put(listenerInfo.id, listenerInfo);
                     onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
                 });
-                logger.info("server subscribe type[{}] id[{}]", type, listenerInfo.id);
-            } catch (IOException e) {
-                logger.error("ListenerInfo.fromString error type[{}] value:\n{}", type, value, e);
+                logger.info("server subscribe type[{}] id[{}] flag[{}]", type, listenerInfo.id, flag);
+            } else {
+                workPool.execute(() -> {
+                    cache.remove(content);
+                    onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
+                });
+                logger.info("server unsubscribe type[{}] id[{}] flag[{}]", type, listenerInfo.id, flag);
             }
-        } else {
-            workPool.execute(() -> {
-                cache.remove(content);
-                onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
-            });
-            logger.info("server unsubscribe type[{}] id[{}]", type, content);
+        } catch (IOException e) {
+            logger.error("ListenerInfo.fromString error type[{}] flag[{}] value:\n{}", type, flag, value, e);
         }
     }
 

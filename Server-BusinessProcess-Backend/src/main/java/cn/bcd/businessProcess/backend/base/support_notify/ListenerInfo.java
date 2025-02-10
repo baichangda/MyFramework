@@ -8,13 +8,11 @@ import java.io.IOException;
 
 public class ListenerInfo {
     public final String id;
-    public final String content;
     public long ts;
 
     @JsonCreator
-    public ListenerInfo(@JsonProperty("id") String id, @JsonProperty("content") String content, @JsonProperty("ts") long ts) {
+    public ListenerInfo(@JsonProperty("id") String id, @JsonProperty("ts") long ts) {
         this.id = id;
-        this.content = content;
         this.ts = ts;
     }
 
