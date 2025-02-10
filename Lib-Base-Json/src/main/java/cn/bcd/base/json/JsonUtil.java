@@ -91,5 +91,13 @@ public class JsonUtil {
         }
     }
 
+    public static byte[] toJsonAsBytes(Object object) {
+        try {
+            return OBJECT_MAPPER.writeValueAsBytes(object);
+        } catch (JsonProcessingException e) {
+            throw BaseException.get(e);
+        }
+    }
+
 }
 
