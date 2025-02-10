@@ -14,10 +14,16 @@ public class MqttSslSupport {
 
     static Logger logger= LoggerFactory.getLogger(MqttSslSupport.class);
 
+    /**
+     * 用于双向认证
+     * @param sslCertFilePath p12证书文件路径
+     * @param sslCertPassword p12证书文件密码
+     * @return
+     */
     public static MqttClientSslConfig getMqttClientSslConfig(String sslCertFilePath, String sslCertPassword) {
         try {
             // 加载 PKCS#12 格式的密钥库
-            KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             try (InputStream is = MqttSslSupport.class.getClassLoader().getResourceAsStream(sslCertFilePath)) {
                 keyStore.load(is, sslCertPassword.toCharArray());
             }
