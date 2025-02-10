@@ -36,6 +36,7 @@ public abstract class WorkHandler {
     public long lastMessageTime;
 
     /**
+     *
      * @param id id
      */
     public WorkHandler(String id) {
@@ -52,9 +53,7 @@ public abstract class WorkHandler {
         this.consumer = consumer;
     }
 
-
     public abstract void onMessage(ConsumerRecord<String, byte[]> msg) throws Exception;
-
 
     public void init() throws Exception {
 

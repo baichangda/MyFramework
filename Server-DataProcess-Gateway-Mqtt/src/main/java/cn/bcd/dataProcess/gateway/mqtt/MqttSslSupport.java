@@ -1,7 +1,7 @@
 package cn.bcd.dataProcess.gateway.mqtt;
 
 import com.hivemq.client.mqtt.MqttClientSslConfig;
-import com.wq.base.exception.BaseException;
+import cn.bcd.base.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

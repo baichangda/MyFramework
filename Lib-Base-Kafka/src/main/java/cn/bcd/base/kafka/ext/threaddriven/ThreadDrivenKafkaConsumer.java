@@ -10,6 +10,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -271,7 +273,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                         cur.close();
                     }
                 }
-                throw BaseException.get(ex);
+                throw cn.bcd.base.exception.BaseException.get(ex);
             }
             consumeThreads = new Thread[partitionSize];
             for (int i = 0; i < partitionSize; i++) {
@@ -294,6 +296,8 @@ public abstract class ThreadDrivenKafkaConsumer {
                 if (!available) {
                     try {
                         Map<String, Object> properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
+                        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+                        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
                         //标记可用
                         available = true;
                         //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量

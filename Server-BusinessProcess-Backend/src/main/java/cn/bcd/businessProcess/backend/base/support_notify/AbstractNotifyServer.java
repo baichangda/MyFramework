@@ -8,6 +8,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -15,25 +18,24 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 /**
  * 由消息提供方实现、并注册为spring bean
- * 主要实现
- * {@link #onListenerInfoUpdate (ListenerInfo)} 用于更新订阅
  * 逻辑流程
  * 1、启动时候会从redis中加载所有订阅信息
  * 2、kafka监听订阅和取消订阅请求
  * 3、每隔1min检查订阅信息是否有变化
  * 主要是为了解决客户端掉线、未主动取消订阅导致服务端无法更新缓存
  * <p>
- * 通过调用{@link #notify(byte[])}发送通知
+ * 通过调用{@link #notify(String, Supplier)}发送通知
  */
 public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
-    static Logger logger = LoggerFactory.getLogger(AbstractNotifyServer.class);
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String type;
     public final BoundHashOperations<String, String, String> boundHashOperations;
     public ExecutorService workPool;
@@ -53,7 +55,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
      *                               必须是全局唯一、即时同一集群的也不能一样
      *                               例如两个业务后端的客户端id、设置为bus1、bus2
      */
-    public AbstractNotifyServer(String kafkaBootstrapServers,
+    public AbstractNotifyServer(List<String> kafkaBootstrapServers,
                                 RedisConnectionFactory redisConnectionFactory,
                                 String type,
                                 String serverId) {
@@ -67,10 +69,14 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                 0,
                 "subscribe_" + type);
         this.consumerProp = new KafkaProperties.Consumer();
-        this.consumerProp.setBootstrapServers(Arrays.stream(kafkaBootstrapServers.split(",")).toList());
+        this.consumerProp.setBootstrapServers(kafkaBootstrapServers);
         this.consumerProp.setGroupId(type + "_" + serverId);
+        this.consumerProp.setKeyDeserializer(StringDeserializer.class);
+        this.consumerProp.setValueDeserializer(ByteArraySerializer.class);
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
         producerProp.setBootstrapServers(this.consumerProp.getBootstrapServers());
+        producerProp.setKeySerializer(StringSerializer.class);
+        producerProp.setValueSerializer(ByteArraySerializer.class);
         this.subscribeTopic = "subscribe_" + type;
         this.notifyTopic = "notify_" + type;
         this.type = type;
@@ -105,22 +111,20 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         final char flag = (char) value[0];
         final String content = new String(value, 1, value.length - 1);
         try {
-            final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
             if (flag == '1') {
+                final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
                 workPool.execute(() -> {
                     cache.put(listenerInfo.id, listenerInfo);
-                    onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
                 });
-                logger.info("server subscribe type[{}] id[{}] flag[{}]", type, listenerInfo.id, flag);
+                logger.info("notify server subscribe type[{}] id[{}]", type, listenerInfo.id);
             } else {
                 workPool.execute(() -> {
                     cache.remove(content);
-                    onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
                 });
-                logger.info("server unsubscribe type[{}] id[{}] flag[{}]", type, listenerInfo.id, flag);
+                logger.info("notify server unsubscribe type[{}] id[{}]", type, content);
             }
         } catch (IOException e) {
-            logger.error("ListenerInfo.fromString error type[{}] flag[{}] value:\n{}", type, flag, value, e);
+            logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, new String(value), e);
         }
     }
 
@@ -145,7 +149,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                         aliveMap.put(entry.getKey(), listenerInfo);
                     }
                 } catch (IOException e) {
-                    logger.error("ListenerInfo.fromString error type[{}] value:\n{}", type, value);
+                    logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, value);
                 }
             }
         }
@@ -158,39 +162,35 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
             }
             if (update) {
                 cache = aliveMap;
-                onListenerInfoUpdate(cache.values().toArray(new ListenerInfo[0]));
             }
         }, workPool);
     }
 
-    /**
-     * 当监控信息发生变更后的回调方法
-     * 注意不要阻塞此方法
-     * 因为针对该类所有操作都是由单线程完成
-     *
-     * @param listenerInfos 全量有效的订阅信息
-     */
-    public void onListenerInfoUpdate(ListenerInfo[] listenerInfos) {
-
-    }
 
     /**
      * 发送通知(异步)
      * 会先判断是否有订阅者，有则发送，无则不发送
      * 如果不发送、则{@link CompletableFuture#get()}结果为null
      *
-     * @param bytes
+     * @param id
+     * @param supplier
      * @return
      */
-    public CompletableFuture<Future<RecordMetadata>> notify(final byte[] bytes) {
+    public CompletableFuture<Future<RecordMetadata>> notify(String id, Supplier<byte[]> supplier) {
         return CompletableFuture.supplyAsync(() -> {
-            if (cache.isEmpty()) {
-                return null;
+            if (cache.containsKey(id)) {
+                try {
+                    return producer.send(new ProducerRecord<>(notifyTopic, id, supplier.get()));
+                } catch (Exception ex) {
+                    logger.info("notify server notify error type[{}] id[{}]", type, id, ex);
+                    return null;
+                }
             } else {
-                return producer.send(new ProducerRecord<>(notifyTopic, bytes));
+                return null;
             }
         }, workPool);
 
     }
+
 
 }

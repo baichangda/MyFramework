@@ -4,24 +4,29 @@ import cn.bcd.base.kafka.ext.ProducerFactory;
 import cn.bcd.base.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.base.util.ExecutorUtil;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
-    static Logger logger = LoggerFactory.getLogger(AbstractNotifyClient.class);
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final Producer<String, byte[]> producer;
     public ScheduledExecutorService workPool;
     public final BoundHashOperations<String, String, String> boundHashOperations;
@@ -29,6 +34,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     private final String subscribeTopic;
     private final String notifyTopic;
     private final KafkaProperties.Consumer consumerProp;
+    private final String type;
 
     /**
      * @param kafkaBootstrapServers  监听kafka地址
@@ -38,7 +44,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
      *                               必须是全局唯一、即时同一集群的也不能一样
      *                               例如两个业务后端的客户端id、设置为bus1、bus2
      */
-    public AbstractNotifyClient(String kafkaBootstrapServers,
+    public AbstractNotifyClient(List<String> kafkaBootstrapServers,
                                 RedisConnectionFactory redisConnectionFactory,
                                 String type,
                                 String serverId) {
@@ -51,11 +57,16 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 0,
                 0,
                 "notify_" + type);
+        this.type = type;
         this.consumerProp = new KafkaProperties.Consumer();
-        this.consumerProp.setBootstrapServers(Arrays.stream(kafkaBootstrapServers.split(",")).toList());
+        this.consumerProp.setBootstrapServers(kafkaBootstrapServers);
         this.consumerProp.setGroupId(type + "_" + serverId);
+        this.consumerProp.setKeyDeserializer(StringDeserializer.class);
+        this.consumerProp.setValueDeserializer(ByteArraySerializer.class);
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
         producerProp.setBootstrapServers(this.consumerProp.getBootstrapServers());
+        producerProp.setKeySerializer(StringSerializer.class);
+        producerProp.setValueSerializer(ByteArraySerializer.class);
         this.subscribeTopic = "subscribe_" + type;
         this.notifyTopic = "notify_" + type;
         this.producer = ProducerFactory.newProducer(producerProp);
@@ -75,7 +86,11 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 value2.ts = ts;
                 save.put(entry2.getKey(), value2.toString());
             }
-            boundHashOperations.putAll(save);
+            try {
+                boundHashOperations.putAll(save);
+            }catch (Exception e){
+                logger.error("notify client schedule error type[{}]", type, e);
+            }
         }, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -87,38 +102,61 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         workPool = null;
     }
 
+    @Override
+    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
+        String id = consumerRecord.key();
+        CompletableFuture.runAsync(() -> {
+            ListenerInfo listenerInfo = id_listenerInfo.get(id);
+            if (listenerInfo != null) {
+                try {
+                    listenerInfo.consumer.accept(consumerRecord.value());
+                } catch (Exception e) {
+                    logger.error("notify client consumer error type[{}] id[{}]", type, id, e);
+                }
+            }
+        }, workPool);
+    }
+
     /**
      * 订阅
      *
      * @param id
+     * @param consumer 当有消息时候回调、注意不要阻塞、因为只有一个线程处理任务、阻塞会导致所有的任务阻塞
      */
-    public CompletableFuture<String> subscribe(String id) {
-        return CompletableFuture.supplyAsync(() -> {
-            final ListenerInfo listenerInfo = new ListenerInfo(id, System.currentTimeMillis());
+    public CompletableFuture<Void> subscribe(String id, Consumer<byte[]> consumer) {
+        return CompletableFuture.runAsync(() -> {
+            final ListenerInfo listenerInfo = new ListenerInfo(id, System.currentTimeMillis(), consumer);
             id_listenerInfo.put(id, listenerInfo);
-            //添加到redis
-            boundHashOperations.put(id, listenerInfo.toString());
-            //发送kafka通知
-            producer.send(new ProducerRecord<>(subscribeTopic, ("1" + listenerInfo).getBytes()));
-            logger.info("client subscribe id[{}]", id);
-            return id;
+            try {
+                //添加到redis
+                boundHashOperations.put(id, listenerInfo.toString());
+                //发送kafka通知
+                producer.send(new ProducerRecord<>(subscribeTopic, id, ("1" + listenerInfo).getBytes()));
+                logger.info("notify client subscribe type[{}] id[{}]", type, id);
+            } catch (Exception ex) {
+                logger.error("notify client subscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);
+            }
         }, workPool);
     }
 
     /**
      * 取消订阅
      *
-     * @param id {@link #subscribe(String)}返回的id
+     * @param id {@link #subscribe(String, Consumer)}返回的id
      */
-    public CompletableFuture<Void> unSubscribe(String id) {
+    public CompletableFuture<Void> unsubscribe(String id) {
         return CompletableFuture.runAsync(() -> {
             //删除缓存
             id_listenerInfo.remove(id);
-            //从redis删除
-            boundHashOperations.delete(id);
-            //发送kafka通知
-            producer.send(new ProducerRecord<>(subscribeTopic, ("2" + id).getBytes()));
-            logger.info("client unSubscribe id[{}]", id);
+            try {
+                //从redis删除
+                boundHashOperations.delete(id);
+                //发送kafka通知
+                producer.send(new ProducerRecord<>(subscribeTopic, id, ("2" + id).getBytes()));
+                logger.info("notify client unsubscribe type[{}] id[{}]", type, id);
+            } catch (Exception ex) {
+                logger.error("notify client unsubscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);
+            }
         });
     }
 }
