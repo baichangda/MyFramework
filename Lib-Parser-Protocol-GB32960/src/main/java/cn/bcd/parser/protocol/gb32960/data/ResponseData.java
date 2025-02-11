@@ -1,11 +1,10 @@
 package cn.bcd.parser.protocol.gb32960.data;
 
-import cn.bcd.parser.base.anno.C_impl;
-import cn.bcd.parser.base.anno.F_num_array;
-import cn.bcd.parser.base.anno.data.NumType;
+import cn.bcd.parser.base.anno.F_date_bytes_6;
 
-@C_impl(value = C_impl.Default)
+import java.util.Date;
+
 public class ResponseData implements PacketData {
-    @F_num_array(singleType = NumType.uint8,lenExpr = "A")
-    public byte[] content;
+    @F_date_bytes_6
+    public Date collectTime;
 }

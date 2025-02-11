@@ -1,13 +1,14 @@
 package cn.bcd.parser.protocol.gb32960.data;
 
 import cn.bcd.parser.base.Parser;
-import cn.bcd.parser.base.anno.F_bean;
+import cn.bcd.parser.base.anno.F_customize;
 import cn.bcd.parser.base.anno.F_num;
 import cn.bcd.parser.base.anno.F_num_array;
 import cn.bcd.parser.base.anno.F_string;
 import cn.bcd.parser.base.anno.data.NumType;
 import cn.bcd.parser.base.anno.data.NumVal_byte;
 import cn.bcd.parser.base.processor.Processor;
+import cn.bcd.parser.protocol.gb32960.processor.PacketDataProcessor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -17,7 +18,7 @@ public class Packet {
     @F_num_array(len = 2, singleType = NumType.uint8)
     public byte[] header;
     //命令标识 2-3
-    @F_num(type = NumType.uint8, var = 'f')
+    @F_num(type = NumType.uint8)
     public PacketFlag flag;
     //应答标识 3-4
     @F_num(type = NumType.uint8)
@@ -29,9 +30,9 @@ public class Packet {
     @F_num(type = NumType.uint8)
     public NumVal_byte encodeWay;
     //数据单元长度 22-24
-    @F_num(type = NumType.uint16, globalVar = 'A')
+    @F_num(type = NumType.uint16)
     public int contentLength;
-    @F_bean(implClassExpr = "f")
+    @F_customize(processorClass = PacketDataProcessor.class)
     public PacketData data;
     //异或校验位
     @F_num(type = NumType.uint8)
