@@ -45,7 +45,7 @@ public class TaskRedisQueue<T extends Task<K>, K extends Serializable> {
     private final ExecutorService workPool = Executors.newCachedThreadPool();
 
     public TaskRedisQueue(String name, RedisConnectionFactory connectionFactory, TaskBuilder<T, K> taskBuilder) {
-        final RedisTemplate<String, TaskRunnable<T, K>> redisTemplate = RedisUtil.newString_SerializableRedisTemplate(connectionFactory);
+        final RedisTemplate<String, TaskRunnable<T, K>> redisTemplate = RedisUtil.newRedisTemplate_string_serializable(connectionFactory);
         this.name = name;
         this.queueName = "sysTask:" + name;
         this.boundListOperations = redisTemplate.boundListOps(this.queueName);

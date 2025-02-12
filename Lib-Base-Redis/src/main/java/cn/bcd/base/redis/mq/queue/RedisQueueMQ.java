@@ -53,7 +53,7 @@ public class RedisQueueMQ<V> {
         this.consumerThreadNum = consumerThreadNum;
         this.workThreadNum = workThreadNum;
 
-        this.redisTemplate = RedisUtil.newString_BytesRedisTemplate(connectionFactory);
+        this.redisTemplate = RedisUtil.newRedisTemplate_string_bytes(connectionFactory);
         this.boundListOperations = redisTemplate.boundListOps(name);
         this.valueSerializer = (RedisSerializer<V>) getDefaultRedisSerializer(valueSerializerType);
     }

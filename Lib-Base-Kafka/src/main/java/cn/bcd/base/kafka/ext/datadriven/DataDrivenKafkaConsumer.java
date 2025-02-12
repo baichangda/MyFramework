@@ -1,6 +1,7 @@
 package cn.bcd.base.kafka.ext.datadriven;
 
 import cn.bcd.base.exception.BaseException;
+import cn.bcd.base.kafka.KafkaUtil;
 import cn.bcd.base.kafka.ext.ConsumerRebalanceLogger;
 import cn.bcd.base.util.DateUtil;
 import cn.bcd.base.util.ExecutorUtil;
@@ -12,12 +13,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
 import java.time.Duration;
 import java.util.*;
@@ -349,9 +347,9 @@ public abstract class DataDrivenKafkaConsumer {
      *
      * @param consumer
      * @param ps
-     * @param properties
+     * @param consumerProp
      */
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> properties) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, KafkaProperties.Consumer consumerProp) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -363,7 +361,7 @@ public abstract class DataDrivenKafkaConsumer {
                 consumers[0] = consumer;
                 for (int i = 1; i < partitionSize; i++) {
                     int partition = ps[i];
-                    final KafkaConsumer<String, byte[]> cur = new KafkaConsumer<>(properties);
+                    final KafkaConsumer<String, byte[]> cur = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                     cur.assign(Collections.singletonList(new TopicPartition(topic, partition)));
                     consumers[i] = cur;
                 }
@@ -400,9 +398,6 @@ public abstract class DataDrivenKafkaConsumer {
             synchronized (this) {
                 if (!available) {
                     try {
-                        Map<String, Object> properties = consumerProp.buildProperties(new DefaultSslBundleRegistry());
-                        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-                        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
                         //标记可用
                         available = true;
                         //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
@@ -429,7 +424,7 @@ public abstract class DataDrivenKafkaConsumer {
                         //启动消费者
                         switch (consumeMode) {
                             case 1: {
-                                final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
+                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
                                 //初始化消费线程、提交消费任务
                                 consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
@@ -438,14 +433,14 @@ public abstract class DataDrivenKafkaConsumer {
                                 break;
                             }
                             case 2: {
-                                final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
+                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                                 int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps, properties);
+                                startConsumePartitions(consumer, ps, consumerProp);
                                 break;
                             }
                             default: {
-                                final KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(properties);
-                                startConsumePartitions(consumer, partitions, properties);
+                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                                startConsumePartitions(consumer, partitions, consumerProp);
                                 break;
                             }
                         }

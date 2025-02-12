@@ -22,7 +22,7 @@ public class RedisConfig {
      */
     @Bean(name = "string_serializable_redisTemplate")
     public RedisTemplate<String, Serializable> string_serializable_redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        return RedisUtil.newString_SerializableRedisTemplate(redisConnectionFactory);
+        return RedisUtil.newRedisTemplate_string_serializable(redisConnectionFactory);
     }
 
     /**
@@ -34,7 +34,7 @@ public class RedisConfig {
      */
     @Bean(name = "string_string_redisTemplate")
     public StringRedisTemplate string_string_redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        return RedisUtil.newString_StringRedisTemplate(redisConnectionFactory);
+        return RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
     }
 
     @Bean

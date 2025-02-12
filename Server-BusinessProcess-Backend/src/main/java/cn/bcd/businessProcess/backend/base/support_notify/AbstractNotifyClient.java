@@ -1,6 +1,6 @@
 package cn.bcd.businessProcess.backend.base.support_notify;
 
-import cn.bcd.base.kafka.ext.ProducerFactory;
+import cn.bcd.base.kafka.KafkaUtil;
 import cn.bcd.base.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.base.util.ExecutorUtil;
@@ -69,8 +69,8 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         producerProp.setValueSerializer(ByteArraySerializer.class);
         this.subscribeTopic = "subscribe_" + type;
         this.notifyTopic = "notify_" + type;
-        this.producer = ProducerFactory.newProducer(producerProp);
-        this.boundHashOperations = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory).boundHashOps(this.notifyTopic);
+        this.producer = KafkaUtil.newKafkaProducer_string_bytes(producerProp);
+        this.boundHashOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).boundHashOps(this.notifyTopic);
     }
 
 

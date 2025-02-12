@@ -21,7 +21,7 @@ public final class RegisterInfo {
 
     public RegisterInfo(RegisterServer server, RedisConnectionFactory redisConnectionFactory) {
         this.server = server;
-        this.boundHashOperations = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory).boundHashOps(RegisterUtil.redisKeyPre + server.name());
+        this.boundHashOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).boundHashOps(RegisterUtil.redisKeyPre + server.name());
     }
 
     public String[] hosts() {

@@ -56,7 +56,7 @@ public class RedisTopicMQ<V> {
         this.taskThreadNum = taskThreadNum;
         this.names = names;
 
-        redisTemplate = RedisUtil.newString_BytesRedisTemplate(connectionFactory);
+        redisTemplate = RedisUtil.newRedisTemplate_string_bytes(connectionFactory);
         redisSerializer = (RedisSerializer<V>) getDefaultRedisSerializer(valueSerializerType);
 
     }

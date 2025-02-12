@@ -39,7 +39,7 @@ public class SingleFailedScheduleHandler {
 
     public SingleFailedScheduleHandler(String lockId, RedisConnectionFactory redisConnectionFactory, Duration aliveTime) {
         this.lockId = lockId;
-        this.redisTemplate = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory);
+        this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
         this.valueOperations = this.redisTemplate.opsForValue();
         this.aliveTime = aliveTime;
     }

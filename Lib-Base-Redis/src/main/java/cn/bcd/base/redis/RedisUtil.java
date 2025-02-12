@@ -35,7 +35,7 @@ public class RedisUtil {
      * @param <V>
      * @return
      */
-    public static <V> RedisTemplate<String, V> newString_JacksonBeanRedisTemplate(RedisConnectionFactory redisConnectionFactory, Type type) {
+    public static <V> RedisTemplate<String, V> newRedisTemplate_string_jackson(RedisConnectionFactory redisConnectionFactory, Type type) {
         RedisTemplate<String, V> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         Jackson2JsonRedisSerializer<V> redisSerializer = newJackson2JsonRedisSerializer(type);
@@ -53,7 +53,7 @@ public class RedisUtil {
      * @param redisConnectionFactory
      * @return
      */
-    public static RedisTemplate<String, byte[]> newString_BytesRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public static RedisTemplate<String, byte[]> newRedisTemplate_string_bytes(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, byte[]> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);
@@ -89,7 +89,7 @@ public class RedisUtil {
      * @param redisConnectionFactory
      * @return
      */
-    public static StringRedisTemplate newString_StringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public static StringRedisTemplate newRedisTemplate_string_string(RedisConnectionFactory redisConnectionFactory) {
         StringRedisTemplate redisTemplate = new StringRedisTemplate();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);
@@ -106,7 +106,7 @@ public class RedisUtil {
      * @param redisConnectionFactory
      * @return
      */
-    public static RedisTemplate<String, Integer> newString_IntegerRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public static RedisTemplate<String, Integer> newRedisTemplate_string_int(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, Integer> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);
@@ -123,7 +123,7 @@ public class RedisUtil {
      * @param redisConnectionFactory
      * @return
      */
-    public static <V extends Serializable> RedisTemplate<String, V> newString_SerializableRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public static <V extends Serializable> RedisTemplate<String, V> newRedisTemplate_string_serializable(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, V> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);

@@ -1,7 +1,6 @@
 package cn.bcd.monitor.collector;
 
 import cn.bcd.base.exception.BaseException;
-import cn.bcd.base.json.JsonUtil;
 import cn.bcd.base.redis.RedisUtil;
 import cn.bcd.base.util.DateZoneUtil;
 import cn.bcd.monitor.client.MonitorData;
@@ -44,7 +43,7 @@ public class MonitorCollector {
     static Logger logger = LoggerFactory.getLogger(MonitorCollector.class);
 
     public MonitorCollector(RedisConnectionFactory redisConnectionFactory) {
-        redisTemplate = RedisUtil.newString_JacksonBeanRedisTemplate(redisConnectionFactory, MonitorData.class);
+        redisTemplate = RedisUtil.newRedisTemplate_string_jackson(redisConnectionFactory, MonitorData.class);
     }
 
     @Scheduled(cron = "${monitor.collect-cron}")

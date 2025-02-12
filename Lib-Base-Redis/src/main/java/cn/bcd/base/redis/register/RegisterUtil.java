@@ -58,7 +58,7 @@ public class RegisterUtil implements ApplicationListener<ContextRefreshedEvent> 
      */
     @SuppressWarnings("unchecked")
     public void startProviderHeartbeat(RegisterProp registerProp, RedisConnectionFactory redisConnectionFactory) {
-        final RedisTemplate<String, String> stringStringRedisTemplate = RedisUtil.newString_StringRedisTemplate(redisConnectionFactory);
+        final RedisTemplate<String, String> stringStringRedisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
         final ScheduledExecutorService providerPool = Executors.newSingleThreadScheduledExecutor();
         for (RegisterServer registerServer : registerProp.servers) {
             final BoundHashOperations<String, String, String> boundHashOperation = stringStringRedisTemplate.boundHashOps(redisKeyPre + registerServer.name());

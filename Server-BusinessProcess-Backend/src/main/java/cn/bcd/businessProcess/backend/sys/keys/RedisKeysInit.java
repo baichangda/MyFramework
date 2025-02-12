@@ -22,7 +22,7 @@ public class RedisKeysInit implements ApplicationListener<ContextRefreshedEvent>
         if (KeysConst.IS_CLUSTER) {
             //2、如果是集群环境则从redis中取出公钥私钥
             RedisConnectionFactory redisConnectionFactory = event.getApplicationContext().getBean(RedisConnectionFactory.class);
-            RedisTemplate<String, String[]> redisTemplate = RedisUtil.newString_JacksonBeanRedisTemplate(redisConnectionFactory, TypeFactory.defaultInstance().constructArrayType(String.class));
+            RedisTemplate<String, String[]> redisTemplate = RedisUtil.newRedisTemplate_string_jackson(redisConnectionFactory, TypeFactory.defaultInstance().constructArrayType(String.class));
             String[] keys = redisTemplate.opsForValue().get(KeysConst.REDIS_KEY_NAME);
             //3、如果redis中公钥私钥为空,则生成一份,插入进去
             if (keys == null) {
