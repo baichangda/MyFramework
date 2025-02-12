@@ -7,6 +7,7 @@ import cn.bcd.base.redis.serializer.RedisSerializer_value_integer;
 import com.fasterxml.jackson.databind.JavaType;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -88,8 +89,8 @@ public class RedisUtil {
      * @param redisConnectionFactory
      * @return
      */
-    public static RedisTemplate<String, String> newString_StringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+    public static StringRedisTemplate newString_StringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        StringRedisTemplate redisTemplate = new StringRedisTemplate();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);
         redisTemplate.setValueSerializer(RedisUtil.SERIALIZER_VALUE_STRING);

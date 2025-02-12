@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 import java.io.Serializable;
@@ -32,7 +33,7 @@ public class RedisConfig {
      * @return
      */
     @Bean(name = "string_string_redisTemplate")
-    public RedisTemplate<String, String> string_string_redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public StringRedisTemplate string_string_redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         return RedisUtil.newString_StringRedisTemplate(redisConnectionFactory);
     }
 
