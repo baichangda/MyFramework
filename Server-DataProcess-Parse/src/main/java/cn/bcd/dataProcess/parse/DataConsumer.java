@@ -25,7 +25,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     public DataConsumer(ParseProp parseProp) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
-                0,
                 null,
                 100000,
                 true,
