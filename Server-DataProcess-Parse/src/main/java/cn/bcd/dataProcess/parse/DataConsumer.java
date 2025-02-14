@@ -13,7 +13,9 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 @EnableConfigurationProperties({ParseProp.class, KafkaProperties.class})
 @Component
@@ -47,12 +49,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / period, 2);
         int workQueueTaskNum = 0;
-        StringJoiner workQueueStatus = new StringJoiner(" ");
-        for (WorkExecutor workExecutor : workExecutors) {
-            int size = workExecutor.blockingQueue.size();
-            workQueueTaskNum += size;
-            workQueueStatus.add(size + (workExecutorQueueSize > 0 ? ("/" + workExecutorQueueSize) : ""));
-        }
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.executor.getQueue().size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / period, 2);
         int saveQueueTaskNum_gb32960 = SaveHandler_gb32960.queue.size();
         double saveSpeed_gb32960 = FloatUtil.format(SaveHandler_gb32960.saveCount.sumThenReset() / period, 2);
