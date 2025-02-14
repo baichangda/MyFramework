@@ -10,13 +10,11 @@ public class DefaultNumValChecker extends NumValGetter {
     @Override
     public int getType(NumType numType, int val) {
         int i = val & 0xFF;
-        if (i == 0xFF) {
-            return 1;
-        } else if (i == 0xFE) {
-            return 2;
-        } else {
-            return 0;
-        }
+        return switch (i) {
+            case 0xFF -> 1;
+            case 0xFE -> 2;
+            default -> 0;
+        };
 //        return switch (numType) {
 //            case uint8, int8 -> switch (val & 0xff) {
 //                case 0xFF -> 1;
@@ -45,13 +43,11 @@ public class DefaultNumValChecker extends NumValGetter {
     @Override
     public int getType(NumType numType, long val) {
         int i = (int) (val) & 0xFF;
-        if (i == 0xFF) {
-            return 1;
-        } else if (i == 0xFE) {
-            return 2;
-        } else {
-            return 0;
-        }
+        return switch (i) {
+            case 0xFF -> 1;
+            case 0xFE -> 2;
+            default -> 0;
+        };
 //        switch (numType) {
 //            case uint40, int40 -> {
 //                if (val == 0xFFFFFFFFFFL) {
