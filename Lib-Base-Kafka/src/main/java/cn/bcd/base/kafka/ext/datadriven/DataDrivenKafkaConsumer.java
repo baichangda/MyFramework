@@ -81,10 +81,6 @@ public abstract class DataDrivenKafkaConsumer {
      */
     public final int workExecutorNum;
     /**
-     * 工作执行器非阻塞任务线程池队列大小
-     */
-    public final int workExecutorQueueSize;
-    /**
      * 工作执行器阻塞检查任务执行周期
      */
     public final WorkExecutor.BlockingChecker blockingChecker;
@@ -184,10 +180,6 @@ public abstract class DataDrivenKafkaConsumer {
     /**
      * @param name                  当前消费者的名称(用于标定线程名称)
      * @param workExecutorNum       工作任务执行器个数
-     * @param workExecutorQueueSize 工作任务执行器无阻塞任务线程池队列大小
-     *                              <=0代表不限制、此时使用{@link LinkedBlockingQueue}
-     *                              其他情况、则使用{@link ArrayBlockingQueue}
-     *                              每个工作任务执行器都有一个自己的队列
      * @param blockingChecker       工作任务执行器阻塞检查参数
      *                              null代表不启动阻塞检查
      *                              否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
@@ -212,7 +204,6 @@ public abstract class DataDrivenKafkaConsumer {
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
-                                   int workExecutorQueueSize,
                                    WorkExecutor.BlockingChecker blockingChecker,
                                    int maxBlockingNum,
                                    boolean autoReleaseBlocking,
@@ -223,7 +214,6 @@ public abstract class DataDrivenKafkaConsumer {
                                    int... partitions) {
         this.name = name;
         this.workExecutorNum = workExecutorNum;
-        this.workExecutorQueueSize = workExecutorQueueSize;
         this.blockingChecker = blockingChecker;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
@@ -261,7 +251,7 @@ public abstract class DataDrivenKafkaConsumer {
         //初始化工作任务执行器
         this.workExecutors = new WorkExecutor[workExecutorNum];
         for (int i = 0; i < workExecutorNum; i++) {
-            this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorQueueSize, blockingChecker);
+            this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", blockingChecker);
         }
 
     }
@@ -302,9 +292,9 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public final CompletableFuture<Void> removeHandler(String id) {
+    public final Future<?> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
-        return workExecutor.execute(() -> {
+        return workExecutor.submit(() -> {
             WorkHandler workHandler = workExecutor.workHandlers.remove(id);
             removeHandlerInExecutor(workHandler);
         });
@@ -617,12 +607,7 @@ public abstract class DataDrivenKafkaConsumer {
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         int workQueueTaskNum = 0;
-        StringJoiner workQueueStatus = new StringJoiner(" ");
-        for (WorkExecutor workExecutor : workExecutors) {
-            int size = workExecutor.blockingQueue.size();
-            workQueueTaskNum += size;
-            workQueueStatus.add(size + (workExecutorQueueSize > 0 ? ("/" + workExecutorQueueSize) : ""));
-        }
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.executor.getQueue().size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
@@ -638,7 +623,7 @@ public abstract class DataDrivenKafkaConsumer {
                 curBlockingNum, maxBlockingNum,
                 consumeSpeed,
                 workQueueTaskNum,
-                workQueueStatus.toString(),
+                workQueueStatus,
                 workSpeed);
     }
 
