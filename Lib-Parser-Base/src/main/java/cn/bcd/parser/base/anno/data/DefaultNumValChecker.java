@@ -93,25 +93,19 @@ public class DefaultNumValChecker extends NumValGetter {
 
     @Override
     public int getVal_int(NumType numType, int type) {
-        return switch (numType) {
-            case uint8, int8 -> switch (type) {
-                case 1 -> 0xFF;
-                case 2 -> 0xFE;
+        return switch (type) {
+            case 1 -> switch (numType) {
+                case uint8, int8 -> 0xFF;
+                case uint16, int16 -> 0xFFFF;
+                case uint24, int24 -> 0xFFFFFF;
+                case uint32, int32 -> 0xFFFFFFFF;
                 default -> 0;
             };
-            case uint16, int16 -> switch (type) {
-                case 1 -> 0xFFFF;
-                case 2 -> 0xFFFE;
-                default -> 0;
-            };
-            case uint24, int24 -> switch (type) {
-                case 1 -> 0xFFFFFF;
-                case 2 -> 0xFFFFFE;
-                default -> 0;
-            };
-            case uint32, int32 -> switch (type) {
-                case 1 -> 0xFFFFFFFF;
-                case 2 -> 0xFFFFFFFE;
+            case 2 -> switch (numType) {
+                case uint8, int8 -> 0xFE;
+                case uint16, int16 -> 0xFFFE;
+                case uint24, int24 -> 0xFFFFFE;
+                case uint32, int32 -> 0xFFFFFFFE;
                 default -> 0;
             };
             default -> 0;
@@ -120,25 +114,19 @@ public class DefaultNumValChecker extends NumValGetter {
 
     @Override
     public long getVal_long(NumType numType, int type) {
-        return switch (numType) {
-            case uint40, int40 -> switch (type) {
-                case 1 -> 0xFFFFFFFFFFL;
-                case 2 -> 0xFFFFFFFFFEL;
+        return switch (type) {
+            case 1 -> switch (numType) {
+                case uint40, int40 -> 0xFFFFFFFFFFL;
+                case uint48, int48 -> 0xFFFFFFFFFFFFL;
+                case uint56, int56 -> 0xFFFFFFFFFFFFFFL;
+                case uint64, int64 -> 0xFFFFFFFFFFFFFFFFL;
                 default -> 0;
             };
-            case uint48, int48 -> switch (type) {
-                case 1 -> 0xFFFFFFFFFFFFL;
-                case 2 -> 0xFFFFFFFFFFFEL;
-                default -> 0;
-            };
-            case uint56, int56 -> switch (type) {
-                case 1 -> 0xFFFFFFFFFFFFFFL;
-                case 2 -> 0xFFFFFFFFFFFFFEL;
-                default -> 0;
-            };
-            case uint64, int64 -> switch (type) {
-                case 1 -> 0xFFFFFFFFFFFFFFFFL;
-                case 2 -> 0xFFFFFFFFFFFFFFFEL;
+            case 2 -> switch (numType) {
+                case uint40, int40 -> 0xFFFFFFFFFEL;
+                case uint48, int48 -> 0xFFFFFFFFFFFEL;
+                case uint56, int56 -> 0xFFFFFFFFFFFFFEL;
+                case uint64, int64 -> 0xFFFFFFFFFFFFFFFEL;
                 default -> 0;
             };
             default -> 0;
