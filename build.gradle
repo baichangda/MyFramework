@@ -8,6 +8,8 @@ buildscript {
         mavenCentral()
     }
 
+
+
     dependencies {
         // https://mvnrepository.com/artifact/io.spring.gradle/dependency-management-plugin
         classpath group: 'io.spring.gradle', name: 'dependency-management-plugin', version: '1.1.7'
@@ -16,7 +18,15 @@ buildscript {
     }
 }
 
+
+
+
+
 subprojects {
+    if (it.name == 'Lib-Bom') {
+        return
+    }
+
     group 'cn.bcd'
     version '1.0'
 
@@ -37,8 +47,8 @@ subprojects {
 
     dependencies {
         // https://mvnrepository.com/artifact/org.projectlombok/lombok
-        compileOnly group: 'org.projectlombok', name: 'lombok', version: "+"
-        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "+"
+        compileOnly group: 'org.projectlombok', name: 'lombok', version: "1.18.36"
+        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "1.18.36"
     }
 
     //下载源码和文档

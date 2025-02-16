@@ -1,0 +1,11 @@
+apply plugin: "java-platform"
+
+javaPlatform {
+    allowDependencies()
+}
+
+dependencies {
+    constraints {
+        api 'commons-httpclient:commons-httpclient:3.1'
+    }
+}

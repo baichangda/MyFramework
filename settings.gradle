@@ -14,4 +14,5 @@ include 'Server-Simulator-PressTest-Tcp'
 include 'Server-DataProcess-Gateway-Mqtt'
 include 'Lib-Base-Redis'
 include 'Lib-Base-Kafka'
+include 'Lib-Bom'
 
