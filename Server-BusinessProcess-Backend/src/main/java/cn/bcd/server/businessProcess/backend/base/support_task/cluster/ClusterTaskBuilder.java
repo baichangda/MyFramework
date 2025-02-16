@@ -1,8 +1,7 @@
 package cn.bcd.server.businessProcess.backend.base.support_task.cluster;
 
-import cn.bcd.businessProcess.backend.base.support_task.*;
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.server.businessProcess.backend.base.support_task.*;
+import cn.bcd.lib.base.exception.BaseException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 

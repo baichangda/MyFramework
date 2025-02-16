@@ -1,12 +1,10 @@
 package cn.bcd.server.businessProcess.backend.base.support_mongodb.util;
 
-import cn.bcd.businessProcess.backend.base.condition.impl.*;
-import cn.bcd.businessProcess.backend.base.support_mongodb.condition.converter.*;
+import cn.bcd.server.businessProcess.backend.base.condition.impl.*;
+import cn.bcd.server.businessProcess.backend.base.support_mongodb.condition.converter.*;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.server.businessProcess.backend.base.condition.Condition;
 import cn.bcd.server.businessProcess.backend.base.condition.Converter;
-import cn.bcd.server.businessProcess.backend.base.condition.impl.*;
-import cn.bcd.server.businessProcess.backend.base.support_mongodb.condition.converter.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 

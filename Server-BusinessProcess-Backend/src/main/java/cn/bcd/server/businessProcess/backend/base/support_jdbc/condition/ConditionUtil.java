@@ -1,11 +1,10 @@
 package cn.bcd.server.businessProcess.backend.base.support_jdbc.condition;
 
 
-import cn.bcd.businessProcess.backend.base.condition.impl.*;
+import cn.bcd.server.businessProcess.backend.base.condition.impl.*;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.server.businessProcess.backend.base.condition.Condition;
 import cn.bcd.server.businessProcess.backend.base.condition.Converter;
-import cn.bcd.server.businessProcess.backend.base.condition.impl.*;
 import cn.bcd.server.businessProcess.backend.base.support_jdbc.service.BeanInfo;
 
 import java.util.HashMap;
