@@ -1,6 +1,6 @@
 package cn.bcd;
 
-import cn.bcd.simulator.singleVehicle.tcp.HttpServer;
+import cn.bcd.server.simulator.singleVehicle.tcp.HttpServer;
 import picocli.CommandLine;
 
 public class Application {

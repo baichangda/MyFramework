@@ -1,6 +1,6 @@
 package cn.bcd;
 
-import cn.bcd.simulator.pressTest.tcp.Starter;
+import cn.bcd.server.simulator.pressTest.tcp.Starter;
 import picocli.CommandLine;
 
 public class Application {
