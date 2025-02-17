@@ -127,17 +127,17 @@ public class WorkExecutor {
             int periodInSecond = blockingChecker.periodInSecond;
             this.executor_blockingChecker = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-blockingChecker"));
             this.executor_blockingChecker.scheduleWithFixedDelay(() -> {
-                long expired = DateUtil.CacheMillisecond.current() + expiredInSecond;
+                long start = DateUtil.CacheSecond.current();
                 Future<?> future = submit(() -> {
                 });
                 try {
                     TimeUnit.SECONDS.sleep(expiredInSecond);
                     while (!future.isDone()) {
-                        long blockingSecond = DateUtil.CacheMillisecond.current() - expired;
-                        if (blockingSecond >= 0) {
-                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] queueSize[{}]", threadName, blockingSecond + expiredInSecond, expiredInSecond, executor.getQueue().size());
+                        long blockingSecond = DateUtil.CacheSecond.current() - start;
+                        if (blockingSecond >= expiredInSecond) {
+                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] queueSize[{}]", threadName, blockingSecond, expiredInSecond, executor.getQueue().size());
                         }
-                        TimeUnit.SECONDS.sleep(1);
+                        TimeUnit.SECONDS.sleep(3);
                     }
                 } catch (InterruptedException ex) {
                     throw BaseException.get(ex);
