@@ -5,7 +5,70 @@ javaPlatform {
 }
 
 dependencies {
+    api platform('org.springframework.boot:spring-boot-dependencies:3.2.12')
+    api platform('org.springframework.cloud:spring-cloud-dependencies:2023.0.5')
+    api platform('com.alibaba.cloud:spring-cloud-alibaba-dependencies:2023.0.3.2')
+    api platform("com.squareup.okhttp3:okhttp-bom:4.12.0")
+
     constraints {
-        api 'commons-httpclient:commons-httpclient:3.1'
+        api group: 'org.projectlombok', name: 'lombok', version: "1.18.36"
+
+        // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+        api group: 'org.slf4j', name: 'slf4j-api', version: "2.0.16"
+        // https://mvnrepository.com/artifact/com.google.guava/guava
+        api group: 'com.google.guava', name: 'guava', version: "33.4.0-jre"
+
+        var jacksonVersion = "2.18.2"
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: "${jacksonVersion}"
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${jacksonVersion}"
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${jacksonVersion}"
+
+        api group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.1"
+
+        // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
+        api group: 'com.github.oshi', name: 'oshi-core-java11', version: "6.6.6"
+
+        // https://mvnrepository.com/artifact/io.netty/netty-all
+        api group: 'io.netty', name: 'netty-buffer', version: "4.1.117.Final"
+        // https://mvnrepository.com/artifact/org.javassist/javassist
+        api group: 'org.javassist', name: 'javassist', version: "3.30.2-GA"
+
+        // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+        api group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: "5.11.4"
+        // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
+        api group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: "2.24.3"
+
+        api group: 'com.lmax', name: 'disruptor', version: "3.4.4"
+
+        // https://mvnrepository.com/artifact/com.alibaba/easyexcel
+        api(group: 'com.alibaba', name: 'easyexcel', version: "4.0.3")
+
+        api group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter', version: "4.5.0"
+
+        api group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: "3.2.0"
+
+        api group: 'org.freemarker', name: 'freemarker', version: "2.3.34"
+
+        api group: 'com.mysql', name: 'mysql-connector-j', version: "9.2.0"
+
+        api group: 'org.postgresql', name: 'postgresql', version: "42.7.5"
+
+        api group: 'org.xerial', name: 'sqlite-jdbc', version: "3.48.0.0"
+
+        var saTokenVersion = "1.40.0"
+        api group: 'cn.dev33', name: 'sa-token-spring-boot3-starter', version: "${saTokenVersion}"
+        api group: 'cn.dev33', name: 'sa-token-redis-jackson', version: "${saTokenVersion}"
+
+        api 'com.hivemq:hivemq-mqtt-client:1.3.4'
+
+        api group: 'io.netty', name: 'netty-all', version: "4.1.117.Final"
+
+        api 'info.picocli:picocli:4.7.6'
+
+        var undertowVersion = "2.3.18.Final"
+        // https://mvnrepository.com/artifact/io.undertow/undertow-core
+        api group: 'io.undertow', name: 'undertow-core', version: "${undertowVersion}"
+        // https://mvnrepository.com/artifact/io.undertow/undertow-websockets-jsr
+        api group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
     }
 }

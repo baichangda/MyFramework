@@ -27,7 +27,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 
     // https://mvnrepository.com/artifact/com.mysql/mysql-connector-j
-    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: "9.2.0"
+    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j'
 }
 
 bootJar {

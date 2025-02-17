@@ -5,8 +5,6 @@ import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.anno.data.*;
-import cn.bcd.parser.base.anno.*;
-import cn.bcd.parser.base.anno.data.*;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.base.exception.BaseException;

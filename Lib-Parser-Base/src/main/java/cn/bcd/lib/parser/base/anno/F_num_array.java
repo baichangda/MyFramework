@@ -1,7 +1,6 @@
 package cn.bcd.lib.parser.base.anno;
 
 import cn.bcd.lib.parser.base.anno.data.*;
-import cn.bcd.parser.base.anno.data.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

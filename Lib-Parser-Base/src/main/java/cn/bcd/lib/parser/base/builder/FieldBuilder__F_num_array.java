@@ -2,7 +2,6 @@ package cn.bcd.lib.parser.base.builder;
 
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.data.*;
-import cn.bcd.parser.base.anno.data.*;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;

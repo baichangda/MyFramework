@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public class Consumer_gb32960 implements Consumer<Mqtt5Publish> {
 
     @Autowired
-    KafkaTemplate<byte[],byte[]> kafkaTemplate;
+    KafkaTemplate<String,byte[]> kafkaTemplate;
 
     @Autowired
     GatewayProp gatewayProp;
@@ -26,7 +26,7 @@ public class Consumer_gb32960 implements Consumer<Mqtt5Publish> {
     public void accept(Mqtt5Publish mqtt5Publish) {
         byte[] payload = mqtt5Publish.getPayloadAsBytes();
         String vin = new String(payload, 4, 17);
-        kafkaTemplate.send(gatewayProp.getParseTopic(), vin.getBytes(), payload);
+        kafkaTemplate.send(gatewayProp.getParseTopic(), vin, payload);
         byte[] responseByte = response_succeed(payload);
         client.publish(Mqtt5Publish.builder().topic(gatewayProp.getMqttRespTopicPrefix() + vin).payload(responseByte).build());
     }

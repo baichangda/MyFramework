@@ -6,7 +6,6 @@ import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.data.*;
-import cn.bcd.parser.protocol.gb32960.data.*;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

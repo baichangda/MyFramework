@@ -14,12 +14,6 @@ configurations.configureEach {
     }
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.5"
-        mavenBom "com.alibaba.cloud:spring-cloud-alibaba-dependencies:2023.0.3.2"
-    }
-}
 
 dependencies {
     implementation project(":Lib-Base-Redis")
@@ -40,8 +34,7 @@ dependencies {
     //springboot log4j2支持
     implementation('org.springframework.boot:spring-boot-starter-log4j2')
 
-    //disruptor(log4j2异步日志需要用到)
-    implementation group: 'com.lmax', name: 'disruptor', version: "4.0.0"
+    implementation group: 'com.lmax', name: 'disruptor'
 
     //springboot jdbc支持
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
@@ -58,39 +51,37 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
     // https://mvnrepository.com/artifact/com.alibaba/easyexcel
-    implementation(group: 'com.alibaba', name: 'easyexcel', version: "4.0.3")
+    implementation(group: 'com.alibaba', name: 'easyexcel')
 
     // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-openapi3-jakarta-spring-boot-starter
-    implementation group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter', version: "4.5.0"
+    implementation group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter'
 
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
-    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: "3.2.0"
+    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
 
     // https://mvnrepository.com/artifact/org.freemarker/freemarker
-    implementation group: 'org.freemarker', name: 'freemarker', version: "2.3.34"
+    implementation group: 'org.freemarker', name: 'freemarker'
 
 
     // https://mvnrepository.com/artifact/com.mysql/mysql-connector-j
-    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: "9.2.0"
+    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j'
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: "42.7.5"
+    runtimeOnly group: 'org.postgresql', name: 'postgresql'
 
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     // https://mvnrepository.com/artifact/cn.dev33/sa-token-spring-boot-starter
-    implementation group: 'cn.dev33', name: 'sa-token-spring-boot3-starter', version: "1.40.0"
-    implementation group: 'cn.dev33', name: 'sa-token-redis-jackson', version: "1.40.0"
+    implementation group: 'cn.dev33', name: 'sa-token-spring-boot3-starter'
+    implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
 
-    // define a BOM and its version
-    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.12.0"))
     // define any required OkHttp artifacts without version
     implementation("com.squareup.okhttp3:okhttp")
     implementation("com.squareup.okhttp3:logging-interceptor")
 
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: "3.48.0.0"
+    implementation group: 'org.xerial', name: 'sqlite-jdbc'
 
     // https://mvnrepository.com/artifact/com.alibaba.cloud/spring-cloud-starter-alibaba-sentinel
     implementation group: 'com.alibaba.cloud', name: 'spring-cloud-starter-alibaba-sentinel'

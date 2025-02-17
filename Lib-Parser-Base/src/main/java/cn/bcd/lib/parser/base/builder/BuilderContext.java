@@ -7,7 +7,6 @@ import cn.bcd.lib.parser.base.anno.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.*;
-import cn.bcd.parser.base.util.*;
 import io.netty.buffer.ByteBuf;
 import javassist.CtClass;
 
