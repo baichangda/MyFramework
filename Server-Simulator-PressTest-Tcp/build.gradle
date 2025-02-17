@@ -24,6 +24,6 @@ bootJar {
         attributes 'Start-Class': 'cn.bcd.Application'
     }
     //指定jar文件的名称
-    archiveBaseName = "${rootProject.name}"
+    archiveBaseName = "${project.name}"
     version = ""
 }
