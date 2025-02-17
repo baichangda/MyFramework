@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
@@ -60,7 +61,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         this.type = type;
         this.consumerProp = new KafkaProperties.Consumer();
         this.consumerProp.setBootstrapServers(kafkaBootstrapServers);
-        this.consumerProp.setGroupId(type + "_" + serverId);
+        this.consumerProp.setGroupId(serverId);
         this.consumerProp.setKeyDeserializer(StringDeserializer.class);
         this.consumerProp.setValueDeserializer(ByteArraySerializer.class);
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
@@ -69,14 +70,14 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         producerProp.setValueSerializer(ByteArraySerializer.class);
         this.subscribeTopic = "subscribe_" + type;
         this.notifyTopic = "notify_" + type;
-        this.producer = KafkaUtil.newKafkaProducer_string_bytes(producerProp);
+        this.producer = KafkaUtil.newKafkaProducer_string_bytes(producerProp.buildProperties(new DefaultSslBundleRegistry()));
         this.boundHashOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).boundHashOps(this.notifyTopic);
     }
 
 
     public void init() {
         //开始消费
-        super.init(consumerProp);
+        super.init(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
         workPool = Executors.newSingleThreadScheduledExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();

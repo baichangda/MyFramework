@@ -39,6 +39,10 @@ public class HexUtil {
         HEX2B['f'] = 15;
     }
 
+    public static String hexDump(byte b) {
+        return hexDump(new byte[]{b});
+    }
+
     public static String hexDump(byte[] array) {
         return hexDump(array, 0, array.length);
     }

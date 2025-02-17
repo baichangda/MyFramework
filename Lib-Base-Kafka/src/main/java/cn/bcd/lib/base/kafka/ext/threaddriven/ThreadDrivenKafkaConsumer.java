@@ -13,12 +13,12 @@ import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -59,6 +59,7 @@ public abstract class ThreadDrivenKafkaConsumer {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
+
     /**
      * 消费线程
      */
@@ -147,7 +148,7 @@ public abstract class ThreadDrivenKafkaConsumer {
     private Thread shutdownHookThread;
 
     /**
-     * @param name                  当前消费者的名称(用于标定线程名称)
+     * @param name                  当前消费者的名称(用于标定线程名称、消费组id)
      * @param oneWorkThreadOneQueue 一个工作线程一个队列
      *                              true时候
      *                              每个工作线程都有自己的队列
@@ -247,7 +248,7 @@ public abstract class ThreadDrivenKafkaConsumer {
 
     }
 
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, KafkaProperties.Consumer consumerProp) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String,Object> consumerProp) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -287,7 +288,7 @@ public abstract class ThreadDrivenKafkaConsumer {
      * 初始化
      * @param consumerProp
      */
-    public void init(KafkaProperties.Consumer consumerProp) {
+    public void init(Map<String,Object> consumerProp) {
         if (!available) {
             synchronized (this) {
                 if (!available) {

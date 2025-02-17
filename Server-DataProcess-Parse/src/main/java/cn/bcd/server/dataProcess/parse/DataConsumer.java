@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -83,6 +84,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
 
     @Override
     public void run(String... args) throws Exception {
-        init(kafkaProperties.getConsumer());
+        init(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 }
