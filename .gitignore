@@ -8,3 +8,4 @@ gradle-bcd.properties
 gradlew*
 *.log
 *.log.gz
+gradle
