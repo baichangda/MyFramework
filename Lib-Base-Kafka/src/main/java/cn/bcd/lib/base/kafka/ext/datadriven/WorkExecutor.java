@@ -3,34 +3,30 @@ package cn.bcd.lib.base.kafka.ext.datadriven;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
+import io.netty.util.concurrent.FastThreadLocalThread;
+import io.netty.util.concurrent.RejectedExecutionHandlers;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 工作执行器
- * 通过两个线程执行不同的任务
- * <p>
- * - {@link #executor}执行非阻塞任务
- * <p>
  * 注意:
  * 非阻塞任务线程中的任务不能阻塞、且任务之间是串行执行的、没有线程安全问题
  */
-public class WorkExecutor {
+public class WorkExecutor extends SingleThreadEventExecutor {
 
     static Logger logger = LoggerFactory.getLogger(WorkExecutor.class);
 
     public final String threadName;
 
     public final BlockingChecker blockingChecker;
-
-    /**
-     * 任务执行器
-     */
-    public ScheduledThreadPoolExecutor executor;
 
     /**
      * 阻塞检查器
@@ -72,55 +68,31 @@ public class WorkExecutor {
      *                        向执行器中提交一个空任务、等待{@link BlockingChecker#expiredInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
      */
     public WorkExecutor(String threadName, BlockingChecker blockingChecker) {
+        super(null,
+                r -> {
+                    return new FastThreadLocalThread(r, threadName);
+                },
+                true);
         this.threadName = threadName;
         this.blockingChecker = blockingChecker;
     }
 
-    public final void execute(Runnable runnable) {
-        executor.execute(runnable);
-    }
+    @Override
+    protected void run() {
+        for (; ; ) {
+            Runnable task = takeTask();
+            if (task != null) {
+                runTask(task);
+                updateLastExecutionTime();
+            }
 
-    public final Future<?> submit(Runnable runnable) {
-        return executor.submit(runnable);
-    }
-
-    public final <T> Future<T> submit(Runnable runnable, T task) {
-        return executor.submit(runnable, task);
-    }
-
-    public final <T> Future<T> submit(Callable<T> task) {
-        return executor.submit(task);
-    }
-
-    public final ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return executor.schedule(command, delay, unit);
-    }
-
-    public final <T> ScheduledFuture<T> schedule(Callable<T> callable, long delay, TimeUnit unit) {
-        return executor.schedule(callable, delay, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return executor.scheduleAtFixedRate(command, initialDelay, period, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return executor.scheduleWithFixedDelay(command, initialDelay, period, unit);
+            if (confirmShutdown()) {
+                break;
+            }
+        }
     }
 
     public void init() {
-        this.executor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName),
-                (r, executor) -> {
-                    if (!executor.isShutdown()) {
-                        try {
-//                    logger.warn("workThread[{}] RejectedExecutionHandler",threadName);
-                            executor.getQueue().put(r);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-                });
-
         if (blockingChecker != null) {
             //开启阻塞监控
             int expiredInSecond = blockingChecker.expiredInSecond;
@@ -135,7 +107,7 @@ public class WorkExecutor {
                     while (!future.isDone()) {
                         long blockingSecond = DateUtil.CacheSecond.current() - start;
                         if (blockingSecond >= expiredInSecond) {
-                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] queueSize[{}]", threadName, blockingSecond, expiredInSecond, executor.getQueue().size());
+                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] pendingTasks[{}]", threadName, blockingSecond, expiredInSecond, pendingTasks());
                         }
                         TimeUnit.SECONDS.sleep(3);
                     }
@@ -147,8 +119,14 @@ public class WorkExecutor {
     }
 
     public void destroy() {
-        ExecutorUtil.shutdownAllThenAwait(executor, executor_blockingChecker);
-        this.executor = null;
+        try {
+            io.netty.util.concurrent.Future<?> future = shutdownGracefully(2, Long.MAX_VALUE, TimeUnit.SECONDS);
+            executor_blockingChecker.shutdown();
+            future.await();
+            ExecutorUtil.await(executor_blockingChecker);
+        } catch (InterruptedException e) {
+            throw BaseException.get(e);
+        }
         this.executor_blockingChecker = null;
     }
 }

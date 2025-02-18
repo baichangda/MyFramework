@@ -607,7 +607,7 @@ public abstract class DataDrivenKafkaConsumer {
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         int workQueueTaskNum = 0;
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.executor.getQueue().size() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
