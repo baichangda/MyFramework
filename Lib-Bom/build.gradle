@@ -61,7 +61,10 @@ dependencies {
 
         api 'com.hivemq:hivemq-mqtt-client:1.3.4'
 
-        api group: 'io.netty', name: 'netty-all', version: "4.1.117.Final"
+        var nettyVersion = "4.1.117.Final"
+        api group: 'io.netty', name: 'netty-all', version: "${nettyVersion}"
+        api group: 'io.netty', name: 'netty-common', version: "${nettyVersion}"
+        api group: 'io.netty', name: 'netty-buffer', version: "${nettyVersion}"
 
         api 'info.picocli:picocli:4.7.6'
 

@@ -5,7 +5,7 @@ dependencies {
     api project(":Lib-Base")
     //spring kafka支持
     api group: 'org.springframework.kafka', name: 'spring-kafka'
-
+    api group: 'io.netty', name: 'netty-common'
     api("org.springframework.boot:spring-boot-starter")
 }
 
