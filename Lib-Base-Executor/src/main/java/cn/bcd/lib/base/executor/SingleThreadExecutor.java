@@ -43,6 +43,17 @@ public class SingleThreadExecutor {
     volatile boolean running;
 
 
+    /**
+     * @param threadName      线程名称
+     *                        最多存在3个线程、名称分别如下
+     *                        threadName 工作线程
+     *                        threadName-schedule 计划任务线程
+     *                        threadName-blockingChecker 阻塞检查线程
+     * @param queueSize       队列长度
+     *                        0则表示无边界
+     * @param schedule        是否开启计划任务功能
+     * @param blockingChecker 是否开启阻塞检查
+     */
     public SingleThreadExecutor(String threadName,
                                 int queueSize,
                                 boolean schedule,
