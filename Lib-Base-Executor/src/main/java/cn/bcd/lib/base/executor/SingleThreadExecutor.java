@@ -1,11 +1,13 @@
 package cn.bcd.lib.base.executor;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
+import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
+import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
-import io.netty.util.internal.PlatformDependent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,8 +117,9 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
 
     @Override
     protected Queue<Runnable> newTaskQueue(int maxPendingTasks) {
-        return maxPendingTasks == Integer.MAX_VALUE ? PlatformDependent.newMpscQueue()
-                : PlatformDependent.newMpscQueue(maxPendingTasks);
+        return maxPendingTasks == Integer.MAX_VALUE
+                ? new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE)
+                : new MpscArrayBlockingQueue<>(maxPendingTasks, WaitStrategy.PROGRESSIVE);
     }
 
     public io.netty.util.concurrent.Future<?> shutdownGracefully() {
