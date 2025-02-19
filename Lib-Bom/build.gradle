@@ -73,5 +73,7 @@ dependencies {
         api group: 'io.undertow', name: 'undertow-core', version: "${undertowVersion}"
         // https://mvnrepository.com/artifact/io.undertow/undertow-websockets-jsr
         api group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
+
+        api group: 'org.jctools', name: 'jctools-core',version:'4.0.5'
     }
 }

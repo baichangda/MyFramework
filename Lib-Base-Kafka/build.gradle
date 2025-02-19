@@ -3,9 +3,9 @@ apply plugin: "org.springframework.boot"
 
 dependencies {
     api project(":Lib-Base")
+    api project(":Lib-Base-Executor")
     //spring kafka支持
     api group: 'org.springframework.kafka', name: 'spring-kafka'
-    api group: 'io.netty', name: 'netty-common'
     api("org.springframework.boot:spring-boot-starter")
 }
 

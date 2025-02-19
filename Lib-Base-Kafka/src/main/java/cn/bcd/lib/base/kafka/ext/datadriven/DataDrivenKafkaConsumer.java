@@ -1,6 +1,7 @@
 package cn.bcd.lib.base.kafka.ext.datadriven;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.kafka.KafkaUtil;
 import cn.bcd.lib.base.kafka.ext.ConsumerRebalanceLogger;
 import cn.bcd.lib.base.util.DateUtil;
@@ -80,9 +81,13 @@ public abstract class DataDrivenKafkaConsumer {
      */
     public final int workExecutorNum;
     /**
+     * 工作任务执行是否需要开启计划任务功能
+     */
+    public final boolean workExecutorSchedule;
+    /**
      * 工作执行器阻塞检查任务执行周期
      */
-    public final WorkExecutor.BlockingChecker blockingChecker;
+    public final BlockingChecker blockingChecker;
     /**
      * 工作执行器数组
      */
@@ -177,33 +182,36 @@ public abstract class DataDrivenKafkaConsumer {
 
 
     /**
-     * @param name                当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum     工作任务执行器个数
-     * @param blockingChecker     工作任务执行器阻塞检查参数
-     *                            null代表不启动阻塞检查
-     *                            否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
-     *                            检查逻辑为
-     *                            向执行器中写入一个空任务、然后等待{@link WorkExecutor.BlockingChecker#expiredInSecond}后
-     *                            检查任务是否完成、如果未完成、则告警并每秒执行一次检查、直到完成
-     * @param maxBlockingNum      最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
-     *                            当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
-     * @param autoReleaseBlocking 是否自动释放阻塞、适用于工作内容为同步处理的逻辑
-     * @param maxConsumeSpeed     最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
-     *                            每消费一次的数据量大小取决于如下消费者参数
-     *                            {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
-     *                            {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
-     * @param workHandlerScanner  定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
-     *                            null则代表不启动扫描
-     * @param monitor_period      监控信息打印周期(秒)、0则代表不打印
-     * @param topic               消费的topic
-     * @param partitions          消费的topic的分区、不同的情况消费策略不一样
-     *                            如果partitions为空、则会启动单线程即一个消费者使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅
-     *                            如果partitions不为空、且partitions[0]<0、则会首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}完成分配
-     *                            其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
+     * @param name                 当前消费者的名称(用于标定线程名称)
+     * @param workExecutorNum      工作任务执行器个数
+     * @param workExecutorSchedule 工作任务执行是否需要开启计划任务功能
+     *                             如果开启、则每个执行器会启动一个计划任务线程池、接受计划任务
+     * @param blockingChecker      工作任务执行器阻塞检查参数
+     *                             null代表不启动阻塞检查
+     *                             否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
+     *                             检查逻辑为
+     *                             向执行器中写入一个空任务、然后等待{@link cn.bcd.lib.base.executor.BlockingChecker#expiredInSecond}后
+     *                             检查任务是否完成、如果未完成、则告警并每秒执行一次检查、直到完成
+     * @param maxBlockingNum       最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
+     *                             当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
+     * @param autoReleaseBlocking  是否自动释放阻塞、适用于工作内容为同步处理的逻辑
+     * @param maxConsumeSpeed      最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
+     *                             每消费一次的数据量大小取决于如下消费者参数
+     *                             {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
+     *                             {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
+     * @param workHandlerScanner   定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
+     *                             null则代表不启动扫描
+     * @param monitor_period       监控信息打印周期(秒)、0则代表不打印
+     * @param topic                消费的topic
+     * @param partitions           消费的topic的分区、不同的情况消费策略不一样
+     *                             如果partitions为空、则会启动单线程即一个消费者使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅
+     *                             如果partitions不为空、且partitions[0]<0、则会首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}完成分配
+     *                             其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
-                                   WorkExecutor.BlockingChecker blockingChecker,
+                                   boolean workExecutorSchedule,
+                                   BlockingChecker blockingChecker,
                                    int maxBlockingNum,
                                    boolean autoReleaseBlocking,
                                    int maxConsumeSpeed,
@@ -213,6 +221,7 @@ public abstract class DataDrivenKafkaConsumer {
                                    int... partitions) {
         this.name = name;
         this.workExecutorNum = workExecutorNum;
+        this.workExecutorSchedule = workExecutorSchedule;
         this.blockingChecker = blockingChecker;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
@@ -249,9 +258,7 @@ public abstract class DataDrivenKafkaConsumer {
 
         //初始化工作任务执行器
         this.workExecutors = new WorkExecutor[workExecutorNum];
-        for (int i = 0; i < workExecutorNum; i++) {
-            this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", blockingChecker);
-        }
+
 
     }
 
@@ -339,7 +346,7 @@ public abstract class DataDrivenKafkaConsumer {
      * @param ps
      * @param consumerProp
      */
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String,Object> consumerProp) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> consumerProp) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -383,7 +390,7 @@ public abstract class DataDrivenKafkaConsumer {
      *
      * @param consumerProp
      */
-    public void init(Map<String,Object> consumerProp) {
+    public void init(Map<String, Object> consumerProp) {
         if (!available) {
             synchronized (this) {
                 if (!available) {
@@ -408,8 +415,8 @@ public abstract class DataDrivenKafkaConsumer {
                             scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
                         }
                         //启动任务执行器
-                        for (WorkExecutor workExecutor : this.workExecutors) {
-                            workExecutor.init();
+                        for (int i = 0; i < workExecutorNum; i++) {
+                            this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule, blockingChecker);
                         }
                         //启动消费者
                         switch (consumeMode) {
@@ -607,7 +614,7 @@ public abstract class DataDrivenKafkaConsumer {
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         int workQueueTaskNum = 0;
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
