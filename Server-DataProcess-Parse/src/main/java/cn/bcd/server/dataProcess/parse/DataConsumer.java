@@ -26,7 +26,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     public DataConsumer(ParseProp parseProp) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
-                false,
                 null,
                 100000,
                 true,
@@ -49,7 +48,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / period, 2);
         int workQueueTaskNum = 0;
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.executor.getQueue().size() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / period, 2);
         int saveQueueTaskNum_gb32960 = SaveHandler_gb32960.queue.size();
         double saveSpeed_gb32960 = FloatUtil.format(SaveHandler_gb32960.saveCount.sumThenReset() / period, 2);
@@ -84,7 +83,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         init(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 }

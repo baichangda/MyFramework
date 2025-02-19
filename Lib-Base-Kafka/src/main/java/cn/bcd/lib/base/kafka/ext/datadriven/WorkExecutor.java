@@ -5,6 +5,7 @@ import cn.bcd.lib.base.executor.SingleThreadExecutor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * 工作执行器
@@ -17,7 +18,6 @@ public class WorkExecutor extends SingleThreadExecutor {
      */
     public final Map<String, WorkHandler> workHandlers = new HashMap<>();
 
-
     /**
      * 构造任务执行器
      *
@@ -28,7 +28,9 @@ public class WorkExecutor extends SingleThreadExecutor {
      *                        检查逻辑为
      *                        向执行器中提交一个空任务、等待{@link BlockingChecker#expiredInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
      */
-    public WorkExecutor(String threadName, boolean schedule, BlockingChecker blockingChecker) {
-        super(threadName, 0, schedule, blockingChecker);
+    public WorkExecutor(String threadName, BlockingChecker blockingChecker, Consumer<SingleThreadExecutor> doBeforeExit) {
+        super(threadName,
+                blockingChecker,
+                doBeforeExit);
     }
 }

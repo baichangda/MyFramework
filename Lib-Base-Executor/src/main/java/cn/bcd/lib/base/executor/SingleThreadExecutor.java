@@ -1,86 +1,57 @@
 package cn.bcd.lib.base.executor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
-import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
-import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
+import io.netty.util.concurrent.FastThreadLocalThread;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
+import io.netty.util.internal.PlatformDependent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-public class SingleThreadExecutor{
+public class SingleThreadExecutor extends SingleThreadEventExecutor {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String threadName;
-    public final int queueSize;
-    public final boolean schedule;
-    public final BlockingQueue<Runnable> blockingQueue;
     public final BlockingChecker blockingChecker;
+    public final Consumer<SingleThreadExecutor> doBeforeExit;
     //用于通知其他线程退出
-    public final CountDownLatch quitNotifier = new CountDownLatch(1);
+    public final CountDownLatch quitNotifier;
 
-    /**
-     * 任务执行器
-     */
-    public final ThreadPoolExecutor executor;
-    /**
-     * 计划任务执行器
-     */
-    public final ScheduledThreadPoolExecutor executor_schedule;
     /**
      * 阻塞检查器
      */
     public final ScheduledThreadPoolExecutor executor_blockingChecker;
 
     /**
-     * 当前执行器绑定的线程
+     * 构造任务执行器
+     *
+     * @param threadName      线程名称
+     * @param blockingChecker 阻塞检查周期任务的执行周期(秒)
+     *                        如果<=0则不启动阻塞检查
+     *                        开启后会启动周期任务
+     *                        检查逻辑为
+     *                        向执行器中提交一个空任务、等待{@link BlockingChecker#expiredInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
+     * @param doBeforeExit    退出前执行的任务
      */
-    public final Thread thread;
-
-    public SingleThreadExecutor(String threadName, int queueSize, boolean schedule, BlockingChecker blockingChecker) {
+    public SingleThreadExecutor(String threadName,
+                                BlockingChecker blockingChecker,
+                                Consumer<SingleThreadExecutor> doBeforeExit) {
+        super(null,
+                r -> {
+                    return new FastThreadLocalThread(r, threadName);
+                },
+                true);
         this.threadName = threadName;
-        this.queueSize = queueSize;
-        this.schedule = schedule;
         this.blockingChecker = blockingChecker;
-        if (queueSize == 0) {
-            this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE);
-        } else {
-            this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE);
-        }
-
-        executor = new ThreadPoolExecutor(
-                1,
-                1,
-                0,
-                TimeUnit.SECONDS,
-                new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE),
-                r -> new Thread(r, threadName),
-                (r, executor) -> {
-                    if (!executor.isShutdown()) {
-                        try {
-//                    logger.warn("workThread[{}] RejectedExecutionHandler",threadName);
-                            executor.getQueue().put(r);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
-                    }
-                });
-
-        //获取当前线程
-        try {
-            thread = executor.submit(Thread::currentThread).get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw BaseException.get(e);
-        }
-
-        if (schedule) {
-            executor_schedule = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-schedule"));
-        } else {
-            executor_schedule = null;
-        }
-
+        this.doBeforeExit = doBeforeExit;
+        this.quitNotifier = new CountDownLatch(1);
         if (blockingChecker != null) {
             //开启阻塞监控
             int expiredInSecond = blockingChecker.expiredInSecond;
@@ -91,20 +62,13 @@ public class SingleThreadExecutor{
                 Future<?> future = submit(() -> {
                 });
                 try {
-                    boolean quit = quitNotifier.await(expiredInSecond, TimeUnit.SECONDS);
-                    if (quit) {
-                        return;
-                    }
                     TimeUnit.SECONDS.sleep(expiredInSecond);
                     while (!future.isDone()) {
                         long blockingSecond = DateUtil.CacheSecond.current() - start;
                         if (blockingSecond >= expiredInSecond) {
-                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] queueSize[{}]", threadName, blockingSecond, expiredInSecond, executor.getQueue().size());
+                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] pendingTasks[{}]", threadName, blockingSecond, expiredInSecond, pendingTasks());
                         }
-                        quit = quitNotifier.await(periodInSecond, TimeUnit.SECONDS);
-                        if (quit) {
-                            return;
-                        }
+                        TimeUnit.SECONDS.sleep(3);
                     }
                 } catch (InterruptedException ex) {
                     throw BaseException.get(ex);
@@ -115,91 +79,44 @@ public class SingleThreadExecutor{
         }
     }
 
-    public void destroy() {
-        //通知退出
+    @Override
+    protected void run() {
+        for (; ; ) {
+            Runnable task = takeTask();
+            if (task != null) {
+                runTask(task);
+                updateLastExecutionTime();
+            }
+
+            if (confirmShutdown()) {
+                break;
+            }
+        }
+        if (doBeforeExit != null) {
+            try {
+                doBeforeExit.accept(this);
+            } catch (Exception ex) {
+                logger.error("error", ex);
+            }
+        }
+    }
+
+    @Override
+    protected Queue<Runnable> newTaskQueue(int maxPendingTasks) {
+        return maxPendingTasks == Integer.MAX_VALUE ? PlatformDependent.newMpscQueue()
+                : PlatformDependent.newMpscQueue(maxPendingTasks);
+    }
+
+    public io.netty.util.concurrent.Future<?> shutdownGracefully() {
+        return shutdownGracefully(2, Long.MAX_VALUE, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public io.netty.util.concurrent.Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
         quitNotifier.countDown();
-        ExecutorUtil.shutdownAllThenAwait(executor, executor_schedule, executor_blockingChecker);
-    }
-
-    public boolean inThread() {
-        return Thread.currentThread() == thread;
-    }
-
-    public final void execute(Runnable runnable) {
-        if (inThread()) {
-            runnable.run();
-        } else {
-            executor.execute(runnable);
+        if (executor_blockingChecker != null) {
+            ExecutorUtil.shutdownThenAwait(executor_blockingChecker);
         }
-    }
-
-    public final Future<?> submit(Runnable runnable) {
-        if (inThread()) {
-            FutureTask<?> futureTask = new FutureTask<>(runnable, null);
-            futureTask.run();
-            return futureTask;
-        } else {
-            return executor.submit(runnable);
-        }
-    }
-
-    public final <T> Future<T> submit(Runnable runnable, T task) {
-        if (inThread()) {
-            FutureTask<T> futureTask = new FutureTask<>(runnable, task);
-            futureTask.run();
-            return futureTask;
-        } else {
-            return executor.submit(runnable, task);
-        }
-    }
-
-    public final <T> Future<T> submit(Callable<T> task) {
-        if (inThread()) {
-            FutureTask<T> futureTask = new FutureTask<>(task);
-            futureTask.run();
-            return futureTask;
-        } else {
-            return executor.submit(task);
-        }
-    }
-
-    public final ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        if (!schedule) {
-            throw BaseException.get("not support scheduled");
-        }
-        return executor_schedule.schedule(() -> submit(command).get(), delay, unit);
-    }
-
-    public final <T> ScheduledFuture<T> schedule(Callable<T> callable, long delay, TimeUnit unit) {
-        if (!schedule) {
-            throw BaseException.get("not support scheduled");
-        }
-        return executor_schedule.schedule(() -> submit(callable).get(), delay, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        if (!schedule) {
-            throw BaseException.get("not support scheduled");
-        }
-        return executor_schedule.scheduleAtFixedRate(() -> {
-            try {
-                submit(command).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw BaseException.get(e);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        if (!schedule) {
-            throw BaseException.get("not support scheduled");
-        }
-        return executor_schedule.scheduleWithFixedDelay(() -> {
-            try {
-                submit(command).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw BaseException.get(e);
-            }
-        }, initialDelay, period, unit);
+        return super.shutdownGracefully(quietPeriod, timeout, unit);
     }
 }

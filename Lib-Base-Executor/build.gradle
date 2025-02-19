@@ -1,4 +1,4 @@
 dependencies {
     api project(":Lib-Base")
-    api group: 'org.jctools', name: 'jctools-core'
+    api group: 'io.netty', name: 'netty-common'
 }
