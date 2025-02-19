@@ -12,48 +12,46 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class SystemData implements Serializable {
-    @Serial
-    private final static long serialVersionUID = 1L;
+public class SystemData {
     //field
     //cpu物理核心
-    private int physicalProcessorNum;
+    public int physicalProcessorNum;
 
     //cpu逻辑核心
-    private int logicalProcessorNum;
+    public int logicalProcessorNum;
 
     //cpu使用百分比
-    private double cpuUsePercent;
+    public double cpuUsePercent;
 
     //内存使用百分比
-    private double memoryUsePercent;
+    public double memoryUsePercent;
 
     //最大内存(GB)
-    private double memoryMax;
+    public double memoryMax;
 
     //已使用内存(GB)
-    private double memoryUse;
+    public double memoryUse;
 
     //磁盘最大容量(GB)
-    private double diskMax;
+    public double diskMax;
 
     //磁盘使用容量(GB)
-    private double diskUse;
+    public double diskUse;
 
     //磁盘使用百分比
-    private double diskUsePercent;
+    public double diskUsePercent;
 
     //磁盘读取速度(KB/s)
-    private double diskReadSpeed;
+    public double diskReadSpeed;
 
     //磁盘写入速度(KB/s)
-    private double diskWriteSpeed;
+    public double diskWriteSpeed;
 
     //网络流入速度(KB/s)
-    private double netRecvSpeed;
+    public double netRecvSpeed;
 
     //网络流出速度(KB/s)
-    private double netSentSpeed;
+    public double netSentSpeed;
 
     //method
 

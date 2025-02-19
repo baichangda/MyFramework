@@ -11,8 +11,6 @@ dependencies {
     api platform("com.squareup.okhttp3:okhttp-bom:4.12.0")
 
     constraints {
-        api group: 'org.projectlombok', name: 'lombok', version: "1.18.36"
-
         // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
         api group: 'org.slf4j', name: 'slf4j-api', version: "2.0.16"
         // https://mvnrepository.com/artifact/com.google.guava/guava

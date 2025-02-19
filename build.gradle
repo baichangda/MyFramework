@@ -39,7 +39,9 @@ subprojects {
     }
 
     dependencies {
-        compileOnly group: 'org.projectlombok', name: 'lombok'
+        var lombokVersion='1.18.36'
+        compileOnly group: 'org.projectlombok', name: 'lombok',version: "${lombokVersion}"
+        annotationProcessor group: 'org.projectlombok', name: 'lombok',version: "${lombokVersion}"
     }
 
     //下载源码和文档
