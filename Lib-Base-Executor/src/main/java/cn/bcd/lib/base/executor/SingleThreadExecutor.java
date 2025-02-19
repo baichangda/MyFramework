@@ -96,7 +96,7 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
         for (; ; ) {
             Runnable task = takeTask();
             if (task != null) {
-                runTask(task);
+                safeExecute(task);
                 updateLastExecutionTime();
             }
 
