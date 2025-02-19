@@ -58,7 +58,7 @@ public class SingleThreadExecutor {
         if (!running) {
             try {
                 running = true;
-                quitNotifier = new CountDownLatch(1);
+
                 if (queueSize == 0) {
                     this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE);
                 } else {
@@ -83,19 +83,14 @@ public class SingleThreadExecutor {
                         });
 
                 //获取当前线程
-                try {
-                    thread = executor.submit(Thread::currentThread).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw BaseException.get(e);
-                }
+                thread = executor.submit(Thread::currentThread).get();
 
                 if (schedule) {
                     executor_schedule = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-schedule"));
-                } else {
-                    executor_schedule = null;
                 }
 
                 if (blockingChecker != null) {
+                    quitNotifier = new CountDownLatch(1);
                     //开启阻塞监控
                     int maxBlockingTimeInSecond = blockingChecker.maxBlockingTimeInSecond;
                     int periodInSecond = blockingChecker.periodInSecond;
@@ -124,8 +119,6 @@ public class SingleThreadExecutor {
                             throw BaseException.get(ex);
                         }
                     }, periodInSecond, periodInSecond, TimeUnit.SECONDS);
-                } else {
-                    this.executor_blockingChecker = null;
                 }
             } catch (Exception ex) {
                 destroy();
