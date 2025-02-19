@@ -29,6 +29,10 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
      */
     public final ScheduledThreadPoolExecutor executor_blockingChecker;
 
+    public SingleThreadExecutor(String threadName) {
+        this(threadName, null, null);
+    }
+
     /**
      * 构造任务执行器
      *
@@ -52,8 +56,11 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
         this.threadName = threadName;
         this.blockingChecker = blockingChecker;
         this.doBeforeExit = doBeforeExit;
-        this.quitNotifier = new CountDownLatch(1);
-        if (blockingChecker != null) {
+        if (blockingChecker == null) {
+            this.quitNotifier = null;
+            this.executor_blockingChecker = null;
+        } else {
+            this.quitNotifier = new CountDownLatch(1);
             //开启阻塞监控
             int maxBlockingTimeInSecond = blockingChecker.maxBlockingTimeInSecond;
             int periodInSecond = blockingChecker.periodInSecond;
@@ -81,8 +88,6 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
                     throw BaseException.get(ex);
                 }
             }, periodInSecond, periodInSecond, TimeUnit.SECONDS);
-        } else {
-            this.executor_blockingChecker = null;
         }
     }
 
@@ -120,8 +125,8 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
 
     @Override
     public io.netty.util.concurrent.Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
-        quitNotifier.countDown();
         if (executor_blockingChecker != null) {
+            quitNotifier.countDown();
             ExecutorUtil.shutdownThenAwait(executor_blockingChecker);
         }
         return super.shutdownGracefully(quietPeriod, timeout, unit);
