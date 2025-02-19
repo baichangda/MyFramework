@@ -1,7 +1,6 @@
 package cn.bcd.lib.base.executor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import cn.bcd.lib.base.util.DateUtil;
@@ -117,9 +116,7 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
 
     @Override
     protected Queue<Runnable> newTaskQueue(int maxPendingTasks) {
-        return maxPendingTasks == Integer.MAX_VALUE
-                ? new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE)
-                : new MpscArrayBlockingQueue<>(maxPendingTasks, WaitStrategy.PROGRESSIVE);
+        return new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE);
     }
 
     public io.netty.util.concurrent.Future<?> shutdownGracefully() {
