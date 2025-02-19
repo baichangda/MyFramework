@@ -37,7 +37,7 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
      *                        如果<=0则不启动阻塞检查
      *                        开启后会启动周期任务
      *                        检查逻辑为
-     *                        向执行器中提交一个空任务、等待{@link BlockingChecker#expiredInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
+     *                        向执行器中提交一个空任务、等待{@link BlockingChecker#maxBlockingTimeInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
      * @param doBeforeExit    退出前执行的任务
      */
     public SingleThreadExecutor(String threadName,
@@ -54,7 +54,7 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
         this.quitNotifier = new CountDownLatch(1);
         if (blockingChecker != null) {
             //开启阻塞监控
-            int expiredInSecond = blockingChecker.expiredInSecond;
+            int maxBlockingTimeInSecond = blockingChecker.maxBlockingTimeInSecond;
             int periodInSecond = blockingChecker.periodInSecond;
             this.executor_blockingChecker = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-blockingChecker"));
             this.executor_blockingChecker.scheduleWithFixedDelay(() -> {
@@ -62,13 +62,19 @@ public class SingleThreadExecutor extends SingleThreadEventExecutor {
                 Future<?> future = submit(() -> {
                 });
                 try {
-                    TimeUnit.SECONDS.sleep(expiredInSecond);
+                    boolean quit = quitNotifier.await(maxBlockingTimeInSecond, TimeUnit.SECONDS);
+                    if (quit) {
+                        return;
+                    }
                     while (!future.isDone()) {
                         long blockingSecond = DateUtil.CacheSecond.current() - start;
-                        if (blockingSecond >= expiredInSecond) {
-                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] pendingTasks[{}]", threadName, blockingSecond, expiredInSecond, pendingTasks());
+                        if (blockingSecond >= maxBlockingTimeInSecond) {
+                            logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] pendingTasks[{}]", threadName, blockingSecond, maxBlockingTimeInSecond, pendingTasks());
                         }
-                        TimeUnit.SECONDS.sleep(3);
+                        quit = quitNotifier.await(blockingChecker.periodWhenBlockingInSecond, TimeUnit.SECONDS);
+                        if (quit) {
+                            return;
+                        }
                     }
                 } catch (InterruptedException ex) {
                     throw BaseException.get(ex);

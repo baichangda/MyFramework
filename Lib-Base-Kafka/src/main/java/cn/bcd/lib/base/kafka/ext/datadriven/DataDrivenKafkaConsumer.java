@@ -184,8 +184,8 @@ public abstract class DataDrivenKafkaConsumer {
      *                            null代表不启动阻塞检查
      *                            否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
      *                            检查逻辑为
-     *                            向执行器中写入一个空任务、然后等待{@link BlockingChecker#expiredInSecond}后
-     *                            检查任务是否完成、如果未完成、则告警并每秒执行一次检查、直到完成
+     *                            向执行器中写入一个空任务、然后等待{@link BlockingChecker#maxBlockingTimeInSecond}后
+     *                            检查任务是否完成、如果未完成、则告警并每{@link BlockingChecker#periodWhenBlockingInSecond}秒执行一次检查、直到完成
      * @param maxBlockingNum      最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
      *                            当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
      * @param autoReleaseBlocking 是否自动释放阻塞、适用于工作内容为同步处理的逻辑

@@ -22,11 +22,8 @@ public class WorkExecutor extends SingleThreadExecutor {
      * 构造任务执行器
      *
      * @param threadName      线程名称
-     * @param blockingChecker 阻塞检查周期任务的执行周期(秒)
-     *                        如果<=0则不启动阻塞检查
-     *                        开启后会启动周期任务
-     *                        检查逻辑为
-     *                        向执行器中提交一个空任务、等待{@link BlockingChecker#expiredInSecond}秒后检查任务是否完成、如果没有完成则警告、且此后每一秒检查一次任务情况并警告
+     * @param blockingChecker 阻塞检查参数
+     * @param doBeforeExit    线程退出前执行的方法
      */
     public WorkExecutor(String threadName, BlockingChecker blockingChecker, Consumer<SingleThreadExecutor> doBeforeExit) {
         super(threadName,
