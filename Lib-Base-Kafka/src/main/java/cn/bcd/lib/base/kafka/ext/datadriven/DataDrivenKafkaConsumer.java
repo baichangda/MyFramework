@@ -80,6 +80,11 @@ public abstract class DataDrivenKafkaConsumer {
      * 工作执行器数量
      */
     public final int workExecutorNum;
+
+    /**
+     * 工作执行器是否开启计划任务
+     */
+    public final boolean workExecutorSchedule;
     /**
      * 工作执行器阻塞检查任务执行周期
      */
@@ -136,9 +141,9 @@ public abstract class DataDrivenKafkaConsumer {
     public final int consumeMode;
 
     /**
-     * 当前消费者是否可用
+     * 是否运行中
      */
-    public volatile boolean available;
+    volatile boolean running;
 
     /**
      * 控制退出线程标志
@@ -154,8 +159,6 @@ public abstract class DataDrivenKafkaConsumer {
     //处理数据数量(无论是否发生异常)
     public final LongAdder monitor_workCount;
     public ScheduledExecutorService monitor_pool;
-
-    private Thread shutdownHookThread;
 
     public static class WorkHandlerScanner {
         public final int periodInSecond;
@@ -178,32 +181,35 @@ public abstract class DataDrivenKafkaConsumer {
 
 
     /**
-     * @param name                当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum     工作任务执行器个数
-     * @param blockingChecker     工作任务执行器阻塞检查参数
-     *                            null代表不启动阻塞检查
-     *                            否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
-     *                            检查逻辑为
-     *                            向执行器中写入一个空任务、然后等待{@link BlockingChecker#maxBlockingTimeInSecond}后、检查任务是否完成
-     *                            如果未完成、则告警并每{@link BlockingChecker#periodWhenBlockingInSecond}秒执行一次检查、直到完成
-     * @param maxBlockingNum      最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
-     *                            当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
-     * @param autoReleaseBlocking 是否自动释放阻塞、适用于工作内容为同步处理的逻辑
-     * @param maxConsumeSpeed     最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
-     *                            每消费一次的数据量大小取决于如下消费者参数
-     *                            {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
-     *                            {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
-     * @param workHandlerScanner  定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
-     *                            null则代表不启动扫描
-     * @param monitor_period      监控信息打印周期(秒)、0则代表不打印
-     * @param topic               消费的topic
-     * @param partitions          消费的topic的分区、不同的情况消费策略不一样
-     *                            如果partitions为空、则会启动单线程即一个消费者使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅
-     *                            如果partitions不为空、且partitions[0]<0、则会首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}完成分配
-     *                            其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
+     * @param name                 当前消费者的名称(用于标定线程名称)
+     * @param workExecutorNum      工作任务执行器个数
+     * @param workExecutorSchedule 工作任务执是否开启计划任务
+     *                             开启后会启动一个计划线程池用于接收计划任务
+     * @param blockingChecker      工作任务执行器阻塞检查参数
+     *                             null代表不启动阻塞检查
+     *                             否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
+     *                             检查逻辑为
+     *                             向执行器中写入一个空任务、然后等待{@link BlockingChecker#maxBlockingTimeInSecond}后、检查任务是否完成
+     *                             如果未完成、则告警并每{@link BlockingChecker#periodWhenBlockingInSecond}秒执行一次检查、直到完成
+     * @param maxBlockingNum       最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
+     *                             当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
+     * @param autoReleaseBlocking  是否自动释放阻塞、适用于工作内容为同步处理的逻辑
+     * @param maxConsumeSpeed      最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
+     *                             每消费一次的数据量大小取决于如下消费者参数
+     *                             {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
+     *                             {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
+     * @param workHandlerScanner   定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
+     *                             null则代表不启动扫描
+     * @param monitor_period       监控信息打印周期(秒)、0则代表不打印
+     * @param topic                消费的topic
+     * @param partitions           消费的topic的分区、不同的情况消费策略不一样
+     *                             如果partitions为空、则会启动单线程即一个消费者使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅
+     *                             如果partitions不为空、且partitions[0]<0、则会首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}完成分配
+     *                             其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
+                                   boolean workExecutorSchedule,
                                    BlockingChecker blockingChecker,
                                    int maxBlockingNum,
                                    boolean autoReleaseBlocking,
@@ -214,6 +220,7 @@ public abstract class DataDrivenKafkaConsumer {
                                    int... partitions) {
         this.name = name;
         this.workExecutorNum = workExecutorNum;
+        this.workExecutorSchedule = workExecutorSchedule;
         this.blockingChecker = blockingChecker;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
@@ -378,70 +385,58 @@ public abstract class DataDrivenKafkaConsumer {
      *
      * @param consumerProp
      */
-    public void init(Map<String, Object> consumerProp) {
-        if (!available) {
-            synchronized (this) {
-                if (!available) {
-                    try {
-                        //标记可用
-                        available = true;
-                        //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
-                        if (maxConsumeSpeed > 0) {
-                            resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
-                            resetConsumeCountPool.scheduleAtFixedRate(() -> {
-                                consumeCount.set(0);
-                            }, 1, 1, TimeUnit.SECONDS);
-                        }
-                        //启动监控
-                        if (monitor_period != 0) {
-                            monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
-                            monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
-                        }
-                        //启动扫描过期数据
-                        if (workHandlerScanner != null) {
-                            scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-scanner"));
-                            scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
-                        }
-                        //启动任务执行器
-                        for (int i = 0; i < workExecutorNum; i++) {
-                            this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", blockingChecker, e -> {
-                                for (String id : ((WorkExecutor) e).workHandlers.keySet()) {
-                                    removeHandler(id, (WorkExecutor) e);
-                                }
-                            });
-                        }
-                        //启动消费者
-                        switch (consumeMode) {
-                            case 1: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
-                                //初始化消费线程、提交消费任务
-                                consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
-                                consumeThread.start();
-                                logger.info("start consumer for topic[{}]", topic);
-                                break;
-                            }
-                            case 2: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps, consumerProp);
-                                break;
-                            }
-                            default: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                startConsumePartitions(consumer, partitions, consumerProp);
-                                break;
-                            }
-                        }
-                        //增加销毁回调
-                        shutdownHookThread = new Thread(this::destroy, name + "-shutdown");
-                        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
-                    } catch (Exception ex) {
-                        //初始化异常、则销毁资源
-                        destroy();
-                        throw BaseException.get(ex);
+    public synchronized void init(Map<String, Object> consumerProp) {
+        if (!running) {
+            try {
+                //标记可用
+                running = true;
+                //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
+                if (maxConsumeSpeed > 0) {
+                    resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
+                    resetConsumeCountPool.scheduleAtFixedRate(() -> {
+                        consumeCount.set(0);
+                    }, 1, 1, TimeUnit.SECONDS);
+                }
+                //启动监控
+                if (monitor_period != 0) {
+                    monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
+                    monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
+                }
+                //启动扫描过期数据
+                if (workHandlerScanner != null) {
+                    scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-scanner"));
+                    scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
+                }
+                //启动任务执行器
+                for (int i = 0; i < workExecutorNum; i++) {
+                    this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule, blockingChecker);
+                }
+                //启动消费者
+                switch (consumeMode) {
+                    case 1: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
+                        //初始化消费线程、提交消费任务
+                        consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
+                        consumeThread.start();
+                        logger.info("start consumer for topic[{}]", topic);
+                        break;
+                    }
+                    case 2: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
+                        startConsumePartitions(consumer, ps, consumerProp);
+                        break;
+                    }
+                    default: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        startConsumePartitions(consumer, partitions, consumerProp);
+                        break;
                     }
                 }
+            } catch (Exception ex) {
+                destroy();
+                throw BaseException.get(ex);
             }
         }
     }
@@ -449,48 +444,35 @@ public abstract class DataDrivenKafkaConsumer {
     /**
      * 销毁资源
      */
-    public void destroy() {
-        if (available) {
-            synchronized (this) {
-                if (available) {
-                    //打上退出标记、等待消费线程退出
-                    running_consume = false;
-                    ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool);
-                    consumeThread = null;
-                    consumeThreads = null;
-                    resetConsumeCountPool = null;
-                    //等待工作执行器退出
-                    List<io.netty.util.concurrent.Future<?>> futureList = new ArrayList<>();
-                    for (WorkExecutor workExecutor : workExecutors) {
-                        futureList.add(workExecutor.shutdownGracefully());
-                    }
-                    try {
-                        for (io.netty.util.concurrent.Future<?> future : futureList) {
-                            future.await();
-                        }
-                    } catch (InterruptedException ex) {
-                        logger.error("error", ex);
-                    }
-
-                    //取消监控、扫描过期线程
-                    ExecutorUtil.shutdownAllThenAwait(monitor_pool, scannerPool);
-                    monitor_pool = null;
-                    scannerPool = null;
-
-                    //取消shutdownHook
-                    if (shutdownHookThread != null) {
-                        try {
-                            Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
-                        } catch (IllegalStateException ex) {
-                            logger.error("error", ex);
-                        }
-                    }
-                    shutdownHookThread = null;
-                    //标记不可用
-                    available = false;
-
+    public synchronized void destroy() {
+        if (running) {
+            running = false;
+            //打上退出标记、等待消费线程退出
+            running_consume = false;
+            ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool);
+            consumeThread = null;
+            consumeThreads = null;
+            resetConsumeCountPool = null;
+            //等待工作执行器退出
+            for (WorkExecutor workExecutor : workExecutors) {
+                //等待队列清空、保证接下来操作是销毁前最后的操作
+                ExecutorUtil.await(workExecutor.blockingQueue);
+                //注销所有的workHandler
+                for (String id : workExecutor.workHandlers.keySet()) {
+                    removeHandler(id);
+                }
+                //销毁
+                try {
+                    workExecutor.destroy();
+                } catch (Exception ex) {
+                    throw BaseException.get(ex);
                 }
             }
+            //取消监控、扫描过期线程
+            ExecutorUtil.shutdownAllThenAwait(monitor_pool, scannerPool);
+            monitor_pool = null;
+            scannerPool = null;
+
         }
     }
 
@@ -608,7 +590,7 @@ public abstract class DataDrivenKafkaConsumer {
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         int workQueueTaskNum = 0;
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
