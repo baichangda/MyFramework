@@ -368,7 +368,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                             continue;
                         }
                         //消费一批数据
-                        final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(3));
+                        final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
                         if (consumerRecords == null || consumerRecords.isEmpty()) {
                             continue;
                         }

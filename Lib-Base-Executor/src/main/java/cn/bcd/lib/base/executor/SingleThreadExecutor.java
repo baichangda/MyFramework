@@ -139,7 +139,7 @@ public class SingleThreadExecutor {
         }
     }
 
-    public synchronized Future<?> destroy() {
+    public synchronized CompletableFuture<?> destroy() {
         return destroy(null);
     }
 
@@ -150,6 +150,9 @@ public class SingleThreadExecutor {
             try (ExecutorService executorService = Executors.newSingleThreadExecutor(r -> new Thread(r, threadName + "-destroy"))) {
                 destroyFuture = CompletableFuture.runAsync(() -> {
                     try {
+                        //静默100ms处理并发提交任务没有监测到running变化情况
+                        TimeUnit.MILLISECONDS.sleep(100);
+                        //执行销毁前操作
                         if (doBeforeExit != null) {
                             executor.submit(doBeforeExit).get();
                         }
