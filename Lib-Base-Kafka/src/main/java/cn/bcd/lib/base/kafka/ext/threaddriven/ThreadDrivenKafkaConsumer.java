@@ -59,6 +59,27 @@ public abstract class ThreadDrivenKafkaConsumer {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
+    public final boolean oneWorkThreadOneQueue;
+    public final int workThreadNum;
+    public final int workThreadQueueSize;
+    public final int maxBlockingNum;
+    public final boolean autoReleaseBlocking;
+    public final int maxConsumeSpeed;
+    public final int monitor_period;
+    public final String topic;
+    public final int[] partitions;
+    /**
+     * 消费模式、由{@link #partitions}生成
+     * 1、启动一个线程消费topic所有的分区
+     * 2、获取topic所有的分区、每个分区启动一个线程消费指定分区
+     * 3、依据{@link #partitions}、启动对应个数的线程消费指定的分区
+     */
+    public final int consumeMode;
+
+    /**
+     * 当前阻塞数量
+     */
+    public final LongAdder blockingNum = new LongAdder();
 
     /**
      * 消费线程
@@ -70,62 +91,29 @@ public abstract class ThreadDrivenKafkaConsumer {
     /**
      * 工作线程队列
      */
-    public final BlockingQueue<ConsumerRecord<String, byte[]>>[] queues;
-    public final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-    /**
-     * 工作线程数量
-     */
-    public final int workThreadNum;
-    /**
-     * 工作线程池队列大小
-     */
-    public final int workThreadQueueSize;
+    public BlockingQueue<ConsumerRecord<String, byte[]>> queue;
+    public BlockingQueue<ConsumerRecord<String, byte[]>>[] queues;
+
+
     /**
      * 工作线程数组
      */
-    public final Thread[] workThreads;
+    public Thread[] workThreads;
 
-    public final boolean oneWorkThreadOneQueue;
-
-    /**
-     * 最大阻塞(0代表不阻塞)
-     */
-    public final int maxBlockingNum;
 
     /**
-     * 当前阻塞数量
+     * 重置消费计数
      */
-    public final LongAdder blockingNum = new LongAdder();
-
-    /**
-     * 是否自动释放阻塞、适用于工作内容为同步处理的逻辑
-     */
-    public final boolean autoReleaseBlocking;
-
-    /**
-     * 最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
-     */
-    public final int maxConsumeSpeed;
-    public final AtomicInteger consumeCount;
+    public AtomicInteger consumeCount;
     public ScheduledExecutorService resetConsumeCountPool;
 
     /**
-     * 消费topic
+     * 监控信息
      */
-    public final String topic;
+    public LongAdder monitor_consumeCount;
+    public LongAdder monitor_workCount;
+    public ScheduledExecutorService monitor_pool;
 
-    /**
-     * 消费topic的partition
-     */
-    public final int[] partitions;
-
-    /**
-     * 消费模式、由{@link #partitions}生成
-     * 1、启动一个线程消费topic所有的分区
-     * 2、获取topic所有的分区、每个分区启动一个线程消费指定分区
-     * 3、依据{@link #partitions}、启动对应个数的线程消费指定的分区
-     */
-    public final int consumeMode;
 
     /**
      * 当前消费者是否运行中
@@ -138,13 +126,6 @@ public abstract class ThreadDrivenKafkaConsumer {
     volatile boolean running_consume;
     volatile boolean running_work;
 
-    /**
-     * 监控信息
-     */
-    public final int monitor_period;
-    public final LongAdder monitor_consumeCount;
-    public final LongAdder monitor_workCount;
-    public ScheduledExecutorService monitor_pool;
 
     /**
      * @param name                  当前消费者的名称(用于标定线程名称、消费组id)
@@ -201,49 +182,6 @@ public abstract class ThreadDrivenKafkaConsumer {
             }
         }
 
-        if (monitor_period == 0) {
-            monitor_consumeCount = null;
-            monitor_workCount = null;
-        } else {
-            monitor_consumeCount = new LongAdder();
-            monitor_workCount = new LongAdder();
-        }
-
-        if (maxConsumeSpeed > 0) {
-            consumeCount = new AtomicInteger();
-        } else {
-            consumeCount = null;
-        }
-
-        //初始化工作线程
-        this.workThreads = new Thread[workThreadNum];
-        //是否一个工作线程一个队列
-        if (oneWorkThreadOneQueue) {
-            this.queue = null;
-            this.queues = new BlockingQueue[workThreadNum];
-            for (int i = 0; i < workThreadNum; i++) {
-                final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-                if (workThreadQueueSize <= 0) {
-                    queue = new LinkedBlockingQueue<>();
-                } else {
-                    queue = new ArrayBlockingQueue<>(workThreadQueueSize);
-                }
-                this.queues[i] = queue;
-                workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
-            }
-        } else {
-            this.queues = null;
-            final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-            if (workThreadQueueSize <= 0) {
-                queue = new LinkedBlockingQueue<>();
-            } else {
-                queue = new ArrayBlockingQueue<>(workThreadQueueSize);
-            }
-            this.queue = queue;
-            for (int i = 0; i < workThreadNum; i++) {
-                workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
-            }
-        }
 
     }
 
@@ -295,19 +233,52 @@ public abstract class ThreadDrivenKafkaConsumer {
                 running = true;
                 running_consume = true;
                 running_work = true;
+
                 //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
                 if (maxConsumeSpeed > 0) {
+                    consumeCount = new AtomicInteger();
                     resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
                     resetConsumeCountPool.scheduleAtFixedRate(() -> {
                         consumeCount.set(0);
                     }, 1, 1, TimeUnit.SECONDS);
                 }
-                //初始化工作线程池、提交工作任务
-                for (int i = 0; i < workThreadNum; i++) {
-                    workThreads[i].start();
+
+                //初始化工作队列、工作线程池
+                workThreads = new Thread[workThreadNum];
+                if (oneWorkThreadOneQueue) {
+                    this.queue = null;
+                    this.queues = new BlockingQueue[workThreadNum];
+                    for (int i = 0; i < workThreadNum; i++) {
+                        final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
+                        if (workThreadQueueSize <= 0) {
+                            queue = new LinkedBlockingQueue<>();
+                        } else {
+                            queue = new ArrayBlockingQueue<>(workThreadQueueSize);
+                        }
+                        this.queues[i] = queue;
+
+                        workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                        workThreads[i].start();
+                    }
+                } else {
+                    this.queues = null;
+                    final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
+                    if (workThreadQueueSize <= 0) {
+                        queue = new LinkedBlockingQueue<>();
+                    } else {
+                        queue = new ArrayBlockingQueue<>(workThreadQueueSize);
+                    }
+                    this.queue = queue;
+                    for (int i = 0; i < workThreadNum; i++) {
+                        workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                        workThreads[i].start();
+                    }
                 }
+
                 //启动监控
                 if (monitor_period != 0) {
+                    monitor_consumeCount = new LongAdder();
+                    monitor_workCount = new LongAdder();
                     monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
                     monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
                 }
@@ -353,7 +324,18 @@ public abstract class ThreadDrivenKafkaConsumer {
             ExecutorUtil.shutdownThenAwait(workThreads, monitor_pool);
             //标记不可用
             running = false;
-
+            //清空变量
+            blockingNum.reset();
+            consumeThread = null;
+            consumeThreads = null;
+            queue = null;
+            queues = null;
+            workThreads = null;
+            consumeCount = null;
+            resetConsumeCountPool = null;
+            monitor_consumeCount = null;
+            monitor_workCount = null;
+            monitor_pool = null;
         }
     }
 

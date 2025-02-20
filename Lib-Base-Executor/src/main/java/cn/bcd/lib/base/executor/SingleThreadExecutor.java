@@ -42,7 +42,7 @@ public class SingleThreadExecutor {
 
     volatile boolean running;
 
-    volatile Future<?> destoryFuture;
+    volatile CompletableFuture<?> destroyFuture;
 
     /**
      * @param threadName      线程名称
@@ -70,13 +70,7 @@ public class SingleThreadExecutor {
         if (!running) {
             running = true;
             try {
-                //如果正在销毁中、则等待结束
-                if (destoryFuture != null) {
-                    logger.info("executor[{}] wait destroy finish when init", threadName);
-                    destoryFuture.get();
-                    destoryFuture = null;
-                }
-
+                destroyFuture = null;
                 if (queueSize == 0) {
                     this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE);
                 } else {
@@ -149,12 +143,12 @@ public class SingleThreadExecutor {
         return destroy(null);
     }
 
-    public synchronized Future<?> destroy(Runnable doBeforeExit) {
+    public synchronized CompletableFuture<?> destroy(Runnable doBeforeExit) {
         if (running) {
             running = false;
             //开启新的线程执行销毁
-            try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
-                destoryFuture = executorService.submit(() -> {
+            try (ExecutorService executorService = Executors.newSingleThreadExecutor(r -> new Thread(r, threadName + "-destroy"))) {
+                destroyFuture = CompletableFuture.runAsync(() -> {
                     try {
                         if (doBeforeExit != null) {
                             executor.submit(doBeforeExit).get();
@@ -174,11 +168,11 @@ public class SingleThreadExecutor {
                     } catch (Exception ex) {
                         logger.error("error", ex);
                     }
-                });
-                return destoryFuture;
+                }, executorService);
+                return destroyFuture;
             }
         } else {
-            return destoryFuture;
+            return destroyFuture;
         }
     }
 
