@@ -85,6 +85,8 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.alibaba.cloud/spring-cloud-starter-alibaba-sentinel
     implementation group: 'com.alibaba.cloud', name: 'spring-cloud-starter-alibaba-sentinel'
+
+    implementation group: 'org.zeromq', name: 'jeromq'
 }
 
 bootJar {

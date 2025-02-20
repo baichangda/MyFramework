@@ -73,5 +73,9 @@ dependencies {
         api group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
 
         api group: 'org.jctools', name: 'jctools-core',version:'4.0.5'
+
+        // https://mvnrepository.com/artifact/org.zeromq/jeromq
+        api group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
+
     }
 }
