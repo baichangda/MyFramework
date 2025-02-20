@@ -128,15 +128,15 @@ public abstract class ThreadDrivenKafkaConsumer {
     public final int consumeMode;
 
     /**
-     * 当前消费者是否可用
+     * 当前消费者是否运行中
      */
-    public volatile boolean available;
+    volatile boolean running;
 
     /**
      * 控制退出线程标志
      */
-    public volatile boolean running_consume = true;
-    public volatile boolean running_work = true;
+    volatile boolean running_consume;
+    volatile boolean running_work;
 
     /**
      * 监控信息
@@ -145,7 +145,6 @@ public abstract class ThreadDrivenKafkaConsumer {
     public final LongAdder monitor_consumeCount;
     public final LongAdder monitor_workCount;
     public ScheduledExecutorService monitor_pool;
-    private Thread shutdownHookThread;
 
     /**
      * @param name                  当前消费者的名称(用于标定线程名称、消费组id)
@@ -248,7 +247,7 @@ public abstract class ThreadDrivenKafkaConsumer {
 
     }
 
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String,Object> consumerProp) {
+    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> consumerProp) {
         if (ps.length == 0) {
             consumer.close();
         } else {
@@ -286,91 +285,75 @@ public abstract class ThreadDrivenKafkaConsumer {
 
     /**
      * 初始化
+     *
      * @param consumerProp
      */
-    public void init(Map<String,Object> consumerProp) {
-        if (!available) {
-            synchronized (this) {
-                if (!available) {
-                    try {
-                        //标记可用
-                        available = true;
-                        //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
-                        if (maxConsumeSpeed > 0) {
-                            resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
-                            resetConsumeCountPool.scheduleAtFixedRate(() -> {
-                                consumeCount.set(0);
-                            }, 1, 1, TimeUnit.SECONDS);
-                        }
-                        //初始化工作线程池、提交工作任务
-                        for (int i = 0; i < workThreadNum; i++) {
-                            workThreads[i].start();
-                        }
-                        //启动监控
-                        if (monitor_period != 0) {
-                            monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
-                            monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
-                        }
-                        //启动消费者
-                        switch (consumeMode) {
-                            case 1: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
-                                //初始化消费线程、提交消费任务
-                                consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
-                                consumeThread.start();
-                                logger.info("start consumer for topic[{}]", topic);
-                                break;
-                            }
-                            case 2: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                                startConsumePartitions(consumer, ps, consumerProp);
-                                break;
-                            }
-                            default: {
-                                final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                                startConsumePartitions(consumer, partitions, consumerProp);
-                                break;
-                            }
-                        }
-                        //增加销毁回调
-                        shutdownHookThread = new Thread(this::destroy, name + "-shutdown");
-                        Runtime.getRuntime().addShutdownHook(shutdownHookThread);
-                    } catch (Exception ex) {
-                        //初始化异常、则销毁资源
-                        destroy();
-                        throw BaseException.get(ex);
+    public synchronized void init(Map<String, Object> consumerProp) {
+        if (!running) {
+            try {
+                //标记可用
+                running = true;
+                running_consume = true;
+                running_work = true;
+                //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
+                if (maxConsumeSpeed > 0) {
+                    resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
+                    resetConsumeCountPool.scheduleAtFixedRate(() -> {
+                        consumeCount.set(0);
+                    }, 1, 1, TimeUnit.SECONDS);
+                }
+                //初始化工作线程池、提交工作任务
+                for (int i = 0; i < workThreadNum; i++) {
+                    workThreads[i].start();
+                }
+                //启动监控
+                if (monitor_period != 0) {
+                    monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
+                    monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
+                }
+                //启动消费者
+                switch (consumeMode) {
+                    case 1: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
+                        //初始化消费线程、提交消费任务
+                        consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
+                        consumeThread.start();
+                        logger.info("start consumer for topic[{}]", topic);
+                        break;
+                    }
+                    case 2: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
+                        startConsumePartitions(consumer, ps, consumerProp);
+                        break;
+                    }
+                    default: {
+                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                        startConsumePartitions(consumer, partitions, consumerProp);
+                        break;
                     }
                 }
+            } catch (Exception ex) {
+                //初始化异常、则销毁资源
+                destroy();
+                throw BaseException.get(ex);
             }
         }
     }
 
 
-    public void destroy() {
-        if (available) {
-            synchronized (this) {
-                if (available) {
-                    //打上退出标记、等待消费线程退出
-                    running_consume = false;
-                    ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool, queue, queues);
-                    //打上退出标记、等待工作线程退出
-                    running_work = false;
-                    ExecutorUtil.shutdownThenAwait(workThreads, monitor_pool);
-                    //取消shutdownHook
-                    if (shutdownHookThread != null) {
-                        try {
-                            Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
-                        } catch (IllegalStateException ex) {
-                            throw BaseException.get(ex);
-                        }
-                    }
-                    //标记不可用
-                    available = false;
+    public synchronized void destroy() {
+        if (running) {
+            //打上退出标记、等待消费线程退出
+            running_consume = false;
+            ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool, queue, queues);
+            //打上退出标记、等待工作线程退出
+            running_work = false;
+            ExecutorUtil.shutdownThenAwait(workThreads, monitor_pool);
+            //标记不可用
+            running = false;
 
-                }
-            }
         }
     }
 
@@ -382,7 +365,11 @@ public abstract class ThreadDrivenKafkaConsumer {
      * @return [0-{@link #workThreadNum})中某个值
      */
     protected int index(ConsumerRecord<String, byte[]> consumerRecord) {
-        return Math.floorMod(consumerRecord.key().hashCode(), workThreadNum);
+        if (workThreadNum == 1) {
+            return 0;
+        } else {
+            return Math.floorMod(consumerRecord.key().hashCode(), workThreadNum);
+        }
     }
 
     /**
