@@ -42,6 +42,7 @@ public class SingleThreadExecutor {
 
     volatile boolean running;
 
+    volatile Future<?> destoryFuture;
 
     /**
      * @param threadName      线程名称
@@ -67,8 +68,14 @@ public class SingleThreadExecutor {
 
     public synchronized void init() {
         if (!running) {
+            running = true;
             try {
-                running = true;
+                //如果正在销毁中、则等待结束
+                if (destoryFuture != null) {
+                    logger.info("executor[{}] wait destroy finish when init", threadName);
+                    destoryFuture.get();
+                    destoryFuture = null;
+                }
 
                 if (queueSize == 0) {
                     this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE);
@@ -138,25 +145,40 @@ public class SingleThreadExecutor {
         }
     }
 
-    public synchronized void destroy() {
+    public synchronized Future<?> destroy() {
+        destroy(null);
+    }
+
+    public synchronized Future<?> destroy(Runnable doBeforeExit) {
         if (running) {
-            try {
-                running = false;
-                //通知退出
-                if (quitNotifier != null) {
-                    quitNotifier.countDown();
-                }
-                ExecutorUtil.shutdownAllThenAwait(executor, executor_schedule, executor_blockingChecker);
-                //清空变量
-                blockingQueue = null;
-                quitNotifier = null;
-                executor = null;
-                executor_schedule = null;
-                executor_blockingChecker = null;
-                thread = null;
-            } catch (Exception ex) {
-                throw BaseException.get(ex);
+            running = false;
+            //开启新的线程执行销毁
+            try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
+                destoryFuture = executorService.submit(() -> {
+                    try {
+                        if (doBeforeExit != null) {
+                            executor.submit(doBeforeExit).get();
+                        }
+                        //通知退出
+                        if (quitNotifier != null) {
+                            quitNotifier.countDown();
+                        }
+                        ExecutorUtil.shutdownAllThenAwait(executor, executor_schedule, executor_blockingChecker);
+                        //清空变量
+                        blockingQueue = null;
+                        quitNotifier = null;
+                        executor = null;
+                        executor_schedule = null;
+                        executor_blockingChecker = null;
+                        thread = null;
+                    } catch (Exception ex) {
+                        logger.error("error", ex);
+                    }
+                });
+                return destoryFuture;
             }
+        } else {
+            return destoryFuture;
         }
     }
 

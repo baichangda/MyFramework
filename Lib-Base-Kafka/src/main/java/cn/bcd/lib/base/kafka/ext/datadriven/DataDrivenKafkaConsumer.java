@@ -454,19 +454,24 @@ public abstract class DataDrivenKafkaConsumer {
             consumeThreads = null;
             resetConsumeCountPool = null;
             //等待工作执行器退出
+            List<Future<?>> futureList = new ArrayList<>();
             for (WorkExecutor workExecutor : workExecutors) {
-                //等待队列清空、保证接下来操作是销毁前最后的操作
-                ExecutorUtil.await(workExecutor.blockingQueue);
-                //注销所有的workHandler
-                for (String id : workExecutor.workHandlers.keySet()) {
-                    removeHandler(id);
-                }
-                //销毁
                 try {
-                    workExecutor.destroy();
+                    futureList.add(workExecutor.destroy(() -> {
+                        for (String id : workExecutor.workHandlers.keySet()) {
+                            removeHandler(id);
+                        }
+                    }));
                 } catch (Exception ex) {
                     throw BaseException.get(ex);
                 }
+            }
+            try {
+                for (Future<?> future : futureList) {
+                    future.get();
+                }
+            } catch (Exception ex) {
+                logger.error("error", ex);
             }
             //取消监控、扫描过期线程
             ExecutorUtil.shutdownAllThenAwait(monitor_pool, scannerPool);
