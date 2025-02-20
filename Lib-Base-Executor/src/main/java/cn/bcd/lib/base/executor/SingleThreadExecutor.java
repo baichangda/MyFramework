@@ -181,7 +181,7 @@ public class SingleThreadExecutor {
     }
 
     private void checkRunning() {
-        if (running) {
+        if (!running) {
             throw BaseException.get("executor[{}] not running", threadName);
         }
     }
