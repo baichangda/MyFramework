@@ -390,6 +390,7 @@ public abstract class DataDrivenKafkaConsumer {
             try {
                 //标记可用
                 running = true;
+                running_consume=true;
                 //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
                 if (maxConsumeSpeed > 0) {
                     resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
@@ -497,7 +498,7 @@ public abstract class DataDrivenKafkaConsumer {
                         }
                     }
                     //消费一批数据
-                    final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(3));
+                    final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
                     if (consumerRecords == null || consumerRecords.isEmpty()) {
                         continue;
                     }
