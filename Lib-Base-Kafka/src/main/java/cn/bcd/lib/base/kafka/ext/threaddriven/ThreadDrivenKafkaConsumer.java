@@ -508,7 +508,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                 name,
                 blockingNum.sum(), maxBlockingNum,
                 monitor_consumeCount.sumThenReset(), monitor_period,
-                oneWorkThreadOneQueue ? Arrays.stream(queues).map(this::getQueueLog).collect(Collectors.joining(",")) : getQueueLog(queue),
+                oneWorkThreadOneQueue ? Arrays.stream(queues).map(this::getQueueLog).collect(Collectors.joining(" ")) : getQueueLog(queue),
                 monitor_workCount.sumThenReset(), monitor_period);
     }
 }
