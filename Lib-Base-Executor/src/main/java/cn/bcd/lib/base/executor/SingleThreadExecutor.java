@@ -146,7 +146,7 @@ public class SingleThreadExecutor {
     }
 
     public synchronized Future<?> destroy() {
-        destroy(null);
+        return destroy(null);
     }
 
     public synchronized Future<?> destroy(Runnable doBeforeExit) {
