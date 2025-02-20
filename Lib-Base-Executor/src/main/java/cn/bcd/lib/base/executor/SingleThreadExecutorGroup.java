@@ -40,6 +40,7 @@ public class SingleThreadExecutorGroup {
                         executorQueueSize,
                         executorSchedule,
                         executorBlockingChecker);
+                executors[i].init();
             }
         }
     }
