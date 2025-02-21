@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 
-public abstract class SingleThreadExecutorGroup<E extends SingleThreadExecutor> {
+public abstract class SingleThreadExecutorGroup{
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;
@@ -67,12 +67,18 @@ public abstract class SingleThreadExecutorGroup<E extends SingleThreadExecutor> 
         }
     }
 
-    protected abstract E newExecutor(int index);
+    protected SingleThreadExecutor newExecutor(int index) {
+        return new SingleThreadExecutor(
+                groupName + "-executor(" + (index + 1) + "/" + executorNum + ")",
+                executorQueueSize,
+                executorSchedule,
+                executorBlockingChecker);
+    }
 
 
     @SuppressWarnings("unchecked")
-    public E getExecutor(String id) {
+    public SingleThreadExecutor getExecutor(String id) {
         checkRunning();
-        return (E)executors[Math.floorMod(id.hashCode(), executorNum)];
+        return executors[Math.floorMod(id.hashCode(), executorNum)];
     }
 }
