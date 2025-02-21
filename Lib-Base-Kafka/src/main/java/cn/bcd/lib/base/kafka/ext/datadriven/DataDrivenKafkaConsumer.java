@@ -269,6 +269,9 @@ public abstract class DataDrivenKafkaConsumer {
                 } catch (Exception ex) {
                     logger.error("workHandler destroy error id[{}]", workHandler.id, ex);
                 }
+                if (monitor_period > 0) {
+                    monitor_workHandlerCount.decrement();
+                }
             }
         });
     }
@@ -528,9 +531,9 @@ public abstract class DataDrivenKafkaConsumer {
                                 if (autoReleaseBlocking) {
                                     blockingNum.decrement();
                                 }
-                                if (monitor_period > 0) {
-                                    monitor_workCount.increment();
-                                }
+                            }
+                            if (monitor_period > 0) {
+                                monitor_workCount.increment();
                             }
                         });
                     }

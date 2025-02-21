@@ -76,7 +76,7 @@ public abstract class ConsumeExecutorGroup<T> {
                     }
                 }
                 for (String id : ids) {
-                    executor.removeEntityInThread(id);
+                    removeEntity(id,executor);
                 }
             });
         }
@@ -101,6 +101,9 @@ public abstract class ConsumeExecutorGroup<T> {
             }
 
             if (monitor_period > 0) {
+                monitor_blockingNum = new LongAdder();
+                monitor_entityNum = new LongAdder();
+                monitor_messageNum = new LongAdder();
                 monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
                 monitor_pool.scheduleAtFixedRate(() -> {
                     logger.info(monitor_log());
@@ -117,7 +120,7 @@ public abstract class ConsumeExecutorGroup<T> {
                 try {
                     futureList.add(executor.destroy(() -> {
                         for (String id : executor.entityMap.keySet()) {
-                            executor.removeEntityInThread(id);
+                            removeEntity(id,executor);
                         }
                     }));
                 } catch (Exception ex) {
@@ -142,11 +145,25 @@ public abstract class ConsumeExecutorGroup<T> {
 
     }
 
+    public Future<?> removeEntity(String id, ConsumeExecutor<T> executor) {
+        return executor.submit(() -> {
+            ConsumeEntity<T> remove = executor.entityMap.remove(id);
+            if (remove != null) {
+                try {
+                    remove.destroy();
+                } catch (Exception ex) {
+                    logger.error("entity destroy error id[{}]", id, ex);
+                }
+                if (monitor_period > 0) {
+                    monitor_entityNum.decrement();
+                }
+            }
+        });
+    }
+
     public Future<?> removeEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
-        return executor.submit(() -> {
-            executor.removeEntityInThread(id);
-        });
+        return removeEntity(id, executor);
     }
 
     protected ConsumeExecutor<T> getExecutor(String id) {
@@ -158,6 +175,9 @@ public abstract class ConsumeExecutorGroup<T> {
     public abstract ConsumeEntity<T> newEntity(String id);
 
     public void onMessage(T t) {
+        if (monitor_period > 0) {
+            monitor_blockingNum.increment();
+        }
         String id = id(t);
         ConsumeExecutor<T> executor = getExecutor(id);
         executor.execute(() -> {
@@ -166,9 +186,15 @@ public abstract class ConsumeExecutorGroup<T> {
                     ConsumeEntity<T> e = newEntity(id);
                     e.executor = executor;
                     e.init();
+                    if (monitor_period > 0) {
+                        monitor_entityNum.increment();
+                    }
                     return e;
                 } catch (Exception ex) {
                     logger.error("consumeEntity init error groupName[{}] id[{}]", groupName, id, ex);
+                    if (monitor_period > 0) {
+                        monitor_blockingNum.decrement();
+                    }
                     return null;
                 }
             });
@@ -178,6 +204,12 @@ public abstract class ConsumeExecutorGroup<T> {
                 } catch (Exception ex) {
                     logger.error("consumeEntity onMessage error groupName[{}] id[{}]", groupName, id, ex);
                 }
+                if (monitor_period > 0) {
+                    monitor_blockingNum.decrement();
+                }
+            }
+            if (monitor_period > 0) {
+                monitor_messageNum.increment();
             }
         });
     }
