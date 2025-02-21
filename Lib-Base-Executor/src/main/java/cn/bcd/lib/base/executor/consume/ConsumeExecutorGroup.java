@@ -3,21 +3,28 @@ package cn.bcd.lib.base.executor.consume;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.util.DateUtil;
+import cn.bcd.lib.base.util.ExecutorUtil;
+import cn.bcd.lib.base.util.FloatUtil;
+import cn.bcd.lib.base.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.stream.Collectors;
 
 public abstract class ConsumeExecutorGroup<T> {
-    Logger logger = LoggerFactory.getLogger(this.getClass());
+    public final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;
     public final int executorQueueSize;
     public final boolean executorSchedule;
     public final BlockingChecker executorBlockingChecker;
     public final EntityScanner entityScanner;
+    public final int monitor_period;
 
     public ConsumeExecutor<T>[] executors;
 
@@ -28,19 +35,28 @@ public abstract class ConsumeExecutorGroup<T> {
 
     ScheduledExecutorService scannerPool;
 
+    /**
+     * 监控信息
+     */
+    ScheduledExecutorService monitor_pool;
+    LongAdder monitor_blockingNum;
+    LongAdder monitor_entityNum;
+    LongAdder monitor_messageNum;
 
     public ConsumeExecutorGroup(String groupName,
                                 int executorNum,
                                 int executorQueueSize,
                                 boolean executorSchedule,
                                 BlockingChecker executorBlockingChecker,
-                                EntityScanner entityScanner) {
+                                EntityScanner entityScanner,
+                                int monitor_period) {
         this.groupName = groupName;
         this.executorNum = executorNum;
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
         this.executorBlockingChecker = executorBlockingChecker;
         this.entityScanner = entityScanner;
+        this.monitor_period = monitor_period;
     }
 
 
@@ -71,7 +87,7 @@ public abstract class ConsumeExecutorGroup<T> {
             running = true;
             executors = new ConsumeExecutor[executorNum];
             for (int i = 0; i < executorNum; i++) {
-                executors[i] = new ConsumeExecutor<>(groupName + "-executor-" + i,
+                executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + executorNum + ")",
                         executorQueueSize,
                         executorSchedule,
                         executorBlockingChecker);
@@ -82,6 +98,13 @@ public abstract class ConsumeExecutorGroup<T> {
             if (entityScanner != null) {
                 scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-entityScanner"));
                 scannerPool.scheduleAtFixedRate(() -> scanAndDestroyEntity(entityScanner.expiredInSecond), entityScanner.periodInSecond, entityScanner.periodInSecond, TimeUnit.SECONDS);
+            }
+
+            if (monitor_period > 0) {
+                monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
+                monitor_pool.scheduleAtFixedRate(() -> {
+                    logger.info(monitor_log());
+                }, monitor_period, monitor_period, TimeUnit.SECONDS);
             }
         }
     }
@@ -108,9 +131,15 @@ public abstract class ConsumeExecutorGroup<T> {
             } catch (Exception ex) {
                 logger.error("error", ex);
             }
+            ExecutorUtil.shutdownThenAwait(scannerPool, monitor_pool);
+            executors = null;
+            scannerPool = null;
+            monitor_pool = null;
+            monitor_blockingNum = null;
+            monitor_entityNum = null;
+            monitor_messageNum = null;
         }
 
-        executors = null;
     }
 
     public Future<?> removeEntity(String id) {
@@ -151,6 +180,15 @@ public abstract class ConsumeExecutorGroup<T> {
                 }
             }
         });
+    }
+
+    public String monitor_log() {
+        String queueLog = Arrays.stream(executors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
+        return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] messageSpeed[{}/s] queues[{}]",
+                monitor_blockingNum.sum(),
+                monitor_entityNum.sum(),
+                FloatUtil.format(monitor_messageNum.sumThenReset() / ((double) monitor_period), 2),
+                queueLog);
     }
 
 

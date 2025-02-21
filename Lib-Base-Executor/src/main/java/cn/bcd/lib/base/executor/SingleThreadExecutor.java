@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.*;
 
 public class SingleThreadExecutor {
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    public final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String threadName;
     public final int queueSize;
     public final boolean schedule;
