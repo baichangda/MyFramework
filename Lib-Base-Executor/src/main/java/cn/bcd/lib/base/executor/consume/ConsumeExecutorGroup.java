@@ -217,6 +217,7 @@ public abstract class ConsumeExecutorGroup<T> {
     public String monitor_log() {
         String queueLog = Arrays.stream(executors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] messageSpeed[{}/s] queues[{}]",
+                groupName,
                 monitor_blockingNum.sum(),
                 monitor_entityNum.sum(),
                 FloatUtil.format(monitor_messageNum.sumThenReset() / ((double) monitor_period), 2),
