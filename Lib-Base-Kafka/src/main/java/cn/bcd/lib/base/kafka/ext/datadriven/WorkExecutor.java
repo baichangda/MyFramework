@@ -5,7 +5,6 @@ import cn.bcd.lib.base.executor.SingleThreadExecutor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * 工作执行器
