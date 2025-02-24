@@ -1,23 +1,19 @@
 package cn.bcd.lib.base.kafka.ext.threaddriven;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.kafka.KafkaUtil;
-import cn.bcd.lib.base.kafka.ext.ConsumerRebalanceLogger;
+import cn.bcd.lib.base.kafka.ext.KafkaExtUtil;
+import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.StringUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,14 +63,7 @@ public abstract class ThreadDrivenKafkaConsumer {
     public final int maxConsumeSpeed;
     public final int monitor_period;
     public final String topic;
-    public final int[] partitions;
-    /**
-     * 消费模式、由{@link #partitions}生成
-     * 1、启动一个线程消费topic所有的分区
-     * 2、获取topic所有的分区、每个分区启动一个线程消费指定分区
-     * 3、依据{@link #partitions}、启动对应个数的线程消费指定的分区
-     */
-    public final int consumeMode;
+    public final PartitionMode partitionMode;
 
     /**
      * 当前阻塞数量
@@ -147,10 +136,8 @@ public abstract class ThreadDrivenKafkaConsumer {
      *                              {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
      * @param monitor_period        监控信息打印周期(秒)、0则代表不打印
      * @param topic                 消费的topic
-     * @param partitions            消费的topic的分区、不同的情况消费策略不一样
-     *                              如果partitions为空、则会启动单线程即一个消费者使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅
-     *                              如果partitions不为空、且partitions[0]<0、则会首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}完成分配
-     *                              其他情况、则根据指定分区个数启动对应个数的线程、每个线程负责消费一个分区
+     * @param partitionMode         null则代表PartitionMode.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
+     *                              其他情况参考{@link PartitionMode#mode}
      */
     public ThreadDrivenKafkaConsumer(String name,
                                      boolean oneWorkThreadOneQueue,
@@ -161,7 +148,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                                      int maxConsumeSpeed,
                                      int monitor_period,
                                      String topic,
-                                     int... partitions) {
+                                     PartitionMode partitionMode) {
         this.name = name;
         this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;
         this.workThreadNum = workThreadNum;
@@ -171,54 +158,11 @@ public abstract class ThreadDrivenKafkaConsumer {
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.monitor_period = monitor_period;
         this.topic = topic;
-        this.partitions = partitions;
-        if (partitions.length == 0) {
-            consumeMode = 1;
+        if (partitionMode == null) {
+            this.partitionMode = PartitionMode.get(0);
         } else {
-            if (partitions[0] < 0) {
-                consumeMode = 2;
-            } else {
-                consumeMode = 3;
-            }
+            this.partitionMode = partitionMode;
         }
-
-
-    }
-
-    private void startConsumePartitions(KafkaConsumer<String, byte[]> consumer, int[] ps, Map<String, Object> consumerProp) {
-        if (ps.length == 0) {
-            consumer.close();
-        } else {
-            int partitionSize = ps.length;
-            KafkaConsumer<String, byte[]>[] consumers = new KafkaConsumer[partitionSize];
-            try {
-                int firstPartition = ps[0];
-                consumer.assign(Collections.singletonList(new TopicPartition(topic, firstPartition)));
-                consumers[0] = consumer;
-                for (int i = 1; i < partitionSize; i++) {
-                    int partition = ps[i];
-                    final KafkaConsumer<String, byte[]> cur = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                    cur.assign(Collections.singletonList(new TopicPartition(topic, partition)));
-                    consumers[i] = cur;
-                }
-            } catch (Exception ex) {
-                //发生异常则关闭之前构造的消费者
-                for (KafkaConsumer<String, byte[]> cur : consumers) {
-                    if (cur != null) {
-                        cur.close();
-                    }
-                }
-                throw BaseException.get(ex);
-            }
-            consumeThreads = new Thread[partitionSize];
-            for (int i = 0; i < partitionSize; i++) {
-                final KafkaConsumer<String, byte[]> cur = consumers[i];
-                Thread thread = new Thread(() -> consume(cur), name + "-consumer(" + (i + 1) + "/" + partitionSize + ")-partition(" + i + ")");
-                consumeThreads[i] = thread;
-                thread.start();
-            }
-        }
-        logger.info("start consumers[{}] for partitions[{}]", partitions.length, Arrays.stream(partitions).mapToObj(e -> topic + ":" + e).collect(Collectors.joining(",")));
     }
 
     /**
@@ -256,7 +200,6 @@ public abstract class ThreadDrivenKafkaConsumer {
                             queue = new ArrayBlockingQueue<>(workThreadQueueSize);
                         }
                         this.queues[i] = queue;
-
                         workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
                         workThreads[i].start();
                     }
@@ -283,28 +226,9 @@ public abstract class ThreadDrivenKafkaConsumer {
                     monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
                 }
                 //启动消费者
-                switch (consumeMode) {
-                    case 1: {
-                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                        consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
-                        //初始化消费线程、提交消费任务
-                        consumeThread = new Thread(() -> consume(consumer), name + "-consumer(1/1)-partition(all)");
-                        consumeThread.start();
-                        logger.info("start consumer for topic[{}]", topic);
-                        break;
-                    }
-                    case 2: {
-                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                        int[] ps = consumer.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                        startConsumePartitions(consumer, ps, consumerProp);
-                        break;
-                    }
-                    default: {
-                        final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                        startConsumePartitions(consumer, partitions, consumerProp);
-                        break;
-                    }
-                }
+                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, topic, consumerProp, partitionMode, this::consume);
+                consumeThread = holder.thread();
+                consumeThreads = holder.threads();
             } catch (Exception ex) {
                 //初始化异常、则销毁资源
                 destroy();
@@ -508,7 +432,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                 name,
                 blockingNum.sum(), maxBlockingNum,
                 monitor_consumeCount.sumThenReset(), monitor_period,
-                oneWorkThreadOneQueue ? Arrays.stream(queues).map(this::getQueueLog).collect(Collectors.joining(" ")) : getQueueLog(queue),
+                oneWorkThreadOneQueue ? Arrays.stream(queues).map(this::getQueueLog).collect(Collectors.joining(",")) : getQueueLog(queue),
                 monitor_workCount.sumThenReset(), monitor_period);
     }
 }
