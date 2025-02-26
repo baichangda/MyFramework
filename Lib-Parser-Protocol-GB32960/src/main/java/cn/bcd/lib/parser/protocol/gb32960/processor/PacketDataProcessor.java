@@ -62,7 +62,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
                 }
             }
             case heartbeat -> {
-                return null;
+                return processor_timeData.process(data, processContext);
             }
             default -> {
                 throw BaseException.get("flag[{}] not support", flag);
@@ -112,7 +112,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
                 }
             }
             case heartbeat -> {
-
+                processor_timeData.deProcess(data, processContext, (TimeData) instance);
             }
             default -> {
                 throw BaseException.get("flag[{}] not support", flag);
