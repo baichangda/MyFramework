@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 public class SingleThreadExecutor {
     public final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -109,7 +110,7 @@ public class SingleThreadExecutor {
                     this.executor_blockingChecker = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-blockingChecker"));
                     this.executor_blockingChecker.scheduleWithFixedDelay(() -> {
                         long start = DateUtil.CacheSecond.current();
-                        Future<?> future = submit(() -> {
+                        CompletableFuture<Void> future = submit(() -> {
                         });
                         try {
                             boolean quit = quitNotifier.await(maxBlockingTimeInSecond, TimeUnit.SECONDS);
@@ -198,66 +199,64 @@ public class SingleThreadExecutor {
     public final void execute(Runnable runnable) {
         checkRunning();
         if (inThread()) {
-            runnable.run();
+            try {
+                runnable.run();
+                CompletableFuture.completedFuture(null);
+            } catch (Throwable ex) {
+                logger.error("error", ex);
+                CompletableFuture.failedFuture(ex);
+            }
         } else {
-            executor.execute(runnable);
+            CompletableFuture.runAsync(runnable, executor);
         }
     }
 
-    public final Future<?> submit(Runnable runnable) {
+    public final CompletableFuture<Void> submit(Runnable runnable) {
         checkRunning();
         if (inThread()) {
-            FutureTask<?> futureTask = new FutureTask<>(runnable, null);
-            futureTask.run();
-            return futureTask;
+            try {
+                runnable.run();
+                return CompletableFuture.completedFuture(null);
+            } catch (Throwable ex) {
+                logger.error("error", ex);
+                return CompletableFuture.failedFuture(ex);
+            }
         } else {
-            return executor.submit(runnable);
+            return CompletableFuture.runAsync(runnable, executor);
         }
     }
 
-    public final <T> Future<T> submit(Runnable runnable, T task) {
+    public final <T> CompletableFuture<T> submit(Supplier<T> supplier) {
         checkRunning();
         if (inThread()) {
-            FutureTask<T> futureTask = new FutureTask<>(runnable, task);
-            futureTask.run();
-            return futureTask;
+            try {
+                return CompletableFuture.completedFuture(supplier.get());
+            } catch (Throwable ex) {
+                logger.error("error", ex);
+                return CompletableFuture.failedFuture(ex);
+            }
         } else {
-            return executor.submit(runnable, task);
+            return CompletableFuture.supplyAsync(supplier, executor);
         }
     }
 
-    public final <T> Future<T> submit(Callable<T> task) {
-        checkRunning();
-        if (inThread()) {
-            FutureTask<T> futureTask = new FutureTask<>(task);
-            futureTask.run();
-            return futureTask;
-        } else {
-            return executor.submit(task);
-        }
-    }
-
-    public final ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+    public final ScheduledFuture<?> schedule(Runnable runnable, long delay, TimeUnit unit) {
         checkRunning();
         checkSchedule();
-        return executor_schedule.schedule(() -> submit(command).get(), delay, unit);
+        return executor_schedule.schedule(() -> submit(runnable).join(), delay, unit);
     }
 
-    public final <T> ScheduledFuture<T> schedule(Callable<T> callable, long delay, TimeUnit unit) {
+    public final <T> ScheduledFuture<T> schedule(Supplier<T> supplier, long delay, TimeUnit unit) {
         checkRunning();
         checkSchedule();
-        return executor_schedule.schedule(() -> submit(callable).get(), delay, unit);
+        return executor_schedule.schedule(() -> submit(supplier).join(), delay, unit);
     }
 
     public final ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         checkRunning();
         checkSchedule();
         return executor_schedule.scheduleAtFixedRate(() -> {
-            try {
-                submit(command).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw BaseException.get(e);
-            }
+            submit(command).join();
         }, initialDelay, period, unit);
     }
 
@@ -265,11 +264,7 @@ public class SingleThreadExecutor {
         checkRunning();
         checkSchedule();
         return executor_schedule.scheduleWithFixedDelay(() -> {
-            try {
-                submit(command).get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw BaseException.get(e);
-            }
+            submit(command).join();
         }, initialDelay, period, unit);
     }
 }

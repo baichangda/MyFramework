@@ -239,12 +239,12 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public final Future<?> removeHandler(String id) {
+    public final CompletableFuture<Void> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
         return removeHandler(id, workExecutor);
     }
 
-    public final Future<?> removeHandler(String id, WorkExecutor executor) {
+    public final CompletableFuture<Void> removeHandler(String id, WorkExecutor executor) {
         return executor.submit(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {

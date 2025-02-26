@@ -33,7 +33,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 0,
                 WorkHandlerScanner.get(300, 300),
                 5,
-                parseProp.topic);
+                parseProp.topic,
+                null);
     }
 
     @Override
