@@ -69,7 +69,7 @@ public class KafkaExtUtil {
                 String threadName = getConsumerThreadName(name, 0, 1, partitions);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                 consumeThread.start();
-                logger.info("start consumer threadName[{}] assign partitions[{}]", threadName, Arrays.stream(partitions).mapToObj(e -> topic + ":" + e).collect(Collectors.joining(",")));
+                logger.info("start consumer threadName[{}] for topic[{}] assign partitions[{}]", threadName, topic, Arrays.stream(partitions).mapToObj(e -> topic + ":" + e).collect(Collectors.joining(",")));
             }
             case 2 -> {
                 /**
@@ -83,7 +83,7 @@ public class KafkaExtUtil {
                     String threadName = getConsumerThreadName(name, i, partitions.length, partitions[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] assign partitions[{}]", threadName, partitions[i]);
+                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName,topic, partitions[i]);
                 }
             }
             case 3 -> {
@@ -104,7 +104,7 @@ public class KafkaExtUtil {
                     String threadName = getConsumerThreadName(name, i, ps.length, ps[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] assign partitions[{}]", threadName, ps[i]);
+                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName,topic, ps[i]);
                 }
             }
             default ->

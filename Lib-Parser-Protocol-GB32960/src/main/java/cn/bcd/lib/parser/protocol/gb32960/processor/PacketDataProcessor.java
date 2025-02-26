@@ -18,7 +18,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
     final Processor<VehicleLogoutData> processor_vehicleLogoutData = Parser.getProcessor(VehicleLogoutData.class);
     final Processor<PlatformLoginData> processor_platformLoginData = Parser.getProcessor(PlatformLoginData.class);
     final Processor<PlatformLogoutData> processor_platformLogoutData = Parser.getProcessor(PlatformLogoutData.class);
-    final Processor<ResponseData> processor_responseData = Parser.getProcessor(ResponseData.class);
+    final Processor<TimeData> processor_timeData = Parser.getProcessor(TimeData.class);
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext<?> processContext) {
@@ -30,36 +30,39 @@ public class PacketDataProcessor implements Processor<PacketData> {
                 if (cmd) {
                     return processor_vehicleLoginData.process(data, processContext);
                 } else {
-                    return processor_responseData.process(data, processContext);
+                    return processor_timeData.process(data, processContext);
                 }
             }
             case vehicle_run_data, vehicle_supplement_data -> {
                 if (cmd) {
                     return processor_vehicleRunData.process(data, processContext);
                 } else {
-                    return processor_responseData.process(data, processContext);
+                    return processor_timeData.process(data, processContext);
                 }
             }
             case vehicle_logout_data -> {
                 if (cmd) {
                     return processor_vehicleLogoutData.process(data, processContext);
                 } else {
-                    return processor_responseData.process(data, processContext);
+                    return processor_timeData.process(data, processContext);
                 }
             }
             case platform_login_data -> {
                 if (cmd) {
                     return processor_platformLoginData.process(data, processContext);
                 } else {
-                    return processor_responseData.process(data, processContext);
+                    return processor_timeData.process(data, processContext);
                 }
             }
             case platform_logout_data -> {
                 if (cmd) {
                     return processor_platformLogoutData.process(data, processContext);
                 } else {
-                    return processor_responseData.process(data, processContext);
+                    return processor_timeData.process(data, processContext);
                 }
+            }
+            case heartbeat -> {
+                return null;
             }
             default -> {
                 throw BaseException.get("flag[{}] not support", flag);
@@ -77,36 +80,39 @@ public class PacketDataProcessor implements Processor<PacketData> {
                 if (cmd) {
                     processor_vehicleLoginData.deProcess(data, processContext, (VehicleLoginData) instance);
                 } else {
-                    processor_responseData.deProcess(data, processContext, (ResponseData) instance);
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
             }
             case vehicle_run_data, vehicle_supplement_data -> {
                 if (cmd) {
                     processor_vehicleRunData.deProcess(data, processContext, (VehicleRunData) instance);
                 } else {
-                    processor_responseData.deProcess(data, processContext, (ResponseData) instance);
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
             }
             case vehicle_logout_data -> {
                 if (cmd) {
                     processor_vehicleLogoutData.deProcess(data, processContext, (VehicleLogoutData) instance);
                 } else {
-                    processor_responseData.deProcess(data, processContext, (ResponseData) instance);
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
             }
             case platform_login_data -> {
                 if (cmd) {
                     processor_platformLoginData.deProcess(data, processContext, (PlatformLoginData) instance);
                 } else {
-                    processor_responseData.deProcess(data, processContext, (ResponseData) instance);
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
             }
             case platform_logout_data -> {
                 if (cmd) {
                     processor_platformLogoutData.deProcess(data, processContext, (PlatformLogoutData) instance);
                 } else {
-                    processor_responseData.deProcess(data, processContext, (ResponseData) instance);
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
+            }
+            case heartbeat -> {
+
             }
             default -> {
                 throw BaseException.get("flag[{}] not support", flag);

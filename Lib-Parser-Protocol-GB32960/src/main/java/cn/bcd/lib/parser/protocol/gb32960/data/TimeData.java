@@ -4,7 +4,7 @@ import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 
 import java.util.Date;
 
-public class ResponseData implements PacketData {
+public class TimeData implements PacketData {
     @F_date_bytes_6
     public Date collectTime;
 }
