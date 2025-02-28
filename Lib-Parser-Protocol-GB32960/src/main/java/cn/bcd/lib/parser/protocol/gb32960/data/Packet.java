@@ -9,6 +9,7 @@ import cn.bcd.lib.parser.base.anno.data.NumType;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.processor.PacketDataProcessor;
+import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -69,32 +70,9 @@ public class Packet {
      */
     public ByteBuf toByteBuf_fix() {
         ByteBuf byteBuf = toByteBuf();
-        fix_contentLength(byteBuf);
-        fix_code(byteBuf);
+        PacketUtil.fix_contentLength(byteBuf);
+        PacketUtil.fix_code(byteBuf);
         return byteBuf;
     }
 
-    /**
-     * 修正数据单元长度
-     *
-     * @param data 只包含一条数据的数据包
-     */
-    public static void fix_contentLength(ByteBuf data) {
-        int actualLen = data.readableBytes() - 25;
-        data.setShort(22, actualLen);
-    }
-
-    /**
-     * 修正异或校验位
-     *
-     * @param data 只包含一条数据的数据包
-     */
-    public static void fix_code(ByteBuf data) {
-        byte xor = 0;
-        int codeIndex = data.readableBytes() - 1;
-        for (int i = 0; i < codeIndex; i++) {
-            xor ^= data.getByte(i);
-        }
-        data.setByte(codeIndex, xor);
-    }
 }
