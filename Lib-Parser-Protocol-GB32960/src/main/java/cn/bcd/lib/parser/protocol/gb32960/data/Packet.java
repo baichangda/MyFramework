@@ -68,9 +68,21 @@ public class Packet {
      *
      * @return
      */
-    public ByteBuf toByteBuf_fix() {
+    public ByteBuf toByteBuf_fixAll() {
         ByteBuf byteBuf = toByteBuf();
         PacketUtil.fix_contentLength(byteBuf);
+        PacketUtil.fix_code(byteBuf);
+        return byteBuf;
+    }
+
+    /**
+     * 转换为{@link ByteBuf}
+     * 修正异或校验位
+     *
+     * @return
+     */
+    public ByteBuf toByteBuf_fixCode() {
+        ByteBuf byteBuf = toByteBuf();
         PacketUtil.fix_code(byteBuf);
         return byteBuf;
     }
