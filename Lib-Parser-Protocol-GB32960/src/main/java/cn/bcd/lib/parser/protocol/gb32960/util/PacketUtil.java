@@ -150,7 +150,7 @@ public class PacketUtil {
         packet.replyFlag = 0xFE;
         packet.vin = vin;
         packet.encodeWay = new NumVal_byte(0, (byte) 1);
-        packet.contentLength = 65;
+        packet.contentLength = 41;
         packet.data = platformLoginData;
         return packet;
     }
@@ -172,13 +172,13 @@ public class PacketUtil {
         packet.replyFlag = 0xFE;
         packet.vin = vin;
         packet.encodeWay = new NumVal_byte(0, (byte) 1);
-        packet.contentLength = 32;
+        packet.contentLength = 8;
         packet.data = platformLogoutData;
         return packet;
     }
 
     public static void main(String[] args) {
-        //contentLength=24+?
+        //contentLength
         System.out.println(ParseUtil.getClassByteLenIfPossible(PlatformLoginData.class));
         System.out.println(ParseUtil.getClassByteLenIfPossible(PlatformLogoutData.class));
     }
