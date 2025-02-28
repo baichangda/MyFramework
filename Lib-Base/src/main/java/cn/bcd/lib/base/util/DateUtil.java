@@ -29,6 +29,12 @@ public class DateUtil {
     public final static String DATE_FORMAT_MILLISECOND = "yyyyMMddHHmmssSSS";
     private final static Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
+
+    public static Date clearMills(Date date) {
+        long time = date.getTime();
+        return new Date((time / 1000) * 1000);
+    }
+
     /**
      * 获取最近在当前日期之前的最后一个日期单位
      *

@@ -1,7 +1,13 @@
 package cn.bcd.lib.parser.protocol.gb32960.util;
 
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
+import cn.bcd.lib.parser.base.util.ParseUtil;
+import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.data.PlatformLoginData;
+import cn.bcd.lib.parser.protocol.gb32960.data.PlatformLogoutData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -88,7 +94,7 @@ public class PacketUtil {
      * @param replyFlag
      * @return
      */
-    public static byte[] buildBytes_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
+    public static byte[] build_bytes_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
         byte[] bytes = new byte[30];
         bytes[0] = 0x23;
         bytes[1] = 0x23;
@@ -109,7 +115,71 @@ public class PacketUtil {
         return bytes;
     }
 
-    public static ByteBuf buildByteBuf_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
-        return Unpooled.wrappedBuffer(buildBytes_timeData(vin, time, flag, replyFlag));
+    /**
+     * 构造内容只包含时间的通用应答
+     *
+     * @param vin
+     * @param time
+     * @param flag
+     * @param replyFlag
+     * @return
+     */
+    public static ByteBuf build_byteBuf_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
+        return Unpooled.wrappedBuffer(build_bytes_timeData(vin, DateUtil.clearMills(time), flag, replyFlag));
+    }
+
+    /**
+     * 构造平台登录报文
+     * @param vin
+     * @param time
+     * @param sn
+     * @param username
+     * @param password
+     * @return
+     */
+    public static Packet build_packet_command_platformLogin(String vin, Date time, int sn, String username, String password) {
+        PlatformLoginData platformLoginData = new PlatformLoginData();
+        platformLoginData.collectTime = DateUtil.clearMills(time);
+        platformLoginData.sn = sn;
+        platformLoginData.username = username;
+        platformLoginData.password = password;
+        platformLoginData.encode = new NumVal_byte(0, (byte) 1);
+        Packet packet = new Packet();
+        packet.header = new byte[]{0x23, 0x23};
+        packet.flag = PacketFlag.platform_login_data;
+        packet.replyFlag = 0xFE;
+        packet.vin = vin;
+        packet.encodeWay = new NumVal_byte(0, (byte) 1);
+        packet.contentLength = 65;
+        packet.data = platformLoginData;
+        return packet;
+    }
+
+    /**
+     * 构造平台登出报文
+     * @param vin
+     * @param time
+     * @param sn
+     * @return
+     */
+    public static Packet build_packet_command_platformLogout(String vin, Date time, int sn) {
+        PlatformLogoutData platformLogoutData = new PlatformLogoutData();
+        platformLogoutData.collectTime = DateUtil.clearMills(time);
+        platformLogoutData.sn = sn;
+        Packet packet = new Packet();
+        packet.header = new byte[]{0x23, 0x23};
+        packet.flag = PacketFlag.platform_logout_data;
+        packet.replyFlag = 0xFE;
+        packet.vin = vin;
+        packet.encodeWay = new NumVal_byte(0, (byte) 1);
+        packet.contentLength = 32;
+        packet.data = platformLogoutData;
+        return packet;
+    }
+
+    public static void main(String[] args) {
+        //contentLength=24+?
+        System.out.println(ParseUtil.getClassByteLenIfPossible(PlatformLoginData.class));
+        System.out.println(ParseUtil.getClassByteLenIfPossible(PlatformLogoutData.class));
     }
 }
