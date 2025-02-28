@@ -95,7 +95,7 @@ public class PacketUtil {
      * @return
      */
     public static byte[] build_bytes_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
-        byte[] bytes = new byte[30];
+        byte[] bytes = new byte[31];
         bytes[0] = 0x23;
         bytes[1] = 0x23;
         bytes[2] = (byte) flag.type;
