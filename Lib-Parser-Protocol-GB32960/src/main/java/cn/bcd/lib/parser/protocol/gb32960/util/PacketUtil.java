@@ -77,12 +77,23 @@ public class PacketUtil {
      * @return
      */
     public static Date getTime(byte[] bytes) {
-        return Date.from(LocalDateTime.of(bytes[24] + 2000,
-                bytes[25],
-                bytes[26],
-                bytes[27],
-                bytes[28],
-                bytes[29]).toInstant(DateZoneUtil.ZONE_OFFSET));
+        return getTime(bytes, 0);
+    }
+
+    /**
+     * 获取报文时间
+     *
+     * @param bytes
+     * @param offset
+     * @return
+     */
+    public static Date getTime(byte[] bytes, int offset) {
+        return Date.from(LocalDateTime.of(bytes[offset + 24] + 2000,
+                bytes[offset + 25],
+                bytes[offset + 26],
+                bytes[offset + 27],
+                bytes[offset + 28],
+                bytes[offset + 29]).toInstant(DateZoneUtil.ZONE_OFFSET));
     }
 
     /**

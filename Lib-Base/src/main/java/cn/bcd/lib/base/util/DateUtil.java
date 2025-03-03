@@ -320,6 +320,23 @@ public class DateUtil {
         }
     }
 
+    public static byte[] dateToBytes(Date date) {
+        long ts = date.getTime();
+        byte[] bytes = new byte[8];
+        for (int i = 0; i < 8; i++) {
+            bytes[i] = (byte) (ts >> (i * 8));
+        }
+        return bytes;
+    }
+
+    public static Date bytesToDate(byte[] bytes, int offset) {
+        long ts = 0;
+        for (int i = 0; i < 8; i++) {
+            ts |= (bytes[offset + i] & 0xffL) << (i * 8);
+        }
+        return new Date(ts);
+    }
+
     /**
      * 缓存方式获取毫秒级时间戳
      * {@link System#currentTimeMillis()}在高频率调用下,性能过低
