@@ -1,7 +1,7 @@
 <html lang="">
-<link href="/common/jsoneditor.min.css" rel="stylesheet" type="text/css">
-<script src="/common/jquery.min.js"></script>
-<script src="/common/jsoneditor.min.js"></script>
+<link href="/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="/jquery.min.js"></script>
+<script src="/jsoneditor.min.js"></script>
 
 <style>
     input {
@@ -54,21 +54,33 @@
                     </button>
                 </td>
             </tr>
-            </tbody>
-        </table>
-    </div>
-    <div class="dataDiv" style="width: 900px;">
-        <table style="width: 100%">
-            <tbody>
             <tr>
-                <td style="text-align: center;height: 30px">
-                    <button onclick="updateRun()" id="update_run_btn" style="color: red" disabled>更新运行信息
+                <td style="border-bottom: 1px dotted;text-align: center" colspan="2">
+                    <button onclick="updateVehicleData()" id="update_vehicleData_btn" style="color: red" disabled>更新车辆信息
                     </button>
                 </td>
             </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="dataDiv" style="width: 900px;overflow:auto">
+        <table style="width: 100%">
+            <tbody>
             <tr>
-                <td style="width: 100%;height: 810px">
-                    <div id="jsoneditor" style="width: 100%; height: 100%;overflow:scroll"></div>
+                <td onmouseenter="onModuleMouseEnter(this)" onmouseleave="onModuleMouseOut(this)"
+                    style="width: 100%;height: 500px">
+                    <table style="width: 100%;height: 100%">
+                        <tr>
+                            <td style="text-align: center;width: 20px;font-weight: bolder">
+                                车<br>辆<br>运<br>行<br>数<br>据
+                            </td>
+                            <td>
+                                <div id="jsoneditor_vehicleRunData"
+                                     style="width: 100%; height: 100%;overflow:scroll"></div>
+                            </td>
+                        </tr>
+                    </table>
+
                 </td>
             </tr>
             </tbody>
@@ -91,11 +103,9 @@
 </body>
 
 <script type="text/javascript">
-    // create the editor
-    const container = document.getElementById("jsoneditor")
     // const options = {}
     const options = {mode: 'code'}
-    const editor = new JSONEditor(container, options)
+    const editor_vehicleRunData = new JSONEditor(document.getElementById("jsoneditor_vehicleRunData"), options)
 
     function getWsUrl() {
         let loc = window.location, new_uri;
@@ -104,12 +114,23 @@
         } else {
             new_uri = "ws:";
         }
-        return new_uri + "//" + loc.host + "/ws/gb32960";
+        return new_uri + "//" + loc.host + "/ws";
     }
 
     let ws
     let isConnectWs = false
     let isConnectGw = false
+    let vehicleData
+
+    function onModuleMouseEnter(ele) {
+        console.log(ele)
+        $(ele).css("border", "2px solid orange")
+    }
+
+    function onModuleMouseOut(ele) {
+        console.log(ele)
+        $(ele).css("border", "1px solid")
+    }
 
     function connectWs() {
         let vin = $("#vin").val();
@@ -118,8 +139,8 @@
             isConnectWs = true
             $("#ws_connect_btn").css("color", "green")
             $("#ws_connect_btn").prop("disabled", true)
-            $("#update_run_btn").css("color", "green")
-            $("#update_run_btn").prop("disabled", false)
+            $("#update_vehicleData_btn").css("color", "green")
+            $("#update_vehicleData_btn").prop("disabled", false)
             appendToOutput("连接ws服务器成功,vin[" + vin + "]", 1)
         };
 
@@ -134,8 +155,8 @@
             $("#ws_connect_btn").prop("disabled", false)
             $("#gw_connect_btn").css("color", "red")
             $("#gw_connect_btn").prop("disabled", false)
-            $("#update_run_btn").css("color", "red")
-            $("#update_run_btn").prop("disabled", true)
+            $("#update_vehicleData_btn").css("color", "red")
+            $("#update_vehicleData_btn").prop("disabled", true)
             appendToOutput("ws服务断开,vin[" + vin + "]", 1)
         };
     }
@@ -156,19 +177,15 @@
             }
             case 2: {
                 if (parse.succeed) {
-                    if (parse.data === undefined) {
-                        appendToOutput("更新运行信息到ws成功", 2)
-                    } else {
-                        editor.set(JSON.parse(parse.data))
-                        appendToOutput("更新运行信息到ws成功、检测数据不符合格式、刷新客户端运行数据", 2)
-                    }
+                    appendToOutput("更新车辆信息到ws成功", 2)
                 } else {
                     appendToOutput("更新运行信息到ws失败", 2)
                 }
                 break
             }
             case 101: {
-                editor.set(JSON.parse(parse.data))
+                vehicleData = JSON.parse(parse.data)
+                editor_vehicleRunData.set(vehicleData.vehicleRunData)
                 appendToOutput("接收到ws服务器运行数据,更新客户端运行信息", 2)
                 break
             }
@@ -204,18 +221,19 @@
         appendToOutput("发送连接tcp网关到ws成功", 1)
     }
 
-    function updateRun() {
+    function updateVehicleData() {
         if (!isConnectWs) {
             appendToOutput("请先连接ws服务器", 1)
             return
         }
+        vehicleData.vehicleRunData = editor_vehicleRunData.get()
         ws.send(JSON.stringify(
             {
                 flag: 2,
-                data: JSON.stringify(editor.get())
+                data: JSON.stringify(vehicleData)
             }
         ))
-        appendToOutput("发送更新运行信息到ws成功", 1)
+        appendToOutput("发送更新车辆信息到ws成功", 1)
     }
 
     let outputCount = 0

@@ -66,11 +66,9 @@ dependencies {
 
         api 'info.picocli:picocli:4.7.6'
 
-        var undertowVersion = "2.3.18.Final"
-        // https://mvnrepository.com/artifact/io.undertow/undertow-core
-        api group: 'io.undertow', name: 'undertow-core', version: "${undertowVersion}"
-        // https://mvnrepository.com/artifact/io.undertow/undertow-websockets-jsr
-        api group: 'io.undertow', name: 'undertow-websockets-jsr', version: "${undertowVersion}"
+        var vertxVersion = "4.5.13"
+        // https://mvnrepository.com/artifact/io.vertx/vertx-web
+        api group: 'io.vertx', name: 'vertx-web', version: "${vertxVersion}"
 
         api group: 'org.jctools', name: 'jctools-core',version:'4.0.5'
 

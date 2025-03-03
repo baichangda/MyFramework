@@ -1,7 +1,7 @@
 <html>
-<link href="/common/jsoneditor.min.css" rel="stylesheet" type="text/css">
-<script src="/common/jquery.min.js"></script>
-<script src="/common/jsoneditor.min.js"></script>
+<link href="/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="/jquery.min.js"></script>
+<script src="/jsoneditor.min.js"></script>
 
 <body>
 <table style="width: 100%;height: 100%">
@@ -57,7 +57,7 @@
             appendToOutput("报文不能为空",1)
         } else {
             $.ajax({
-                url: "/parse/gb32960?hex="+val,
+                url: "/parse?hex="+val,
                 success:function (res){
                     if(res.succeed){
                         editor.set(JSON.parse(res.data))

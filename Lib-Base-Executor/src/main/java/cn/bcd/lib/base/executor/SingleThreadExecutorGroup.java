@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 
-public abstract class SingleThreadExecutorGroup{
+public class SingleThreadExecutorGroup{
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;

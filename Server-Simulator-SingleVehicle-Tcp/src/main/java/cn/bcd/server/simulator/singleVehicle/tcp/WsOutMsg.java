@@ -7,6 +7,7 @@ package cn.bcd.server.simulator.singleVehicle.tcp;
  *                102、发送数据到网关成功通知
  *                103、接收到网关的响应数据
  *                104、tcp网关断开通知
+ *                999、车辆使用中
  * @param data
  * @param succeed
  */

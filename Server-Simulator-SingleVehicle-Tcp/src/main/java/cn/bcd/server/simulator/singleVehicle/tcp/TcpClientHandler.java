@@ -5,20 +5,27 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 public class TcpClientHandler extends ChannelInboundHandlerAdapter {
-    public WsSession<?> session;
+    public Vehicle vehicle;
 
-    public TcpClientHandler(WsSession<?> session) {
-        this.session = session;
+    public TcpClientHandler(Vehicle vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        vehicle.onConnected();
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        session.tcp_onDisConnect();
+        vehicle.onDisconnected();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        session.tcp_onMsg((ByteBuf) msg);
+        byte[] bytes=new byte[((ByteBuf) msg).readableBytes()];
+        ((ByteBuf) msg).readBytes(bytes);
+        vehicle.onMessage(bytes);
     }
 
     @Override
