@@ -320,6 +320,11 @@ public class DateUtil {
         }
     }
 
+    /**
+     * date转换为时间戳字节数组
+     * @param date
+     * @return
+     */
     public static byte[] dateToBytes(Date date) {
         long ts = date.getTime();
         byte[] bytes = new byte[8];
@@ -329,12 +334,52 @@ public class DateUtil {
         return bytes;
     }
 
+    /**
+     * bytes时间戳格式转换为date
+     * @param bytes
+     * @param offset
+     * @return
+     */
     public static Date bytesToDate(byte[] bytes, int offset) {
         long ts = 0;
         for (int i = 0; i < 8; i++) {
             ts |= (bytes[offset + i] & 0xffL) << (i * 8);
         }
         return new Date(ts);
+    }
+
+
+    /**
+     * 添加多个date到bytes前面、得到新的bytes
+     * @param bytes
+     * @param dates
+     * @return
+     */
+    public static byte[] prependDatesToBytes(byte[] bytes, Date... dates) {
+        if (dates.length == 0) {
+            return bytes;
+        }
+        byte[] res = new byte[bytes.length + dates.length * 8];
+        for (int i = 0; i < dates.length; i++) {
+            byte[] temp = DateUtil.dateToBytes(dates[i]);
+            System.arraycopy(temp, 0, res, i * 8, 8);
+        }
+        System.arraycopy(bytes, 0, res, dates.length * 8, bytes.length);
+        return res;
+    }
+
+    /**
+     * 从bytes中获取多个date
+     * @param bytes
+     * @param num
+     * @return
+     */
+    public static Date[] getPrependDatesFromBytes(byte[] bytes, int num) {
+        Date[] dates = new Date[num];
+        for (int i = 0; i < num; i++) {
+            dates[i] = bytesToDate(bytes, i * 8);
+        }
+        return dates;
     }
 
     /**

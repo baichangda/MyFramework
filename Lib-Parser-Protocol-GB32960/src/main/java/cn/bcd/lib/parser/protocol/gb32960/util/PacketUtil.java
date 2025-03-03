@@ -11,6 +11,7 @@ import cn.bcd.lib.parser.protocol.gb32960.data.PlatformLogoutData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -55,38 +56,58 @@ public class PacketUtil {
         data[codeIndex] = xor;
     }
 
-    /**
-     * 获取报文时间
-     *
-     * @param data
-     * @return
-     */
-    public static Date getTime(ByteBuf data) {
-        return Date.from(LocalDateTime.of(data.getByte(24) + 2000,
-                data.getByte(25),
-                data.getByte(26),
-                data.getByte(27),
-                data.getByte(28),
-                data.getByte(29)).toInstant(DateZoneUtil.ZONE_OFFSET));
+
+    public static PacketFlag getPacketFlag(ByteBuf byteBuf) {
+        return getPacketFlag(byteBuf, 0);
     }
 
-    /**
-     * 获取报文时间
-     *
-     * @param bytes
-     * @return
-     */
+    public static PacketFlag getPacketFlag(ByteBuf byteBuf, int offset) {
+        return PacketFlag.fromInteger(byteBuf.getUnsignedByte(offset + 2));
+    }
+
+    public static PacketFlag getPacketFlag(byte[] bytes) {
+        return getPacketFlag(bytes, 0);
+    }
+
+    public static PacketFlag getPacketFlag(byte[] bytes, int offset) {
+        return PacketFlag.fromInteger(bytes[offset + 2] & 0xFF);
+    }
+
+
+    public static String getVin(byte[] bytes) {
+        return getVin(bytes, 0);
+    }
+
+    public static String getVin(byte[] bytes, int offset) {
+        return new String(bytes, offset + 4, 17);
+    }
+
+    public static String getVin(ByteBuf byteBuf) {
+        return getVin(byteBuf, 0);
+    }
+
+    public static String getVin(ByteBuf byteBuf, int offset) {
+        return byteBuf.getCharSequence(offset + 4, 17, StandardCharsets.UTF_8).toString();
+    }
+
+    public static Date getTime(ByteBuf data) {
+        return getTime(data, 0);
+    }
+
+    public static Date getTime(ByteBuf data, int offset) {
+        return Date.from(LocalDateTime.of(data.getByte(offset + 24) + 2000,
+                data.getByte(offset + 25),
+                data.getByte(offset + 26),
+                data.getByte(offset + 27),
+                data.getByte(offset + 28),
+                data.getByte(offset + 29)).toInstant(DateZoneUtil.ZONE_OFFSET));
+    }
+
+
     public static Date getTime(byte[] bytes) {
         return getTime(bytes, 0);
     }
 
-    /**
-     * 获取报文时间
-     *
-     * @param bytes
-     * @param offset
-     * @return
-     */
     public static Date getTime(byte[] bytes, int offset) {
         return Date.from(LocalDateTime.of(bytes[offset + 24] + 2000,
                 bytes[offset + 25],
@@ -141,6 +162,7 @@ public class PacketUtil {
 
     /**
      * 构造平台登录报文
+     *
      * @param vin
      * @param time
      * @param sn
@@ -168,6 +190,7 @@ public class PacketUtil {
 
     /**
      * 构造平台登出报文
+     *
      * @param vin
      * @param time
      * @param sn
