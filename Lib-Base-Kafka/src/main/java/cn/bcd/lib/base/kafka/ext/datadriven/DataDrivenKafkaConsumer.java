@@ -130,6 +130,11 @@ public abstract class DataDrivenKafkaConsumer {
      */
     volatile boolean running_consume = true;
 
+    /**
+     * 是否暂停消费
+     */
+    volatile boolean pause_consume = false;
+
 
     public static class WorkHandlerScanner {
         public final int periodInSecond;
@@ -261,6 +266,20 @@ public abstract class DataDrivenKafkaConsumer {
     }
 
     /**
+     * 暂停消费
+     */
+    public final void pauseConsume() {
+        pause_consume = true;
+    }
+
+    /**
+     * 恢复消费
+     */
+    public final void resumeConsume() {
+        pause_consume = false;
+    }
+
+    /**
      * 根据id获取对应WorkHandler
      *
      * @param id
@@ -275,6 +294,7 @@ public abstract class DataDrivenKafkaConsumer {
             throw BaseException.get(e);
         }
     }
+
 
     /**
      * 初始化
@@ -374,6 +394,7 @@ public abstract class DataDrivenKafkaConsumer {
             monitor_consumeCount = null;
             monitor_workCount = null;
             monitor_pool = null;
+            pause_consume = false;
         }
     }
 
@@ -385,6 +406,13 @@ public abstract class DataDrivenKafkaConsumer {
         try {
             while (running_consume) {
                 try {
+                    //检查暂停消费
+                    if (pause_consume) {
+                        do {
+                            TimeUnit.MILLISECONDS.sleep(100);
+                        } while (pause_consume);
+                    }
+
                     //检查阻塞
                     if (maxBlockingNum > 0) {
                         if (blockingNum.sum() >= maxBlockingNum) {
