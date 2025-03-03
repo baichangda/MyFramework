@@ -403,7 +403,7 @@ public abstract class DataDrivenKafkaConsumer {
      * 消费
      */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
-        try {
+        try (consumer){
             while (running_consume) {
                 try {
                     //检查暂停消费
@@ -496,7 +496,6 @@ public abstract class DataDrivenKafkaConsumer {
         } finally {
             String assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
             logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
-            consumer.close();
         }
 
     }
