@@ -201,10 +201,8 @@ public class SingleThreadExecutor {
         if (inThread()) {
             try {
                 runnable.run();
-                CompletableFuture.completedFuture(null);
             } catch (Throwable ex) {
                 logger.error("error", ex);
-                CompletableFuture.failedFuture(ex);
             }
         } else {
             CompletableFuture.runAsync(runnable, executor);
