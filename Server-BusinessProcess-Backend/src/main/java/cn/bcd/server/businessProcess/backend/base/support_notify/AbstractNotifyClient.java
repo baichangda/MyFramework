@@ -41,14 +41,14 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
      * @param kafkaBootstrapServers  监听kafka地址
      * @param redisConnectionFactory redis
      * @param type                   所监听的业务的类型名称
-     * @param serverId               当前服务的id
+     * @param groupId                消费组id
      *                               必须是全局唯一、即时同一集群的也不能一样
      *                               例如两个业务后端的客户端id、设置为bus1、bus2
      */
     public AbstractNotifyClient(List<String> kafkaBootstrapServers,
                                 RedisConnectionFactory redisConnectionFactory,
                                 String type,
-                                String serverId) {
+                                String groupId) {
         super("notifyClient(" + type + ")",
                 false,
                 1,
@@ -57,11 +57,12 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 true,
                 0,
                 0,
-                "notify_" + type);
+                "notify_" + type,
+                null);
         this.type = type;
         this.consumerProp = new KafkaProperties.Consumer();
         this.consumerProp.setBootstrapServers(kafkaBootstrapServers);
-        this.consumerProp.setGroupId(serverId);
+        this.consumerProp.setGroupId(groupId);
         this.consumerProp.setKeyDeserializer(StringDeserializer.class);
         this.consumerProp.setValueDeserializer(ByteArraySerializer.class);
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
@@ -89,7 +90,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
             }
             try {
                 boundHashOperations.putAll(save);
-            }catch (Exception e){
+            } catch (Exception e) {
                 logger.error("notify client schedule error type[{}]", type, e);
             }
         }, 1, 1, TimeUnit.MINUTES);
