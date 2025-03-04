@@ -216,7 +216,6 @@ public class SingleThreadExecutor {
                 runnable.run();
                 return CompletableFuture.completedFuture(null);
             } catch (Throwable ex) {
-                logger.error("error", ex);
                 return CompletableFuture.failedFuture(ex);
             }
         } else {
@@ -230,7 +229,6 @@ public class SingleThreadExecutor {
             try {
                 return CompletableFuture.completedFuture(supplier.get());
             } catch (Throwable ex) {
-                logger.error("error", ex);
                 return CompletableFuture.failedFuture(ex);
             }
         } else {

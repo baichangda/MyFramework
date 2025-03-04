@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class WsSession {
     static Logger logger = LoggerFactory.getLogger(WsSession.class);
@@ -41,15 +40,14 @@ public class WsSession {
         this.vin = vin;
         this.executor = executorGroup.getExecutor(vin);
         this.channel = channel;
-        this.vehicle = new Vehicle(vin);
-
+        this.vehicle = new Vehicle(vin, executor);
         this.closed = false;
     }
 
     public void init() {
         executeTask(() -> {
             this.vehicle.init();
-            ws_sendVehicleData();
+            ws_sendVehicleData(vehicle.vehicleData);
         });
     }
 
@@ -73,12 +71,18 @@ public class WsSession {
             switch (inMsg.flag()) {
                 case 1 -> {
                     String[] split = inMsg.data().split(":");
-                    try {
-                        tcp_connect(split[0], Integer.parseInt(split[1]));
-                    } catch (Exception ex) {
-                        logger.error("connect tcp address[{}] error", inMsg.data(), ex);
-                        ws_send(new WsOutMsg(1, null, false));
-                    }
+                    vehicle.connect(split[0],
+                                    Integer.parseInt(split[1]),
+                                    this::tcp_onConnected,
+                                    this::tcp_onDisConnected,
+                                    this::tcp_onSend,
+                                    this::tcp_onReceive,
+                                    this::vehicle_onDataUpdate)
+                            .exceptionally(ex -> {
+                                logger.error("connect tcp address[{}] error", inMsg.data(), ex);
+                                ws_send(new WsOutMsg(1, null, false));
+                                return null;
+                            });
                 }
                 case 2 -> {
                     try {
@@ -97,7 +101,6 @@ public class WsSession {
     public void tcp_onConnected() {
         executeTask(() -> {
             logger.info("-------------tcp connected vin[{}]--------------", vin);
-            tcp_startSendRunData();
             ws_send(new WsOutMsg(1, null, true));
         });
     }
@@ -113,53 +116,30 @@ public class WsSession {
         });
     }
 
-    public void tcp_onMessage(int type, byte[] data) {
+    public void tcp_onReceive(byte[] data) {
         executeTask(() -> {
-            if (type == 1) {
-                ws_send(new WsOutMsg(102, ByteBufUtil.hexDump(data), true));
-            } else {
-                ws_send(new WsOutMsg(103, ByteBufUtil.hexDump(data), true));
-            }
+            ws_send(new WsOutMsg(103, ByteBufUtil.hexDump(data), true));
         });
     }
 
-    private void ws_sendVehicleData() {
+    public void tcp_onSend(byte[] data) {
         executeTask(() -> {
-            ws_send(new WsOutMsg(101, JsonUtil.toJson(vehicle.vehicleData), true));
+            ws_send(new WsOutMsg(102, ByteBufUtil.hexDump(data), true));
         });
     }
 
-    private void tcp_connect(String host, int port) {
-        vehicle.connect(host, port, this::tcp_onConnected, this::tcp_onDisConnected, this::tcp_onMessage);
+    public void vehicle_onDataUpdate(VehicleData vehicleData) {
+        executeTask(() -> ws_sendVehicleData(vehicleData));
+    }
+
+    private void ws_sendVehicleData(VehicleData vehicleData) {
+        ws_send(new WsOutMsg(101, JsonUtil.toJson(vehicleData), true));
     }
 
     private void ws_send(WsOutMsg outMsg) {
-        executeTask(() -> {
-            if (!closed) {
-                channel.writeTextMessage(JsonUtil.toJson(outMsg));
-            }
-        });
-    }
-
-    private void tcp_sendRunData() {
-        executeTask(() -> {
-            if (channel.isClosed()) {
-                ws_onClose();
-            } else {
-                byte[] bytes = vehicle.send_vehicleRunData();
-                ws_send(new WsOutMsg(102, ByteBufUtil.hexDump(bytes), true));
-            }
-        });
-    }
-
-    private void tcp_startSendRunData() {
-        executeTask(() -> {
-            if (scheduledFuture != null) {
-                scheduledFuture.cancel(false);
-                scheduledFuture = null;
-            }
-            this.scheduledFuture = executor.scheduleAtFixedRate(this::tcp_sendRunData, 1, 10, TimeUnit.SECONDS);
-        });
+        if (!closed) {
+            channel.writeTextMessage(JsonUtil.toJson(outMsg));
+        }
     }
 
     private void executeTask(Runnable runnable) {

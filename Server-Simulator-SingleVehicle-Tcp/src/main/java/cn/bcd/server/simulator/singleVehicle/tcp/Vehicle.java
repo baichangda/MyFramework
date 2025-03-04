@@ -1,6 +1,7 @@
 package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
@@ -16,66 +17,143 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 import java.util.Date;
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 
 public class Vehicle {
-
     static NioEventLoopGroup tcp_workerGroup = new NioEventLoopGroup();
-
     public final String vin;
     public VehicleData vehicleData;
+    public final SingleThreadExecutor executor;
 
-    public Channel channel;
+    Channel channel;
     Runnable onConnected;
     Runnable onDisconnected;
+    Consumer<byte[]> onSend;
+    Consumer<byte[]> onReceive;
+    Consumer<VehicleData> onDataUpdate;
+    ScheduledFuture<?> scheduledFuture;
 
-    /**
-     * 1、发送的上行数据
-     * 2、接收到的下行数据
-     */
-    BiConsumer<Integer, byte[]> onMessage;
-
-    public Vehicle(String vin) {
+    public Vehicle(String vin, SingleThreadExecutor executor) {
         this.vin = vin;
-
+        this.executor = executor;
     }
 
-    public void connect(String host, int port,
-                        Runnable onConnected,
-                        Runnable onDisconnected,
-                        BiConsumer<Integer, byte[]> onMessage) {
-        this.onConnected = onConnected;
-        this.onDisconnected = onDisconnected;
-        this.onMessage = onMessage;
-        Vehicle vehicle = this;
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(tcp_workerGroup);
-        bootstrap.channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true);
-        bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            protected void initChannel(SocketChannel ch) {
-                ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
-                ch.pipeline().addLast(new TcpClientHandler(vehicle));
+    public CompletableFuture<?> init() {
+        return executor.submit(() -> {
+            this.vehicleData = new VehicleData();
+            vehicleData.init();
+        });
+    }
+
+    public CompletableFuture<?> destroy() {
+        return executor.submit(() -> {
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(true);
+                scheduledFuture = null;
+            }
+            if (channel != null) {
+                channel.close();
+                channel = null;
             }
         });
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-        try {
-            channel = bootstrap.connect(host, port).sync().channel();
-        } catch (InterruptedException e) {
-            throw BaseException.get(e);
-        }
     }
 
-    public void init() {
-        this.vehicleData = new VehicleData();
-        vehicleData.init();
+    public CompletableFuture<?> connect(String host, int port,
+                                        Runnable onConnected,
+                                        Runnable onDisconnected,
+                                        Consumer<byte[]> onSend,
+                                        Consumer<byte[]> onReceive,
+                                        Consumer<VehicleData> onDataUpdate
+    ) {
+        return executor.submit(() -> {
+            this.onConnected = onConnected;
+            this.onDisconnected = onDisconnected;
+            this.onSend = onSend;
+            this.onReceive = onReceive;
+            this.onDataUpdate = onDataUpdate;
+            Vehicle vehicle = this;
+            Bootstrap bootstrap = new Bootstrap();
+            bootstrap.group(tcp_workerGroup);
+            bootstrap.channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true);
+            bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                protected void initChannel(SocketChannel ch) {
+                    ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
+                    ch.pipeline().addLast(new TcpClientHandler(vehicle));
+                }
+            });
+            try {
+                channel = bootstrap.connect(host, port).sync().channel();
+            } catch (InterruptedException e) {
+                throw BaseException.get(e);
+            }
+        });
     }
 
-    public byte[] send_vehicleRunData() {
+    public CompletableFuture<?> disconnect() {
+        return executor.submit(() -> {
+            if (channel != null) {
+                channel.close();
+            }
+        });
+    }
+
+    public CompletableFuture<?> startSendRunData() {
+        return executor.submit(() -> {
+            if (scheduledFuture == null) {
+                scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, 10, TimeUnit.SECONDS);
+            }
+        });
+    }
+
+    public CompletableFuture<?> stopSendRunData() {
+        return executor.submit(() -> {
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(true);
+                scheduledFuture = null;
+            }
+        });
+    }
+
+    public CompletableFuture<?> send(byte[] data) {
+        return executor.submit(() -> {
+            if (channel != null) {
+                channel.writeAndFlush(Unpooled.wrappedBuffer(data));
+            }
+        });
+    }
+
+    public void onConnected() {
+        executor.execute(() -> {
+            startSendRunData();
+            if (onConnected != null) {
+                onConnected.run();
+            }
+        });
+    }
+
+    public void onMessage(byte[] data) {
+        executor.execute(() -> {
+            if (onConnected != null) {
+                onReceive.accept(data);
+            }
+        });
+    }
+
+    public void onDisconnected() {
+        executor.execute(() -> {
+            stopSendRunData();
+            if (onDisconnected != null) {
+                onDisconnected.run();
+            }
+        });
+    }
+
+    private void send_vehicleRunData() {
         Packet packet = new Packet();
         packet.header = new byte[]{0x23, 0x23};
         packet.flag = PacketFlag.vehicle_run_data;
@@ -89,36 +167,6 @@ public class Vehicle {
         byte[] arr = new byte[buffer.readableBytes()];
         buffer.readBytes(arr);
         send(arr);
-        return arr;
-    }
-
-    public void send(byte[] data) {
-        if (channel != null) {
-            channel.writeAndFlush(Unpooled.wrappedBuffer(data));
-        }
-    }
-
-    public void disconnect() {
-        if (channel != null) {
-            channel.close();
-        }
-    }
-
-    public void onConnected() {
-        if (onConnected != null) {
-            onConnected.run();
-        }
-    }
-
-    public void onMessage(byte[] data) {
-        if (onMessage != null) {
-            onMessage.accept(2, data);
-        }
-    }
-
-    public void onDisconnected() {
-        if (onDisconnected != null) {
-            onDisconnected.run();
-        }
+        onSend.accept(arr);
     }
 }
