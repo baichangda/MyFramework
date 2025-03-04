@@ -16,7 +16,7 @@ import java.util.Map;
 @CommandLine.Command(name = "singleVehicle", mixinStandardHelpOptions = true)
 public class HttpServer implements Runnable {
 
-    static Logger logger= LoggerFactory.getLogger(HttpServer.class);
+    static Logger logger = LoggerFactory.getLogger(HttpServer.class);
 
     @CommandLine.Option(names = {"-p", "--httpServerPort"}, description = "http server port", required = false, defaultValue = "45678", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
     int httpServerPort;
@@ -55,19 +55,18 @@ public class HttpServer implements Runnable {
             ctx.request().toWebSocket().onSuccess(webSocket -> {
                 String vin = ctx.queryParam("vin").getFirst();
                 logger.info("-------------ws open vin[{}]--------------", vin);
-                WsSession wsSession = new WsSession(vin,webSocket);
+                WsSession wsSession = new WsSession(vin, webSocket);
                 WsSession prev = WsSession.sessionMap.putIfAbsent(vin, wsSession);
                 if (prev != null) {
                     try {
                         webSocket.writeTextMessage(JsonUtil.toJson(new WsOutMsg(999, "车辆[" + vin + "]正在使用中、请更换车辆", false)));
                         wsSession.ws_onClose();
-                        WsSession.sessionMap.remove(vin);
                         webSocket.close();
                         logger.info("-------------ws close vin[{}]--------------", vin);
-                        return;
                     } catch (Exception ex) {
                         logger.error("error", ex);
                     }
+                    return;
                 }
                 wsSession.init();
                 webSocket.frameHandler(frame -> {
