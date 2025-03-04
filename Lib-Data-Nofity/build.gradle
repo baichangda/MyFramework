@@ -1,0 +1,15 @@
+apply plugin: "io.spring.dependency-management"
+apply plugin: "org.springframework.boot"
+
+dependencies {
+    api project(":Lib-Base-Redis")
+    api project(":Lib-Base-Kafka")
+}
+
+bootJar {
+    enabled = false
+}
+
+bootRun {
+    enabled = false
+}
