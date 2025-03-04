@@ -18,6 +18,7 @@ configurations.configureEach {
 dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
+    implementation project(":Lib-Data-Notify")
     implementation project(":Lib-Monitor-Client")
 
     //springboot支持
