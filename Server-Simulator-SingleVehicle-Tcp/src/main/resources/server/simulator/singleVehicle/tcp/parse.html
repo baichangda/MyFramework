@@ -47,29 +47,33 @@
     // create the editor
     const container = document.getElementById("jsoneditor")
     // const options = {mode:'view'}
-    const options = {mode:'code'}
+    const options = {mode: 'code'}
     const editor = new JSONEditor(container, options)
 
     function parse() {
         editor.set({})
         let val = $("#hex_textarea").val().trim();
         if (val === "") {
-            appendToOutput("报文不能为空",1)
+            appendToOutput("报文不能为空", 1)
         } else {
             $.ajax({
-                url: "/parse?hex="+val,
-                success:function (res){
-                    if(res.succeed){
+                url: "/parse",
+                method: "POST",
+                data: val,
+                contentType: "text/plain",
+                success: function (res) {
+                    if (res.succeed) {
                         editor.set(JSON.parse(res.data))
-                        appendToOutput("解析成功",2)
-                    }else{
-                        appendToOutput(res.msg,2)
+                        appendToOutput("解析成功", 2)
+                    } else {
+                        appendToOutput(res.msg, 2)
                     }
                 }
             })
-            appendToOutput("发送http解析请求成功",1)
+            appendToOutput("发送http解析请求成功", 1)
         }
     }
+
     let outputCount = 0
     const maxOutputCount = 20
 
