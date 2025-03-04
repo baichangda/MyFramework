@@ -1,4 +1,4 @@
-package cn.bcd.lib.data.notify.onlyNofity.vehicleData;
+package cn.bcd.lib.data.notify.onlyNotify.vehicleData;
 
 import lombok.Data;
 

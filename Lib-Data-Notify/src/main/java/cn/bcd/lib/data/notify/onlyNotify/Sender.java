@@ -1,4 +1,4 @@
-package cn.bcd.lib.data.notify.onlyNofity;
+package cn.bcd.lib.data.notify.onlyNotify;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.kafka.KafkaUtil;
