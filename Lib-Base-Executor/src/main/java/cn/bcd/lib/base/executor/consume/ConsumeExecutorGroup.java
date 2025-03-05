@@ -2,7 +2,7 @@ package cn.bcd.lib.base.executor.consume;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.BlockingChecker;
-import cn.bcd.lib.base.executor.TaskResult;
+import cn.bcd.lib.base.executor.ExecResult;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -146,7 +146,7 @@ public abstract class ConsumeExecutorGroup<T> {
 
     }
 
-    public CompletableFuture<TaskResult<Void>> removeEntity(String id, ConsumeExecutor<T> executor) {
+    public CompletableFuture<ExecResult<Void>> removeEntity(String id, ConsumeExecutor<T> executor) {
         return executor.submit(() -> {
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
@@ -162,7 +162,7 @@ public abstract class ConsumeExecutorGroup<T> {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> removeEntity(String id) {
+    public CompletableFuture<ExecResult<Void>> removeEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
         return removeEntity(id, executor);
     }

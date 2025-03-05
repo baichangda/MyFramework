@@ -2,7 +2,7 @@ package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.SingleThreadExecutor;
-import cn.bcd.lib.base.executor.TaskResult;
+import cn.bcd.lib.base.executor.ExecResult;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
@@ -43,14 +43,14 @@ public class Vehicle {
         this.executor = executor;
     }
 
-    public CompletableFuture<TaskResult<Void>> init() {
+    public CompletableFuture<ExecResult<Void>> init() {
         return executor.submit(() -> {
             this.vehicleData = new VehicleData();
             vehicleData.init();
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> destroy() {
+    public CompletableFuture<ExecResult<Void>> destroy() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -63,12 +63,12 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> connect(String host, int port,
-                                        Runnable onConnected,
-                                        Runnable onDisconnected,
-                                        Consumer<byte[]> onSend,
-                                        Consumer<byte[]> onReceive,
-                                        Consumer<VehicleData> onDataUpdate
+    public CompletableFuture<ExecResult<Void>> connect(String host, int port,
+                                                       Runnable onConnected,
+                                                       Runnable onDisconnected,
+                                                       Consumer<byte[]> onSend,
+                                                       Consumer<byte[]> onReceive,
+                                                       Consumer<VehicleData> onDataUpdate
     ) {
         return executor.submit(() -> {
             this.onConnected = onConnected;
@@ -95,7 +95,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> disconnect() {
+    public CompletableFuture<ExecResult<Void>> disconnect() {
         return executor.submit(() -> {
             if (channel != null) {
                 channel.close();
@@ -103,7 +103,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> startSendRunData() {
+    public CompletableFuture<ExecResult<Void>> startSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture == null) {
                 scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, 10, TimeUnit.SECONDS);
@@ -111,7 +111,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> stopSendRunData() {
+    public CompletableFuture<ExecResult<Void>> stopSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -120,7 +120,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<TaskResult<Void>> send(byte[] data) {
+    public CompletableFuture<ExecResult<Void>> send(byte[] data) {
         return executor.submit(() -> {
             if (channel != null) {
                 channel.writeAndFlush(Unpooled.wrappedBuffer(data));

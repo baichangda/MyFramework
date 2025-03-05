@@ -2,7 +2,7 @@ package cn.bcd.lib.base.kafka.ext.datadriven;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.BlockingChecker;
-import cn.bcd.lib.base.executor.TaskResult;
+import cn.bcd.lib.base.executor.ExecResult;
 import cn.bcd.lib.base.kafka.ext.KafkaExtUtil;
 import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.util.DateUtil;
@@ -245,12 +245,12 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public final CompletableFuture<TaskResult<Void>> removeHandler(String id) {
+    public final CompletableFuture<ExecResult<Void>> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
         return removeHandler(id, workExecutor);
     }
 
-    public final CompletableFuture<TaskResult<Void>> removeHandler(String id, WorkExecutor executor) {
+    public final CompletableFuture<ExecResult<Void>> removeHandler(String id, WorkExecutor executor) {
         return executor.execute(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {
