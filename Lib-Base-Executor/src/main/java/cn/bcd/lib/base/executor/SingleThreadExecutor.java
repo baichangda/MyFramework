@@ -228,7 +228,7 @@ public class SingleThreadExecutor implements Executor {
         if (inThread()) {
             try {
                 runnable.run();
-                return CompletableFuture.completedFuture(ExecResult.succeed(null));
+                return CompletableFuture.completedFuture(ExecResult.void_succeed);
             } catch (Throwable ex) {
                 return CompletableFuture.completedFuture(ExecResult.failed(ex));
             }
