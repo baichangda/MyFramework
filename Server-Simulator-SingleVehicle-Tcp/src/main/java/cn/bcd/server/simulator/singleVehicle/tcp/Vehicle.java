@@ -1,8 +1,8 @@
 package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.base.executor.ExecResult;
+import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
@@ -103,6 +103,12 @@ public class Vehicle {
         });
     }
 
+    public void updateVehicleData(VehicleData vehicleData) {
+        executor.execute(() -> {
+            this.vehicleData = vehicleData;
+        });
+    }
+
     public CompletableFuture<ExecResult<Void>> startSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture == null) {
@@ -137,19 +143,19 @@ public class Vehicle {
         });
     }
 
-    public void onMessage(byte[] data) {
-        executor.execute(() -> {
-            if (onConnected != null) {
-                onReceive.accept(data);
-            }
-        });
-    }
-
     public void onDisconnected() {
         executor.execute(() -> {
             stopSendRunData();
             if (onDisconnected != null) {
                 onDisconnected.run();
+            }
+        });
+    }
+
+    public void onMessage(byte[] data) {
+        executor.execute(() -> {
+            if (onConnected != null) {
+                onReceive.accept(data);
             }
         });
     }

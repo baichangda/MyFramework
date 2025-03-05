@@ -19,7 +19,6 @@ public class WsSession {
     public final ServerWebSocket channel;
     public final Vehicle vehicle;
     public final SingleThreadExecutor executor;
-
     public ScheduledFuture<?> scheduledFuture;
 
     boolean closed;
@@ -47,7 +46,7 @@ public class WsSession {
     public void init() {
         executeTask(() -> {
             this.vehicle.init();
-            ws_sendVehicleData(vehicle.vehicleData);
+            vehicle_onDataUpdate(vehicle.vehicleData);
         });
     }
 
@@ -60,7 +59,7 @@ public class WsSession {
                     scheduledFuture = null;
                 }
                 if (vehicle != null) {
-                    vehicle.disconnect();
+                    vehicle.destroy();
                 }
             }
         });
@@ -117,9 +116,9 @@ public class WsSession {
         });
     }
 
-    public void tcp_onReceive(byte[] data) {
+    public void vehicle_onDataUpdate(VehicleData vehicleData) {
         executeTask(() -> {
-            ws_send(new WsOutMsg(103, ByteBufUtil.hexDump(data), true));
+            ws_send(new WsOutMsg(101, JsonUtil.toJson(vehicleData), true));
         });
     }
 
@@ -129,13 +128,12 @@ public class WsSession {
         });
     }
 
-    public void vehicle_onDataUpdate(VehicleData vehicleData) {
-        executeTask(() -> ws_sendVehicleData(vehicleData));
+    public void tcp_onReceive(byte[] data) {
+        executeTask(() -> {
+            ws_send(new WsOutMsg(103, ByteBufUtil.hexDump(data), true));
+        });
     }
 
-    private void ws_sendVehicleData(VehicleData vehicleData) {
-        ws_send(new WsOutMsg(101, JsonUtil.toJson(vehicleData), true));
-    }
 
     private void ws_send(WsOutMsg outMsg) {
         if (!closed) {
