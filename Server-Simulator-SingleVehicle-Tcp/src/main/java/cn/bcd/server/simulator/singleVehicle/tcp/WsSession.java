@@ -78,11 +78,12 @@ public class WsSession {
                                     this::tcp_onSend,
                                     this::tcp_onReceive,
                                     this::vehicle_onDataUpdate)
-                            .exceptionally(ex -> {
-                                logger.error("connect tcp address[{}] error", inMsg.data(), ex);
-                                ws_send(new WsOutMsg(1, null, false));
-                                return null;
-                            });
+                            .whenCompleteAsync((r, ex) -> {
+                                if (r.throwable() != null) {
+                                    logger.error("connect tcp address[{}] error", inMsg.data(), ex);
+                                    ws_send(new WsOutMsg(1, null, false));
+                                }
+                            }, executor);
                 }
                 case 2 -> {
                     try {
