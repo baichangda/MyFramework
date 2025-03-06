@@ -19,9 +19,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @CommandLine.Command(name = "singleVehicle", mixinStandardHelpOptions = true)
-public class HttpServerCommandLine implements Runnable {
+public class CommandLineStarter implements Runnable {
 
-    static Logger logger = LoggerFactory.getLogger(HttpServerCommandLine.class);
+    static Logger logger = LoggerFactory.getLogger(CommandLineStarter.class);
 
     @CommandLine.Option(names = {"-p", "--httpServerPort"}, description = "http server port", required = false, defaultValue = "45678", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
     int httpServerPort;
