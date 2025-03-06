@@ -69,6 +69,7 @@ dependencies {
         var vertxVersion = "4.5.13"
         // https://mvnrepository.com/artifact/io.vertx/vertx-web
         api group: 'io.vertx', name: 'vertx-web', version: "${vertxVersion}"
+        api group: 'io.vertx', name: 'vertx-tcp-eventbus-bridge', version: "${vertxVersion}"
 
         api group: 'org.jctools', name: 'jctools-core',version:'4.0.5'
 
