@@ -5,6 +5,8 @@ import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.LoggerFormat;
 import io.vertx.ext.web.handler.LoggerHandler;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @CommandLine.Command(name = "singleVehicle", mixinStandardHelpOptions = true)
 public class HttpServerCommandLine implements Runnable {
@@ -26,7 +29,11 @@ public class HttpServerCommandLine implements Runnable {
     @Override
     public void run() {
         Vertx vertx = Vertx.builder().build();
-        io.vertx.core.http.HttpServer httpServer = vertx.createHttpServer();
+        io.vertx.core.http.HttpServer httpServer = vertx.createHttpServer(
+                new HttpServerOptions()
+                        .setIdleTimeoutUnit(TimeUnit.SECONDS)
+                        .setIdleTimeout(60)
+        );
         Router router = Router.router(vertx);
         router.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
         router.route("/*")
@@ -62,13 +69,20 @@ public class HttpServerCommandLine implements Runnable {
                         String vin = ctx.queryParam("vin").getFirst();
                         logger.info("-------------ws open vin[{}]--------------", vin);
                         WsSession wsSession = new WsSession(vin, webSocket);
+                        webSocket.closeHandler(e -> {
+                            try {
+                                wsSession.ws_onClose();
+                                WsSession.sessionMap.remove(vin);
+                                logger.info("-------------ws close vin[{}]--------------", vin);
+                            } catch (Exception ex) {
+                                logger.error("error", ex);
+                            }
+                        });
                         WsSession prev = WsSession.sessionMap.putIfAbsent(vin, wsSession);
                         if (prev != null) {
                             try {
                                 webSocket.writeTextMessage(JsonUtil.toJson(new WsOutMsg(999, "车辆[" + vin + "]正在使用中、请更换车辆", false)));
-                                wsSession.ws_onClose();
                                 webSocket.close();
-                                logger.info("-------------ws close vin[{}]--------------", vin);
                             } catch (Exception ex) {
                                 logger.error("error", ex);
                             }
@@ -76,24 +90,13 @@ public class HttpServerCommandLine implements Runnable {
                         }
                         wsSession.init();
                         webSocket.frameHandler(frame -> {
-                            switch (frame.type()) {
-                                case TEXT -> {
-                                    String data = frame.textData();
-                                    try {
-                                        WsInMsg wsInMsg = JsonUtil.OBJECT_MAPPER.readValue(data, WsInMsg.class);
-                                        wsSession.ws_onMessage(wsInMsg);
-                                    } catch (Exception ex) {
-                                        logger.error("receive ws msg parse json error:\n{}", data);
-                                    }
-                                }
-                                case CLOSE -> {
-                                    try {
-                                        wsSession.ws_onClose();
-                                        WsSession.sessionMap.remove(vin);
-                                        logger.info("-------------ws close vin[{}]--------------", vin);
-                                    } catch (Exception ex) {
-                                        logger.error("error", ex);
-                                    }
+                            if (frame.type() == WebSocketFrameType.TEXT) {
+                                String data = frame.textData();
+                                try {
+                                    WsInMsg wsInMsg = JsonUtil.OBJECT_MAPPER.readValue(data, WsInMsg.class);
+                                    wsSession.ws_onMessage(wsInMsg);
+                                } catch (Exception ex) {
+                                    logger.error("receive ws msg parse json error:\n{}", data);
                                 }
                             }
                         });
