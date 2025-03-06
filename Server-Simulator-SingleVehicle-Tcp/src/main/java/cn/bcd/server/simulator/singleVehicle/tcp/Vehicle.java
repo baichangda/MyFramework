@@ -16,6 +16,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +27,9 @@ import java.util.function.Consumer;
 
 
 public class Vehicle {
+
+    static Logger logger = LoggerFactory.getLogger(Vehicle.class);
+
     static NioEventLoopGroup tcp_workerGroup = new NioEventLoopGroup();
     public final String vin;
     public VehicleData vehicleData;
@@ -136,26 +141,38 @@ public class Vehicle {
 
     public void onConnected() {
         executor.execute(() -> {
-            startSendRunData();
-            if (onConnected != null) {
-                onConnected.run();
+            try {
+                startSendRunData();
+                if (onConnected != null) {
+                    onConnected.run();
+                }
+            } catch (Exception ex) {
+                logger.error("error", ex);
             }
         });
     }
 
     public void onDisconnected() {
         executor.execute(() -> {
-            stopSendRunData();
-            if (onDisconnected != null) {
-                onDisconnected.run();
+            try {
+                stopSendRunData();
+                if (onDisconnected != null) {
+                    onDisconnected.run();
+                }
+            } catch (Exception ex) {
+                logger.error("error", ex);
             }
         });
     }
 
     public void onMessage(byte[] data) {
         executor.execute(() -> {
-            if (onConnected != null) {
-                onReceive.accept(data);
+            try {
+                if (onConnected != null) {
+                    onReceive.accept(data);
+                }
+            } catch (Exception ex) {
+                logger.error("error", ex);
             }
         });
     }
