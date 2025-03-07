@@ -1,6 +1,4 @@
-apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
-
 dependencies {
     api project(":Lib-Base")
     api project(":Lib-Base-Executor")
@@ -9,11 +7,4 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter")
 }
 
-bootJar {
-    enabled = false
-}
-
-bootRun {
-    enabled = false
-}
 

@@ -251,7 +251,7 @@ public abstract class DataDrivenKafkaConsumer {
     }
 
     public final CompletableFuture<ExecResult<Void>> removeHandler(String id, WorkExecutor executor) {
-        return executor.execute(() -> {
+        return executor.submit(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {
                 try {
@@ -290,7 +290,7 @@ public abstract class DataDrivenKafkaConsumer {
     public final <V extends WorkHandler> V getHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
         try {
-            return (V) workExecutor.execute(() -> workExecutor.workHandlers.get(id)).get().result();
+            return (V) workExecutor.submit(() -> workExecutor.workHandlers.get(id)).get().result();
         } catch (InterruptedException | ExecutionException e) {
             throw BaseException.get(e);
         }

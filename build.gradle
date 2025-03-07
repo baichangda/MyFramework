@@ -38,6 +38,7 @@ subprojects {
         mavenCentral()
     }
 
+    //统一配置排除spring logback包、使用log4j2
     configurations.configureEach {
         //去除springboot默认的logback
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
@@ -50,10 +51,11 @@ subprojects {
         }
     }
 
+    //统一配置lombok
     dependencies {
-        var lombokVersion='1.18.36'
-        compileOnly group: 'org.projectlombok', name: 'lombok',version: "${lombokVersion}"
-        annotationProcessor group: 'org.projectlombok', name: 'lombok',version: "${lombokVersion}"
+        var lombokVersion = '1.18.36'
+        compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
     }
 
     //下载源码和文档
@@ -75,6 +77,54 @@ subprojects {
         useJUnitPlatform()
     }
 
+
+}
+
+gradle.projectsEvaluated {
+    subprojects {
+        //判断是否包含springboot依赖、有则引入springboot插件
+        def isSpringBootApplication = project.plugins.hasPlugin("org.springframework.boot")
+        def isLib = project.name.startsWith("Lib-")
+        println("---------project[${project.name}] isLib[{${isLib}] isSpringBootApplication[${isSpringBootApplication}]")
+        if (isSpringBootApplication) {
+            //统一配置springboot应用的bootJar和bootRun
+            if (isLib) {
+                bootJar {
+                    enabled = false
+                }
+                bootRun {
+                    enabled = false
+                }
+            } else {
+                bootJar {
+                    exclude "**/*-dev.yml"
+                    exclude "**/*-test.yml"
+                    manifest {
+                        attributes 'Start-Class': 'cn.bcd.Application'
+                    }
+                    //指定jar文件的名称
+                    archiveBaseName = "${project.name}"
+                    version = ""
+                }
+                bootRun {
+                    /**
+                     * 启动时候带入jvm的参数;如下(启动jvisualvm监控)
+                     * nohup gradle bootRun -PjvmArgs="-Djava.rmi.server.hostname=172.16.24.36 -Dcom.sun.management.jmxremote.port=10001 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=true" &
+                     */
+                    if (project.hasProperty('jvmArgs')) {
+                        jvmArgs(project.jvmArgs.split("\\s+") as List)
+                    }
+                    //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
+                    //开启缓存行补齐
+                    jvmArgs('-XX:-RestrictContended')
+                    jvmArgs('-Dfile.encoding=UTF-8')
+                    jvmArgs('-Dsun.jnu.encoding=UTF-8')
+                    jvmArgs('--add-opens=java.base/java.nio=ALL-UNNAMED')
+                }
+            }
+
+        }
+    }
 }
 
 

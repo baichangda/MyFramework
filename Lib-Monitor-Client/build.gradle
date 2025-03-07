@@ -1,4 +1,3 @@
-apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
 
 dependencies {
@@ -7,10 +6,3 @@ dependencies {
     api group: 'com.github.oshi', name: 'oshi-core-java11'
 }
 
-bootJar {
-    enabled = false
-}
-
-bootRun {
-    enabled = false
-}

@@ -1,4 +1,3 @@
-apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
 
 dependencies {
@@ -12,18 +11,4 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl'
-}
-
-/**
- * SpringBoot 2开始,使用gradle bootJar进行打包,并要配置入口类
- */
-bootJar {
-    exclude "**/*-dev.yml"
-    exclude "**/*-test.yml"
-    manifest {
-        attributes 'Start-Class': 'cn.bcd.Application'
-    }
-    //指定jar文件的名称
-    archiveBaseName = "${project.name}"
-    version = ""
 }

@@ -1,4 +1,3 @@
-apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
 
 dependencies {
@@ -6,12 +5,4 @@ dependencies {
     //springboot redis支持
     //lettuce异步客户端(默认使用lettuce)
     api("org.springframework.boot:spring-boot-starter-data-redis")
-}
-
-bootJar {
-    enabled = false
-}
-
-bootRun {
-    enabled = false
 }

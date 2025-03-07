@@ -1,7 +1,5 @@
 package cn.bcd.server.business.backend.process.base.support_mongodb.util;
 
-import cn.bcd.server.business.backend.base.condition.impl.*;
-import cn.bcd.server.business.backend.base.support_mongodb.condition.converter.*;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.server.business.backend.process.base.condition.Condition;
 import cn.bcd.server.business.backend.process.base.condition.Converter;
