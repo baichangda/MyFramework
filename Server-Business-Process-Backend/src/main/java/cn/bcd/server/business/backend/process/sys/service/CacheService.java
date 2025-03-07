@@ -43,14 +43,7 @@ public class CacheService {
         if (username_roleList == null) {
             synchronized (this) {
                 if (username_roleList == null) {
-                    username_roleList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        final UserBean user = userService.getUser(k);
-                        if (user == null) {
-                            return Collections.emptyList();
-                        } else {
-                            return roleService.findRolesByUserId(user.id).stream().map(e->e.code).collect(Collectors.toList());
-                        }
-                    });
+                    username_roleList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> roleService.findRolesByUsername(k).stream().map(e->e.code).toList());
                 }
             }
         }
@@ -61,14 +54,7 @@ public class CacheService {
         if (username_permissionList == null) {
             synchronized (this) {
                 if (username_permissionList == null) {
-                    username_permissionList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        final UserBean user = userService.getUser(k);
-                        if (user == null) {
-                            return Collections.emptyList();
-                        } else {
-                            return permissionService.findPermissionsByUserId(user.id).stream().map(e->e.code).collect(Collectors.toList());
-                        }
-                    });
+                    username_permissionList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> permissionService.findPermissionsByUsername(k).stream().map(e->e.code).toList());
                 }
             }
         }

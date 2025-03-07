@@ -213,4 +213,34 @@ public class UserController extends BaseController {
             return Result.fail().message("密码错误");
         }
     }
+
+
+    /**
+     * 获取用户角色编码列表
+     * @return
+     */
+    @RequestMapping(value = "/getUserRoles", method = RequestMethod.GET)
+    @Operation(summary = "获取用户角色编码列表")
+    @ApiResponse(responseCode = "200", description = "用户角色编码列表")
+    public Result<List<String>> getUserRoles(
+            @Parameter(description = "用户名") @RequestParam(required = false) String username,
+            @Parameter(description = "登陆方式") @RequestParam(required = false) String loginType
+    ) {
+        return Result.success(userService.getUserRoles(username,loginType));
+    }
+
+    /**
+     * 获取用户权限编码列表
+     * @return
+     */
+    @RequestMapping(value = "/getUserPermissions", method = RequestMethod.GET)
+    @Operation(summary = "获取用户权限编码列表")
+    @ApiResponse(responseCode = "200", description = "用户权限编码列表")
+    public Result<List<String>> getUserPermissions(
+            @Parameter(description = "用户名") @RequestParam(required = false) String username,
+            @Parameter(description = "登陆方式") @RequestParam(required = false) String loginType
+    ) {
+        return Result.success(userService.getUserPermissions(username,loginType));
+    }
+
 }

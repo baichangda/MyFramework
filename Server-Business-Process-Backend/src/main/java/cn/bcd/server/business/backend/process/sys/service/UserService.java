@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.PrivateKey;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +37,10 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
     @Autowired
     @Qualifier("string_string_redisTemplate")
     private RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private PermissionService permissionService;
+    @Autowired
+    private RoleService roleService;
 
 
     public UserBean getUser(String username) {
@@ -243,5 +248,13 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
             user.password = dbUser.password;
         }
         save(user);
+    }
+
+    public List<String> getUserRoles(String username, String loginType) {
+        return roleService.findRolesByUsername(username).stream().map(e -> e.code).toList();
+    }
+
+    public List<String> getUserPermissions(String username, String loginType) {
+        return permissionService.findPermissionsByUsername(username).stream().map(e -> e.code).toList();
     }
 }

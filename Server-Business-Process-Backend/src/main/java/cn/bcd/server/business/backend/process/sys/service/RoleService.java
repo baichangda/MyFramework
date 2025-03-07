@@ -18,12 +18,30 @@ public class RoleService extends BaseService<RoleBean> {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    public List<RoleBean> findRolesByUserId(Long userId){
+    public List<RoleBean> findRolesByUserId(Long userId) {
         if (CommonConst.ADMIN_ID == userId) {
             return list();
-        }else {
-            String sql = "select b.* from t_sys_user_role a inner join t_sys_role b on a.role_code=b.code where a.user_id=?";
+        } else {
+            String sql = """
+                    select b.* from t_sys_user_role a
+                    inner join t_sys_role b on a.role_code=b.code
+                    where a.user_id=?
+                    """;
             return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RoleBean.class), userId);
+        }
+    }
+
+    public List<RoleBean> findRolesByUsername(String username) {
+        if (CommonConst.ADMIN_USERNAME.equals(username)) {
+            return list();
+        } else {
+            String sql = """
+                    select b.* from t_sys_user x
+                    inner join t_sys_user_role a on x.id=a.user_id
+                    inner join t_sys_role b on a.role_code=b.code
+                    where x.username=?
+                    """;
+            return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RoleBean.class), username);
         }
     }
 }
