@@ -38,6 +38,19 @@ subprojects {
         mavenCentral()
     }
 
+    //统一配置排除spring logback包、使用log4j2
+    configurations.configureEach {
+        //去除springboot默认的logback
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude module: 'logback-classic'
+        exclude module: 'logback-core'
+        //指定快照jar的更新策略
+        resolutionStrategy {
+            //缓存依赖时间、0代表不缓存
+            cacheChangingModulesFor 0, 'seconds'
+        }
+    }
+
     //统一配置lombok
     dependencies {
         var lombokVersion = '1.18.36'
@@ -77,19 +90,6 @@ gradle.projectsEvaluated {
         def isLib = project.name.startsWith("Lib-")
         println("---------project[${project.name}] isLib[{${isLib}] isSpringBootApplication[${isSpringBootApplication}]")
         if (isSpringBootApplication) {
-            //统一配置排除spring logback包、使用log4j2
-            configurations.configureEach {
-                //去除springboot默认的logback
-                exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-                exclude module: 'logback-classic'
-                exclude module: 'logback-core'
-                //指定快照jar的更新策略
-                resolutionStrategy {
-                    //缓存依赖时间、0代表不缓存
-                    cacheChangingModulesFor 0, 'seconds'
-                }
-            }
-
             //统一配置springboot应用的bootJar和bootRun
             if (isLib) {
                 bootJar {
