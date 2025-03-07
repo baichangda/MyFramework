@@ -6,6 +6,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
+
 @Configuration
 public class SaTokenConfig {
     @Bean
@@ -17,17 +19,16 @@ public class SaTokenConfig {
                 )
                 // 业务后台开放地址
                 .addExclude(
-                        RouteConfig.business_process_backend_pre + "/api/anno",
-                        RouteConfig.business_process_backend_pre + "/api/sys/user/getVerificationCode",
-                        RouteConfig.business_process_backend_pre + "/api/sys/user/login",
-                        //tbox上传文件接口
-                        RouteConfig.business_process_backend_pre + "/api/third/device/runData",
-                        //websocket单独验证token
-                        RouteConfig.business_process_backend_pre + "/ws/**",
-                        //todo 测试接口，上线后取消
-                        RouteConfig.business_process_backend_pre + "/api/sys/user/testLogin"
+                        getExcludeUrls(RouteConfig.business_process_backend_pre,
+                                "/api/anno",
+                                "/api/sys/user/login"
+                        )
                 )
                 .setAuth(obj -> StpUtil.checkLogin())
                 .setError(ex -> JsonUtil.toJson(Result.fail(401, "请先登陆")));
+    }
+
+    private String[] getExcludeUrls(String pre, String... urls) {
+        return Arrays.stream(urls).map(e -> pre + e).toArray(String[]::new);
     }
 }
