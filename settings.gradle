@@ -17,4 +17,5 @@ include 'Lib-Base-Kafka'
 include 'Lib-Bom'
 include 'Lib-Base-Executor'
 include 'Lib-Data-Notify'
+include 'Lib-Microservice-Common'
 
