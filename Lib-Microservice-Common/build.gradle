@@ -2,7 +2,13 @@ apply plugin: "io.spring.dependency-management"
 apply plugin: "org.springframework.boot"
 
 dependencies {
+    implementation project(":Lib-Base-Json")
+    //springboot支持
+    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-configuration-processor")
 
+    // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-openapi3-jakarta-spring-boot-starter
+    implementation group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter'
 }
 
 bootJar {
