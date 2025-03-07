@@ -80,6 +80,8 @@ subprojects {
 
 }
 
+//在其中不能做引入插件、修改依赖配置的工作
+//因为在此时插件和依赖已经确定了
 gradle.projectsEvaluated {
     subprojects {
         if (it.name == 'Lib-Bom') {
