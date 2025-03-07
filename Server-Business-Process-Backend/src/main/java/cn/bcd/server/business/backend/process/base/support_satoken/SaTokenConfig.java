@@ -36,9 +36,9 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
          * 2、路由匹配的登陆验证
          * 具体逻辑查看 {@link  SaInterceptor#preHandle(HttpServletRequest, HttpServletResponse, Object)}
          */
-        registry.addInterceptor(new SaInterceptor(handler -> {
-            StpUtil.checkLogin();
-        })).addPathPatterns("/api/**").excludePathPatterns("/api/sys/user/login", "/api/anno");
+//        registry.addInterceptor(new SaInterceptor(handler -> {
+//            StpUtil.checkLogin();
+//        })).addPathPatterns("/api/**").excludePathPatterns("/api/sys/user/login", "/api/anno");
     }
 
     /**
