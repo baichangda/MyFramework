@@ -7,7 +7,6 @@ dependencies {
     implementation group: 'cn.dev33', name: 'sa-token-reactor-spring-boot3-starter', version: "1.39.0"
     implementation group: 'cn.dev33', name: 'sa-token-redis-jackson', version: "1.39.0"
 
-
     // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-gateway
     implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-gateway'
 

@@ -9,7 +9,7 @@ server:
       timeout: 1800
 spring:
   application:
-    name: businessProcess-backend-1
+    name: business-process-backend
   threads:
     virtual:
       enabled: true
@@ -97,7 +97,7 @@ spring:
       #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
       #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
       bootstrap-servers: 192.168.23.129:9092
-      group-id: bcd
+      group-id: ${spring.application.name}
       key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:
@@ -115,6 +115,11 @@ spring:
     password:
     default-encoding: UTF-8
   cloud:
+    nacos:
+      discovery:
+        server-addr: 10.0.11.50:8848
+        ip: 10.0.11.50
+        port: 8888
     sentinel:
       log:
         dir: logs/csp
@@ -163,9 +168,6 @@ sa-token:
 register:
   host: 127.0.0.1
   servers: test1,test2
-
-notify:
-  id: bcd
 
 monitor:
   request-topic: monitorRequest

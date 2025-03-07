@@ -5,20 +5,14 @@ dependencies {
     implementation project(":Lib-Base-Kafka")
     implementation project(":Lib-Data-Notify")
     implementation project(":Lib-Monitor-Client")
+    implementation project(":Lib-Microservice-Common")
 
-    //springboot支持
-    implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-configuration-processor")
     //springboot cache支持
     implementation("org.springframework.boot:spring-boot-starter-cache")
-    //springboot aop支持
-    implementation("org.springframework.boot:spring-boot-starter-aop")
     //springboot web支持
     implementation("org.springframework.boot:spring-boot-starter-web")
     //springboot websocket支持
     implementation("org.springframework.boot:spring-boot-starter-websocket")
-    //springboot log4j2支持
-    implementation('org.springframework.boot:spring-boot-starter-log4j2')
 
     implementation group: 'com.lmax', name: 'disruptor'
 
@@ -38,10 +32,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.alibaba/easyexcel
     implementation(group: 'com.alibaba', name: 'easyexcel')
-
-    // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-openapi3-jakarta-spring-boot-starter
-    implementation group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter'
-
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
     implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
