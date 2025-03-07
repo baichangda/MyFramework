@@ -13,7 +13,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -25,10 +24,17 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
+                    boolean isAuth = exchange.getAttributes().containsKey(AuthFilter.isAuth_key);
                     ServerHttpRequest request = exchange.getRequest();
                     String sourcePath = request.getURI().toString();
                     String method = request.getMethod().name();
-                    String token = Optional.ofNullable(request.getHeaders().get("token")).orElse(List.of("")).getFirst();
+                    String token = Optional.ofNullable(request.getCookies().get("token")).map(e -> {
+                        if (e.isEmpty()) {
+                            return "";
+                        } else {
+                            return e.getFirst().getValue();
+                        }
+                    }).orElse("");
                     Route route = getGatewayRoute(exchange);
                     String lbPath = route.getUri().toString();
                     String targetPath = getTargetUrl(exchange).toString();
@@ -38,6 +44,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     logger.info("targetPath: {}", targetPath);
                     logger.info("method: {}", method);
                     logger.info("token: {}", token);
+                    logger.info("isAuth: {}", isAuth);
                     logger.info("-------------request end-------------");
                 })
         );
