@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -59,11 +60,14 @@ public class DBController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.POST, consumes = "multipart/form-data")
-    @Operation(summary = "文件上传示例", description = """
-            必须设置 consumes = "multipart/form-data"
-            否则当存在MultipartFile参数、同时需要导出xlsx文件时候、此时会导致导出的xlsx损坏无法打开
-            """)
+    @RequestMapping(value = "/test", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "文件上传示例",
+            description = """
+                    当存在MultipartFile参数、同时需要导出xlsx文件时候、此时会导致导出的xlsx损坏无法打开
+                    在doc.html存在异常
+                    在swagger-ui.html正常
+                    """
+    )
     @ApiResponse(responseCode = "200", description = "导出结果")
     public void testExportBug(@Parameter(description = "文件") @RequestParam MultipartFile file, HttpServletResponse response) {
         try {
