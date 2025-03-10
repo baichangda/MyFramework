@@ -67,7 +67,8 @@ subprojects {
 
 
     //在项目build.gradle执行完毕后、判断是否是springboot项目、设置bootRun和bootJar
-    //在此回调中无法修改插件、依赖
+    //在此回调中无法添加修改依赖、但是排除依赖是有效的
+    //插件无法在回调中添加、修改、删除
     afterEvaluate {
         if (it.name == 'Lib-Bom') {
             return
