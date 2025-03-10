@@ -66,18 +66,17 @@ subprojects {
     }
 
 
+    //在项目build.gradle执行完毕后、判断是否是springboot项目、设置bootRun和bootJar
+    //在此回调中无法修改插件、依赖
     afterEvaluate {
         if (it.name == 'Lib-Bom') {
             return
         }
-
         //判断是否包含springboot依赖、有则引入springboot插件
         def isSpringBootApplication = project.plugins.hasPlugin("org.springframework.boot")
         def isLib = project.name.startsWith("Lib-")
         println("---------project[${project.name}] isLib[{${isLib}] isSpringBootApplication[${isSpringBootApplication}]")
         if (isSpringBootApplication) {
-            //引入springboot依赖管理插件
-            apply plugin: "io.spring.dependency-management"
             //统一配置排除spring logback包、使用log4j2
             configurations.configureEach {
                 //去除springboot默认的logback
