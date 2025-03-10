@@ -3,6 +3,7 @@ package cn.bcd.server.business.process.backend.base.support_jdbc.dbinfo.controll
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.base.support_jdbc.dbinfo.service.DBService;
+import com.alibaba.excel.EasyExcel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/db")
@@ -57,15 +59,20 @@ public class DBController extends BaseController {
         }
     }
 
-    @RequestMapping(value = "/test", method = RequestMethod.POST)
-    @Operation(summary = "测试spring导出bug")
+    @RequestMapping(value = "/test", method = RequestMethod.POST, consumes = "multipart/form-data")
+    @Operation(summary = "文件上传示例", description = """
+            必须设置 consumes = "multipart/form-data"
+            否则当存在MultipartFile参数、同时需要导出xlsx文件时候、此时会导致导出的xlsx损坏无法打开
+            """)
     @ApiResponse(responseCode = "200", description = "导出结果")
     public void testExportBug(@Parameter(description = "文件") @RequestParam MultipartFile file, HttpServletResponse response) {
         try {
-            dbService.exportSpringDBDesignerExcel("bcd", response.getOutputStream(), () -> {
-                String fileName = "db-bcd.xlsx";
-                doBeforeResponseFile(fileName, response);
-            });
+            doBeforeResponseFile("test.xlsx", response);
+            EasyExcel.write(response.getOutputStream()).sheet("test").doWrite(List.of(
+                    List.of("123", "456"),
+                    List.of("abc", "def")
+            ));
+
         } catch (IOException e) {
             throw BaseException.get(e);
         }
