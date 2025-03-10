@@ -1,5 +1,4 @@
 apply plugin: "java-platform"
-apply plugin: "io.spring.dependency-management"
 
 javaPlatform {
     allowDependencies()
