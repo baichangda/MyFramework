@@ -223,8 +223,8 @@ public class UserController extends BaseController {
     @Operation(summary = "获取用户角色编码列表")
     @ApiResponse(responseCode = "200", description = "用户角色编码列表")
     public Result<List<String>> getUserRoles(
-            @Parameter(description = "用户名") @RequestParam(required = false) String username,
-            @Parameter(description = "登陆方式") @RequestParam(required = false) String loginType
+            @Parameter(description = "用户名") @RequestParam String username,
+            @Parameter(description = "登陆方式") @RequestParam String loginType
     ) {
         return Result.success(userService.getUserRoles(username,loginType));
     }
@@ -237,8 +237,8 @@ public class UserController extends BaseController {
     @Operation(summary = "获取用户权限编码列表")
     @ApiResponse(responseCode = "200", description = "用户权限编码列表")
     public Result<List<String>> getUserPermissions(
-            @Parameter(description = "用户名") @RequestParam(required = false) String username,
-            @Parameter(description = "登陆方式") @RequestParam(required = false) String loginType
+            @Parameter(description = "用户名") @RequestParam String username,
+            @Parameter(description = "登陆方式") @RequestParam String loginType
     ) {
         return Result.success(userService.getUserPermissions(username,loginType));
     }
