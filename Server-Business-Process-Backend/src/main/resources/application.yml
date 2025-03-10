@@ -130,7 +130,7 @@ spring:
 
 springdoc:
   packages-to-scan:
-    - cn.bcd.business.backend
+    - cn.bcd.server.business.process.backend
   swagger-ui:
     path: /swagger-ui.html
   api-docs:
