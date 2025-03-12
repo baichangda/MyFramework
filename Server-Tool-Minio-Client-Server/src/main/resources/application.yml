@@ -34,9 +34,9 @@ spring:
 minio:
   #minio地址
   endpoint: http://10.0.11.50:49000
-  #用户名
-  accessKey: k8DDNHsGGYEGxB0PUXRs
-  #密码
-  secretKey: 1lDFcaHIPpD4eCSnhABPkQOpblrN3t6LvCgz3Ouv
+  #访问密钥accessKey
+  accessKey: xxx
+  #访问密钥secretKey
+  secretKey: xxx
   #桶名称
   bucket: bucket-wq
