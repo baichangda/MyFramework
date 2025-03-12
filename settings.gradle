@@ -19,4 +19,5 @@ include 'Server-Monitor-Collector'
 include 'Server-Simulator-SingleVehicle-Tcp'
 include 'Server-Simulator-PressTest-Tcp'
 include 'Server-Business-Process-Gateway'
+include 'Server-Tool-Minio-Client-Server'
 

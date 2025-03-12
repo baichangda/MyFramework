@@ -1,0 +1,42 @@
+server:
+  port: 24680
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,application/xhtml+xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  servlet:
+    session:
+      timeout: 1800
+
+spring:
+  application:
+    name: tool-minio-client-server
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  web:
+    resources:
+      chain:
+        cache: false
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
+
+# Minio settings
+minio:
+  #minio地址
+  endpoint: http://10.0.11.50:49000
+  #用户名
+  accessKey: k8DDNHsGGYEGxB0PUXRs
+  #密码
+  secretKey: 1lDFcaHIPpD4eCSnhABPkQOpblrN3t6LvCgz3Ouv
+  #桶名称
+  bucket: bucket-wq

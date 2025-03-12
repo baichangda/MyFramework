@@ -79,5 +79,7 @@ dependencies {
         // https://mvnrepository.com/artifact/org.zeromq/jeromq
         api group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
 
+        api("io.minio:minio:8.5.17")
+
     }
 }
