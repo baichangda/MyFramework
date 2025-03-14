@@ -4,8 +4,8 @@ build
 ### Mac OS ###
 .DS_Store
 *.class
-gradle-bcd.properties
 gradlew*
 *.log
 *.log.*
 gradle
+application-local.yml
