@@ -100,8 +100,6 @@ subprojects {
                 }
             } else {
                 bootJar {
-                    exclude "**/*-dev.yml"
-                    exclude "**/*-test.yml"
                     manifest {
                         attributes 'Start-Class': 'cn.bcd.Application'
                     }
