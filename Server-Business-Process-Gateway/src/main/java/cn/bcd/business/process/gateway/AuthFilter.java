@@ -27,6 +27,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
         try {
             SaRouter
                     .match(RouteConfig.pre + "/**")
+                    .notMatch(RouteConfig.pre + "/*/v3/api-docs")
                     .notMatch(
                             getExcludeUrls(RouteConfig.business_process_backend_pre,
                                     "/api/anno",

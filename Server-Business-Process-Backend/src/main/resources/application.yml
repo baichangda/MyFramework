@@ -118,7 +118,7 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:18848
-        ip: 10.0.14.90
+        ip: 10.0.14.129
         port: 8888
     sentinel:
       log:

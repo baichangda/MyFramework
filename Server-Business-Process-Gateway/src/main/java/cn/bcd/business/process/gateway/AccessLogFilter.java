@@ -37,7 +37,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     }).orElse("");
                     Route route = getGatewayRoute(exchange);
                     String lbPath = route.getUri().toString();
-                    String targetPath = getTargetUrl(exchange).toString();
+                    String targetPath = Optional.ofNullable(getTargetUrl(exchange)).map(URI::toString).orElse("");
                     logger.info("-------------request start-------------");
                     logger.info("sourcePath: {}", sourcePath);
                     logger.info("lbPath: {}", lbPath);
