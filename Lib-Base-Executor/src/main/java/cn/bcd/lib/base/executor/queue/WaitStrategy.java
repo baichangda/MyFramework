@@ -23,7 +23,7 @@ public enum WaitStrategy {
     }),
     PROGRESSIVE_MS(idleCounter -> {
         if (idleCounter > 200) {
-            //休眠100ms
+            //休眠10ms
             LockSupport.parkNanos(10_000_000);
         } else if (idleCounter > 100) {
             Thread.yield();
