@@ -1,9 +1,9 @@
 package cn.bcd.lib.base.executor.queue;
 
-import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
 public enum WaitStrategy {
+
     SPIN(idleCounter -> idleCounter + 1),
     YIELD(idleCounter -> {
         Thread.yield();
@@ -21,9 +21,13 @@ public enum WaitStrategy {
         }
         return idleCounter + 1;
     }),
-
-    PARK_100MS(idleCounter -> {
-        LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+    PROGRESSIVE_MS(idleCounter -> {
+        if (idleCounter > 200) {
+            //休眠100ms
+            LockSupport.parkNanos(10_000_000);
+        } else if (idleCounter > 100) {
+            Thread.yield();
+        }
         return idleCounter + 1;
     });
 

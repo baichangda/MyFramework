@@ -73,9 +73,9 @@ public class SingleThreadExecutor implements Executor {
             try {
                 destroyFuture = null;
                 if (queueSize == 0) {
-                    this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PARK_100MS);
+                    this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE_MS);
                 } else {
-                    this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PARK_100MS);
+                    this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_MS);
                 }
                 executor = new ThreadPoolExecutor(
                         1,
