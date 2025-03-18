@@ -117,7 +117,6 @@ public class SingleThreadExecutor implements Executor {
                             if (quit) {
                                 return;
                             }
-                            TimeUnit.SECONDS.sleep(maxBlockingTimeInSecond);
                             while (!future.isDone()) {
                                 long blockingSecond = DateUtil.CacheSecond.current() - start;
                                 if (blockingSecond >= maxBlockingTimeInSecond) {
