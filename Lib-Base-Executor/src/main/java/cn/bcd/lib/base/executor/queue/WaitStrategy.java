@@ -21,10 +21,19 @@ public enum WaitStrategy {
         }
         return idleCounter + 1;
     }),
-    PROGRESSIVE_MS(idleCounter -> {
+    PROGRESSIVE_10MS(idleCounter -> {
         if (idleCounter > 200) {
             //休眠10ms
             LockSupport.parkNanos(10_000_000);
+        } else if (idleCounter > 100) {
+            Thread.yield();
+        }
+        return idleCounter + 1;
+    }),
+    PROGRESSIVE_100MS(idleCounter -> {
+        if (idleCounter > 200) {
+            //休眠100ms
+            LockSupport.parkNanos(100_000_000);
         } else if (idleCounter > 100) {
             Thread.yield();
         }
