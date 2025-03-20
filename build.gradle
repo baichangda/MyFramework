@@ -122,6 +122,8 @@ subprojects {
                     jvmArgs('-Dfile.encoding=UTF-8')
                     jvmArgs('-Dsun.jnu.encoding=UTF-8')
                     jvmArgs('--add-opens=java.base/java.nio=ALL-UNNAMED')
+                    jvmArgs('--add-opens=java.base/java.lang=ALL-UNNAMED')
+                    jvmArgs('--add-opens=java.base/java.lang.reflect=ALL-UNNAMED')
                 }
             }
 
