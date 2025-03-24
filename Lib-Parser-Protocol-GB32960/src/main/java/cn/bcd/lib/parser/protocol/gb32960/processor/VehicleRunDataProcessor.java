@@ -79,7 +79,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
                     instance.vehicleStorageTemperatureData = processor_vehicleStorageTemperatureData.process(data, parentContext);
                 }
                 default -> {
-                    logger.warn("flag[" + flag + "] not support");
+                    logger.warn("flag[{}] not support", flag);
                     //2.8、如果是自定义数据,只做展现,不解析
                     //2.8.1、解析长度
                     int dataLen = data.readUnsignedShort();
