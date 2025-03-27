@@ -310,6 +310,6 @@ public class BaseService<T extends SuperBaseBean> {
      * 通过注册一个spring的bean {@link java.util.function.Supplier<UserInterface>}
      */
     private static UserInterface getLoginUser() {
-        return null;
+        return UserGetter.getUser();
     }
 }
