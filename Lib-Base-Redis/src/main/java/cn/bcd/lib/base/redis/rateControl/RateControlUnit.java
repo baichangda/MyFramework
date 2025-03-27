@@ -9,10 +9,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class RateControlUnit {
     static Logger logger = LoggerFactory.getLogger(RateControlUnit.class);
@@ -20,7 +17,21 @@ public class RateControlUnit {
     static final String REDIS_KEY_PRE_COUNT = "rc:count";
     static final String REDIS_KEY_PRE_RESET = "rc:reset";
     static final int REDIS_KEY_TIMEOUT_SECOND_RESET = 10;
-    static final ScheduledExecutorService resetExecutor = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "RateControl-reset"));
+
+    static final int RESET_EXECUTOR_NUM = Runtime.getRuntime().availableProcessors();
+    static final ScheduledExecutorService[] RESET_EXECUTORS = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
+
+    static {
+        for (int i = 0; i < RESET_EXECUTORS.length; i++) {
+            int no = i + 1;
+            RESET_EXECUTORS[i] = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "rateControl(" + no + "/" + RESET_EXECUTORS.length + ")");
+                }
+            });
+        }
+    }
 
     private final String name;
     private final String redisKeyCount;
@@ -28,6 +39,7 @@ public class RateControlUnit {
     private final int timeInSecond;
     private final int maxAccessCount;
     private final RedisTemplate<String, String> redisTemplate;
+    private final ScheduledExecutorService resetExecutor;
     private volatile boolean reset;
 
     private ScheduledFuture<?> managerFuture;
@@ -43,6 +55,7 @@ public class RateControlUnit {
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
+        this.resetExecutor = RESET_EXECUTORS[Math.floorMod(name.hashCode(), RESET_EXECUTORS.length)];
     }
 
 
