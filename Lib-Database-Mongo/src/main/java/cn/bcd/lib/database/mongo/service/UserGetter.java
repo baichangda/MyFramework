@@ -1,12 +1,12 @@
-package cn.bcd.lib.database.jdbc.service;
+package cn.bcd.lib.database.mongo.service;
 
-import cn.bcd.lib.database.jdbc.bean.UserInterface;
+import cn.bcd.lib.database.mongo.bean.UserInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Supplier;
 
-@Component("UserGetter-jdbc")
+@Component("UserGetter-mongo")
 public class UserGetter {
 
     static Supplier<UserInterface> supplier;

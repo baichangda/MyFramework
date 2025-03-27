@@ -306,10 +306,8 @@ public class BaseService<T extends SuperBaseBean> {
     /**
      * 此方法主要是给内部创建信息、更新信息获取当前登陆用户使用
      * 不允许调用
-     * 其内容在代码创建之初就已经确定下来
-     * 如果没有用户体系、则实现返回null即可
-     *
-     * @return
+     * 实现通过{@link UserGetter#getUser()}
+     * 通过注册一个spring的bean {@link java.util.function.Supplier<UserInterface>}
      */
     private static UserInterface getLoginUser() {
         return null;
