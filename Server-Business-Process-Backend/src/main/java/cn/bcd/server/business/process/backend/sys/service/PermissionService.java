@@ -1,6 +1,6 @@
 package cn.bcd.server.business.process.backend.sys.service;
 
-import cn.bcd.server.business.process.backend.base.support_jdbc.service.BaseService;
+import cn.bcd.lib.database.jdbc.service.BaseService;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.NotePermission;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckNotePermissions;
 import cn.bcd.server.business.process.backend.sys.bean.PermissionBean;

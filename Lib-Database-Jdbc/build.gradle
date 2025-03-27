@@ -1,0 +1,22 @@
+apply plugin: "org.springframework.boot"
+
+dependencies {
+    api project(":Lib-Base-Json")
+    api project(":Lib-Database-Common")
+    //springboot redis支持
+    //lettuce异步客户端(默认使用lettuce)
+    api("org.springframework.boot:spring-boot-starter-data-jdbc")
+    //springboot validation支持
+    api("org.springframework.boot:spring-boot-starter-validation")
+
+    api group: 'com.github.ben-manes.caffeine', name: 'caffeine'
+
+    // https://mvnrepository.com/artifact/org.freemarker/freemarker
+    api group: 'org.freemarker', name: 'freemarker'
+
+    // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-openapi3-jakarta-spring-boot-starter
+    api group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter'
+
+    // https://mvnrepository.com/artifact/com.alibaba/easyexcel
+    api(group: 'com.alibaba', name: 'easyexcel')
+}

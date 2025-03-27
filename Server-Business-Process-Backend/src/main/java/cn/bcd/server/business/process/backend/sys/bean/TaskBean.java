@@ -1,8 +1,8 @@
 package cn.bcd.server.business.process.backend.sys.bean;
 
 import cn.bcd.lib.base.util.ExceptionUtil;
-import cn.bcd.server.business.process.backend.base.support_jdbc.anno.Table;
-import cn.bcd.server.business.process.backend.base.support_jdbc.bean.SuperBaseBean;
+import cn.bcd.lib.database.jdbc.anno.Table;
+import cn.bcd.lib.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.server.business.process.backend.base.support_task.Task;
 import com.fasterxml.jackson.annotation.JsonIgnore;

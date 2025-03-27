@@ -1,0 +1,42 @@
+apply plugin: "org.springframework.boot"
+apply plugin: "io.spring.dependency-management"
+
+dependencies {
+    implementation project(":Lib-Base-Redis")
+    implementation project(":Lib-Monitor-Client")
+    implementation project(":Lib-Microservice-Common")
+
+    //springboot cache支持
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    //springboot web支持
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    //springboot aop支持
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    //springboot websocket支持
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    //springboot jdbc支持
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+
+    //springboot redis支持
+    //lettuce异步客户端(默认使用lettuce)
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    //springboot validation支持
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
+    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
+
+    // https://mvnrepository.com/artifact/com.mysql/mysql-connector-j
+    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j'
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // https://mvnrepository.com/artifact/cn.dev33/sa-token-spring-boot-starter
+    implementation group: 'cn.dev33', name: 'sa-token-spring-boot3-starter'
+    implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
+
+    // define any required OkHttp artifacts without version
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
+
+}

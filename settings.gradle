@@ -20,4 +20,8 @@ include 'Server-Simulator-SingleVehicle-Tcp'
 include 'Server-Simulator-PressTest-Tcp'
 include 'Server-Business-Process-Gateway'
 include 'Server-Tool-Minio-Client-Server'
+include 'Server-Business-Process-Openapi'
+include 'Lib-Database-Common'
+include 'Lib-Database-Jdbc'
+include 'Lib-Database-Mongo'
 

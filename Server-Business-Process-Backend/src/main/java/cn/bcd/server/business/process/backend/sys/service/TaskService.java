@@ -1,6 +1,6 @@
 package cn.bcd.server.business.process.backend.sys.service;
 
-import cn.bcd.server.business.process.backend.base.support_jdbc.service.BaseService;
+import cn.bcd.lib.database.jdbc.service.BaseService;
 import cn.bcd.server.business.process.backend.base.support_task.TaskDao;
 import cn.bcd.server.business.process.backend.sys.bean.TaskBean;
 import org.springframework.stereotype.Service;

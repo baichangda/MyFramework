@@ -1,9 +1,9 @@
 package cn.bcd.server.business.process.backend.sys.controller;
 
-import cn.bcd.server.business.process.backend.base.condition.Condition;
-import cn.bcd.server.business.process.backend.base.condition.impl.DateCondition;
-import cn.bcd.server.business.process.backend.base.condition.impl.NumberCondition;
-import cn.bcd.server.business.process.backend.base.condition.impl.StringCondition;
+import cn.bcd.lib.database.common.condition.Condition;
+import cn.bcd.lib.database.common.condition.impl.DateCondition;
+import cn.bcd.lib.database.common.condition.impl.NumberCondition;
+import cn.bcd.lib.database.common.condition.impl.StringCondition;
 import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.base.result.Result;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;

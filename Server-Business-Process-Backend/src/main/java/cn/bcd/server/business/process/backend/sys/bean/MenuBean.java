@@ -1,8 +1,8 @@
 package cn.bcd.server.business.process.backend.sys.bean;
 
-import cn.bcd.server.business.process.backend.base.support_jdbc.anno.Table;
-import cn.bcd.server.business.process.backend.base.support_jdbc.anno.Transient;
-import cn.bcd.server.business.process.backend.base.support_jdbc.bean.BaseBean;
+import cn.bcd.lib.database.jdbc.anno.Table;
+import cn.bcd.lib.database.jdbc.anno.Transient;
+import cn.bcd.lib.database.jdbc.bean.BaseBean;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

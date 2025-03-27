@@ -1,0 +1,4 @@
+dependencies {
+    api project(":Lib-Base-Json")
+    api group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml'
+}

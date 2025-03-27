@@ -2,8 +2,8 @@ package cn.bcd.server.business.process.backend.sys.service;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.RSAUtil;
-import cn.bcd.server.business.process.backend.base.condition.impl.StringCondition;
-import cn.bcd.server.business.process.backend.base.support_jdbc.service.BaseService;
+import cn.bcd.lib.database.common.condition.impl.StringCondition;
+import cn.bcd.lib.database.jdbc.service.BaseService;
 import cn.bcd.server.business.process.backend.sys.bean.UserBean;
 import cn.bcd.server.business.process.backend.sys.define.CommonConst;
 import cn.bcd.server.business.process.backend.sys.keys.KeysConst;
