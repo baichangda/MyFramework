@@ -1,5 +1,5 @@
 dependencies {
-    api platform(project(":Lib-Bom"))
+    api platform(project(":Bom"))
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
     api group: 'org.slf4j', name: 'slf4j-api'
     // https://mvnrepository.com/artifact/com.google.guava/guava

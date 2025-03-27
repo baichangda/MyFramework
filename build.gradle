@@ -16,7 +16,7 @@ buildscript {
 
 
 subprojects {
-    if (it.name == 'Lib-Bom') {
+    if (it.name == 'Bom') {
         return
     }
 
@@ -70,7 +70,7 @@ subprojects {
     //在此回调中无法添加修改依赖、但是排除依赖是有效的
     //插件无法在回调中添加、修改、删除
     afterEvaluate {
-        if (it.name == 'Lib-Bom') {
+        if (it.name == 'Bom') {
             return
         }
         //判断是否包含springboot依赖、有则引入springboot插件

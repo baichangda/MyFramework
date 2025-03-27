@@ -1,6 +1,5 @@
 apply plugin: "org.springframework.boot"
 dependencies {
-    println(project.name+"  "+222)
     api project(":Lib-Base")
     api project(":Lib-Base-Executor")
     //spring kafka支持
