@@ -31,6 +31,7 @@ public class CommandLineStarter implements Runnable {
         Vertx vertx = Vertx.builder().build();
         io.vertx.core.http.HttpServer httpServer = vertx.createHttpServer(
                 new HttpServerOptions()
+                        .setCompressionSupported(true)
                         .setIdleTimeoutUnit(TimeUnit.SECONDS)
                         .setIdleTimeout(60)
         );
