@@ -54,11 +54,32 @@ public class CommandLineStarter implements Runnable {
                                 ctx.response().send(JsonUtil.toJson(Map.of("data", json, "succeed", true)));
                             } catch (Exception ex) {
                                 logger.error("parse protocol error:\n{}", hex, ex);
-                                ctx.response().send(JsonUtil.toJson(JsonUtil.toJson(Map.of("msg", "解析失败、报文不符合格式", "succeed", false))));
+                                ctx.response().send(JsonUtil.toJson(Map.of("msg", "解析失败、报文不符合协议格式", "succeed", false)));
                             }
                         } catch (Exception ex) {
                             logger.error("parse hex error:\n{}", hex, ex);
-                            ctx.response().send(JsonUtil.toJson(JsonUtil.toJson(Map.of("msg", "解析失败、报文不是16进制格式", "succeed", false))));
+                            ctx.response().send(JsonUtil.toJson(Map.of("msg", "解析失败、报文不是16进制格式", "succeed", false)));
+                        }
+                    });
+                });
+
+        router.route("/deParse")
+                .handler(ctx -> {
+                    ctx.request().bodyHandler(event -> {
+                        String json = event.toString();
+                        ctx.response().putHeader("content-type", "application/json;charset=utf-8");
+                        try {
+                            try {
+                                Packet packet = JsonUtil.OBJECT_MAPPER.readValue(json, Packet.class);
+                                String hex = ByteBufUtil.hexDump(packet.toByteBuf());
+                                ctx.response().send(JsonUtil.toJson(Map.of("data", hex, "succeed", true)));
+                            } catch (Exception ex) {
+                                logger.error("deParse protocol error:\n{}", json, ex);
+                                ctx.response().send(JsonUtil.toJson(Map.of("msg", "反解析失败、json数据不符合协议格式", "succeed", false)));
+                            }
+                        } catch (Exception ex) {
+                            logger.error("deParse json error:\n{}", json, ex);
+                            ctx.response().send(JsonUtil.toJson(Map.of("msg", "反解析失败、数据不是json格式", "succeed", false)));
                         }
                     });
                 });

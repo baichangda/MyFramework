@@ -23,6 +23,13 @@
                 </tr>
                 <tr style="height: 20px">
                     <td>
+                        <button id="deParse_btn" onclick="deParse()"
+                                style="width: 100%;font-size: 18px;color: green">反解析
+                        </button>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td>
                         <button onclick="clearOutput()">清除日志
                         </button>
                     </td>
@@ -68,9 +75,45 @@
                     } else {
                         appendToOutput(res.msg, 2)
                     }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    appendToOutput("请求失败:" + textStatus, 2)
                 }
             })
             appendToOutput("发送http解析请求成功", 1)
+        }
+    }
+
+    function deParse() {
+        $("#hex_textarea").val("")
+        let val;
+        try {
+            val = JSON.stringify(editor.get())
+        } catch (e) {
+            appendToOutput("json数据格式错误", 1)
+            return
+        }
+        if (val === "") {
+            appendToOutput("json数据不能为空", 1)
+        } else {
+            $.ajax({
+                url: "/deParse",
+                method: "post",
+                data: val,
+                contentType: "application/json",
+                success: function (res) {
+                    if (res.succeed) {
+                        $("#hex_textarea").val(res.data)
+                        appendToOutput("反解析成功", 2)
+                    } else {
+                        appendToOutput(res.msg, 2)
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    appendToOutput("请求失败:" + textStatus, 2)
+                }
+            })
+            appendToOutput("发送http反解析请求成功", 1)
         }
     }
 
