@@ -251,10 +251,10 @@ public class UserController extends BaseController {
      *
      * @return
      */
-    @RequestMapping(value = "/getUser", method = RequestMethod.GET)
+    @RequestMapping(value = "/getAuthUser", method = RequestMethod.GET)
     @Operation(summary = "根据用户名获取用户信息")
     @ApiResponse(responseCode = "200", description = "用户信息")
-    public Result<AuthUser> getUser(
+    public Result<AuthUser> getAuthUser(
             @Parameter(description = "用户名") @RequestParam String username
     ) {
         UserBean userBean = userService.getUser(username);

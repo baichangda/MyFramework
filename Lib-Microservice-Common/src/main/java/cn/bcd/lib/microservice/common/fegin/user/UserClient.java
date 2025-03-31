@@ -16,6 +16,6 @@ public interface UserClient {
     @GetMapping("/api/sys/user/getUserPermissions")
     Result<List<String>> getUserPermissions(@RequestParam String username, @RequestParam String loginType);
 
-    @GetMapping("/api/sys/user/getUser")
-    Result<AuthUser> getUser(@RequestParam String username);
+    @GetMapping("/api/sys/user/getAuthUser")
+    Result<AuthUser> getAuthUser(@RequestParam String username);
 }

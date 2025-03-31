@@ -34,7 +34,7 @@ public class CacheService {
             synchronized (this) {
                 if (username_user == null) {
                     username_user = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        Result<AuthUser> result = userClient.getUser(k);
+                        Result<AuthUser> result = userClient.getAuthUser(k);
                         if (result.code == 0) {
                             return result.data;
                         } else {
