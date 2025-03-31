@@ -4,6 +4,7 @@ import cn.bcd.lib.database.common.condition.Condition;
 import cn.bcd.lib.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.database.common.condition.impl.StringCondition;
+import cn.bcd.lib.microservice.common.bean.AuthUser;
 import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.base.result.Result;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
@@ -217,6 +218,7 @@ public class UserController extends BaseController {
 
     /**
      * 获取用户角色编码列表
+     *
      * @return
      */
     @RequestMapping(value = "/getUserRoles", method = RequestMethod.GET)
@@ -226,11 +228,12 @@ public class UserController extends BaseController {
             @Parameter(description = "用户名") @RequestParam String username,
             @Parameter(description = "登陆方式") @RequestParam String loginType
     ) {
-        return Result.success(userService.getUserRoles(username,loginType));
+        return Result.success(userService.getUserRoles(username, loginType));
     }
 
     /**
      * 获取用户权限编码列表
+     *
      * @return
      */
     @RequestMapping(value = "/getUserPermissions", method = RequestMethod.GET)
@@ -240,7 +243,26 @@ public class UserController extends BaseController {
             @Parameter(description = "用户名") @RequestParam String username,
             @Parameter(description = "登陆方式") @RequestParam String loginType
     ) {
-        return Result.success(userService.getUserPermissions(username,loginType));
+        return Result.success(userService.getUserPermissions(username, loginType));
+    }
+
+    /**
+     * 获取用户信息
+     *
+     * @return
+     */
+    @RequestMapping(value = "/getUser", method = RequestMethod.GET)
+    @Operation(summary = "根据用户名获取用户信息")
+    @ApiResponse(responseCode = "200", description = "用户信息")
+    public Result<AuthUser> getUser(
+            @Parameter(description = "用户名") @RequestParam String username
+    ) {
+        UserBean userBean = userService.getUser(username);
+        if (userBean == null) {
+            return Result.success(null);
+        }
+        AuthUser authUser = new AuthUser(userBean.id, username);
+        return Result.success(authUser);
     }
 
 }

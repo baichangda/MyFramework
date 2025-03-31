@@ -24,7 +24,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
-                    boolean isAuth = exchange.getAttributes().containsKey(AuthFilter.isAuth_key);
+                    Object authUsername = Optional.ofNullable(exchange.getAttributes().get(AuthFilter.authUsername_key)).map(Object::toString).orElse(null);
                     ServerHttpRequest request = exchange.getRequest();
                     String sourcePath = request.getURI().toString();
                     String method = request.getMethod().name();
@@ -44,7 +44,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     logger.info("targetPath: {}", targetPath);
                     logger.info("method: {}", method);
                     logger.info("token: {}", token);
-                    logger.info("isAuth: {}", isAuth);
+                    logger.info("authUser: {}", authUsername);
                     logger.info("-------------request end-------------");
                 })
         );

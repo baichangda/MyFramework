@@ -1,5 +1,7 @@
 package cn.bcd.server.business.process.gateway;
 
+import cn.bcd.lib.microservice.common.bean.AuthUser;
+import cn.dev33.satoken.model.wrapperInfo.SaDisableWrapperInfo;
 import cn.dev33.satoken.stp.StpInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
