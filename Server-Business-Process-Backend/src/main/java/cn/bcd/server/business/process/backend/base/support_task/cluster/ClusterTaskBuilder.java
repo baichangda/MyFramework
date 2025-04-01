@@ -1,8 +1,8 @@
 package cn.bcd.server.business.process.backend.base.support_task.cluster;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.util.RandomUtil;
 import cn.bcd.server.business.process.backend.base.support_task.*;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 import java.io.Serializable;
@@ -87,7 +87,7 @@ public class ClusterTaskBuilder<T extends Task<K>, K extends Serializable> exten
                 redisResMap.put(id, null);
             }
             //生成停止的请求用于广播
-            final String requestId = RandomStringUtils.randomAlphabetic(32);
+            final String requestId = RandomUtil.randomString_alphabetic(32);
             StopRequest stopRequest = new StopRequest(requestId, redisIdArr);
             //将结果存储在map中
             requestIdToResultMap.put(requestId, redisResMap);

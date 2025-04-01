@@ -2,6 +2,7 @@ package cn.bcd.server.business.process.backend.sys.service;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.RSAUtil;
+import cn.bcd.lib.base.util.RandomUtil;
 import cn.bcd.lib.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.database.jdbc.service.BaseService;
 import cn.bcd.server.business.process.backend.sys.bean.UserBean;
@@ -10,7 +11,6 @@ import cn.bcd.server.business.process.backend.sys.keys.KeysConst;
 import cn.dev33.satoken.secure.SaBase64Util;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,7 +114,7 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
                 redisTemplate.delete(key);
             } else {
                 //如果不存在,则构造key发送短信
-                String phoneCode = RandomStringUtils.randomNumeric(6);
+                String phoneCode = RandomUtil.randomString_numeric(6);
                 boolean res = redisTemplate.opsForValue().setIfAbsent("phoneCode:" + phone, phoneCode, 3 * 60, TimeUnit.SECONDS);
                 if (res) {
                     //todo 发送短信
