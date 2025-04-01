@@ -83,6 +83,7 @@ public abstract class ConsumeExecutorGroup<T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void init() {
         if (!running) {
             running = true;

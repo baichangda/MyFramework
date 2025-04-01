@@ -11,6 +11,7 @@ import cn.bcd.server.business.process.backend.sys.keys.KeysConst;
 import cn.dev33.satoken.secure.SaBase64Util;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import com.google.common.hash.Hashing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +76,7 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
         logger.info("encodedBase64: {}", encodedText);
 
         //数据库密码
-        String dbPwd = SaSecureUtil.md5BySalt(password, username);
+        String dbPwd = SaSecureUtil.md5(password);
 
         logger.info("dbPwd: {}", dbPwd);
 
@@ -145,7 +146,7 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
             if (CommonConst.IS_PASSWORD_ENCODED) {
                 //使用私钥解密密码
                 PrivateKey privateKey = KeysConst.PRIVATE_KEY;
-                password = SaSecureUtil.md5BySalt(RSAUtil.decode(privateKey, Base64.getDecoder().decode(encryptPassword)), username);
+                password = SaSecureUtil.md5(RSAUtil.decode(privateKey, Base64.getDecoder().decode(encryptPassword)));
             } else {
                 password = encryptPassword;
             }
@@ -205,7 +206,7 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
      */
     public String encryptPassword(String username, String password) {
         if (CommonConst.IS_PASSWORD_ENCODED) {
-            return SaSecureUtil.md5BySalt(password, username);
+            return SaSecureUtil.md5(password);
         } else {
             return password;
         }

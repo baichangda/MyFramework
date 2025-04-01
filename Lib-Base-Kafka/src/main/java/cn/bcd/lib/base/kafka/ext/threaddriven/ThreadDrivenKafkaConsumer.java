@@ -170,6 +170,7 @@ public abstract class ThreadDrivenKafkaConsumer {
      *
      * @param consumerProp
      */
+    @SuppressWarnings("unchecked")
     public synchronized void init(Map<String, Object> consumerProp) {
         if (!running) {
             try {
