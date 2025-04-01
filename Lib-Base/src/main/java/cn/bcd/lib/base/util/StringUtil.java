@@ -2,6 +2,7 @@ package cn.bcd.lib.base.util;
 
 import org.slf4j.helpers.MessageFormatter;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -64,59 +65,6 @@ public class StringUtil {
             result.append(Character.toLowerCase(c));
         }
         return result.toString();
-    }
-
-    /**
-     * 转义正则特殊字符 $()*+.[]?\^{},|
-     *
-     * @param str
-     * @return
-     */
-    public static String escapeExprSpecialWord(String str) {
-        if (str != null && !str.isEmpty()) {
-            String[] fbsArr = {"\\", "$", "(", ")", "*", "+", ".", "[", "]", "?", "^", "{", "}", "|"};
-            for (String key : fbsArr) {
-                if (str.contains(key)) {
-                    str = str.replace(key, "\\" + key);
-                }
-            }
-        }
-        return str;
-    }
-
-    /**
-     * 找出字符串1中字符串2的个数
-     *
-     * @param str1
-     * @param str2
-     * @return
-     */
-    public static int count(String str1, String str2) {
-        Pattern pattern = Pattern.compile(escapeExprSpecialWord(str2));
-        Matcher matcher = pattern.matcher(str1);
-        int count = 0;
-        while (matcher.find()) {
-            count++;
-        }
-        return count;
-    }
-
-    /**
-     * 从给定的字符串中寻找括号包括的字符串
-     * 例如:
-     * findStrInParenthesis("abcd${xy}e${mn}{aa}","{","}") 寻找出 xy mn aa
-     *
-     * @param str 字符串值
-     * @return
-     */
-    public static Set<String> findStrInParenthesis(String str, String leftStr, String rightStr) {
-        Pattern pattern = Pattern.compile(escapeExprSpecialWord(leftStr) + "(.*?)" + escapeExprSpecialWord(rightStr));
-        Matcher matcher = pattern.matcher(str);
-        Set<String> res = new HashSet<>();
-        while (matcher.find()) {
-            res.add(matcher.group(1));
-        }
-        return res;
     }
 
     /**

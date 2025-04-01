@@ -1,7 +1,6 @@
 package cn.bcd.lib.database.mongo.code;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.database.mongo.code.data.BeanField;
 import cn.bcd.lib.database.mongo.code.data.CodeConst;
@@ -189,7 +188,7 @@ public class CodeGenerator {
         String springSrcPath = springSrcPathSb.toString();
         String targetDirPath = config.targetDirPath;
         if (targetDirPath.contains(springSrcPath)) {
-            return targetDirPath.split(StringUtil.escapeExprSpecialWord(springSrcPath))[1].replaceAll(StringUtil.escapeExprSpecialWord(File.separator), ".");
+            return targetDirPath.split(springSrcPath)[1].replace(File.separator, ".");
         } else {
             throw BaseException.get("targetDirPath[" + targetDirPath + "] must contains [" + springSrcPath + "]");
         }

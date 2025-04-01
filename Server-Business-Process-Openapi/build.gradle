@@ -5,6 +5,7 @@ dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Monitor-Client")
     implementation project(":Lib-Microservice-Common")
+    implementation project(":Lib-Database-Jdbc")
 
     //springboot cache支持
     implementation("org.springframework.boot:spring-boot-starter-cache")

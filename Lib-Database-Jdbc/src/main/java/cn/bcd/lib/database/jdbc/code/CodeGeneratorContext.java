@@ -74,17 +74,15 @@ public class CodeGeneratorContext {
      */
     public String getPackagePre() {
         if (packagePre == null) {
-            StringBuilder springSrcPathSb = new StringBuilder();
-            springSrcPathSb.append("src");
-            springSrcPathSb.append(File.separatorChar);
-            springSrcPathSb.append("main");
-            springSrcPathSb.append(File.separatorChar);
-            springSrcPathSb.append("java");
-            springSrcPathSb.append(File.separatorChar);
-            String springSrcPath = springSrcPathSb.toString();
+            String springSrcPath = "src" +
+                    File.separatorChar +
+                    "main" +
+                    File.separatorChar +
+                    "java" +
+                    File.separatorChar;
             String targetDirPath = tableConfig.config.targetDirPath;
             if (targetDirPath.contains(springSrcPath)) {
-                packagePre = targetDirPath.split(StringUtil.escapeExprSpecialWord(springSrcPath))[1].replaceAll(StringUtil.escapeExprSpecialWord(File.separator), ".");
+                packagePre = targetDirPath.split(springSrcPath)[1].replace(File.separator, ".");
             } else {
                 throw BaseException.get("targetDirPath[" + targetDirPath + "] must contains [" + springSrcPath + "]");
             }
