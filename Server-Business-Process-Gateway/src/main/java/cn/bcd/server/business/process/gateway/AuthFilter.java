@@ -13,16 +13,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
 
-    public final static String authUsername_key = "authUser";
+    public final static String authUser_header_key = "authUser";
+    public final static String doAuth_attr_key = "doAuth";
 
     @Autowired
     CacheService cacheService;
@@ -34,7 +37,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
         // 写入全局上下文 (同步)
         SaReactorSyncHolder.setContext(exchange);
         try {
-            SaRouter
+            boolean check = SaRouter
                     .match(RouteConfig.pre + "/**")
                     .notMatch(RouteConfig.pre + "/*/v3/api-docs")
                     .notMatch(
@@ -42,42 +45,37 @@ public class AuthFilter implements GlobalFilter, Ordered {
                                     "/api/anno",
                                     "/api/sys/user/login"
                             )
-                    )
-                    .check(StpUtil::checkLogin);
-            String username = StpUtil.getLoginIdAsString();
-
-            Result<?> failedResult;
-            try {
-                AuthUser user = cacheService.getUser(username);
-                if (user.getStatus() == 0) {
-                    failedResult = null;
-                } else {
-                    failedResult = Result.fail(402, "用户已被禁用");
+                    ).isHit();
+            if (check) {
+                exchange.getAttributes().put(doAuth_attr_key, true);
+                String username = StpUtil.getLoginIdAsString();
+                try {
+                    AuthUser user = CompletableFuture.supplyAsync(() -> cacheService.getUser(username)).join();
+                    if (user.getStatus() == 1) {
+                        ServerHttpRequest newRequest = exchange.getRequest().mutate().header(AuthFilter.authUser_header_key, JsonUtil.toJson(user)).build();
+                        return chain.filter(exchange.mutate().request(newRequest).build());
+                    } else {
+                        return response(exchange, Result.fail(402, "用户已被禁用"));
+                    }
+                } catch (Exception ex) {
+                    logger.error("error", ex);
+                    return response(exchange, Result.fail(500, "登陆校验失败、程序出错"));
                 }
-            } catch (Exception ex) {
-                logger.error("error", ex);
-                failedResult = Result.fail(500, "登陆校验失败、程序出错");
-            }
-            if (failedResult == null) {
-                // 执行
-                exchange.getAttributes().put(AuthFilter.authUsername_key, username);
-                return chain.filter(exchange);
             } else {
-                String result = JsonUtil.toJson(failedResult);
-                exchange.getResponse().getHeaders().set(SaTokenConsts.CONTENT_TYPE_KEY, SaTokenConsts.CONTENT_TYPE_APPLICATION_JSON);
-                return exchange.getResponse()
-                        .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(result.getBytes())));
+                return chain.filter(exchange);
             }
         } catch (NotLoginException ex) {
-            String result = JsonUtil.toJson(Result.fail(401, "请先登陆"));
-            exchange.getResponse().getHeaders().set(SaTokenConsts.CONTENT_TYPE_KEY, SaTokenConsts.CONTENT_TYPE_APPLICATION_JSON);
-            return exchange.getResponse()
-                    .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(result.getBytes())));
+            return response(exchange, Result.fail(401, "请先登陆"));
         } finally {
             SaReactorSyncHolder.clearContext();
         }
+    }
 
-
+    private Mono<Void> response(ServerWebExchange exchange, Result<?> result) {
+        String json = JsonUtil.toJson(result);
+        exchange.getResponse().getHeaders().set(SaTokenConsts.CONTENT_TYPE_KEY, SaTokenConsts.CONTENT_TYPE_APPLICATION_JSON);
+        return exchange.getResponse()
+                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(json.getBytes())));
     }
 
     @Override

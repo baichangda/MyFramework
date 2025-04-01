@@ -13,6 +13,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -24,7 +25,8 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
-                    Object authUsername = Optional.ofNullable(exchange.getAttributes().get(AuthFilter.authUsername_key)).map(Object::toString).orElse(null);
+                    String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(AuthFilter.authUser_header_key)).map(List::getFirst).orElse(null);
+                    boolean isAuth = Optional.ofNullable(exchange.getAttribute(AuthFilter.doAuth_attr_key)).map(e -> (boolean) e).orElse(false);
                     ServerHttpRequest request = exchange.getRequest();
                     String sourcePath = request.getURI().toString();
                     String method = request.getMethod().name();
@@ -44,7 +46,9 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     logger.info("targetPath: {}", targetPath);
                     logger.info("method: {}", method);
                     logger.info("token: {}", token);
-                    logger.info("authUser: {}", authUsername);
+                    logger.info("{}: {}", AuthFilter.doAuth_attr_key, isAuth);
+                    logger.info("{}: {}", AuthFilter.authUser_header_key, authUserStr);
+                    logger.info("responseStatus: {}", exchange.getResponse().getStatusCode());
                     logger.info("-------------request end-------------");
                 })
         );

@@ -261,7 +261,7 @@ public class UserController extends BaseController {
         if (userBean == null) {
             return Result.success(null);
         }
-        AuthUser authUser = new AuthUser(userBean.id, username);
+        AuthUser authUser = new AuthUser(userBean.id, username,userBean.status);
         return Result.success(authUser);
     }
 

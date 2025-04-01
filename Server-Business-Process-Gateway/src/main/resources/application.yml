@@ -51,13 +51,13 @@ spring:
           maxWait: -1
         shutdown-timeout: 100ms
       #单机配置
-      host: 10.0.11.50
-      port: 36379
+      host: 127.0.0.1
+      port: 16379
   cloud:
     nacos:
       discovery:
         server-addr: 127.0.0.1:18848
-        ip: 10.0.14.90
+        ip: 127.0.0.1
         port: 9999
     loadbalancer:
       cache:
