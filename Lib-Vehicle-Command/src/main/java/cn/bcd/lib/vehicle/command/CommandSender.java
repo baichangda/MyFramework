@@ -116,18 +116,20 @@ public class CommandSender {
         request.setWaitVehicleResponse(waitVehicleResponse);
         request.setTimeout(timeout);
         request.setCallback(callback);
-        workExecutor.schedule(() -> {
-            Request<?, ?> remove = requestMap.remove(request.getId());
-            if (remove != null) {
-                try {
-                    remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.TIMEOUT));
-                } catch (Exception ex) {
-                    logger.error("error", ex);
-                } finally {
-                    releaseLock(remove.vin, remove.flag);
-                }
-            }
-        }, timeout, TimeUnit.SECONDS);
+        request.setTimeoutFuture(
+                workExecutor.schedule(() -> {
+                    Request<?, ?> remove = requestMap.remove(request.getId());
+                    if (remove != null) {
+                        try {
+                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.TIMEOUT));
+                        } catch (Exception ex) {
+                            logger.error("error", ex);
+                        } finally {
+                            releaseLock(remove.vin, remove.flag);
+                        }
+                    }
+                }, timeout, TimeUnit.SECONDS)
+        );
         workExecutor.execute(() -> {
             requestMap.put(request.getId(), request);
             try {

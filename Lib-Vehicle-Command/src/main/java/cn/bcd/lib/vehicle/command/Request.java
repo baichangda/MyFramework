@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.ScheduledFuture;
+
 @Getter
 @Setter
 public class Request<T, R> {
@@ -19,6 +21,8 @@ public class Request<T, R> {
     public Command<T, R> command;
     @JsonIgnore
     public CommandCallback<T, R> callback;
+    @JsonIgnore
+    public ScheduledFuture<?> timeoutFuture;
 
     public static String toId(String vin, PacketFlag flag) {
         return vin + "," + flag.type;

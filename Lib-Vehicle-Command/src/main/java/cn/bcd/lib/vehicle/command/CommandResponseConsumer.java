@@ -29,7 +29,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
                 true,
                 0,
                 0,
-                commandProp.responseTopic,null);
+                commandProp.responseTopic, null);
     }
 
     @Override
@@ -46,10 +46,13 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
         CommandSender.workExecutor.execute(() -> {
             Request<?, ?> request = CommandSender.requestMap.remove(id);
             if (request == null) {
-                logger.info("command response id[{}] request not found", id);
+                logger.info("command response failed、request not found、id[{}]", id);
             } else {
                 try {
-                    logger.info("command consumer {}", id);
+                    logger.info("command response succeed、id[{}]", id);
+                    //取消超时任务
+                    request.timeoutFuture.cancel(false);
+                    //执行回调
                     Response response = JsonUtil.OBJECT_MAPPER.readValue(value, Response.class);
                     response.setCommand(request.getCommand());
                     request.callback.callback(response);
