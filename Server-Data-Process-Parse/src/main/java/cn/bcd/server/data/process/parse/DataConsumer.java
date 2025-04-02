@@ -4,7 +4,8 @@ import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
-import cn.bcd.server.data.process.parse.gb32960.SaveHandler_gb32960;
+import cn.bcd.server.data.process.parse.gb32960.DataHandler_gb32960;
+import cn.bcd.server.data.process.parse.gb32960.SaveUtil_gb32960;
 import cn.bcd.server.data.process.parse.gb32960.WorkHandler_gb32960;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -14,6 +15,7 @@ import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @EnableConfigurationProperties({ParseProp.class, KafkaProperties.class})
@@ -22,6 +24,9 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
 
     @Autowired
     KafkaProperties kafkaProperties;
+
+    @Autowired
+    List<DataHandler_gb32960> handlers_gb32960;
 
     public DataConsumer(ParseProp parseProp) {
         super("dataConsumer",
@@ -39,7 +44,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
 
     @Override
     public WorkHandler newHandler(String id) {
-        return new WorkHandler_gb32960(id);
+        return new WorkHandler_gb32960(id, handlers_gb32960);
     }
 
     @Override
@@ -52,8 +57,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         int workQueueTaskNum = 0;
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / period, 2);
-        int saveQueueTaskNum_gb32960 = SaveHandler_gb32960.queue.size();
-        double saveSpeed_gb32960 = FloatUtil.format(SaveHandler_gb32960.saveCount.sumThenReset() / period, 2);
+        int saveQueueTaskNum_gb32960 = SaveUtil_gb32960.queue.size();
+        double saveSpeed_gb32960 = FloatUtil.format(SaveUtil_gb32960.saveCount.sumThenReset() / period, 2);
 
         MonitorExtCollector_parse.blockingNum = (int) curBlockingNum;
         MonitorExtCollector_parse.consumeSpeed = consumeSpeed;
@@ -78,7 +83,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 curBlockingNum, maxBlockingNum,
                 consumeSpeed,
                 workQueueTaskNum,
-                workQueueStatus.toString(),
+                workQueueStatus,
                 workSpeed,
                 saveQueueTaskNum_gb32960,
                 saveSpeed_gb32960);

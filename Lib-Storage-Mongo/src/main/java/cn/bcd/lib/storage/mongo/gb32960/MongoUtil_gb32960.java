@@ -1,5 +1,6 @@
 package cn.bcd.lib.storage.mongo.gb32960;
 
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.storage.mongo.MongoUtil;
 import com.google.common.base.Strings;
@@ -73,6 +74,7 @@ public class MongoUtil_gb32960 {
 
     /**
      * 批量保存
+     *
      * @param list
      */
     public static void saveBatch_rawData(List<SaveRawData> list) {
@@ -83,7 +85,7 @@ public class MongoUtil_gb32960 {
         for (SaveRawData e : list) {
             List<Pair<Query, Update>> pairs = map.computeIfAbsent(e.vin(), k -> new ArrayList<>());
             String id = toId_rawData(e.vin(), e.collectTime(), e.type());
-            pairs.add(Pair.of(Query.query(Criteria.where("id").is(id)), Update.update("value", e.value())));
+            pairs.add(Pair.of(Query.query(Criteria.where("id").is(id)), Update.update("value", JsonUtil.toJson(e.val()))));
         }
         map.forEach((k, v) -> {
             MongoUtil.getMongoTemplate(k).bulkOps(BulkOperations.BulkMode.UNORDERED, SaveRawData.class)
