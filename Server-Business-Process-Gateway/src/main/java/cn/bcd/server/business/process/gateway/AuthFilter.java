@@ -4,7 +4,7 @@ import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.permission.PermissionDataInitializer;
-import cn.bcd.lib.microservice.common.bean.AuthUser;
+import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
 import cn.dev33.satoken.router.SaRouter;

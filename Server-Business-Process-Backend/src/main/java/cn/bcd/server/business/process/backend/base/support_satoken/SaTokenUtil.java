@@ -1,10 +1,17 @@
 package cn.bcd.server.business.process.backend.base.support_satoken;
 
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
 import cn.bcd.server.business.process.backend.sys.bean.UserBean;
 import cn.bcd.server.business.process.backend.sys.service.CacheService;
 import cn.bcd.server.business.process.backend.sys.service.UserService;
 import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.stp.StpUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +19,8 @@ import java.util.Optional;
 
 @Component
 public class SaTokenUtil {
+
+    static Logger logger = LoggerFactory.getLogger(SaTokenUtil.class);
 
     static CacheService cacheService;
 
@@ -38,5 +47,16 @@ public class SaTokenUtil {
         } catch (SaTokenException ex) {
             return null;
         }
+    }
+
+    public static AuthUser getLoginUserFromRequest(HttpServletRequest request) {
+        return Optional.ofNullable(request.getHeader(Const.request_header_authUser)).map(e -> {
+            try {
+                return JsonUtil.OBJECT_MAPPER.readValue(e, AuthUser.class);
+            } catch (JsonProcessingException ex) {
+                logger.error("error", ex);
+                return null;
+            }
+        }).orElse(null);
     }
 }

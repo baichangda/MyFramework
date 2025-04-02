@@ -5,7 +5,7 @@ import cn.bcd.lib.database.common.condition.Condition;
 import cn.bcd.lib.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.database.common.condition.impl.StringCondition;
-import cn.bcd.lib.microservice.common.bean.AuthUser;
+import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
 import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -54,7 +55,8 @@ public class UserController extends BaseController {
             @Parameter(description = "真实姓名") @RequestParam(required = false) String realName,
             @Parameter(description = "性别") @RequestParam(required = false) String sex,
             @Parameter(description = "是否可用(0:禁用,1:可用)") @RequestParam(required = false) Integer status,
-            @Parameter(description = "用户名") @RequestParam(required = false) String username
+            @Parameter(description = "用户名") @RequestParam(required = false) String username,
+            HttpServletRequest request
     ) {
         Condition condition = Condition.and(
                 DateCondition.BETWEEN("birthday", birthdayBegin, birthdayEnd),

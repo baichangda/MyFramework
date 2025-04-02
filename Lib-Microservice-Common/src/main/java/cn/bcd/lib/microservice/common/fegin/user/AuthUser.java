@@ -1,4 +1,4 @@
-package cn.bcd.lib.microservice.common.bean;
+package cn.bcd.lib.microservice.common.fegin.user;
 
 import lombok.Data;
 
