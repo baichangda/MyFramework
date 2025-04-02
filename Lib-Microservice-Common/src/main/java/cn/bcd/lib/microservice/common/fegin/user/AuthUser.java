@@ -8,6 +8,9 @@ public class AuthUser {
     public String username;
     public int status;
 
+    public AuthUser() {
+    }
+
     public AuthUser(long id, String username, int status) {
         this.id = id;
         this.username = username;

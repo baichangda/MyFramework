@@ -1,6 +1,7 @@
 package cn.bcd.server.business.process.backend.sys.controller;
 
 import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.database.common.condition.Condition;
 import cn.bcd.lib.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.database.common.condition.impl.NumberCondition;
@@ -55,8 +56,7 @@ public class UserController extends BaseController {
             @Parameter(description = "真实姓名") @RequestParam(required = false) String realName,
             @Parameter(description = "性别") @RequestParam(required = false) String sex,
             @Parameter(description = "是否可用(0:禁用,1:可用)") @RequestParam(required = false) Integer status,
-            @Parameter(description = "用户名") @RequestParam(required = false) String username,
-            HttpServletRequest request
+            @Parameter(description = "用户名") @RequestParam(required = false) String username
     ) {
         Condition condition = Condition.and(
                 DateCondition.BETWEEN("birthday", birthdayBegin, birthdayEnd),
