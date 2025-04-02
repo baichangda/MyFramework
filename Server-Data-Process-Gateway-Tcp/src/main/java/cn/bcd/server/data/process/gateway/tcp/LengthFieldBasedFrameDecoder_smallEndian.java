@@ -13,27 +13,13 @@ public class LengthFieldBasedFrameDecoder_smallEndian extends LengthFieldBasedFr
 
     @Override
     protected long getUnadjustedFrameLength(ByteBuf buf, int offset, int length, ByteOrder order) {
-        buf = buf.order(order);
-        long frameLength;
-        switch (length) {
-            case 1:
-                frameLength = buf.getUnsignedByte(offset);
-                break;
-            case 2:
-                frameLength = buf.getUnsignedShortLE(offset);
-                break;
-            case 3:
-                frameLength = buf.getUnsignedMediumLE(offset);
-                break;
-            case 4:
-                frameLength = buf.getUnsignedIntLE(offset);
-                break;
-            case 8:
-                frameLength = buf.getLongLE(offset);
-                break;
-            default:
-                throw BaseException.get("not support");
-        }
-        return frameLength;
+        return switch (length) {
+            case 1 -> buf.getUnsignedByte(offset);
+            case 2 -> buf.getUnsignedShortLE(offset);
+            case 3 -> buf.getUnsignedMediumLE(offset);
+            case 4 -> buf.getUnsignedIntLE(offset);
+            case 8 -> buf.getLongLE(offset);
+            default -> throw BaseException.get("not support");
+        };
     }
 }

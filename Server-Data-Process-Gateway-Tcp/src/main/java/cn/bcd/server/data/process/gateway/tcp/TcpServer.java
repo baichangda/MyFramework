@@ -7,12 +7,15 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
@@ -29,7 +32,16 @@ public class TcpServer implements CommandLineRunner {
     @Autowired
     GatewayProp gatewayProp;
     @Autowired
-    Handler_dispatch handler_dispatch;
+    SessionClusterManager sessionClusterManager;
+
+    @Autowired
+    KafkaTemplate<String, byte[]> kafkaTemplate;
+
+    @Autowired
+    RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    GatewayCommandReceiver gatewayCommandReceiver;
 
     @Autowired
     List<Monitor> monitorList;
@@ -46,7 +58,12 @@ public class TcpServer implements CommandLineRunner {
                             @Override
                             protected void initChannel(Channel ch) {
                                 ch.pipeline().addLast(new IdleStateHandler(0L, 0L, 30L, TimeUnit.SECONDS));
-                                ch.pipeline().addLast(handler_dispatch);
+                                ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
+                                ch.pipeline().addLast(new VehicleHandler(sessionClusterManager,
+                                        redisTemplate,
+                                        kafkaTemplate,
+                                        gatewayCommandReceiver,
+                                        gatewayProp));
                             }
                         }
                 );

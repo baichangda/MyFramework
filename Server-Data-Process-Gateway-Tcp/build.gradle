@@ -4,6 +4,7 @@ apply plugin: "io.spring.dependency-management"
 dependencies {
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
+    implementation project(":Lib-Vehicle-Command")
     implementation project(":Lib-Monitor-Client")
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
@@ -14,4 +15,7 @@ dependencies {
 
     //springboot log4j2支持
     implementation('org.springframework.boot:spring-boot-starter-log4j2')
+
+    // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
+    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
 }

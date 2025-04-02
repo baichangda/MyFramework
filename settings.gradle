@@ -33,5 +33,5 @@ include 'Lib-Database-Common'
 include 'Lib-Database-Jdbc'
 include 'Lib-Database-Mongo'
 include 'Lib-Data-Init'
-include 'Lib-Common-Define'
+include 'Lib-Vehicle-Command'
 

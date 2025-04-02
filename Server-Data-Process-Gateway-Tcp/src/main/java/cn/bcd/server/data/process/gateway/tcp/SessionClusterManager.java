@@ -29,13 +29,12 @@ public class SessionClusterManager {
         //格式为 session类型,sessionId,网关id,连接的时间戳(毫秒)
         final String value = new String(consumerRecord.value());
         final String[] split = value.split(",");
-        final String remoteGatewayId = split[2];
+        final String remoteGatewayId = split[1];
         //忽略本网关自己的通知
         if (!remoteGatewayId.equals(gatewayProp.id)) {
-            final int sessionType = Integer.parseInt(split[0]);
-            final Session local = Session.getSession(sessionType, split[1]);
+            final Session local = Session.getSession(split[0]);
             if (local != null) {
-                final long remoteTs = Long.parseLong(split[3]);
+                final long remoteTs = Long.parseLong(split[2]);
                 if (local.createTs < remoteTs) {
                     local.close();
                     logger.debug("close local session[{},{}] with listen[{}]", local.id, local.createTs, value);
@@ -49,7 +48,7 @@ public class SessionClusterManager {
         String sessionTopic = gatewayProp.sessionTopic;
         String id = gatewayProp.id;
         pool_sendKafka_sessionNotify.execute(() -> {
-            String msg = session.type + "," + session.id + "," + id + "," + session.createTs;
+            String msg = session.id + "," + id + "," + session.createTs;
             kafkaTemplate.send(new ProducerRecord<>(sessionTopic, msg.getBytes(StandardCharsets.UTF_8)));
         });
     }

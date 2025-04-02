@@ -1,52 +1,71 @@
-package cn.bcd.server.data.process.gateway.tcp.gb32960;
+package cn.bcd.server.data.process.gateway.tcp;
 
-import cn.bcd.server.data.process.gateway.tcp.SessionClusterManager;
-import cn.bcd.server.data.process.gateway.tcp.GatewayProp;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.util.DateUtil;
+import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 
-public class Handler_gb32960 extends ChannelInboundHandlerAdapter {
+import java.util.Date;
 
-    static Logger logger = LoggerFactory.getLogger(Handler_gb32960.class);
+public class VehicleHandler extends ChannelInboundHandlerAdapter {
+
+    static Logger logger = LoggerFactory.getLogger(VehicleHandler.class);
     private final SessionClusterManager sessionClusterManager;
-    private final KafkaTemplate<byte[], byte[]> kafkaTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
+    private final GatewayCommandReceiver gatewayCommandReceiver;
     private final String parseTopic;
-    Session_gb32960 session;
+    Session session;
 
-    public Handler_gb32960(SessionClusterManager sessionClusterManager,
-                           KafkaTemplate<byte[], byte[]> kafkaTemplate,
-                           GatewayProp gatewayProp) {
+    public VehicleHandler(SessionClusterManager sessionClusterManager,
+                          RedisTemplate<String, String> redisTemplate,
+                          KafkaTemplate<String, byte[]> kafkaTemplate,
+                          GatewayCommandReceiver gatewayCommandReceiver,
+                          GatewayProp gatewayProp) {
         this.sessionClusterManager = sessionClusterManager;
+        this.redisTemplate = redisTemplate;
         this.kafkaTemplate = kafkaTemplate;
+        this.gatewayCommandReceiver = gatewayCommandReceiver;
         this.parseTopic = gatewayProp.parseTopic;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        Monitor_gb32960.receiveNum.increment();
-        Monitor_gb32960.blockingNum.increment();
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        Date receiveTime = new Date();
+        Monitor.receiveNum.increment();
+        Monitor.blockingNum.increment();
         //读取数据
         ByteBuf byteBuf = (ByteBuf) msg;
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(bytes);
         try {
             //轻量解析
-            String vin = new String(bytes, 4, 21);
+            String vin = PacketUtil.getVin(bytes);
+            PacketFlag packetFlag = PacketUtil.getPacketFlag(bytes);
+            logger.info("receive packet vin[{}] flag[{}] hex:\n{}", vin, packetFlag, ByteBufUtil.hexDump(bytes));
             if (session == null) {
                 //构造会话
-                session = new Session_gb32960(vin, ctx.channel());
+                session = new Session(vin, ctx.channel());
                 //发送会话通知到其他集群、踢掉无用的session
                 sessionClusterManager.send(session);
             }
+            //刷新redis最后一包数据时间
+            redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, System.currentTimeMillis() + "");
+            //响应下行指令的结果
+            gatewayCommandReceiver.onResponse(vin, packetFlag, bytes);
             //发送到解析队列
-            sendToKafka(vin, bytes);
+            sendToKafka(vin, DateUtil.prependDatesToBytes(bytes, receiveTime, new Date()));
         } catch (Exception e) {
-            Monitor_gb32960.blockingNum.decrement();
+            Monitor.blockingNum.decrement();
             logger.error("error", e);
         }
         //响应数据
@@ -70,13 +89,13 @@ public class Handler_gb32960 extends ChannelInboundHandlerAdapter {
     }
 
     private void sendToKafka(String vin, byte[] value) {
-        kafkaTemplate.send(parseTopic, vin.getBytes(), value).whenComplete((sendResult, throwable) -> {
+        kafkaTemplate.send(parseTopic, vin, value).whenComplete((sendResult, throwable) -> {
             if (throwable == null) {
-                Monitor_gb32960.sendKafkaNum.increment();
+                Monitor.sendKafkaNum.increment();
             } else {
                 logger.error("send failed", throwable);
             }
-            Monitor_gb32960.blockingNum.decrement();
+            Monitor.blockingNum.decrement();
         });
 
     }

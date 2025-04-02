@@ -1,9 +1,23 @@
 package cn.bcd.server.data.process.gateway.tcp;
 
-import java.time.Duration;
+import cn.bcd.lib.base.util.StringUtil;
 
-public interface Monitor {
-    String log(Duration period);
+import java.time.Duration;
+import java.util.concurrent.atomic.LongAdder;
+
+public class Monitor {
+
+    public final static LongAdder blockingNum = new LongAdder();
+    public final static LongAdder receiveNum = new LongAdder();
+    public final static LongAdder sendKafkaNum = new LongAdder();
+
+    public String log(Duration period) {
+        return StringUtil.format("gb32960 clientNum[{}] blocking[{}] receiveSpeed[{}/s] sendKafkaSpeed[{}/s]",
+                Session.sessionMap.size(),
+                blockingNum.intValue(),
+                Monitor.formatSpeed(receiveNum.sumThenReset(), period),
+                Monitor.formatSpeed(sendKafkaNum.sumThenReset(), period));
+    }
 
     static String formatSpeed(long count, Duration period) {
         long seconds = period.toSeconds();

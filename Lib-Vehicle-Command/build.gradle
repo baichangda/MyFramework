@@ -1,0 +1,12 @@
+apply plugin: "org.springframework.boot"
+
+dependencies {
+    api project(":Lib-Parser-Protocol-GB32960")
+    api project(":Lib-Base-Json")
+    api project(":Lib-Base-Redis")
+    api project(":Lib-Base-Kafka")
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: "5.11.4"
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
+    testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: "2.24.3"
+}
