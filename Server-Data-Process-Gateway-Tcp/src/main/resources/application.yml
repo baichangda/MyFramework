@@ -58,3 +58,10 @@ monitor:
   response-list: monitorResponse
   server-id: ${gateway.id}
   server-type: 1
+
+lib:
+  vehicle:
+    command:
+      request-topic: commandRequest
+      response-topic: commandResponse
+      receiver: true
