@@ -1,9 +1,8 @@
 package cn.bcd.server.business.process.backend.sys.service;
 
+import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.database.jdbc.service.BaseService;
-import cn.bcd.lib.microservice.common.Const;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
-import cn.bcd.server.business.process.backend.sys.bean.PermissionBean;
 import cn.bcd.server.business.process.backend.sys.define.CommonConst;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.reflect.MethodUtils;
@@ -14,6 +13,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
+import cn.bcd.server.business.process.backend.sys.bean.PermissionBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,12 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- */
 @Service
 public class PermissionService extends BaseService<PermissionBean> implements ApplicationListener<ContextRefreshedEvent> {
-
     @Autowired
     JdbcTemplate jdbcTemplate;
 
@@ -106,5 +102,4 @@ public class PermissionService extends BaseService<PermissionBean> implements Ap
             return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(PermissionBean.class), username);
         }
     }
-
 }

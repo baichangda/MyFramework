@@ -3,6 +3,7 @@ package cn.bcd.server.business.process.gateway;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.data.init.permission.PermissionDataInitializer;
 import cn.bcd.lib.microservice.common.bean.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
@@ -25,7 +26,8 @@ import java.util.Arrays;
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
 
-    public final static String doAuth_attr_key = "doAuth";
+    public final static String checkAuth_attr_key = "checkAuth";
+    public final static String checkPermission_attr_key = "checkPermission";
 
     @Autowired
     CacheService cacheService;
@@ -47,7 +49,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
                             )
                     ).isHit();
             if (check) {
-                exchange.getAttributes().put(doAuth_attr_key, true);
+                exchange.getAttributes().put(checkAuth_attr_key, true);
                 //登陆校验
                 String username = StpUtil.getLoginIdAsString();
 
@@ -56,13 +58,20 @@ public class AuthFilter implements GlobalFilter, Ordered {
                     AuthUser user = cacheService.getUser(username);
                     if (user.getStatus() == 1) {
                         ServerHttpRequest newRequest = exchange.getRequest().mutate().header(Const.request_header_authUser, JsonUtil.toJson(user)).build();
-                        //权限校验
+                        //判断是否权限校验
                         String requestPath = exchange.getRequest().getPath().value();
-                        boolean hasPermission = StpUtil.hasPermission(requestPath);
-                        if (hasPermission) {
+                        boolean needCheckPermission = PermissionDataInitializer.resource_permission.containsKey(requestPath);
+                        if (needCheckPermission) {
+                            exchange.getAttributes().put(checkPermission_attr_key, true);
+                            //权限校验
+                            boolean hasPermission = StpUtil.hasPermission(requestPath);
+                            if (hasPermission) {
+                                return chain.filter(exchange.mutate().request(newRequest).build());
+                            } else {
+                                return response(exchange, Result.fail(403, "用户权限不足"));
+                            }
+                        }else{
                             return chain.filter(exchange.mutate().request(newRequest).build());
-                        } else {
-                            return response(exchange, Result.fail(403, "用户权限不足"));
                         }
                     } else {
                         return response(exchange, Result.fail(402, "用户已被禁用"));

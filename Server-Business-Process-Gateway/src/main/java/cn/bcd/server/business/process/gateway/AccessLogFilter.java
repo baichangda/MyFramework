@@ -27,7 +27,8 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
                     String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(Const.request_header_authUser)).map(List::getFirst).orElse(null);
-                    boolean isAuth = Optional.ofNullable(exchange.getAttribute(AuthFilter.doAuth_attr_key)).map(e -> (boolean) e).orElse(false);
+                    boolean checkAuth = Optional.ofNullable(exchange.getAttribute(AuthFilter.checkAuth_attr_key)).map(e -> (boolean) e).orElse(false);
+                    boolean checkPermission = Optional.ofNullable(exchange.getAttribute(AuthFilter.checkPermission_attr_key)).map(e -> (boolean) e).orElse(false);
                     ServerHttpRequest request = exchange.getRequest();
                     String sourcePath = request.getURI().toString();
                     String method = request.getMethod().name();
@@ -47,8 +48,9 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     logger.info("targetPath: {}", targetPath);
                     logger.info("method: {}", method);
                     logger.info("token: {}", token);
-                    logger.info("{}: {}", AuthFilter.doAuth_attr_key, isAuth);
+                    logger.info("{}: {}", AuthFilter.checkAuth_attr_key, checkAuth);
                     logger.info("{}: {}", Const.request_header_authUser, authUserStr);
+                    logger.info("{}: {}", AuthFilter.checkPermission_attr_key, checkPermission);
                     logger.info("responseStatus: {}", exchange.getResponse().getStatusCode());
                     logger.info("-------------request end-------------");
                 })

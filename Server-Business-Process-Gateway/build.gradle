@@ -2,6 +2,7 @@ apply plugin: "org.springframework.boot"
 apply plugin: "io.spring.dependency-management"
 
 dependencies {
+    implementation (project(":Lib-Data-Init"))
     implementation (project(":Lib-Microservice-Common")){
         exclude group: 'com.github.xiaoymin', module: 'knife4j-openapi3-jakarta-spring-boot-starter'
     }

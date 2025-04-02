@@ -1,6 +1,6 @@
 package ${packagePre}.service;
 
-import cn.bcd.server.business.process.backend.base.support_jdbc.service.BaseService;
+import cn.bcd.lib.database.jdbc.service.BaseService;
 import org.springframework.stereotype.Service;
 import ${packagePre}.bean.${moduleName?cap_first}Bean;
 

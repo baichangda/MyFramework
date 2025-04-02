@@ -33,22 +33,6 @@ public class CodeGenerator {
         this.dbSupport = dbSupport;
     }
 
-    public static void main(String[] args) {
-        String path = "D:\\work\\bcd\\MyFramework\\Server-Business-Process-Backend\\src\\main\\java\\cn\\bcd\\server\\business\\process\\backend\\base\\support_jdbc\\code";
-        final TableConfig.Helper helper = TableConfig.newHelper();
-        helper.needCreateBeanFile = true;
-        helper.needCreateServiceFile = true;
-        helper.needCreateControllerFile = true;
-        helper.needValidateBeanField = true;
-        helper.needValidateSaveParam = true;
-        helper
-                .addModule("User", "用户", "t_sys_user")
-                .addModule("Permission", "权限", "t_sys_permission");
-        Config config = Config.newConfig(path).addTableConfig(helper.toTableConfigs());
-        CodeGenerator.MYSQL.generate(config);
-//        CodeGenerator.PGSQL.generate(config);
-    }
-
     /**
      * 生成bean文件
      *

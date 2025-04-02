@@ -1,7 +1,8 @@
 package cn.bcd.server.business.process.backend.base.support_spring_exception;
 
+import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.ExceptionUtil;
-import cn.bcd.server.business.process.backend.base.result.Result;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,7 @@ public class ExceptionConfig {
             result = Result.from(realException);
         }
         response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(result.toJson());
+        response.getWriter().write(JsonUtil.toJson(result));
         response.getWriter().flush();
     }
 }

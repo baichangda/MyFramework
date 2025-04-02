@@ -1,6 +1,6 @@
 package cn.bcd.lib.data.notify.onlyNotify.vehicleData;
 
-import cn.bcd.lib.data.notify.Const;
+import cn.bcd.lib.data.notify.NotifyConst;
 import cn.bcd.lib.data.notify.NotifyProp;
 import cn.bcd.lib.data.notify.onlyNotify.Sender;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,6 +13,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class VehicleDataSender extends Sender<VehicleData> {
     public VehicleDataSender(KafkaProperties kafkaProp) {
-        super(Const.topic_vehicleData, kafkaProp);
+        super(NotifyConst.topic_vehicleData, kafkaProp);
     }
 }

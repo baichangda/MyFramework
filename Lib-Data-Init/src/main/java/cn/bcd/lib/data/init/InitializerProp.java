@@ -9,5 +9,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class InitializerProp {
     public String nacosHost;
     public int nacosPort;
-    public ControlProp permissionData;
+    public ControlProp permission;
 }

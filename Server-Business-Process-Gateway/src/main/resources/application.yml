@@ -107,3 +107,11 @@ knife4j:
         # 兼容OpenAPI3规范在聚合时丢失contextPath属性的异常情况，由开发者自己配置contextPath,Knife4j的前端Ui做兼容处理,与url属性独立不冲突，仅OpenAPI3规范聚合需要，OpenAPI2规范不需要设置此属性,默认为(apiPathPrefix)
         context-path: /service/backend
         order: 1
+
+lib:
+  data:
+    init:
+      nacos-host: 127.0.0.1
+      nacos-port: 18848
+      permission:
+        enable: true

@@ -1,7 +1,6 @@
 package cn.bcd.lib.database.jdbc.code;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.database.jdbc.code.data.BeanField;
 
 import java.io.File;
@@ -82,7 +81,8 @@ public class CodeGeneratorContext {
                     File.separatorChar;
             String targetDirPath = tableConfig.config.targetDirPath;
             if (targetDirPath.contains(springSrcPath)) {
-                packagePre = targetDirPath.split(springSrcPath)[1].replace(File.separator, ".");
+                String splitStr = springSrcPath.replace("\\", "\\\\");
+                packagePre = targetDirPath.split(splitStr)[1].replace(File.separator, ".");
             } else {
                 throw BaseException.get("targetDirPath[" + targetDirPath + "] must contains [" + springSrcPath + "]");
             }

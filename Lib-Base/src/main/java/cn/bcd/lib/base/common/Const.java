@@ -10,10 +10,10 @@ public class Const {
 
     //微服务-后端服务
     public final static String uri_prefix_business_process_backend = uri_prefix + "/backend";
-    public final static String service_name_business_process_backend = "business_process_backend";
+    public final static String service_name_business_process_backend = "business-process-backend";
 
     //微服务-开放服务
     public final static String uri_prefix_business_process_openapi = uri_prefix + "/openapi";
-    public final static String service_name_business_process_openapi = "business_process_openapi";
+    public final static String service_name_business_process_openapi = "business-process-openapi";
 
 }
