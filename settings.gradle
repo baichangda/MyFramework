@@ -1,3 +1,11 @@
+pluginManagement {
+    plugins {
+        id 'org.jetbrains.kotlin.jvm' version '2.1.10'
+    }
+}
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
 rootProject.name = 'MyFramework'
 include 'Bom'
 include 'Lib-Base'
@@ -25,4 +33,5 @@ include 'Lib-Database-Common'
 include 'Lib-Database-Jdbc'
 include 'Lib-Database-Mongo'
 include 'Lib-Data-Init'
+include 'Lib-Common-Define'
 

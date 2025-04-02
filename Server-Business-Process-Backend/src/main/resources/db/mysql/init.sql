@@ -64,9 +64,8 @@ ALTER TABLE t_sys_menu
 CREATE TABLE IF NOT EXISTS t_sys_permission
 (
     id               bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'id',
-    name             varchar(20)     NOT NULL COMMENT '角色名称',
-    code             varchar(50)     NOT NULL COMMENT '编码',
-    remark           varchar(256) COMMENT '备注',
+    name             varchar(20)     NOT NULL COMMENT '权限名称',
+    resource         varchar(100)    NOT NULL COMMENT '资源',
     create_time      datetime        NOT NULL COMMENT '创建时间',
     create_user_id   bigint COMMENT '创建人id',
     create_user_name varchar(50) COMMENT '创建人姓名',
@@ -81,9 +80,9 @@ ALTER TABLE t_sys_permission
 
 CREATE TABLE IF NOT EXISTS t_sys_user_role
 (
-    user_id   bigint COMMENT '关联用户id',
-    role_code varchar(50) COMMENT '关联角色编码',
-    PRIMARY KEY (user_id, role_code)
+    user_id bigint COMMENT '关联用户id',
+    role_id bigint COMMENT '关联角色id',
+    PRIMARY KEY (user_id, role_id)
 );
 
 ALTER TABLE t_sys_user_role
@@ -91,9 +90,9 @@ ALTER TABLE t_sys_user_role
 
 CREATE TABLE IF NOT EXISTS t_sys_role_menu
 (
-    role_code varchar(50) COMMENT '关联角色编码',
-    menu_id   bigint COMMENT '关联菜单id',
-    PRIMARY KEY (role_code, menu_id)
+    role_id bigint COMMENT '关联角色id',
+    menu_id bigint COMMENT '关联菜单id',
+    PRIMARY KEY (role_id, menu_id)
 );
 
 ALTER TABLE t_sys_role_menu
@@ -102,9 +101,9 @@ ALTER TABLE t_sys_role_menu
 
 CREATE TABLE IF NOT EXISTS t_sys_menu_permission
 (
-    menu_id         varchar(50) COMMENT '关联菜单id',
-    permission_code varchar(50) COMMENT '关联权限编码',
-    PRIMARY KEY (menu_id, permission_code)
+    menu_id       bigint COMMENT '关联菜单id',
+    permission_id bigint COMMENT '关联权限id',
+    PRIMARY KEY (menu_id, permission_id)
 );
 
 ALTER TABLE t_sys_menu_permission

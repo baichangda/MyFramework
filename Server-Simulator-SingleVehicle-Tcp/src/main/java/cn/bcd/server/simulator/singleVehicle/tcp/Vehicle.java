@@ -6,8 +6,10 @@ import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -134,6 +136,7 @@ public class Vehicle {
     public CompletableFuture<ExecResult<Void>> send(byte[] data) {
         return executor.submit(() -> {
             if (channel != null) {
+                logger.info("send message vin[{}] type[{}]:\n{}", PacketUtil.getVin(data), PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));
                 channel.writeAndFlush(Unpooled.wrappedBuffer(data));
             }
         });

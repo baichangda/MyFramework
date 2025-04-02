@@ -1,5 +1,6 @@
 package cn.bcd.server.business.process.gateway;
 
+import cn.bcd.lib.base.common.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -25,7 +26,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
-                    String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(AuthFilter.authUser_header_key)).map(List::getFirst).orElse(null);
+                    String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(Const.request_header_authUser)).map(List::getFirst).orElse(null);
                     boolean isAuth = Optional.ofNullable(exchange.getAttribute(AuthFilter.doAuth_attr_key)).map(e -> (boolean) e).orElse(false);
                     ServerHttpRequest request = exchange.getRequest();
                     String sourcePath = request.getURI().toString();
@@ -47,7 +48,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
                     logger.info("method: {}", method);
                     logger.info("token: {}", token);
                     logger.info("{}: {}", AuthFilter.doAuth_attr_key, isAuth);
-                    logger.info("{}: {}", AuthFilter.authUser_header_key, authUserStr);
+                    logger.info("{}: {}", Const.request_header_authUser, authUserStr);
                     logger.info("responseStatus: {}", exchange.getResponse().getStatusCode());
                     logger.info("-------------request end-------------");
                 })

@@ -2,6 +2,7 @@ apply plugin: "org.springframework.boot"
 
 dependencies {
     api project(":Lib-Base-Json")
+    api project(":Lib-Data-Notify")
     api("org.springframework.boot:spring-boot-starter")
     // define any required OkHttp artifacts without version
     api("com.squareup.okhttp3:okhttp")

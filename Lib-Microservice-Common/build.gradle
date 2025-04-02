@@ -15,5 +15,18 @@ dependencies {
     api 'org.springframework.cloud:spring-cloud-starter-openfeign'
     //springboot log4j2支持
     api('org.springframework.boot:spring-boot-starter-log4j2')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+}
+buildscript {
+    ext.kotlin_version = '2.1.10'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+repositories {
+    mavenCentral()
 }
 

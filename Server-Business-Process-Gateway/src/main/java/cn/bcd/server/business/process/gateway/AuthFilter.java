@@ -1,5 +1,7 @@
 package cn.bcd.server.business.process.gateway;
 
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.microservice.common.bean.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;
@@ -19,12 +21,10 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
 
 @Component
 public class AuthFilter implements GlobalFilter, Ordered {
 
-    public final static String authUser_header_key = "authUser";
     public final static String doAuth_attr_key = "doAuth";
 
     @Autowired
@@ -38,22 +38,32 @@ public class AuthFilter implements GlobalFilter, Ordered {
         SaReactorSyncHolder.setContext(exchange);
         try {
             boolean check = SaRouter
-                    .match(RouteConfig.pre + "/**")
-                    .notMatch(RouteConfig.pre + "/*/v3/api-docs")
+                    .match(Const.uri_prefix + "/**")
+                    .notMatch(Const.uri_prefix + "/*/v3/api-docs")
                     .notMatch(
-                            getExcludeUrls(RouteConfig.business_process_backend_pre,
+                            getExcludeUrls(Const.uri_prefix_business_process_backend,
                                     "/api/anno",
                                     "/api/sys/user/login"
                             )
                     ).isHit();
             if (check) {
                 exchange.getAttributes().put(doAuth_attr_key, true);
+                //登陆校验
                 String username = StpUtil.getLoginIdAsString();
+
                 try {
-                    AuthUser user = CompletableFuture.supplyAsync(() -> cacheService.getUser(username)).join();
+                    //用户状态校验
+                    AuthUser user = cacheService.getUser(username);
                     if (user.getStatus() == 1) {
-                        ServerHttpRequest newRequest = exchange.getRequest().mutate().header(AuthFilter.authUser_header_key, JsonUtil.toJson(user)).build();
-                        return chain.filter(exchange.mutate().request(newRequest).build());
+                        ServerHttpRequest newRequest = exchange.getRequest().mutate().header(Const.request_header_authUser, JsonUtil.toJson(user)).build();
+                        //权限校验
+                        String requestPath = exchange.getRequest().getPath().value();
+                        boolean hasPermission = StpUtil.hasPermission(requestPath);
+                        if (hasPermission) {
+                            return chain.filter(exchange.mutate().request(newRequest).build());
+                        } else {
+                            return response(exchange, Result.fail(403, "用户权限不足"));
+                        }
                     } else {
                         return response(exchange, Result.fail(402, "用户已被禁用"));
                     }

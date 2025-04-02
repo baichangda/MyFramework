@@ -52,7 +52,7 @@ public class CacheService {
         if (username_permissionList == null) {
             synchronized (this) {
                 if (username_permissionList == null) {
-                    username_permissionList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> permissionService.findPermissionsByUsername(k).stream().map(e->e.code).toList());
+                    username_permissionList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> permissionService.findPermissionsByUsername(k).stream().map(e->e.resource).toList());
                 }
             }
         }

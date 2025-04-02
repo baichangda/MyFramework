@@ -1,15 +1,14 @@
 package cn.bcd.server.business.process.backend.sys.controller;
 
+import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.database.common.condition.Condition;
 import cn.bcd.lib.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.microservice.common.bean.AuthUser;
 import cn.bcd.server.business.process.backend.base.controller.BaseController;
-import cn.bcd.server.business.process.backend.base.result.Result;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
-import cn.bcd.server.business.process.backend.base.support_satoken.anno.NotePermission;
-import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckNotePermissions;
+import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.server.business.process.backend.sys.bean.UserBean;
 import cn.bcd.server.business.process.backend.sys.service.UserService;
 import cn.dev33.satoken.stp.StpUtil;
@@ -40,7 +39,7 @@ public class UserController extends BaseController {
      *
      * @return
      */
-    @SaCheckNotePermissions(NotePermission.user_search)
+    @SaCheckRequestMappingUrl
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     @Operation(summary = "查询用户列表")
     @ApiResponse(responseCode = "200", description = "用户列表")
@@ -77,7 +76,7 @@ public class UserController extends BaseController {
      *
      * @return
      */
-    @SaCheckNotePermissions(NotePermission.user_search)
+    @SaCheckRequestMappingUrl
     @RequestMapping(value = "/page", method = RequestMethod.GET)
     @Operation(summary = "查询用户分页")
     @ApiResponse(responseCode = "200", description = "用户分页结果集")
@@ -117,7 +116,6 @@ public class UserController extends BaseController {
      * @param user
      * @return
      */
-    @SaCheckNotePermissions(NotePermission.user_edit)
     @RequestMapping(value = "/save", method = RequestMethod.POST)
     @Operation(summary = "保存用户")
     @ApiResponse(responseCode = "200", description = "保存结果")
@@ -132,7 +130,6 @@ public class UserController extends BaseController {
      * @param ids
      * @return
      */
-    @SaCheckNotePermissions(NotePermission.user_edit)
     @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
     @Operation(summary = "删除用户")
     @ApiResponse(responseCode = "200", description = "删除结果")
@@ -181,7 +178,6 @@ public class UserController extends BaseController {
      * @param userId
      * @return
      */
-    @SaCheckNotePermissions(NotePermission.user_edit)
     @RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
     @Operation(summary = "重置密码")
     @ApiResponse(responseCode = "200", description = "重制密码结果")

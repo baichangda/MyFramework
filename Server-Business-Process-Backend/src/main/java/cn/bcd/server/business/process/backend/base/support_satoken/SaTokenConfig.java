@@ -1,13 +1,10 @@
 package cn.bcd.server.business.process.backend.base.support_satoken;
 
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckAction;
-import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckNotePermissions;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
-import cn.dev33.satoken.SaManager;
-import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.annotation.handler.SaAnnotationHandlerInterface;
 import cn.dev33.satoken.interceptor.SaInterceptor;
-import cn.dev33.satoken.stp.StpLogic;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -54,7 +51,7 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
             public void checkMethod(SaCheckAction anno, Method method) {
                 final String className = method.getDeclaringClass().getName();
                 final String methodName = method.getName();
-                SaManager.getStpLogic(anno.type(), false).checkPermissionAnd(className + ":" + methodName);
+                StpUtil.checkPermissionAnd(className + ":" + methodName);
             }
         });
 
@@ -73,26 +70,7 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
                 String[] methodUrls = methodRequestMapping.value();
                 Set<String> permissionSet = new HashSet<>();
                 Arrays.stream(classUrls).forEach(e1 -> Arrays.stream(methodUrls).forEach(e2 -> permissionSet.add(e1 + e2)));
-                SaManager.getStpLogic(anno.type(), false).checkPermissionOr(permissionSet.toArray(new String[0]));
-            }
-        });
-
-        SaAnnotationStrategy.instance.registerAnnotationHandler(new SaAnnotationHandlerInterface<SaCheckNotePermissions>() {
-            @Override
-            public Class<SaCheckNotePermissions> getHandlerAnnotationClass() {
-                return SaCheckNotePermissions.class;
-            }
-
-            @Override
-            public void checkMethod(SaCheckNotePermissions anno, Method method) {
-                String[] perms = Arrays.stream(anno.value()).map(e -> e.code).toArray(String[]::new);
-                final StpLogic stpLogic = SaManager.getStpLogic(anno.type(), false);
-                final SaMode mode = anno.mode();
-                if (mode == SaMode.AND) {
-                    stpLogic.checkPermissionAnd(perms);
-                } else {
-                    stpLogic.checkPermissionOr(perms);
-                }
+                StpUtil.checkPermissionAnd(permissionSet.toArray(new String[0]));
             }
         });
     }

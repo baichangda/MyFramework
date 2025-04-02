@@ -1,13 +1,13 @@
 package ${packagePre}.controller;
 
-import cn.bcd.server.business.process.backend.base.condition.Condition;
-import cn.bcd.server.business.process.backend.base.condition.impl.*;
-import cn.bcd.server.business.process.backend.base.controller.BaseController;
-import cn.bcd.server.business.process.backend.base.result.Result;
+import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.database.common.condition.Condition;
+import cn.bcd.lib.database.common.condition.impl.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;

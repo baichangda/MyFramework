@@ -256,6 +256,6 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
     }
 
     public List<String> getUserPermissions(String username, String loginType) {
-        return permissionService.findPermissionsByUsername(username).stream().map(e -> e.code).toList();
+        return permissionService.findPermissionsByUsername(username).stream().map(e -> e.resource).toList();
     }
 }

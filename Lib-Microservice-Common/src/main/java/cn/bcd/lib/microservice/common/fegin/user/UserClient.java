@@ -1,7 +1,7 @@
 package cn.bcd.lib.microservice.common.fegin.user;
 
+import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.microservice.common.bean.AuthUser;
-import cn.bcd.lib.microservice.common.result.Result;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;

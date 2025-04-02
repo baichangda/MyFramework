@@ -1,9 +1,9 @@
 package cn.bcd.server.business.process.gateway;
 
+import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.microservice.common.bean.AuthUser;
 import cn.bcd.lib.microservice.common.fegin.user.UserClient;
-import cn.bcd.lib.microservice.common.result.Result;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.slf4j.Logger;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class CacheService {
@@ -34,7 +35,7 @@ public class CacheService {
             synchronized (this) {
                 if (username_user == null) {
                     username_user = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        Result<AuthUser> result = userClient.getAuthUser(k);
+                        Result<AuthUser> result = CompletableFuture.supplyAsync(() -> userClient.getAuthUser(k)).join();
                         if (result.code == 0) {
                             return result.data;
                         } else {
@@ -56,7 +57,7 @@ public class CacheService {
                         int i = k.indexOf(",");
                         String s1 = k.substring(0, i);
                         String s2 = k.substring(i + 1);
-                        Result<List<String>> result = userClient.getUserRoles(s1, s2);
+                        Result<List<String>> result = CompletableFuture.supplyAsync(() -> userClient.getUserRoles(s1, s2)).join();
                         if (result.code == 0) {
                             return result.data;
                         } else {
@@ -78,7 +79,7 @@ public class CacheService {
                         int i = k.indexOf(",");
                         String s1 = k.substring(0, i);
                         String s2 = k.substring(i + 1);
-                        Result<List<String>> result = userClient.getUserPermissions(s1, s2);
+                        Result<List<String>> result = CompletableFuture.supplyAsync(() -> userClient.getUserPermissions(s1, s2)).join();
                         if (result.code == 0) {
                             return result.data;
                         } else {
