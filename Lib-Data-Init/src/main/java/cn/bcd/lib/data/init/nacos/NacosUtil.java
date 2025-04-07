@@ -1,5 +1,6 @@
 package cn.bcd.lib.data.init.nacos;
 
+import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.util.OkHttpUtil;
@@ -11,6 +12,22 @@ import org.slf4j.LoggerFactory;
 
 public class NacosUtil {
     static Logger logger = LoggerFactory.getLogger(NacosUtil.class);
+
+    public static HostData getHostData_business_process_backend(String host, int port) {
+        try {
+            ListInstanceData listInstanceData = listInstance(host, port, new ListInstanceRequest(Const.service_name_business_process_backend));
+            HostData[] hosts = listInstanceData.hosts;
+            if (hosts.length == 0) {
+                return null;
+            } else {
+                return hosts[0];
+            }
+        } catch (Exception ex) {
+            logger.error("getHostData_business_process_backend error host[{}] port[{}]", host, port, ex);
+            return null;
+        }
+    }
+
     public static ListInstanceData listInstance(String host, int port, ListInstanceRequest listInstanceRequest) throws Exception {
         HttpUrl.Builder builder = HttpUrl.get("http://" + host + ":" + port + "/nacos/v2/ns/instance/list")
                 .newBuilder();

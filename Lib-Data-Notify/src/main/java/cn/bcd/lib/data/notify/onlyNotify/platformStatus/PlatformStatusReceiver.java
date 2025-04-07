@@ -1,0 +1,18 @@
+package cn.bcd.lib.data.notify.onlyNotify.platformStatus;
+
+import cn.bcd.lib.data.notify.NotifyConst;
+import cn.bcd.lib.data.notify.NotifyProp;
+import cn.bcd.lib.data.notify.onlyNotify.Receiver;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@EnableConfigurationProperties(NotifyProp.class)
+@ConditionalOnProperty("lib.data.notify.platformStatus.groupId")
+@Component
+public class PlatformStatusReceiver extends Receiver<PlatformStatusData> {
+    public PlatformStatusReceiver(KafkaProperties kafkaProp, NotifyProp notifyProp) {
+        super(PlatformStatusReceiver.class.getSimpleName(), NotifyConst.topic_platformStatus, notifyProp.platformStatus.groupId, kafkaProp);
+    }
+}

@@ -6,8 +6,7 @@ import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
-import cn.bcd.lib.storage.mongo.gb32960.SaveRawData;
-import cn.bcd.lib.storage.mongo.gb32960.ValData;
+import cn.bcd.lib.storage.mongo.gb32960.RawData;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -83,16 +82,14 @@ public class WorkHandler_gb32960 extends WorkHandler {
             if (saveRawDataTypeSet.contains(flag)) {
                 String hexDump = ByteBufUtil.hexDump(message);
                 Date collectTime = PacketUtil.getTime(message);
-                SaveRawData rawData = new SaveRawData(
-                        id,
-                        collectTime,
-                        flag.type,
-                        new ValData(hexDump,
-                                context.gwReceiveTime.getTime(),
-                                context.gwSendTime.getTime(),
-                                context.parseReceiveTime.getTime()
-                        )
-                );
+                RawData rawData = new RawData();
+                rawData.setVin(id);
+                rawData.setCollectTime(collectTime);
+                rawData.setType(flag.type);
+                rawData.setGwReceiveTime(context.gwReceiveTime);
+                rawData.setGwSendTime(context.gwSendTime);
+                rawData.setParseReceiveTime(context.parseReceiveTime);
+                rawData.setHex(hexDump);
                 SaveUtil_gb32960.put(rawData);
             }
         } catch (Exception e) {

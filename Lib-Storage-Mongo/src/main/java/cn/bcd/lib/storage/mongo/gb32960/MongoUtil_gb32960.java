@@ -1,22 +1,19 @@
 package cn.bcd.lib.storage.mongo.gb32960;
 
-import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.storage.mongo.MongoUtil;
+import cn.bcd.lib.storage.mongo.QueryData;
 import com.google.common.base.Strings;
 import com.google.common.hash.Hashing;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.BulkOperations;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.util.Pair;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 public class MongoUtil_gb32960 {
+
+    static String collection_rowData = "rawData";
+
 
     /**
      * 范围查询
@@ -29,46 +26,22 @@ public class MongoUtil_gb32960 {
      * @param desc      是否主键逆序
      * @return
      */
-    public static List<QueryRawData> list_rawData(String vin, Date beginTime, Date endTime, int skip, int limit, boolean desc) {
-        String startRowKey = toId_rawData(vin, beginTime, 0);
-        String endRowKey = toId_rawData(vin, endTime, 0);
-        return list_rawData(vin, startRowKey, endRowKey, skip, limit, desc);
-    }
-
-    /**
-     * 范围查询
-     *
-     * @param vin
-     * @param startRowKey 包含
-     * @param endRowKey   不包含
-     * @param skip
-     * @param limit
-     * @param desc
-     * @return
-     */
-    public static List<QueryRawData> list_rawData(String vin, String startRowKey, String endRowKey, int skip, int limit, boolean desc) {
-        MongoTemplate mongoTemplate = MongoUtil.getMongoTemplate(vin);
-        Query query = new Query();
-        query.skip(skip);
-        query.limit(limit);
-        query.with(Sort.by(desc ? Sort.Direction.DESC : Sort.Direction.ASC, "id"));
-        final Criteria criteria = Criteria.where("id");
-        criteria.gte(startRowKey);
-        criteria.lt(endRowKey);
-        query.addCriteria(criteria);
-        return mongoTemplate.find(query, QueryRawData.class);
+    public static List<QueryData<RawData>> list_rawData(String vin, Date beginTime, Date endTime, int skip, int limit, boolean desc) {
+        String startId = toId(vin, beginTime, 0);
+        String endId = toId(vin, endTime, 0);
+        return MongoUtil.list(vin, startId, endId, skip, limit, desc, RawData.class, collection_rowData);
     }
 
     /**
      * 获取单条报文
      *
-     * @param vin
-     * @param type
-     * @param collectTime
+     * @param vin         vin
+     * @param collectTime 采集时间
+     * @param type        报文类型
      * @return
      */
-    public static QueryRawData get_rawData(String vin, Date collectTime, int type) {
-        return MongoUtil.getMongoTemplate(vin).findById(toId_rawData(vin, collectTime, type), QueryRawData.class);
+    public static QueryData<RawData> get_rawData(String vin, Date collectTime, int type) {
+        return MongoUtil.get(vin, toId(vin, collectTime, type), RawData.class, collection_rowData);
     }
 
 
@@ -77,35 +50,22 @@ public class MongoUtil_gb32960 {
      *
      * @param list
      */
-    public static void saveBatch_rawData(List<SaveRawData> list) {
-        if (list.isEmpty()) {
-            return;
-        }
-        Map<String, List<Pair<Query, Update>>> map = new HashMap<>();
-        for (SaveRawData e : list) {
-            List<Pair<Query, Update>> pairs = map.computeIfAbsent(e.vin(), k -> new ArrayList<>());
-            String id = toId_rawData(e.vin(), e.collectTime(), e.type());
-            pairs.add(Pair.of(Query.query(Criteria.where("id").is(id)), Update.update("value", JsonUtil.toJson(e.val()))));
-        }
-        map.forEach((k, v) -> {
-            MongoUtil.getMongoTemplate(k).bulkOps(BulkOperations.BulkMode.UNORDERED, SaveRawData.class)
-                    .upsert(v).execute();
-        });
+    public static void save_rawData(List<RawData> list) {
+        MongoUtil.save(list, collection_rowData);
     }
 
     /**
      * 生成记录主键
      *
-     * @param vin         必填
-     * @param collectTime 必填
-     * @param type        必填
+     * @param vin         vin
+     * @param collectTime 采集时间
+     * @param type        报文类型
      * @return
      */
-    public static String toId_rawData(String vin, Date collectTime, int type) {
+    public static String toId(String vin, Date collectTime, int type) {
         return Hashing.md5().hashString(vin, StandardCharsets.UTF_8).toString().substring(0, 4)
-                + Strings.padEnd(vin, 17, '#')
+                + vin
                 + DateZoneUtil.dateToString_second(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
-
 }

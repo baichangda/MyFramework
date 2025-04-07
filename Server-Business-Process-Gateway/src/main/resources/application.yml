@@ -111,7 +111,7 @@ knife4j:
 lib:
   data:
     init:
-      nacos-host: 127.0.0.1
-      nacos-port: 18848
+      nacosHost: 127.0.0.1
+      nacosPort: 18848
       permission:
         enable: true

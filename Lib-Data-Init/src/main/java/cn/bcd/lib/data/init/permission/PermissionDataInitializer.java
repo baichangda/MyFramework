@@ -1,12 +1,9 @@
 package cn.bcd.lib.data.init.permission;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.InitializerProp;
 import cn.bcd.lib.data.init.nacos.HostData;
-import cn.bcd.lib.data.init.nacos.ListInstanceData;
-import cn.bcd.lib.data.init.nacos.ListInstanceRequest;
 import cn.bcd.lib.data.init.nacos.NacosUtil;
 import cn.bcd.lib.data.init.util.OkHttpUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,14 +39,11 @@ public class PermissionDataInitializer implements ApplicationListener<ContextRef
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         try {
-            ListInstanceData listInstanceData = NacosUtil.listInstance(initializerProp.nacosHost, initializerProp.nacosPort, new ListInstanceRequest(Const.service_name_business_process_backend));
-            HostData[] hosts = listInstanceData.hosts;
-            if (hosts.length == 0) {
-                logger.error("PermissionDataInitializer failed、service[{}] unavailable", Const.service_name_business_process_backend);
+            HostData hostData = NacosUtil.getHostData_business_process_backend(initializerProp.nacosHost, initializerProp.nacosPort);
+            if (hostData == null) {
                 return;
             }
-            HostData first = hosts[0];
-            String url = "http://" + first.ip + ":" + first.port + "/api/sys/permission/list";
+            String url = "http://" + hostData.ip + ":" + hostData.port + "/api/sys/permission/list";
             Request request = new Request.Builder().url(url).get().build();
             try (Response response = OkHttpUtil.client.newCall(request).execute()) {
                 String str = response.body().string();
