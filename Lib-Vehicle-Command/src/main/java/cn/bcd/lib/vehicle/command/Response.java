@@ -1,6 +1,7 @@
 package cn.bcd.lib.vehicle.command;
 
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,8 +13,8 @@ public class Response<T, R> {
     public PacketFlag flag;
     public ResponseStatus status;
 
-    //以下属性可能为null、取决于车辆是否在线
-    public String requestId;
+    //以下属性可能为null或默认值、取决于是否接收到车辆的报文
+    public int replyFlag;
     public byte[] content;
 
     @JsonIgnore
@@ -28,11 +29,11 @@ public class Response<T, R> {
         this.status = status;
     }
 
-    public Response(Request<T, R> request, ResponseStatus status, byte[] content) {
+    public Response(Request<T, R> request, ResponseStatus status, int replyFlag, byte[] content) {
         this.vin = request.vin;
         this.flag = request.flag;
-        this.requestId = request.id;
         this.status = status;
+        this.replyFlag = replyFlag;
         this.content = content;
     }
 

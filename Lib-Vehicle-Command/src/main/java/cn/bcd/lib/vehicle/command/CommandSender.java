@@ -99,11 +99,11 @@ public class CommandSender {
         boolean online = online(vin);
         PacketFlag flag = command.flag;
         if (!online) {
-            callback.callback(new Response<>(vin, flag, ResponseStatus.OFFLINE));
+            callback.callback(new Response<>(vin, flag, ResponseStatus.offline));
             return;
         }
         if (!tryLock(vin, flag, timeout)) {
-            callback.callback(new Response<>(vin, flag, ResponseStatus.BUSY));
+            callback.callback(new Response<>(vin, flag, ResponseStatus.busy));
             return;
         }
         Request<T, R> request = new Request<>();
@@ -120,7 +120,7 @@ public class CommandSender {
                     Request<?, ?> remove = requestMap.remove(request.getId());
                     if (remove != null) {
                         try {
-                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.TIMEOUT));
+                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.timeout));
                         } catch (Exception ex) {
                             logger.error("error", ex);
                         } finally {

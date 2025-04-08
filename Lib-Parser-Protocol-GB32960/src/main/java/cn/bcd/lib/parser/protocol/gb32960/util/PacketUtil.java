@@ -23,6 +23,17 @@ public class PacketUtil {
      *
      * @param data 只包含一条数据的数据包
      */
+    public static void fix_contentLength(byte[] data) {
+        int actualLen = data.length - 25;
+        data[22] = (byte) (actualLen >> 8);
+        data[23] = (byte) actualLen;
+    }
+
+    /**
+     * 修正数据单元长度
+     *
+     * @param data 只包含一条数据的数据包
+     */
     public static void fix_contentLength(ByteBuf data) {
         int actualLen = data.readableBytes() - 25;
         data.setShort(22, actualLen);
@@ -73,6 +84,22 @@ public class PacketUtil {
         return PacketFlag.fromInteger(bytes[offset + 2] & 0xFF);
     }
 
+    public static int getReplyFlag(ByteBuf byteBuf) {
+        return getReplyFlag(byteBuf, 0);
+    }
+
+    public static int getReplyFlag(ByteBuf byteBuf, int offset) {
+        return byteBuf.getUnsignedByte(offset + 3);
+    }
+
+    public static int getReplyFlag(byte[] bytes) {
+        return getReplyFlag(bytes, 0);
+    }
+
+    public static int getReplyFlag(byte[] bytes, int offset) {
+        return bytes[offset + 3] & 0xFF;
+    }
+
 
     public static String getVin(byte[] bytes) {
         return getVin(bytes, 0);
@@ -115,6 +142,26 @@ public class PacketUtil {
                 bytes[offset + 27],
                 bytes[offset + 28],
                 bytes[offset + 29]).toInstant(DateZoneUtil.ZONE_OFFSET));
+    }
+
+    public static byte[] getPacketData_bytes(byte[] bytes) {
+        return getPacketData_bytes(bytes, 0);
+    }
+
+    public static byte[] getPacketData_bytes(byte[] bytes, int offset) {
+        byte[] content = new byte[bytes.length - 25 - offset];
+        System.arraycopy(bytes, 24 + offset, content, 0, content.length);
+        return content;
+    }
+
+    public static byte[] getPacketData_bytes(ByteBuf byteBuf) {
+        return getPacketData_bytes(byteBuf, 0);
+    }
+
+    public static byte[] getPacketData_bytes(ByteBuf byteBuf, int offset) {
+        byte[] content = new byte[byteBuf.readableBytes() - 25 - offset];
+        byteBuf.getBytes(24 + offset, content, 0, content.length);
+        return content;
     }
 
     /**
