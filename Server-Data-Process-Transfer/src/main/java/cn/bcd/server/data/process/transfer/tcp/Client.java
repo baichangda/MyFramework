@@ -262,7 +262,7 @@ public class Client {
             //启用心跳发送
             heartbeatFuture = manageExecutor.scheduleAtFixedRate(() -> {
                 try {
-                    ByteBuf buffer = PacketUtil.build_byteBuf_timeData(transferConfigData.uniqueCode, new Date(), PacketFlag.heartbeat, 0xFE);
+                    ByteBuf buffer = PacketUtil.build_byteBuf_timeData(transferConfigData.uniqueCode, PacketFlag.heartbeat, 0xFE, new Date());
                     if (Const.logEnable) {
                         logger.info("--------------------------send heartbeat:\n{}", ByteBufUtil.hexDump(buffer));
                     }

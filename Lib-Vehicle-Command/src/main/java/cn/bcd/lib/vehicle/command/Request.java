@@ -30,18 +30,6 @@ public class Request<T, R> {
     }
 
     public byte[] toPacketBytes() {
-        int length = content.length;
-        byte[] bytes = new byte[length + 25];
-        bytes[0] = 0x23;
-        bytes[1] = 0x23;
-        bytes[2] = (byte) flag.toInteger();
-        bytes[3] = (byte) 0xfe;
-        System.arraycopy(vin.getBytes(), 0, bytes, 4, 17);
-        bytes[21] = 1;
-        bytes[22] = (byte) (length >> 8);
-        bytes[23] = (byte) length;
-        System.arraycopy(content, 0, bytes, 24, length);
-        PacketUtil.fix_code(bytes);
-        return bytes;
+        return PacketUtil.build_bytes_packetData(vin, flag, 0xFE, content);
     }
 }

@@ -126,7 +126,7 @@ public class PacketUtil {
      * @param replyFlag
      * @return
      */
-    public static byte[] build_bytes_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
+    public static byte[] build_bytes_timeData(String vin, PacketFlag flag, int replyFlag, Date time) {
         byte[] bytes = new byte[31];
         bytes[0] = 0x23;
         bytes[1] = 0x23;
@@ -147,17 +147,37 @@ public class PacketUtil {
         return bytes;
     }
 
+    public static ByteBuf build_byteBuf_timeData(String vin, PacketFlag flag, int replyFlag, Date time) {
+        return Unpooled.wrappedBuffer(build_bytes_timeData(vin, flag, replyFlag, DateUtil.clearMills(time)));
+    }
+
     /**
-     * 构造内容只包含时间的通用应答
+     * 根据报文体内容构造报文
      *
      * @param vin
-     * @param time
      * @param flag
      * @param replyFlag
+     * @param content
      * @return
      */
-    public static ByteBuf build_byteBuf_timeData(String vin, Date time, PacketFlag flag, int replyFlag) {
-        return Unpooled.wrappedBuffer(build_bytes_timeData(vin, DateUtil.clearMills(time), flag, replyFlag));
+    public static byte[] build_bytes_packetData(String vin, PacketFlag flag, int replyFlag, byte[] content) {
+        int length = content.length;
+        byte[] bytes = new byte[length + 25];
+        bytes[0] = 0x23;
+        bytes[1] = 0x23;
+        bytes[2] = (byte) flag.toInteger();
+        bytes[3] = (byte) replyFlag;
+        System.arraycopy(vin.getBytes(), 0, bytes, 4, 17);
+        bytes[21] = 1;
+        bytes[22] = (byte) (length >> 8);
+        bytes[23] = (byte) length;
+        System.arraycopy(content, 0, bytes, 24, length);
+        fix_code(bytes);
+        return bytes;
+    }
+
+    public static ByteBuf build_byteBuf_packetData(String vin, PacketFlag flag, int replyFlag, byte[] content) {
+        return Unpooled.wrappedBuffer(build_bytes_packetData(vin, flag, replyFlag, content));
     }
 
     /**
