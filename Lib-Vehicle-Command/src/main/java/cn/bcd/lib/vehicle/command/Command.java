@@ -11,7 +11,7 @@ public abstract class Command<T, R> {
         this.request = request;
         this.flag = flag;
     }
-    public abstract byte[] requestToBytes();
+    public abstract byte[] toRequestBytes();
 
     public abstract R toResponse(byte[] content);
 }

@@ -52,7 +52,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
             return;
         }
         //写报文到车端
-        session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.content));
+        session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.toPacketBytes()));
     }
 
     public void onResponse(String vin, PacketFlag flag, byte[] bytes) {

@@ -90,7 +90,6 @@ public class CommandSender {
      *                            如果为true，则发送命令后，会等待车端响应，并将车端响应结果设置到{@link Response#content}中
      *                            否则在发送命令后直接返回成功、且{@link Response#content}为null
      * @param <T>                 响应回调的数据类型
-     * @return true:发送成功，false:车辆不在线
      */
     public static <T, R> void send(String vin,
                                    Command<T, R> command,
@@ -110,7 +109,7 @@ public class CommandSender {
         Request<T, R> request = new Request<>();
         request.setId(Request.toId(vin, flag));
         request.setFlag(flag);
-        request.setContent(command.requestToBytes());
+        request.setContent(command.toRequestBytes());
         request.setVin(vin);
         request.setCommand(command);
         request.setWaitVehicleResponse(waitVehicleResponse);
