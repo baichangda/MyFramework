@@ -45,7 +45,6 @@ public class KafkaSendDataHandler implements KafkaDataHandler {
             TransferData transferData = new TransferData();
             transferData.setVin(vin);
             transferData.setType(PacketUtil.getPacketFlag(bytes).type);
-            transferData.setVehicleModelCode(context.vehicleData.getVehicleModelCode());
             transferData.setPlatformCode(Client.transferConfigData.platCode);
             transferData.setHex(ByteBufUtil.hexDump(bytes));
             transferData.setCollectTime(PacketUtil.getTime(bytes));

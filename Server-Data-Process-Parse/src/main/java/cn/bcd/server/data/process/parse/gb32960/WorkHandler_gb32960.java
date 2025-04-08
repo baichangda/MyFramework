@@ -72,9 +72,9 @@ public class WorkHandler_gb32960 extends WorkHandler {
                 DateZoneUtil.dateToString_second(dates[0]),
                 DateZoneUtil.dateToString_second(dates[1]),
                 ByteBufUtil.hexDump(message));
-        context.gwReceiveTime = dates[0];
-        context.gwSendTime = dates[1];
-        context.parseReceiveTime = new Date();
+        context.gwInTime = dates[0];
+        context.gwOutTime = dates[1];
+        context.parseInTime = new Date();
 
         Packet packet;
         try {
@@ -86,9 +86,9 @@ public class WorkHandler_gb32960 extends WorkHandler {
                 rawData.setVin(id);
                 rawData.setCollectTime(collectTime);
                 rawData.setType(flag.type);
-                rawData.setGwReceiveTime(context.gwReceiveTime);
-                rawData.setGwSendTime(context.gwSendTime);
-                rawData.setParseReceiveTime(context.parseReceiveTime);
+                rawData.setGwReceiveTime(context.gwInTime);
+                rawData.setGwSendTime(context.gwOutTime);
+                rawData.setParseReceiveTime(context.parseInTime);
                 rawData.setHex(hexDump);
                 SaveUtil_gb32960.put(rawData);
             }

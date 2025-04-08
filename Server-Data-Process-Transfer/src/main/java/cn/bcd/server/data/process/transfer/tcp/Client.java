@@ -4,7 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.data.init.transfer.TransferConfigData;
+import cn.bcd.lib.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusData;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
 import cn.bcd.lib.parser.base.util.ParseUtil;

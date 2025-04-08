@@ -1,4 +1,4 @@
-package cn.bcd.lib.data.init.transfer;
+package cn.bcd.lib.data.init.transferAccess;
 
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;

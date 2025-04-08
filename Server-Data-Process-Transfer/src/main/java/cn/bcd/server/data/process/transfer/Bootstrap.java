@@ -1,8 +1,8 @@
 package cn.bcd.server.data.process.transfer;
 
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.data.init.transfer.TransferConfigData;
-import cn.bcd.lib.data.init.transfer.TransferConfigDataInit;
+import cn.bcd.lib.data.init.transferConfig.TransferConfigData;
+import cn.bcd.lib.data.init.transferConfig.TransferConfigDataInit;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
 import cn.bcd.server.data.process.transfer.handler.KafkaDataHandler;
 import cn.bcd.server.data.process.transfer.handler.TcpDataHandler;
