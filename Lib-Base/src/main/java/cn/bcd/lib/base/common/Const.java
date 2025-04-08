@@ -2,6 +2,8 @@ package cn.bcd.lib.base.common;
 
 public class Const {
 
+    public final static boolean logEnable = true;
+
     //微服务网关请求头用户信息
     public final static String request_header_authUser = "authUser";
 

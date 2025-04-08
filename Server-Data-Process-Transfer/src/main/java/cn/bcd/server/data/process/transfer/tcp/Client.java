@@ -1,5 +1,6 @@
 package cn.bcd.server.data.process.transfer.tcp;
 
+import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.WaitStrategy;
@@ -214,7 +215,9 @@ public class Client {
 
     public static void onMessage(ByteBuf byteBuf) {
         PacketFlag flag = PacketFlag.fromInteger(byteBuf.getByte(2));
-        logger.info("--------------------------receive type[{}]:\n{}", flag, ByteBufUtil.hexDump(byteBuf));
+        if (Const.logEnable) {
+            logger.info("--------------------------receive type[{}]:\n{}", flag, ByteBufUtil.hexDump(byteBuf));
+        }
         switch (flag) {
             case heartbeat -> execute(() -> onHeartbeatResponse(byteBuf));
             case platform_login_data -> execute(() -> onPlatformLoginResponse(byteBuf));
@@ -260,7 +263,9 @@ public class Client {
             heartbeatFuture = manageExecutor.scheduleAtFixedRate(() -> {
                 try {
                     ByteBuf buffer = PacketUtil.build_byteBuf_timeData(transferConfigData.uniqueCode, new Date(), PacketFlag.heartbeat, 0xFE);
-                    logger.info("--------------------------send heartbeat:\n{}", ByteBufUtil.hexDump(buffer));
+                    if (Const.logEnable) {
+                        logger.info("--------------------------send heartbeat:\n{}", ByteBufUtil.hexDump(buffer));
+                    }
                     send(buffer);
                 } catch (Exception ex) {
                     logger.error("error", ex);
@@ -331,7 +336,9 @@ public class Client {
                 try {
                     SendData sendData = sendQueue.take();
                     byte[] data = sendData.data();
-                    logger.info("--------------------------send type[{}]:\n{}", PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));
+                    if (Const.logEnable) {
+                        logger.info("--------------------------send type[{}]:\n{}", PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));
+                    }
                     send(Unpooled.wrappedBuffer(data));
                     sendData.callback();
                     sendNum.increment();

@@ -1,5 +1,6 @@
 package cn.bcd.server.data.process.parse.gb32960;
 
+import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
@@ -66,12 +67,14 @@ public class WorkHandler_gb32960 extends WorkHandler {
         byte[] message = new byte[value.length - 16];
         System.arraycopy(value, 16, message, 0, message.length);
         PacketFlag flag = PacketUtil.getPacketFlag(message);
-        logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}]:\n{}",
-                PacketUtil.getVin(message),
-                flag,
-                DateZoneUtil.dateToString_second(dates[0]),
-                DateZoneUtil.dateToString_second(dates[1]),
-                ByteBufUtil.hexDump(message));
+        if (Const.logEnable) {
+            logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}]:\n{}",
+                    PacketUtil.getVin(message),
+                    flag,
+                    DateZoneUtil.dateToString_second(dates[0]),
+                    DateZoneUtil.dateToString_second(dates[1]),
+                    ByteBufUtil.hexDump(message));
+        }
         context.gwInTime = dates[0];
         context.gwOutTime = dates[1];
         context.parseInTime = new Date();

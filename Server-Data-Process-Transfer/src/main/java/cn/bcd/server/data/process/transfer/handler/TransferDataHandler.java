@@ -1,5 +1,6 @@
 package cn.bcd.server.data.process.transfer.handler;
 
+import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
@@ -74,14 +75,16 @@ public class TransferDataHandler extends WorkHandler {
             byte[] message = new byte[value.length - 32];
             System.arraycopy(value, 32, message, 0, message.length);
             PacketFlag flag = PacketUtil.getPacketFlag(message);
-            logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}] parseInTime[{}] parseOutTime[{}]:\n{}",
-                    PacketUtil.getVin(message),
-                    flag,
-                    DateZoneUtil.dateToString_second(dates[0]),
-                    DateZoneUtil.dateToString_second(dates[1]),
-                    DateZoneUtil.dateToString_second(dates[2]),
-                    DateZoneUtil.dateToString_second(dates[3]),
-                    ByteBufUtil.hexDump(message));
+            if (Const.logEnable) {
+                logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}] parseInTime[{}] parseOutTime[{}]:\n{}",
+                        PacketUtil.getVin(message),
+                        flag,
+                        DateZoneUtil.dateToString_second(dates[0]),
+                        DateZoneUtil.dateToString_second(dates[1]),
+                        DateZoneUtil.dateToString_second(dates[2]),
+                        DateZoneUtil.dateToString_second(dates[3]),
+                        ByteBufUtil.hexDump(message));
+            }
             context.gwInTime = dates[0];
             context.gwOutTime = dates[1];
             context.parseInTime = dates[2];

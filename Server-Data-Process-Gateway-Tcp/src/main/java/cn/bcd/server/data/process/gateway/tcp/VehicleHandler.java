@@ -51,7 +51,9 @@ public class VehicleHandler extends ChannelInboundHandlerAdapter {
             //轻量解析
             String vin = PacketUtil.getVin(bytes);
             PacketFlag packetFlag = PacketUtil.getPacketFlag(bytes);
-            logger.info("receive packet vin[{}] flag[{}] hex:\n{}", vin, packetFlag, ByteBufUtil.hexDump(bytes));
+            if (Const.logEnable) {
+                logger.info("receive packet vin[{}] flag[{}] hex:\n{}", vin, packetFlag, ByteBufUtil.hexDump(bytes));
+            }
             if (session == null) {
                 //构造会话
                 session = new Session(vin, ctx.channel());
