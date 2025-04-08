@@ -3,7 +3,7 @@ package cn.bcd.server.business.process.gateway;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.data.init.permission.PermissionDataInitializer;
+import cn.bcd.lib.data.init.permission.PermissionDataInit;
 import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.reactor.context.SaReactorSyncHolder;
@@ -60,7 +60,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
                         ServerHttpRequest newRequest = exchange.getRequest().mutate().header(Const.request_header_authUser, JsonUtil.toJson(user)).build();
                         //判断是否权限校验
                         String requestPath = exchange.getRequest().getPath().value();
-                        boolean needCheckPermission = PermissionDataInitializer.resource_permission.containsKey(requestPath);
+                        boolean needCheckPermission = PermissionDataInit.resource_permission.containsKey(requestPath);
                         if (needCheckPermission) {
                             exchange.getAttributes().put(checkPermission_attr_key, true);
                             //权限校验

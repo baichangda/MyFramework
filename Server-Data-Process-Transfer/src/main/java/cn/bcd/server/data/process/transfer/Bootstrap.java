@@ -2,7 +2,7 @@ package cn.bcd.server.data.process.transfer;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.transfer.TransferConfigData;
-import cn.bcd.lib.data.init.transfer.TransferConfigDataInitializer;
+import cn.bcd.lib.data.init.transfer.TransferConfigDataInit;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
 import cn.bcd.server.data.process.transfer.handler.KafkaDataHandler;
 import cn.bcd.server.data.process.transfer.handler.TcpDataHandler;
@@ -54,7 +54,7 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         try {
-            TransferConfigData data = TransferConfigDataInitializer.get(serverId);
+            TransferConfigData data = TransferConfigDataInit.get(serverId);
             if (data == null) {
                 logger.error("serverId[{}] transfer config not exist", serverId);
                 return;

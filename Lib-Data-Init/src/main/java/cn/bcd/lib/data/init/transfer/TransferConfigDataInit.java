@@ -3,7 +3,7 @@ package cn.bcd.lib.data.init.transfer;
 
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.data.init.InitializerProp;
+import cn.bcd.lib.data.init.InitProp;
 import cn.bcd.lib.data.init.nacos.HostData;
 import cn.bcd.lib.data.init.nacos.NacosUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -16,23 +16,23 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@EnableConfigurationProperties(InitializerProp.class)
+@EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.transferConfig.enable")
 @Component
-public class TransferConfigDataInitializer {
+public class TransferConfigDataInit {
 
-    static Logger logger = LoggerFactory.getLogger(TransferConfigDataInitializer.class);
+    static Logger logger = LoggerFactory.getLogger(TransferConfigDataInit.class);
 
     public static OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
 
-    private static InitializerProp initializerProp;
+    private static InitProp initProp;
 
-    public TransferConfigDataInitializer(InitializerProp initializerProp) {
-        TransferConfigDataInitializer.initializerProp = initializerProp;
+    public TransferConfigDataInit(InitProp initProp) {
+        TransferConfigDataInit.initProp = initProp;
     }
 
     public static TransferConfigData get(String serverId) {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initializerProp.nacosHost, initializerProp.nacosPort);
+        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
         if (hostData == null) {
             return null;
         }

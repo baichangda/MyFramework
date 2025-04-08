@@ -2,7 +2,7 @@ package cn.bcd.lib.data.init.permission;
 
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.data.init.InitializerProp;
+import cn.bcd.lib.data.init.InitProp;
 import cn.bcd.lib.data.init.nacos.HostData;
 import cn.bcd.lib.data.init.nacos.NacosUtil;
 import cn.bcd.lib.data.init.util.OkHttpUtil;
@@ -20,26 +20,26 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-@EnableConfigurationProperties(InitializerProp.class)
+@EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.permission.enable")
 @Component
-public class PermissionDataInitializer implements ApplicationListener<ContextRefreshedEvent> {
+public class PermissionDataInit implements ApplicationListener<ContextRefreshedEvent> {
 
-    static Logger logger = LoggerFactory.getLogger(PermissionDataInitializer.class);
+    static Logger logger = LoggerFactory.getLogger(PermissionDataInit.class);
 
 
     public static final ConcurrentHashMap<String, PermissionData> resource_permission = new ConcurrentHashMap<>();
 
-    private static InitializerProp initializerProp;
+    private static InitProp initProp;
 
-    public PermissionDataInitializer(InitializerProp initializerProp) {
-        PermissionDataInitializer.initializerProp = initializerProp;
+    public PermissionDataInit(InitProp initProp) {
+        PermissionDataInit.initProp = initProp;
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         try {
-            HostData hostData = NacosUtil.getHostData_business_process_backend(initializerProp.nacosHost, initializerProp.nacosPort);
+            HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
             if (hostData == null) {
                 return;
             }
