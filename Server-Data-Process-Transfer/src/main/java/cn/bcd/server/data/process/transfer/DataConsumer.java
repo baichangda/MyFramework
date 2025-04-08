@@ -18,11 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * @Author：Liqi
- * @CreateTime：2025-01-23
- * @Description：TODO
- **/
 public class DataConsumer extends DataDrivenKafkaConsumer {
 
     List<KafkaDataHandler> kafkaDataHandlers;

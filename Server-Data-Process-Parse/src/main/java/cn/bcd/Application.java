@@ -5,10 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
-/**
- * @author liqi
- */
-
 @SpringBootApplication(scanBasePackages = {"cn.bcd"},
         exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class}
 )

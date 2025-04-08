@@ -23,12 +23,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/**
- * @Author：Liqi
- * @CreateTime：2025-02-13
- * @Description：TODO
- **/
-
 @EnableConfigurationProperties(InitializerProp.class)
 @ConditionalOnProperty("lib.data.init.vehicle.enable")
 @Component
