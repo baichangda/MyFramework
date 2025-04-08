@@ -3,7 +3,7 @@ package cn.bcd.lib.data.init.vehicle;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.data.init.InitializerProp;
+import cn.bcd.lib.data.init.InitProp;
 import cn.bcd.lib.data.init.nacos.HostData;
 import cn.bcd.lib.data.init.nacos.NacosUtil;
 import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
@@ -23,23 +23,23 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-@EnableConfigurationProperties(InitializerProp.class)
+@EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.vehicle.enable")
 @Component
-public class VehicleDataInitializer implements Consumer<VehicleData>, ApplicationListener<ContextRefreshedEvent> {
+public class VehicleDataInit implements Consumer<VehicleData>, ApplicationListener<ContextRefreshedEvent> {
 
-    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(VehicleDataInitializer.class);
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(VehicleDataInit.class);
 
     public static final ConcurrentHashMap<String, VehicleData> VEHICLE_DATA_MAP = new ConcurrentHashMap<>();
 
-    private static InitializerProp initializerProp;
+    private static InitProp initProp;
 
-    public VehicleDataInitializer(InitializerProp staticDataInitProp) {
-        VehicleDataInitializer.initializerProp = staticDataInitProp;
+    public VehicleDataInit(InitProp staticDataInitProp) {
+        VehicleDataInit.initProp = staticDataInitProp;
     }
 
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initializerProp.nacosHost, initializerProp.nacosPort);
+        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
         if (hostData == null) {
             return;
         }

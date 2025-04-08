@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 @Data
 @ConfigurationProperties(prefix = "lib.data.init")
-public class InitializerProp {
+public class InitProp {
     public String nacosHost;
     public int nacosPort;
     @NestedConfigurationProperty

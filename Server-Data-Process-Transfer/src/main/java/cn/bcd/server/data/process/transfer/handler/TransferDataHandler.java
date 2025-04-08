@@ -3,7 +3,7 @@ package cn.bcd.server.data.process.transfer.handler;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.data.init.vehicle.VehicleDataInitializer;
+import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +33,7 @@ public class TransferDataHandler extends WorkHandler {
     @Override
     public void init() {
         context.executor = executor;
-        context.setVehicleData(VehicleDataInitializer.VEHICLE_DATA_MAP.get(id));
+        context.setVehicleData(VehicleDataInit.VEHICLE_DATA_MAP.get(id));
         for (KafkaDataHandler handler : kafkaDataHandlers) {
             try {
                 handler.init(id, context);
