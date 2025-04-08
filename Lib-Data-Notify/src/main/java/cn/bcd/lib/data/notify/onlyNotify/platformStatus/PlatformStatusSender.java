@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty("lib.data.notify.platformStatus.enableSender")
 @Component
 public class PlatformStatusSender extends Sender<PlatformStatusData> {
-    public PlatformStatusSender(KafkaProperties kafkaProp, NotifyProp notifyProp) {
+    public PlatformStatusSender(KafkaProperties kafkaProp) {
         super(NotifyConst.topic_platformStatus, kafkaProp);
     }
 }
