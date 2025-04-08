@@ -11,4 +11,6 @@ public class NotifyProp {
     public NodeProp vehicleData;
     @NestedConfigurationProperty
     public NodeProp platformStatus;
+    @NestedConfigurationProperty
+    public NodeProp transferAccess;
 }

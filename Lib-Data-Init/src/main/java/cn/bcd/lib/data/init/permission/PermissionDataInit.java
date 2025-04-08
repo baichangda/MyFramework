@@ -46,16 +46,16 @@ public class PermissionDataInit implements ApplicationListener<ContextRefreshedE
             String url = "http://" + hostData.ip + ":" + hostData.port + "/api/sys/permission/list";
             Request request = new Request.Builder().url(url).get().build();
             try (Response response = OkHttpUtil.client.newCall(request).execute()) {
-                String str = response.body().string();
-                Result<List<PermissionData>> result = JsonUtil.OBJECT_MAPPER.readValue(str, new TypeReference<>() {
+                byte[] bytes = response.body().bytes();
+                Result<List<PermissionData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
                 });
                 if (result.code == 0) {
                     for (PermissionData data : result.data) {
                         resource_permission.put(data.resource, data);
                     }
-                    logger.info("PermissionDataInitializer succeed、count[{}]", resource_permission.size());
+                    logger.info("PermissionDataInit succeed、count[{}]", resource_permission.size());
                 } else {
-                    logger.error("PermissionDataInitializer failed、call url[{}] result:\n{}", url, str);
+                    logger.error("PermissionDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
                 }
             }
         } catch (Exception ex) {

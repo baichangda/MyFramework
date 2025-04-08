@@ -6,9 +6,9 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.InitProp;
 import cn.bcd.lib.data.init.nacos.HostData;
 import cn.bcd.lib.data.init.nacos.NacosUtil;
+import cn.bcd.lib.data.init.util.OkHttpUtil;
 import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
 import com.fasterxml.jackson.core.type.TypeReference;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, ApplicationListen
 
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(VehicleDataInit.class);
 
-    public static final ConcurrentHashMap<String, VehicleData> VEHICLE_DATA_MAP = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<String, VehicleData> vin_vehicleData = new ConcurrentHashMap<>();
 
     private static InitProp initProp;
 
@@ -43,31 +43,31 @@ public class VehicleDataInit implements Consumer<VehicleData>, ApplicationListen
         if (hostData == null) {
             return;
         }
-        OkHttpClient httpClient = new OkHttpClient.Builder().build();
-        Request request = new Request.Builder().url("http://" + hostData.ip + ":" + hostData.port + "/api/vehicle/vehicleData/initVehicleData").get().build();
-        try (Response response = httpClient.newCall(request).execute()) {
+        String url = "http://" + hostData.ip + ":" + hostData.port + "/api/vehicle/list";
+        Request request = new Request.Builder().url(url).get().build();
+        try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             assert response.body() != null;
-            String res = response.body().string();
-            Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(res, new TypeReference<>() {
+            byte[] bytes = response.body().bytes();
+            Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (resultData.getCode() == 0) {
                 List<VehicleData> list = resultData.getData();
                 for (VehicleData data : list) {
-                    VEHICLE_DATA_MAP.put(data.getVin(), data);
+                    vin_vehicleData.put(data.getVin(), data);
                 }
-                logger.info("VehicleData init succeed, total size :{}", list.size());
+                logger.info("VehicleDataInit succeed、count[{}]", vin_vehicleData.size());
             } else {
-                logger.error("VehicleData init failed:\n{}", res);
+                logger.error("VehicleDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
             }
         } catch (IOException e) {
-            throw BaseException.get("车辆数据加载异常，请检查！！！", e);
+            throw BaseException.get("VehicleDataInit error", e);
         }
     }
 
     @Override
     public void accept(VehicleData vehicleData) {
         if (vehicleData != null) {
-            VEHICLE_DATA_MAP.put(vehicleData.getVin(), vehicleData);
+            vin_vehicleData.put(vehicleData.getVin(), vehicleData);
         }
     }
 }

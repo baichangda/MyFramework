@@ -33,7 +33,7 @@ public class TransferDataHandler extends WorkHandler {
     @Override
     public void init() {
         context.executor = executor;
-        context.setVehicleData(VehicleDataInit.VEHICLE_DATA_MAP.get(id));
+        context.setVehicleData(VehicleDataInit.vin_vehicleData.get(id));
         for (KafkaDataHandler handler : kafkaDataHandlers) {
             try {
                 handler.init(id, context);
