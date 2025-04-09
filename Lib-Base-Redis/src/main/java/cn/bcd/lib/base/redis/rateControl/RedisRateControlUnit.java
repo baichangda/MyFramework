@@ -123,6 +123,7 @@ public class RedisRateControlUnit {
     }
 
     public void add(int count) throws InterruptedException {
+        //首先检查是否超出最大访问次数
         while (true) {
             String s = redisTemplate.opsForValue().get(redisKeyCount);
             if (s == null) {
@@ -136,6 +137,7 @@ public class RedisRateControlUnit {
                 }
             }
         }
+        //记录访问次数
         redisTemplate.opsForValue().increment(redisKeyCount, count);
     }
 }
