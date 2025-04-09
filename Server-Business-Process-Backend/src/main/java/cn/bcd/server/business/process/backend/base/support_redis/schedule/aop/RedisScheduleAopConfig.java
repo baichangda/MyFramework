@@ -37,7 +37,7 @@ public class RedisScheduleAopConfig {
     /**
      * 定时任务
      */
-    @Pointcut("@annotation(cn.bcd.businessProcess.backend.base.support_redis.schedule.anno.SingleFailedSchedule)")
+    @Pointcut("@annotation(cn.bcd.server.business.process.backend.base.support_redis.schedule.anno.SingleFailedSchedule)")
     public void methodSchedule() {
 
     }
