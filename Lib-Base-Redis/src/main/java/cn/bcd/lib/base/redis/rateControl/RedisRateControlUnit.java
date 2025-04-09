@@ -9,10 +9,14 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Date;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
-public class RateControlUnit {
-    static Logger logger = LoggerFactory.getLogger(RateControlUnit.class);
+public class RedisRateControlUnit {
+    static Logger logger = LoggerFactory.getLogger(RedisRateControlUnit.class);
 
     static final String REDIS_KEY_PRE_COUNT = "rc:count";
     static final String REDIS_KEY_PRE_RESET = "rc:reset";
@@ -24,12 +28,7 @@ public class RateControlUnit {
     static {
         for (int i = 0; i < resetPool.length; i++) {
             int no = i + 1;
-            resetPool[i] = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "rateControl(" + no + "/" + resetPool.length + ")");
-                }
-            });
+            resetPool[i] = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "redisRateControl(" + no + "/" + resetPool.length + ")"));
         }
     }
 
@@ -38,6 +37,7 @@ public class RateControlUnit {
     private final String redisKeyReset;
     private final int timeInSecond;
     private final int maxAccessCount;
+    private final int waitMills;
     private final RedisTemplate<String, String> redisTemplate;
     private final ScheduledExecutorService resetExecutor;
     private volatile boolean reset;
@@ -45,15 +45,17 @@ public class RateControlUnit {
     private ScheduledFuture<?> managerFuture;
     private ScheduledFuture<?> resetFuture;
 
-    public RateControlUnit(String name,
-                           int timeInSecond,
-                           int maxAccessCount,
-                           RedisConnectionFactory redisConnectionFactory) {
+    public RedisRateControlUnit(String name,
+                                int timeInSecond,
+                                int maxAccessCount,
+                                int waitMills,
+                                RedisConnectionFactory redisConnectionFactory) {
         this.name = name;
         this.redisKeyCount = REDIS_KEY_PRE_COUNT + name;
         this.redisKeyReset = REDIS_KEY_PRE_RESET + name;
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
+        this.waitMills = waitMills;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
         this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
     }
@@ -120,8 +122,20 @@ public class RateControlUnit {
         stopResetTask();
     }
 
-    public boolean access() {
-        Long increment = redisTemplate.opsForValue().increment(redisKeyCount, 1);
-        return increment <= maxAccessCount;
+    public void add(int count) throws InterruptedException {
+        while (true) {
+            String s = redisTemplate.opsForValue().get(redisKeyCount);
+            if (s == null) {
+                break;
+            } else {
+                int i = Integer.parseInt(s);
+                if (i >= maxAccessCount) {
+                    TimeUnit.MILLISECONDS.sleep(waitMills);
+                } else {
+                    break;
+                }
+            }
+        }
+        redisTemplate.opsForValue().increment(redisKeyCount, count);
     }
 }
