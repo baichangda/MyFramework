@@ -35,4 +35,73 @@ public abstract class NumValGetter {
     public abstract int getVal_int(NumType numType, int type);
 
     public abstract long getVal_long(NumType numType, int type);
+
+
+    public byte getVal(NumType numType, NumVal_byte numVal) {
+        if (numVal.type() == 0) {
+            return numVal.val();
+        } else {
+            return (byte) getVal_int(numType, numVal.type());
+        }
+    }
+
+    public short getVal(NumType numType, NumVal_short numVal) {
+        if (numVal.type() == 0) {
+            return numVal.val();
+        } else {
+            return (short) getVal_int(numType, numVal.type());
+        }
+    }
+
+    public int getVal(NumType numType, NumVal_int numVal) {
+        if (numVal.type() == 0) {
+            return numVal.val();
+        } else {
+            return getVal_int(numType, numVal.type());
+        }
+    }
+
+    public long getVal(NumType numType, NumVal_long numVal) {
+        if (numVal.type() == 0) {
+            return numVal.val();
+        } else {
+            return getVal_long(numType, numVal.type());
+        }
+    }
+
+    public NumVal_byte getNumVal_byte(NumType numType, byte val) {
+        int type = getType(numType, val);
+        if (type == 0) {
+            return new NumVal_byte(0, val);
+        } else {
+            return new NumVal_byte(type, (byte) 0);
+        }
+    }
+
+    public NumVal_short getNumVal_short(NumType numType, short val) {
+        int type = getType(numType, val);
+        if (type == 0) {
+            return new NumVal_short(0, val);
+        } else {
+            return new NumVal_short(type, (short) 0);
+        }
+    }
+
+    public NumVal_int getNumVal_int(NumType numType, int val) {
+        int type = getType(numType, val);
+        if (type == 0) {
+            return new NumVal_int(0, val);
+        } else {
+            return new NumVal_int(type, 0);
+        }
+    }
+
+    public NumVal_long getNumVal_long(NumType numType, long val) {
+        int type = getType(numType, val);
+        if (type == 0) {
+            return new NumVal_long(0, val);
+        } else {
+            return new NumVal_long(type, 0L);
+        }
+    }
 }

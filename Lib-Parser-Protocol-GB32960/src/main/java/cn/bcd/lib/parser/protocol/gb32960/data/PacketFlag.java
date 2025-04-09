@@ -11,7 +11,8 @@ public enum PacketFlag {
     platform_login_data(0x05, "平台登入"),
     platform_logout_data(0x06, "平台登出"),
     heartbeat(0x07, "心跳"),
-    terminal_timing(0x08, "终端校时"),
+    param_query(0x80, "参数查询"),
+    param_set(0x81, "参数设置"),
     ;
 
     final static PacketFlag[] all = new PacketFlag[9];

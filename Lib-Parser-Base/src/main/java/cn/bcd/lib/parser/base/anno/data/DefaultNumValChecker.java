@@ -7,6 +7,8 @@ public class DefaultNumValChecker extends NumValGetter {
 
     }
 
+
+
     @Override
     public int getType(NumType numType, int val) {
         return switch (numType) {
