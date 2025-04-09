@@ -41,11 +41,11 @@ import java.util.function.Supplier;
 public class Client {
     static Logger logger = LoggerFactory.getLogger(Client.class);
 
-    static String REDIS_KEY_PRE_PLATFORM_SN = "platformSn:";
-    static String REDIS_KEY_PRE_PLATFORM_STATUS = "platformStatus:";
-    static String REDIS_KEY_PRE_PLATFORM_LAST_HEARTBEAT_TIME = "platformLastHeartbeatTime:";
-    static String REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_TIME = "platformLastLoginTime:";
-    static String REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_SN = "platformLastLoginSn:";
+    static final String REDIS_KEY_PRE_PLATFORM_SN = "platformSn:";
+    static final String REDIS_KEY_PRE_PLATFORM_STATUS = "platformStatus:";
+    static final String REDIS_KEY_PRE_PLATFORM_LAST_HEARTBEAT_TIME = "platformLastHeartbeatTime:";
+    static final String REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_TIME = "platformLastLoginTime:";
+    static final String REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_SN = "platformLastLoginSn:";
 
     public static TransferConfigData transferConfigData;
     public static DataConsumer dataConsumer;
@@ -55,8 +55,8 @@ public class Client {
     static Channel channel;
     static ScheduledExecutorService manageExecutor;
 
-    public final static int sendQueueSize = 10000;
-    public final static MpscArrayBlockingQueue<SendData> sendQueue = new MpscArrayBlockingQueue<>(sendQueueSize, WaitStrategy.PROGRESSIVE_10MS);
+    public final static int SEND_QUEUE_SIZE = 10000;
+    public final static MpscArrayBlockingQueue<SendData> sendQueue = new MpscArrayBlockingQueue<>(SEND_QUEUE_SIZE, WaitStrategy.PROGRESSIVE_10MS);
     static ExecutorService sendExecutor;
 
     static int platformLoginSn;

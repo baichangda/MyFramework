@@ -3,11 +3,11 @@ package cn.bcd.lib.base.util;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomUtil {
-    static final String strPool_alphabeticUppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    static final String strPool_alphabeticLowercase = "abcdefghijklmnopqrstuvwxyz";
-    static final String strPool_alphabetic = strPool_alphabeticUppercase + strPool_alphabeticLowercase;
-    static final String strPool_numeric = "0123456789";
-    static final String strPool_alphanumeric = strPool_alphabetic + strPool_numeric;
+    static final String STR_POOL_ALPHABETIC_UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static final String STR_POOL_ALPHABETIC_LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+    static final String STR_POOL_ALPHABETIC = STR_POOL_ALPHABETIC_UPPERCASE + STR_POOL_ALPHABETIC_LOWERCASE;
+    static final String STR_POOL_NUMERIC = "0123456789";
+    static final String STR_POOL_ALPHANUMERIC = STR_POOL_ALPHABETIC + STR_POOL_NUMERIC;
     static final ThreadLocalRandom random = ThreadLocalRandom.current();
 
     /**
@@ -17,7 +17,7 @@ public class RandomUtil {
      * @return
      */
     public static String randomString_alphabeticUppercase(int n) {
-        return random(strPool_alphabeticUppercase, n);
+        return random(STR_POOL_ALPHABETIC_UPPERCASE, n);
     }
 
 
@@ -28,7 +28,7 @@ public class RandomUtil {
      * @return
      */
     public static String randomString_alphabeticLowercase(int n) {
-        return random(strPool_alphabeticLowercase, n);
+        return random(STR_POOL_ALPHABETIC_LOWERCASE, n);
     }
 
     /**
@@ -38,7 +38,7 @@ public class RandomUtil {
      * @return
      */
     public static String randomString_alphabetic(int n) {
-        return random(strPool_alphabetic, n);
+        return random(STR_POOL_ALPHABETIC, n);
     }
 
     /**
@@ -48,7 +48,7 @@ public class RandomUtil {
      * @return
      */
     public static String randomString_numeric(int n) {
-        return random(strPool_numeric, n);
+        return random(STR_POOL_NUMERIC, n);
     }
 
 
@@ -59,7 +59,7 @@ public class RandomUtil {
      * @return
      */
     public static String randomString_alphanumeric(int n) {
-        return random(strPool_alphanumeric, n);
+        return random(STR_POOL_ALPHANUMERIC, n);
     }
 
     /**

@@ -82,7 +82,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 consumeSpeed,
                 workQueueStatus,
                 workSpeed,
-                Client.sendQueue.size(), Client.sendQueueSize,
+                Client.sendQueue.size(), Client.SEND_QUEUE_SIZE,
                 sendSpeed
         );
     }

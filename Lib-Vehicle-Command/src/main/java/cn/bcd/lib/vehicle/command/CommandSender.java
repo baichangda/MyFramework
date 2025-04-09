@@ -50,7 +50,7 @@ public class CommandSender {
     }
 
 
-    public static final String redis_key_prefix_command_lock = "commandLock:";
+    public static final String REDIS_KEY_PREFIX_COMMAND_LOCK = "commandLock:";
 
     /**
      * 判断车辆是否在线
@@ -70,12 +70,12 @@ public class CommandSender {
     }
 
     public static boolean tryLock(String vin, PacketFlag flag, int timeout) {
-        String key = redis_key_prefix_command_lock + vin + "," + HexUtil.hexDump((byte) flag.type);
+        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag.type);
         return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToString_second(new Date()), timeout * 2L, TimeUnit.SECONDS));
     }
 
     public static void releaseLock(String vin, PacketFlag flag) {
-        String key = redis_key_prefix_command_lock + vin + "," + HexUtil.hexDump((byte) flag.type);
+        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag.type);
         redisTemplate.delete(key);
     }
 

@@ -19,15 +19,15 @@ public class RateControlUnit {
     static final int REDIS_KEY_TIMEOUT_SECOND_RESET = 10;
 
     static final int RESET_EXECUTOR_NUM = Runtime.getRuntime().availableProcessors();
-    static final ScheduledExecutorService[] RESET_EXECUTORS = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
+    static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
 
     static {
-        for (int i = 0; i < RESET_EXECUTORS.length; i++) {
+        for (int i = 0; i < resetPool.length; i++) {
             int no = i + 1;
-            RESET_EXECUTORS[i] = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            resetPool[i] = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, "rateControl(" + no + "/" + RESET_EXECUTORS.length + ")");
+                    return new Thread(r, "rateControl(" + no + "/" + resetPool.length + ")");
                 }
             });
         }
@@ -55,7 +55,7 @@ public class RateControlUnit {
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
-        this.resetExecutor = RESET_EXECUTORS[Math.floorMod(name.hashCode(), RESET_EXECUTORS.length)];
+        this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
     }
 
 

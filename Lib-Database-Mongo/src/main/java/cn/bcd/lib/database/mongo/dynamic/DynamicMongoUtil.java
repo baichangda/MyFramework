@@ -25,7 +25,7 @@ public class DynamicMongoUtil {
     private final static int EXPIRE_IN_SECOND = 5;
 
     static Logger logger = LoggerFactory.getLogger(DynamicMongoUtil.class);
-    private static final LoadingCache<String, MongoTemplate> CACHE = Caffeine.newBuilder()
+    private static final LoadingCache<String, MongoTemplate> cache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(EXPIRE_IN_SECOND))
             .<String, MongoTemplate>evictionListener((k, v, c) -> {
                 //移除数据源时候关闭数据源
@@ -47,15 +47,15 @@ public class DynamicMongoUtil {
 
 
     public static MongoTemplate getMongoTemplate(String url) {
-        return CACHE.get(url);
+        return cache.get(url);
     }
 
     public static void close(String url) {
-        CACHE.invalidate(url);
+        cache.invalidate(url);
     }
 
     public static void closeAll() {
-        CACHE.invalidateAll();
+        cache.invalidateAll();
     }
 
     public static MongoTemplate getTest() {
