@@ -3,17 +3,15 @@ package cn.bcd.lib.vehicle.command;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class Response<T, R> {
     public String vin;
     public PacketFlag flag;
     public ResponseStatus status;
 
-    //以下属性可能为null或默认值、取决于是否接收到车辆的报文
+    //以下属性可能为null或默认值、取决于是否接收到车辆的响应报文
     public int replyFlag;
     public byte[] content;
 
@@ -23,18 +21,20 @@ public class Response<T, R> {
     public Response() {
     }
 
-    public Response(String vin, PacketFlag flag, ResponseStatus status) {
+    /**
+     * @param vin
+     * @param flag
+     * @param status
+     * @param packetBytes 响应报文、可能为null
+     */
+    public Response(String vin, PacketFlag flag, ResponseStatus status, byte[] packetBytes) {
         this.vin = vin;
         this.flag = flag;
         this.status = status;
-    }
-
-    public Response(Request<T, R> request, ResponseStatus status, int replyFlag, byte[] content) {
-        this.vin = request.vin;
-        this.flag = request.flag;
-        this.status = status;
-        this.replyFlag = replyFlag;
-        this.content = content;
+        if (packetBytes != null) {
+            this.replyFlag = PacketUtil.getReplyFlag(packetBytes);
+            this.content = PacketUtil.getPacketData_bytes(packetBytes);
+        }
     }
 
     @JsonIgnore

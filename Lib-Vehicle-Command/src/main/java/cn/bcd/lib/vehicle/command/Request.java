@@ -3,13 +3,11 @@ package cn.bcd.lib.vehicle.command;
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.concurrent.ScheduledFuture;
 
-@Getter
-@Setter
+@Data
 public class Request<T, R> {
     public String id;
     public String vin;

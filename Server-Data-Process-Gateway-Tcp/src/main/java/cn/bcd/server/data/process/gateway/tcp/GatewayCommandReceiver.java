@@ -1,7 +1,6 @@
 package cn.bcd.server.data.process.gateway.tcp;
 
 import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
 import cn.bcd.lib.vehicle.command.CommandReceiver;
 import cn.bcd.lib.vehicle.command.Request;
 import cn.bcd.lib.vehicle.command.ResponseStatus;
@@ -49,7 +48,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
         session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.toPacketBytes()));
         //判断直接响应
         if (!request.waitVehicleResponse) {
-            CommandReceiver.response(request, ResponseStatus.success);
+            CommandReceiver.response(request, ResponseStatus.success, null);
         }
     }
 
