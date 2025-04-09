@@ -9,11 +9,11 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 public class RedisRateControlUnit {
     static Logger logger = LoggerFactory.getLogger(RedisRateControlUnit.class);
@@ -122,22 +122,12 @@ public class RedisRateControlUnit {
         stopResetTask();
     }
 
-    public void add(int count) throws InterruptedException {
-        //首先检查是否超出最大访问次数
-        while (true) {
-            String s = redisTemplate.opsForValue().get(redisKeyCount);
-            if (s == null) {
-                break;
-            } else {
-                int i = Integer.parseInt(s);
-                if (i >= maxAccessCount) {
-                    TimeUnit.MILLISECONDS.sleep(waitMills);
-                } else {
-                    break;
-                }
-            }
+    public void add(int i) throws InterruptedException {
+        long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
+        if (c >= maxAccessCount) {
+            do {
+                TimeUnit.MILLISECONDS.sleep(waitMills);
+            } while (Optional.ofNullable(redisTemplate.opsForValue().get(redisKeyCount)).map(Integer::parseInt).orElse(0) >= maxAccessCount);
         }
-        //记录访问次数
-        redisTemplate.opsForValue().increment(redisKeyCount, count);
     }
 }
