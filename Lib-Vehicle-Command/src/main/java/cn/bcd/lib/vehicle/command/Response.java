@@ -11,7 +11,10 @@ public class Response<T, R> {
     public PacketFlag flag;
     public ResponseStatus status;
 
-    //以下属性可能为null或默认值、取决于是否接收到车辆的响应报文
+    /**
+     * 以下属性可能为null或默认值、取决于是否接收到车辆的响应报文
+     * 通过{@link #content}==null判断是否接收到车辆的响应报文
+     */
     public int replyFlag;
     public byte[] content;
 
