@@ -54,9 +54,11 @@ public class LocalRateControlUnit {
     }
 
     public void add(int i) throws InterruptedException {
+        //首先检查是否超出最大访问次数
         while (count.get() >= maxAccessCount) {
             TimeUnit.MILLISECONDS.sleep(waitMills);
         }
+        //记录访问次数
         count.addAndGet(i);
     }
 }
