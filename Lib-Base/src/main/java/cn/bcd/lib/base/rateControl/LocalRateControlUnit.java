@@ -1,4 +1,4 @@
-package cn.bcd.lib.base.kafka.ext.datadriven;
+package cn.bcd.lib.base.rateControl;
 
 import cn.bcd.lib.base.util.DateUtil;
 
@@ -8,6 +8,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 流量控制单元
+ */
 public class LocalRateControlUnit {
     public final String name;
     public final int timeInSecond;
