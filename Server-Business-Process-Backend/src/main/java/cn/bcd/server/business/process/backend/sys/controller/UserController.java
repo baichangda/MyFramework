@@ -7,7 +7,6 @@ import cn.bcd.lib.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
-import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.server.business.process.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.server.business.process.backend.sys.bean.UserBean;
@@ -31,7 +30,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/sys/user")
 @Tag(name = "用户-UserController")
-public class UserController extends BaseController {
+public class UserController{
 
     @Autowired
     private UserService userService;

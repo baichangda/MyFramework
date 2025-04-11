@@ -1,4 +1,4 @@
-package cn.bcd.server.business.process.backend.sys.util;
+package cn.bcd.server.business.process.backend;
 
 import cn.bcd.lib.database.jdbc.code.CodeGenerator;
 import cn.bcd.lib.database.jdbc.code.Config;

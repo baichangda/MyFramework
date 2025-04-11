@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -22,7 +21,7 @@ import ${packagePre}.service.${moduleName?cap_first}Service;
 @RestController
 @RequestMapping("/api${requestMappingPre}/${moduleName?uncap_first}")
 @Tag(name = "${moduleNameCN}-${moduleName?cap_first}Controller")
-public class ${moduleName?cap_first}Controller extends BaseController {
+public class ${moduleName?cap_first}Controller{
 
     @Autowired
     private ${moduleName?cap_first}Service ${moduleName?uncap_first}Service;

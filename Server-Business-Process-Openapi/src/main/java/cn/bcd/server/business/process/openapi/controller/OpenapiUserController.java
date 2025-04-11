@@ -1,4 +1,4 @@
-package cn.bcd.server.business.process.backend.sys.controller;
+package cn.bcd.server.business.process.openapi.controller;
 
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.database.common.condition.Condition;
@@ -15,28 +15,30 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import org.springframework.validation.annotation.Validated;
-import cn.bcd.server.business.process.backend.sys.bean.PermissionBean;
-import cn.bcd.server.business.process.backend.sys.service.PermissionService;
+import cn.bcd.server.business.process.openapi.bean.OpenapiUserBean;
+import cn.bcd.server.business.process.openapi.service.OpenapiUserService;
 
 @RestController
-@RequestMapping("/api/sys/permission")
-@Tag(name = "权限-PermissionController")
-public class PermissionController{
+@RequestMapping("/api/openapi/openapiUser")
+@Tag(name = "openapi用户-OpenapiUserController")
+public class OpenapiUserController{
 
     @Autowired
-    private PermissionService permissionService;
+    private OpenapiUserService openapiUserService;
 
     /**
-     * 查询权限列表
+     * 查询openapi用户列表
      * @return
      */
     @RequestMapping(value = "/list", method = RequestMethod.GET)
-    @Operation(summary="查询权限列表")
-    @ApiResponse(responseCode = "200",description = "权限列表")
-    public Result<List<PermissionBean>> list(
-        @Parameter(description = "id") @RequestParam(required = false) Long id,
-        @Parameter(description = "权限名称") @RequestParam(required = false) String name,
-        @Parameter(description = "资源") @RequestParam(required = false) String resource,
+    @Operation(summary="查询openapi用户列表")
+    @ApiResponse(responseCode = "200",description = "openapi用户列表")
+    public Result<List<OpenapiUserBean>> list(
+        @Parameter(description = "主键") @RequestParam(required = false) Long id,
+        @Parameter(description = "用户名") @RequestParam(required = false) String name,
+        @Parameter(description = "用户状态(1:启用;0:禁用)") @RequestParam(required = false) Integer status,
+        @Parameter(description = "密钥") @RequestParam(required = false) String secretKey,
+        @Parameter(description = "备注") @RequestParam(required = false) String remark,
         @Parameter(description = "创建时间开始",schema = @Schema(type = "integer")) @RequestParam(required = false) Date createTimeBegin,
         @Parameter(description = "创建时间结束",schema = @Schema(type = "integer")) @RequestParam(required = false) Date createTimeEnd,
         @Parameter(description = "创建人id") @RequestParam(required = false) Long createUserId,
@@ -49,7 +51,9 @@ public class PermissionController{
         Condition condition= Condition.and(
            NumberCondition.EQUAL("id",id),
            StringCondition.EQUAL("name",name),
-           StringCondition.EQUAL("resource",resource),
+           NumberCondition.EQUAL("status",status),
+           StringCondition.EQUAL("secretKey",secretKey),
+           StringCondition.EQUAL("remark",remark),
            DateCondition.BETWEEN("createTime",createTimeBegin,createTimeEnd),
            NumberCondition.EQUAL("createUserId",createUserId),
            StringCondition.EQUAL("createUserName",createUserName),
@@ -57,20 +61,22 @@ public class PermissionController{
            NumberCondition.EQUAL("updateUserId",updateUserId),
            StringCondition.EQUAL("updateUserName",updateUserName)
         );
-        return Result.success(permissionService.list(condition));
+        return Result.success(openapiUserService.list(condition));
     }
 
     /**
-     * 查询权限分页
+     * 查询openapi用户分页
      * @return
      */
     @RequestMapping(value = "/page", method = RequestMethod.GET)
-    @Operation(summary="查询权限分页")
-    @ApiResponse(responseCode = "200",description = "权限分页结果集")
-    public Result<Page<PermissionBean>> page(
-        @Parameter(description = "id") @RequestParam(required = false) Long id,
-        @Parameter(description = "权限名称") @RequestParam(required = false) String name,
-        @Parameter(description = "资源") @RequestParam(required = false) String resource,
+    @Operation(summary="查询openapi用户分页")
+    @ApiResponse(responseCode = "200",description = "openapi用户分页结果集")
+    public Result<Page<OpenapiUserBean>> page(
+        @Parameter(description = "主键") @RequestParam(required = false) Long id,
+        @Parameter(description = "用户名") @RequestParam(required = false) String name,
+        @Parameter(description = "用户状态(1:启用;0:禁用)") @RequestParam(required = false) Integer status,
+        @Parameter(description = "密钥") @RequestParam(required = false) String secretKey,
+        @Parameter(description = "备注") @RequestParam(required = false) String remark,
         @Parameter(description = "创建时间开始",schema = @Schema(type = "integer")) @RequestParam(required = false) Date createTimeBegin,
         @Parameter(description = "创建时间结束",schema = @Schema(type = "integer")) @RequestParam(required = false) Date createTimeEnd,
         @Parameter(description = "创建人id") @RequestParam(required = false) Long createUserId,
@@ -85,7 +91,9 @@ public class PermissionController{
         Condition condition= Condition.and(
            NumberCondition.EQUAL("id",id),
            StringCondition.EQUAL("name",name),
-           StringCondition.EQUAL("resource",resource),
+           NumberCondition.EQUAL("status",status),
+           StringCondition.EQUAL("secretKey",secretKey),
+           StringCondition.EQUAL("remark",remark),
            DateCondition.BETWEEN("createTime",createTimeBegin,createTimeEnd),
            NumberCondition.EQUAL("createUserId",createUserId),
            StringCondition.EQUAL("createUserName",createUserName),
@@ -93,33 +101,33 @@ public class PermissionController{
            NumberCondition.EQUAL("updateUserId",updateUserId),
            StringCondition.EQUAL("updateUserName",updateUserName)
         );
-        return Result.success(permissionService.page(condition,PageRequest.of(pageNum-1,pageSize)));
+        return Result.success(openapiUserService.page(condition,PageRequest.of(pageNum-1,pageSize)));
     }
 
     /**
-     * 保存权限
-     * @param permission
+     * 保存openapi用户
+     * @param openapiUser
      * @return
      */
     @RequestMapping(value = "/save",method = RequestMethod.POST)
-    @Operation(summary = "保存权限")
+    @Operation(summary = "保存openapi用户")
     @ApiResponse(responseCode = "200",description = "保存结果")
-    public Result<?> save(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "权限实体") @Validated @RequestBody PermissionBean permission){
-        permissionService.save(permission);
+    public Result<?> save(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "openapi用户实体") @Validated @RequestBody OpenapiUserBean openapiUser){
+        openapiUserService.save(openapiUser);
         return Result.success();
     }
 
 
     /**
-     * 删除权限
+     * 删除openapi用户
      * @param ids
      * @return
      */
     @RequestMapping(value = "/delete",method = RequestMethod.DELETE)
-    @Operation(summary = "删除权限")
+    @Operation(summary = "删除openapi用户")
     @ApiResponse(responseCode = "200",description = "删除结果")
     public Result<?> delete(@Parameter(description = "id数组",example = "100,101,102") @RequestParam long[] ids){
-        permissionService.delete(ids);
+        openapiUserService.delete(ids);
         return Result.success();
     }
 

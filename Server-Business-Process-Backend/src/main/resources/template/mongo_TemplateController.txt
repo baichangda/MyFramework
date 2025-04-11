@@ -3,7 +3,6 @@ package ${packagePre}.controller;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.database.common.condition.Condition;
 import cn.bcd.lib.database.common.condition.impl.*;
-import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +21,7 @@ import ${packagePre}.service.${moduleName?cap_first}Service;
 @RestController
 @RequestMapping("/api${requestMappingPre}/${moduleName?uncap_first}")
 @Tag(name = "${moduleNameCN}-${moduleName?cap_first}Controller")
-public class ${moduleName?cap_first}Controller extends BaseController {
+public class ${moduleName?cap_first}Controller{
 
     @Autowired
     private ${moduleName?cap_first}Service ${moduleName?uncap_first}Service;

@@ -1,7 +1,6 @@
 package cn.bcd.server.business.process.backend.sys.controller;
 
 import cn.bcd.lib.base.common.Result;
-import cn.bcd.server.business.process.backend.base.controller.BaseController;
 import cn.bcd.server.business.process.backend.sys.keys.KeysConst;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
@@ -23,7 +22,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/anon")
 @Tag(name = "匿名-AnonController")
-public class AnonController extends BaseController {
+public class AnonController{
     Logger logger = LoggerFactory.getLogger(AnonController.class);
 
     @RequestMapping(value = "/getPublicKey", method = RequestMethod.GET)

@@ -188,6 +188,19 @@ public class DBInfoUtil {
         }
     }
 
+    public static boolean checkTableExist(Connection conn, String dbName, String tableName) {
+        String sql = "SELECT * FROM tables WHERE table_schema=? AND table_name=?";
+        try (PreparedStatement pstsm = conn.prepareStatement(sql)) {
+            pstsm.setString(1, dbName);
+            pstsm.setString(2, tableName);
+            try (ResultSet rs = pstsm.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw BaseException.get(e);
+        }
+    }
+
     /**
      * 找到指定数据库表下面的所有列
      *
@@ -196,6 +209,9 @@ public class DBInfoUtil {
      * @return
      */
     public static List<ColumnsBean> findColumns(Connection conn, String dbName, String tableName) {
+        if (!checkTableExist(conn, dbName, tableName)) {
+            throw BaseException.get("db[{}] table[{}] not exist", dbName, tableName);
+        }
         List<ColumnsBean> res;
         String sql = "SELECT * FROM columns WHERE table_schema=? AND table_name=?";
         try (PreparedStatement pstsm = conn.prepareStatement(sql)) {
