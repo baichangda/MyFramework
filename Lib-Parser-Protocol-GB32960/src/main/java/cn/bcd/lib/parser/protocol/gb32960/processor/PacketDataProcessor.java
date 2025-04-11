@@ -20,7 +20,8 @@ public class PacketDataProcessor implements Processor<PacketData> {
     final Processor<PlatformLogoutData> processor_platformLogoutData = Parser.getProcessor(PlatformLogoutData.class);
     final Processor<TimeData> processor_timeData = Parser.getProcessor(TimeData.class);
     final Processor<ParamQueryRequest> processor_paramQueryRequest = Parser.getProcessor(ParamQueryRequest.class);
-    final ParamQueryResponseProcessor processor_paramQueryResponse = new ParamQueryResponseProcessor();
+    final Processor<ParamQueryResponse> processor_paramQueryResponse = Parser.getProcessor(ParamQueryResponse.class);
+    final Processor<ParamSetRequest> processor_paramSetRequest = Parser.getProcessor(ParamSetRequest.class);
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext<?> processContext) {
@@ -71,6 +72,13 @@ public class PacketDataProcessor implements Processor<PacketData> {
                     return processor_paramQueryRequest.process(data, processContext);
                 }else{
                     return processor_paramQueryResponse.process(data, processContext);
+                }
+            }
+            case param_set -> {
+                if(cmd){
+                    return processor_paramSetRequest.process(data, processContext);
+                }else{
+                    return processor_timeData.process(data, processContext);
                 }
             }
             default -> {
@@ -125,6 +133,13 @@ public class PacketDataProcessor implements Processor<PacketData> {
                     processor_paramQueryRequest.deProcess(data, processContext, (ParamQueryRequest) instance);
                 } else {
                     processor_paramQueryResponse.deProcess(data, processContext, (ParamQueryResponse) instance);
+                }
+            }
+            case param_set -> {
+                if (cmd) {
+                    processor_paramSetRequest.deProcess(data, processContext, (ParamSetRequest) instance);
+                } else {
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
             }
             case heartbeat -> {

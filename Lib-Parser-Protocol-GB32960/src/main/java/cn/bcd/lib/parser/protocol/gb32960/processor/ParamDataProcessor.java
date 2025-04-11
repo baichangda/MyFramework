@@ -1,10 +1,9 @@
 package cn.bcd.lib.parser.protocol.gb32960.processor;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.data.DefaultNumValChecker;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 import cn.bcd.lib.parser.base.anno.data.NumValGetter;
-import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.data.ParamData;
@@ -12,20 +11,22 @@ import cn.bcd.lib.parser.protocol.gb32960.data.ParamQueryResponse;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
-public class ParamQueryResponseProcessor implements Processor<ParamQueryResponse> {
+public class ParamDataProcessor implements Processor<ParamData> {
 
     public final NumValGetter numValGetter = DefaultNumValChecker.instance;
 
     @Override
-    public ParamQueryResponse process(ByteBuf data, ProcessContext<?> processContext) {
-        ParamQueryResponse instance = new ParamQueryResponse();
-        instance.queryTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-        instance.num = data.readUnsignedByte();
+    public ParamData process(ByteBuf data, ProcessContext<?> processContext) {
+        Object obj = processContext.instance;
+        int num;
+        if (obj instanceof ParamQueryResponse paramQueryResponse) {
+            num = paramQueryResponse.num;
+        } else {
+            throw BaseException.get("instance[{}] not support", obj.getClass().getName());
+        }
         ParamData paramData = new ParamData();
-        instance.paramData = paramData;
-        for (int i = 0; i < instance.num; i++) {
+        for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();
             DefaultNumValChecker.instance.getType(NumType.uint16, data.readUnsignedByte());
             switch (paramId) {
@@ -61,73 +62,70 @@ public class ParamQueryResponseProcessor implements Processor<ParamQueryResponse
                         paramData.samplingDetectionData = numValGetter.getNumVal_short(NumType.uint8, data.readUnsignedByte());
             }
         }
-        return instance;
+        return paramData;
     }
 
     @Override
-    public void deProcess(ByteBuf data, ProcessContext<?> processContext, ParamQueryResponse instance) {
-        FieldBuilder__F_date_bytes_6.write(data, instance.queryTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
-        data.writeByte(instance.num);
-        ParamData paramData = instance.paramData;
-        if (paramData.localStorageTimeCycle != null) {
+    public void deProcess(ByteBuf data, ProcessContext<?> processContext, ParamData instance) {
+        if (instance.localStorageTimeCycle != null) {
             data.writeByte(0x01);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.localStorageTimeCycle));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.localStorageTimeCycle));
         }
-        if (paramData.normalReportTime != null) {
+        if (instance.normalReportTime != null) {
             data.writeByte(0x02);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.normalReportTime));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.normalReportTime));
         }
-        if (paramData.alarmReportTime != null) {
+        if (instance.alarmReportTime != null) {
             data.writeByte(0x03);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.alarmReportTime));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.alarmReportTime));
         }
-        if (paramData.remotePlatformName != null) {
+        if (instance.remotePlatformName != null) {
             data.writeByte(0x04);
-            data.writeByte(paramData.remotePlatformName.length());
+            data.writeByte(instance.remotePlatformName.length());
             data.writeByte(0x05);
-            data.writeCharSequence(paramData.remotePlatformName,StandardCharsets.UTF_8);
+            data.writeCharSequence(instance.remotePlatformName, StandardCharsets.UTF_8);
         }
-        if (paramData.remotePlatformPort != null) {
+        if (instance.remotePlatformPort != null) {
             data.writeByte(0x06);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.remotePlatformPort));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.remotePlatformPort));
         }
-        if (paramData.terminalHardwareData != null) {
+        if (instance.terminalHardwareData != null) {
             data.writeByte(0x07);
-            data.writeCharSequence(paramData.terminalHardwareData.substring(0, 5), StandardCharsets.UTF_8);
+            data.writeCharSequence(instance.terminalHardwareData.substring(0, 5), StandardCharsets.UTF_8);
         }
-        if (paramData.terminalSoftwareData != null) {
+        if (instance.terminalSoftwareData != null) {
             data.writeByte(0x08);
-            data.writeCharSequence(paramData.terminalSoftwareData.substring(0, 5), StandardCharsets.UTF_8);
+            data.writeCharSequence(instance.terminalSoftwareData.substring(0, 5), StandardCharsets.UTF_8);
         }
-        if (paramData.heartbeatSendCycleData != null) {
+        if (instance.heartbeatSendCycleData != null) {
             data.writeByte(0x09);
-            data.writeShort(numValGetter.getVal(NumType.uint8, paramData.remotePlatformPort));
+            data.writeShort(numValGetter.getVal(NumType.uint8, instance.remotePlatformPort));
         }
-        if (paramData.terminalResponseTimeoutData != null) {
+        if (instance.terminalResponseTimeoutData != null) {
             data.writeByte(0x0A);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.terminalResponseTimeoutData));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.terminalResponseTimeoutData));
         }
-        if (paramData.domainResponseTimeoutData != null) {
+        if (instance.domainResponseTimeoutData != null) {
             data.writeByte(0x0B);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.domainResponseTimeoutData));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.domainResponseTimeoutData));
         }
-        if (paramData.loginFailureData != null) {
+        if (instance.loginFailureData != null) {
             data.writeByte(0x0C);
-            data.writeShort(numValGetter.getVal(NumType.uint8, paramData.loginFailureData));
+            data.writeShort(numValGetter.getVal(NumType.uint8, instance.loginFailureData));
         }
-        if (paramData.publicPlatformName != null) {
+        if (instance.publicPlatformName != null) {
             data.writeByte(0x0D);
-            data.writeByte(paramData.publicPlatformName.length());
+            data.writeByte(instance.publicPlatformName.length());
             data.writeByte(0x0E);
-            data.writeCharSequence(paramData.publicPlatformName, StandardCharsets.UTF_8);
+            data.writeCharSequence(instance.publicPlatformName, StandardCharsets.UTF_8);
         }
-        if (paramData.publicPlatformPort != null) {
+        if (instance.publicPlatformPort != null) {
             data.writeByte(0x0F);
-            data.writeShort(numValGetter.getVal(NumType.uint16, paramData.publicPlatformPort));
+            data.writeShort(numValGetter.getVal(NumType.uint16, instance.publicPlatformPort));
         }
-        if (paramData.samplingDetectionData != null) {
+        if (instance.samplingDetectionData != null) {
             data.writeByte(0x10);
-            data.writeShort(numValGetter.getVal(NumType.uint8, paramData.samplingDetectionData));
+            data.writeShort(numValGetter.getVal(NumType.uint8, instance.samplingDetectionData));
         }
     }
 }
