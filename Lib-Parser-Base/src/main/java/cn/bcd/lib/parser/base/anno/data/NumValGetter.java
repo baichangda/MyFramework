@@ -43,7 +43,7 @@ public abstract class NumValGetter {
      * 所谓简单值指的是只需要判断原始值是否异常等等情况、而不用进行偏移量运算
      */
 
-    public NumVal_byte getNumVal_byte(NumType numType, byte val) {
+    public final NumVal_byte getNumVal_byte(NumType numType, byte val) {
         int type = getType(numType, val);
         if (type == 0) {
             return new NumVal_byte(0, val);
@@ -52,7 +52,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public NumVal_short getNumVal_short(NumType numType, short val) {
+    public final NumVal_short getNumVal_short(NumType numType, short val) {
         int type = getType(numType, val);
         if (type == 0) {
             return new NumVal_short(0, val);
@@ -61,7 +61,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public NumVal_int getNumVal_int(NumType numType, int val) {
+    public final NumVal_int getNumVal_int(NumType numType, int val) {
         int type = getType(numType, val);
         if (type == 0) {
             return new NumVal_int(0, val);
@@ -70,7 +70,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public NumVal_long getNumVal_long(NumType numType, long val) {
+    public final NumVal_long getNumVal_long(NumType numType, long val) {
         int type = getType(numType, val);
         if (type == 0) {
             return new NumVal_long(0, val);
@@ -80,7 +80,7 @@ public abstract class NumValGetter {
     }
 
 
-    public byte getVal(NumType numType, NumVal_byte numVal) {
+    public final byte getVal(NumType numType, NumVal_byte numVal) {
         if (numVal.type() == 0) {
             return numVal.val();
         } else {
@@ -88,7 +88,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public short getVal(NumType numType, NumVal_short numVal) {
+    public final short getVal(NumType numType, NumVal_short numVal) {
         if (numVal.type() == 0) {
             return numVal.val();
         } else {
@@ -96,7 +96,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public int getVal(NumType numType, NumVal_int numVal) {
+    public final int getVal(NumType numType, NumVal_int numVal) {
         if (numVal.type() == 0) {
             return numVal.val();
         } else {
@@ -104,7 +104,7 @@ public abstract class NumValGetter {
         }
     }
 
-    public long getVal(NumType numType, NumVal_long numVal) {
+    public final long getVal(NumType numType, NumVal_long numVal) {
         if (numVal.type() == 0) {
             return numVal.val();
         } else {
