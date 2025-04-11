@@ -12,7 +12,7 @@ import java.util.Date;
 public class ParamSetRequest implements PacketData{
     @F_date_bytes_6
     public Date setTime;
-    @F_num(type = NumType.uint8, var = 'n')
+    @F_num(type = NumType.uint8)
     public short num;
     @F_customize(processorClass = ParamDataProcessor.class)
     public ParamData paramData;
