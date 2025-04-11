@@ -8,6 +8,7 @@ import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.data.ParamData;
 import cn.bcd.lib.parser.protocol.gb32960.data.ParamQueryResponse;
+import cn.bcd.lib.parser.protocol.gb32960.data.ParamSetRequest;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
         int num;
         if (obj instanceof ParamQueryResponse paramQueryResponse) {
             num = paramQueryResponse.num;
+        } else if (obj instanceof ParamSetRequest paramSetRequest) {
+            num = paramSetRequest.num;
         } else {
             throw BaseException.get("instance[{}] not support", obj.getClass().getName());
         }
