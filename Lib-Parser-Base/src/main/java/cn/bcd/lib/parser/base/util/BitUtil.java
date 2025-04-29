@@ -105,6 +105,7 @@ public class BitUtil {
                 new Signal("test2", 37, 13),
                 new Signal("test2", 62, 7),
         });
+
         Arrays.sort(res, Comparator.comparing(e -> e.calc_startBit_reverse));
         for (Signal signal : res) {
             System.out.println(signal);
