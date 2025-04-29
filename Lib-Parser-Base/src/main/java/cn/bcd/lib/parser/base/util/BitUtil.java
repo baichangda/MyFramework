@@ -29,7 +29,7 @@ public class BitUtil {
 
         @Override
         public String toString() {
-            return "Signal{" +
+            return "{" +
                     "name='" + name + '\'' +
                     ", calc_skip_before=" + calc_skip_before +
                     ", length=" + length +
