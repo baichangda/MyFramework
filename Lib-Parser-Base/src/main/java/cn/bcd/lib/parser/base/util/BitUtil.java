@@ -30,7 +30,7 @@ public class BitUtil {
         @Override
         public String toString() {
             return "{" +
-                    "name='" + name + '\'' +
+                    "name=\"" + name + "\"" +
                     ", calc_skip_before=" + calc_skip_before +
                     ", length=" + length +
                     ", startBit=" + startBit +
@@ -43,6 +43,7 @@ public class BitUtil {
     /**
      * 按照CAN矩阵 Motorola_LSB 信号规则
      * 计算出配合{@link F_bit_num}使用的相应属性
+     *
      * @param signals
      * @return
      */
