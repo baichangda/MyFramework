@@ -22,6 +22,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer {
 
     public final Class<T> clazz;
 
+    @SuppressWarnings("unchecked")
     public Receiver(String name, String topic, String groupId, KafkaProperties kafkaProp) {
         super(name,
                 false,
