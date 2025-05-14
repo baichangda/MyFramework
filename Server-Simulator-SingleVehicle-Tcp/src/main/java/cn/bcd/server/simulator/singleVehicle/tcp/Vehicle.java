@@ -1,7 +1,6 @@
 package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.ExecResult;
 import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
@@ -50,14 +49,14 @@ public class Vehicle {
         this.executor = executor;
     }
 
-    public CompletableFuture<ExecResult<Void>> init() {
+    public CompletableFuture<Void> init() {
         return executor.submit(() -> {
             this.vehicleData = new VehicleData();
             vehicleData.init();
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> destroy() {
+    public CompletableFuture<Void> destroy() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -70,7 +69,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> connect(String host, int port,
+    public CompletableFuture<Void> connect(String host, int port,
                                                        Runnable onConnected,
                                                        Runnable onDisconnected,
                                                        Consumer<byte[]> onSend,
@@ -102,7 +101,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> disconnect() {
+    public CompletableFuture<Void> disconnect() {
         return executor.submit(() -> {
             if (channel != null) {
                 channel.close();
@@ -116,7 +115,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> startSendRunData() {
+    public CompletableFuture<Void> startSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture == null) {
                 scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, 10, TimeUnit.SECONDS);
@@ -124,7 +123,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> stopSendRunData() {
+    public CompletableFuture<Void> stopSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -133,7 +132,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<ExecResult<Void>> send(byte[] data) {
+    public CompletableFuture<Void> send(byte[] data) {
         return executor.submit(() -> {
             if (channel != null) {
                 logger.info("send message vin[{}] type[{}]:\n{}", PacketUtil.getVin(data), PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));
