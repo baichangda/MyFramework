@@ -27,11 +27,7 @@ public class OkHttpConfig {
 
     private HttpLoggingInterceptor newHttpLoggingInterceptor() {
         final HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(s -> {
-            try {
-                logger.info(s);
-            } catch (Exception ex) {
-                logger.error("error", ex);
-            }
+            logger.info(s);
         });
         httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         return httpLoggingInterceptor;
