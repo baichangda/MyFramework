@@ -1,5 +1,6 @@
 package cn.bcd.parser.protocol.gb32960;
 
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.Const;
@@ -10,6 +11,12 @@ import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 public class ParserTest {
     static Logger logger = LoggerFactory.getLogger(ParserTest.class);
@@ -42,7 +49,22 @@ public class ParserTest {
         String data = Const.sample_vehicleRunData;
         int threadNum = 1;
         logger.info("param threadNum[{}]", threadNum);
-        int num = 2000000000;
+        int num = Integer.MAX_VALUE;
         PerformanceUtil.testPerformance(ByteBufUtil.decodeHexDump(data), threadNum, num, Packet::read, (buf, instance) -> instance.write(buf), true);
+    }
+
+    @Test
+    public void test_performance_json() throws IOException {
+        ByteBuf buffer = Unpooled.wrappedBuffer(ByteBufUtil.decodeHexDump(Const.sample_vehicleRunData));
+        Packet read = Packet.read(buffer);
+        byte[] data = JsonUtil.toJsonAsBytes(read);
+        LongAdder count = new LongAdder();
+        try (ScheduledExecutorService pool = Executors.newSingleThreadScheduledExecutor()) {
+            pool.scheduleAtFixedRate(() -> logger.info("perThreadSpeed/s:{}", count.sumThenReset()), 3, 3, TimeUnit.SECONDS);
+            for (int i = 0; i < Integer.MAX_VALUE; i++) {
+                Packet packet = JsonUtil.OBJECT_MAPPER.readValue(data, Packet.class);
+                count.increment();
+            }
+        }
     }
 }

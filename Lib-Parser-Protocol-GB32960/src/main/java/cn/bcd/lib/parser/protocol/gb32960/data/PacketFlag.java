@@ -15,7 +15,7 @@ public enum PacketFlag {
     param_set(0x81, "参数设置"),
     ;
 
-    final static PacketFlag[] all = new PacketFlag[9];
+    final static PacketFlag[] all = new PacketFlag[0x82];
 
     static {
         for (PacketFlag value : PacketFlag.values()) {
