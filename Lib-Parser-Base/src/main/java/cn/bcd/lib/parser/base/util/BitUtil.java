@@ -3,7 +3,6 @@ package cn.bcd.lib.parser.base.util;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 
 public class BitUtil {
@@ -14,12 +13,12 @@ public class BitUtil {
         public final int length;
 
         //计算值
-        //根据startBit和length计算出结束位
-        public int calc_endBit;
-        //根据calc_endBit计算出的翻转的起始位
-        public int calc_startBit_reverse;
-        //根据calc_startBit_reverse得出字段占用的位数
-        public int calc_skip_before;
+        //计算出翻转后的结束位
+        public int reserve_endBit;
+        //计算出翻转后的起始位
+        public int reserve_startBit;
+        //计算字段前应该跳过位
+        public int skip_before;
 
         public Signal(String name, int startBit, int length) {
             this.name = name;
@@ -31,11 +30,11 @@ public class BitUtil {
         public String toString() {
             return "{" +
                     "name=\"" + name + "\"" +
-                    ", calc_skip_before=" + calc_skip_before +
+                    ", skip_before=" + skip_before +
                     ", length=" + length +
                     ", startBit=" + startBit +
-                    ", calc_endBit=" + calc_endBit +
-                    ", calc_startBit_reverse=" + calc_startBit_reverse +
+                    ", reserve_startBit=" + reserve_endBit +
+                    ", reserve_endBit=" + reserve_startBit +
                     '}';
         }
     }
@@ -51,34 +50,20 @@ public class BitUtil {
         ArrayList<Signal> list = new ArrayList<>();
         //计算结束位、翻转起始位
         for (Signal signal : signals) {
-            int row = signal.startBit / 8;
-            int rowStartIndex = row * 8 + 7;
-            int rowLeave = rowStartIndex - signal.startBit + 1;
-            int endBit;
-            if (rowLeave < signal.length) {
-                int n1 = signal.length - rowLeave;
-                int n2 = n1 / 8;
-                int n3 = n1 % 8;
-                int endRow = row - n2;
-                if (n3 > 0) {
-                    endRow -= 1;
-                }
-                endBit = endRow * 8 + n3;
-            } else {
-                endBit = signal.startBit + signal.length;
-            }
-            signal.calc_endBit = endBit - 1;
-            signal.calc_startBit_reverse = (signal.calc_endBit / 8 + 1) * 8 - (signal.calc_endBit % 8) - 1;
+            int row = signal.startBit / 8 + 1;
+            int leave = signal.startBit % 8;
+            signal.reserve_endBit = row * 8 - leave - 1;
+            signal.reserve_startBit = signal.reserve_endBit - signal.length + 1;
             list.add(signal);
         }
 
         //排序后计算skip
-        list.sort(Comparator.comparing(e -> e.calc_startBit_reverse));
+        list.sort(Comparator.comparing(e -> e.reserve_startBit));
         int pos = 0;
         for (Signal signal : list) {
-            int skip = signal.calc_startBit_reverse - pos;
+            int skip = signal.reserve_startBit - pos;
             if (skip > 0) {
-                signal.calc_skip_before = skip;
+                signal.skip_before = skip;
                 pos += skip;
             }
             pos += signal.length;
@@ -89,25 +74,15 @@ public class BitUtil {
 
     public static void main(String[] args) {
         Signal[] res = calc_Motorola_LSB(new Signal[]{
-//                new Signal("TBOX_RemoteAuthRequest", 0, 2),
-//                new Signal("TBOX_RemoteControlDoor", 8, 2),
-//                new Signal("TBOX_RemoteControlWindow", 10, 3),
-//                new Signal("TBOX_RemoteSearchCar", 13, 2),
-//                new Signal("TBOX_RemoteCtrlSigSrc", 16, 2),
-//                new Signal("TBOX_OTAModeRequest", 20, 2),
-//                new Signal("TBOX_RemoteControlAC", 24, 4),
-//                new Signal("TBOX_RemoteACStartTime", 28, 3),
-//                new Signal("TBOX_RemoteACTempSet", 32, 6),
-//                new Signal("TBOX_RemoteControlSeatHeat", 40, 3),
-//                new Signal("TBOX_RemoteSeatHeatTime", 43, 3),
-//                new Signal("TBOX_RemoteStart", 51, 2),
-//                new Signal("TBOX_RemoteStartActiveTime", 53, 3),
-                new Signal("test1", 13, 2),
-                new Signal("test2", 37, 13),
-                new Signal("test2", 62, 7),
+                new Signal("EMS_EngineSpeedValid", 2, 1),
+                new Signal("EMS_ThrottlePositionValid", 3, 1),
+                new Signal("EMS_IntakeAirTempValid", 5, 1),
+                new Signal("EMS_EngineLimpHome", 6, 1),
+                new Signal("EMS_IdleSpeedStatus", 7, 1),
+                new Signal("EMS_EngineSpeed", 16, 16),
+                new Signal("EMS_ThrottlePosition", 24, 8),
+                new Signal("EMS_IntakeAirTemp", 40, 8),
         });
-
-        Arrays.sort(res, Comparator.comparing(e -> e.calc_startBit_reverse));
         for (Signal signal : res) {
             System.out.println(signal);
         }
