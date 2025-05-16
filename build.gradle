@@ -4,7 +4,7 @@ buildscript {
     }
     repositories {
         mavenLocal()
-        maven { url "${aliyunPublic}" }
+        maven { url = "${aliyunPublic}" }
         mavenCentral()
     }
 
@@ -20,8 +20,8 @@ subprojects {
         return
     }
 
-    group 'cn.bcd'
-    version '1.0'
+    group = 'cn.bcd'
+    version = '1.0'
 
     apply plugin: 'java-library'
     apply plugin: 'java'
@@ -34,7 +34,7 @@ subprojects {
 
     repositories {
         mavenLocal()
-        maven { url "${aliyunPublic}" }
+        maven { url = "${aliyunPublic}" }
         mavenCentral()
     }
 
@@ -109,21 +109,16 @@ subprojects {
                     version = ""
                 }
                 bootRun {
-                    /**
-                     * 启动时候带入jvm的参数;如下(启动jvisualvm监控)
-                     * nohup gradle bootRun -PjvmArgs="-Djava.rmi.server.hostname=172.16.24.36 -Dcom.sun.management.jmxremote.port=10001 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=true" &
-                     */
-                    if (project.hasProperty('jvmArgs')) {
-                        jvmArgs(project.jvmArgs.split("\\s+") as List)
-                    }
                     //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
                     //开启缓存行补齐
-                    jvmArgs('-XX:-RestrictContended')
-                    jvmArgs('-Dfile.encoding=UTF-8')
-                    jvmArgs('-Dsun.jnu.encoding=UTF-8')
-                    jvmArgs('--add-opens=java.base/java.nio=ALL-UNNAMED')
-                    jvmArgs('--add-opens=java.base/java.lang=ALL-UNNAMED')
-                    jvmArgs('--add-opens=java.base/java.lang.reflect=ALL-UNNAMED')
+                    jvmArgs([
+                            '-XX:-RestrictContended',
+                            '-Dfile.encoding=UTF-8',
+                            '-Dsun.jnu.encoding=UTF-8',
+                            '--add-opens=java.base/java.nio=ALL-UNNAMED',
+                            '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                            '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+                    ])
                 }
             }
 
