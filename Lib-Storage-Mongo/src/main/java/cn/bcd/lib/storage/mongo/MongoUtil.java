@@ -57,7 +57,8 @@ public class MongoUtil {
      * @param skip        跳过前多少条
      * @param limit       限制返回最大条数
      * @param desc        是否主键逆序
-     * @param clazz
+     * @param clazz       返回对象类
+     * @param collection  mongo中的集合
      * @return
      */
     public static <T extends MongoData> List<QueryData<T>> list(String partitionId, String startId, String endId, int skip, int limit, boolean desc, Class<T> clazz, String collection) {
@@ -82,9 +83,9 @@ public class MongoUtil {
     /**
      * 获取单条数据
      *
-     * @param partitionId
-     * @param id
-     * @param clazz
+     * @param partitionId 分区id
+     * @param id          id
+     * @param clazz       返回对象类
      * @return
      */
     public static <T extends MongoData> QueryData<T> get(String partitionId, String id, Class<T> clazz, String collection) {
