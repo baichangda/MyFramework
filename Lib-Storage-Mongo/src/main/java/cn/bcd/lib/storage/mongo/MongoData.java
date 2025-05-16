@@ -12,6 +12,7 @@ public interface MongoData {
     /**
      *
      * 数据会以key、value方式存储、所有只能通过主键 精确查询/范围查询
+     * 为了主键可以范围查询、需要将查询条件设计在主键中
      * 获取记录id
      *
      * @return
