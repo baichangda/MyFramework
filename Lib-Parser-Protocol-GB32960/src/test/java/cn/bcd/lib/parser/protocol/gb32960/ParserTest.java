@@ -1,9 +1,8 @@
-package cn.bcd.parser.protocol.gb32960;
+package cn.bcd.lib.parser.protocol.gb32960;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
-import cn.bcd.lib.parser.protocol.gb32960.Const;
 import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
