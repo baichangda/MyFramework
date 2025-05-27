@@ -50,7 +50,11 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
 
-mongodbs: mongodb://bcd:bcd@192.168.23.129:27017/gw1,mongodb://bcd:bcd@192.168.23.129:27017/gw2,mongodb://bcd:bcd@192.168.23.129:27017/gw3
+lib:
+  storage:
+    mongo:
+      dbs: mongodb://bcd:bcd@192.168.23.129:27017/gw1,mongodb://bcd:bcd@192.168.23.129:27017/gw2,mongodb://bcd:bcd@192.168.23.129:27017/gw3
+
 monitor:
   request-topic: monitorRequest
   response-list: monitorResponse

@@ -3,4 +3,5 @@ dependencies {
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations'
+    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }

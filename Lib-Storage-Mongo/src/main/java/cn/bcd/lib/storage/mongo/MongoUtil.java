@@ -22,13 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@ConditionalOnProperty(value = "mongodbs")
+@ConditionalOnProperty(value = "lib.storage.mongo.dbs")
 public class MongoUtil {
 
     public static int dbNum;
     public static MongoTemplate[] mongoTemplates;
 
-    public MongoUtil(@Value("${mongodbs}") String[] mongodbs) {
+    public MongoUtil(@Value("${lib.storage.mongo.dbs}") String[] mongodbs) {
         dbNum = mongodbs.length;
         mongoTemplates = new MongoTemplate[dbNum];
         for (int i = 0; i < dbNum; i++) {

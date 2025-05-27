@@ -1,5 +1,6 @@
 package cn.bcd.lib.base.json;
 
+import cn.bcd.lib.base.exception.BaseException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -7,7 +8,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import cn.bcd.lib.base.exception.BaseException;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
@@ -61,6 +62,8 @@ public class JsonUtil {
             }
         });
         t.registerModule(simpleModule);
+        //注册jdk8时间类型
+        t.registerModule(new JavaTimeModule());
         //设置忽略null属性输出
         t.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         //设置在解析json字符串为实体类时候,忽略多余的属性
@@ -69,6 +72,8 @@ public class JsonUtil {
         t.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         //序列化日期时候转换为时间戳
         t.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true);
+        t.configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false);
+        t.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false);
         //序列化和反序列化的数据内容中添加类属性
         //旧版本
         //t.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
