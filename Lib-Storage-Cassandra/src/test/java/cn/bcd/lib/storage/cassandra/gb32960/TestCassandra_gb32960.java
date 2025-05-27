@@ -74,10 +74,10 @@ public class TestCassandra_gb32960 {
             CassandraConfig.session = session;
             List<RawData> list = List.of(
                     new RawData("TEST0000000000000",
-                            LocalDateTime.now().plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET), 1,
-                            LocalDateTime.now().plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000000"),
+                            LocalDateTime.of(2025,5,27,11,0,30,154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1,
+                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
+                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
+                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000000"),
                     new RawData("TEST0000000000001",
                             LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET), 2,
                             LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET),
