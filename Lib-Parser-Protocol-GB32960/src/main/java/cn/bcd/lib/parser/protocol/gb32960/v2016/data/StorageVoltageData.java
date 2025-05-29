@@ -19,7 +19,7 @@ public class StorageVoltageData {
     public NumVal_float voltage;
 
     //可充电储能状态电流
-    @F_num(type = NumType.uint16, valExpr = "x/10-1000")
+    @F_num(type = NumType.uint16, valExpr = "(x-10000)/10")
     public NumVal_float current;
 
     //单体电池总数

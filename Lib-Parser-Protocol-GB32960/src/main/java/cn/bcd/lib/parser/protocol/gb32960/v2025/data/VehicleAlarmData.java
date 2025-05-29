@@ -1,9 +1,10 @@
-package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
+package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
+import cn.bcd.lib.parser.base.anno.data.NumVal_int;
 import cn.bcd.lib.parser.base.anno.data.NumVal_short;
 
 /**
@@ -49,6 +50,14 @@ public class VehicleAlarmData {
     //其他故障代码列表
     @F_num_array(lenExpr = "d", singleType = NumType.uint32)
     public long[] otherBadCodes;
+
+    //通用故障总数
+    @F_num(type = NumType.uint8, var = 'e')
+    public short commonBadNum;
+
+    //通用故障代码列表
+    @F_num_array(lenExpr = "e", singleType = NumType.uint16)
+    public int[] commonBadCodes;
 
 
 }

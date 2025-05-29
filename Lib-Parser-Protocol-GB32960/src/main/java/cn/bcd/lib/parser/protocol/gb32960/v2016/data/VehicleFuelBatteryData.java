@@ -29,7 +29,7 @@ public class VehicleFuelBatteryData {
     public short[] temperatures;
 
     //氢系统中最高温度
-    @F_num(type = NumType.uint16,  valExpr = "x/10-40")
+    @F_num(type = NumType.uint16,  valExpr = "(x-400)/10")
     public NumVal_float maxTemperature;
 
     //氢系统中最高温度探针代号

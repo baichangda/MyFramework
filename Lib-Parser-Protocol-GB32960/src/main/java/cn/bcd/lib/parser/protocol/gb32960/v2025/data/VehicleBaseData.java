@@ -1,4 +1,4 @@
-package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
+package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.data.*;
@@ -32,7 +32,7 @@ public class VehicleBaseData {
     public NumVal_float totalVoltage;
 
     //总电流
-    @F_num(type = NumType.uint16, valExpr = "(x-10000)/10")
+    @F_num(type = NumType.uint16, valExpr = "x/10-1000")
     public NumVal_float totalCurrent;
 
     //soc
@@ -47,15 +47,7 @@ public class VehicleBaseData {
     @F_num(type = NumType.uint8)
     public short gearPosition;
 
-    //绝缘电阻
+    //高压对地绝缘电阻
     @F_num(type = NumType.uint16)
     public NumVal_int resistance;
-
-    //加速踏板行程值
-    @F_num(type = NumType.uint8)
-    public NumVal_byte pedalVal;
-
-    //制动踏板状态
-    @F_num(type = NumType.uint8)
-    public NumVal_byte pedalStatus;
 }

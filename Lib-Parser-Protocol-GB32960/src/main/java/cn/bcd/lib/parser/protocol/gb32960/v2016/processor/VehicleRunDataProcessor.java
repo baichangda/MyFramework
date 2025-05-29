@@ -1,11 +1,11 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.processor;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
-import cn.bcd.lib.parser.protocol.gb32960.data.*;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.*;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
@@ -80,14 +80,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
                     instance.vehicleStorageTemperatureData = processor_vehicleStorageTemperatureData.process(data, parentContext);
                 }
                 default -> {
-                    logger.warn("flag[{}] not support", flag);
-                    //2.8、如果是自定义数据,只做展现,不解析
-                    //2.8.1、解析长度
-                    int dataLen = data.readUnsignedShort();
-                    //2.8.2、获取接下来的报文
-                    byte[] content = new byte[dataLen];
-                    data.getBytes(0, content);
-                    break A;
+                    throw BaseException.get("flag[{}] not support", flag);
                 }
             }
         }

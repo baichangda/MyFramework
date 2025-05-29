@@ -1,11 +1,11 @@
-package cn.bcd.lib.parser.protocol.gb32960.v2016.processor;
+package cn.bcd.lib.parser.protocol.gb32960.v2025.processor;
 
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.*;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.*;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,9 @@ public class PacketDataProcessor implements Processor<PacketData> {
     final Processor<ParamQueryRequest> processor_paramQueryRequest = Parser.getProcessor(ParamQueryRequest.class);
     final Processor<ParamQueryResponse> processor_paramQueryResponse = Parser.getProcessor(ParamQueryResponse.class);
     final Processor<ParamSetRequest> processor_paramSetRequest = Parser.getProcessor(ParamSetRequest.class);
+    final Processor<ActivateRequest> processor_activateRequest = Parser.getProcessor(ActivateRequest.class);
+    final Processor<ActivateResponse> processor_activateResponse = Parser.getProcessor(ActivateResponse.class);
+    final Processor<DataEncryptKeyExchange> processor_dataEncryptKeyExchange = Parser.getProcessor(DataEncryptKeyExchange.class);
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext<?> processContext) {
@@ -60,6 +63,20 @@ public class PacketDataProcessor implements Processor<PacketData> {
             case platform_logout_data -> {
                 if (cmd) {
                     return processor_platformLogoutData.process(data, processContext);
+                } else {
+                    return processor_timeData.process(data, processContext);
+                }
+            }
+            case activate -> {
+                if (cmd) {
+                    return processor_activateRequest.process(data, processContext);
+                } else {
+                    return processor_activateResponse.process(data, processContext);
+                }
+            }
+            case data_encrypt_key_exchange -> {
+                if (cmd) {
+                    return processor_dataEncryptKeyExchange.process(data, processContext);
                 } else {
                     return processor_timeData.process(data, processContext);
                 }
@@ -124,6 +141,20 @@ public class PacketDataProcessor implements Processor<PacketData> {
             case platform_logout_data -> {
                 if (cmd) {
                     processor_platformLogoutData.deProcess(data, processContext, (PlatformLogoutData) instance);
+                } else {
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
+                }
+            }
+            case activate -> {
+                if (cmd) {
+                    processor_activateRequest.deProcess(data, processContext, (ActivateRequest) instance);
+                } else {
+                    processor_activateResponse.deProcess(data, processContext, (ActivateResponse) instance);
+                }
+            }
+            case data_encrypt_key_exchange -> {
+                if (cmd) {
+                    processor_dataEncryptKeyExchange.deProcess(data, processContext, (DataEncryptKeyExchange) instance);
                 } else {
                     processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }

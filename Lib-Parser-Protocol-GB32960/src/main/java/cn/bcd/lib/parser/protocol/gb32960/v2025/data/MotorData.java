@@ -1,4 +1,4 @@
-package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
+package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.data.*;
@@ -20,7 +20,7 @@ public class MotorData {
     public NumVal_short controllerTemperature;
 
     //驱动电机转速
-    @F_num(type = NumType.uint16, valExpr = "x-20000")
+    @F_num(type = NumType.uint16, valExpr = "x-32000")
     public NumVal_int rotateSpeed;
 
     //驱动电机转矩
@@ -30,12 +30,4 @@ public class MotorData {
     //驱动电机温度
     @F_num(type = NumType.uint8, valExpr = "x-40")
     public NumVal_short temperature;
-
-    //电机控制器输入电压
-    @F_num(type = NumType.uint16, valExpr = "x/10")
-    public NumVal_float inputVoltage;
-
-    //电机控制器直流母线电流
-    @F_num(type = NumType.uint16, valExpr = "(x-10000)/10")
-    public NumVal_float current;
 }
