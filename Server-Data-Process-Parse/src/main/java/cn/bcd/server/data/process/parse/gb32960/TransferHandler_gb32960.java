@@ -2,7 +2,7 @@ package cn.bcd.server.data.process.parse.gb32960;
 
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.data.init.transferAccess.TransferAccessDataInit;
-import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import org.springframework.beans.factory.annotation.Autowired;

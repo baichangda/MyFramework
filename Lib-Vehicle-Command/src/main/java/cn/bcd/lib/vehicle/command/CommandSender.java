@@ -5,7 +5,7 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.kafka.KafkaUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.base.util.HexUtil;
-import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;

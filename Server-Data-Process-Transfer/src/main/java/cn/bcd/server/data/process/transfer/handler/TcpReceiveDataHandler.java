@@ -3,7 +3,7 @@ package cn.bcd.server.data.process.transfer.handler;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.base.util.HexUtil;
-import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
 import cn.bcd.lib.storage.mongo.transfer.TransferResponseData;
 import io.netty.buffer.ByteBufUtil;

@@ -1,7 +1,7 @@
 package cn.bcd.lib.vehicle.command;
 
-import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 

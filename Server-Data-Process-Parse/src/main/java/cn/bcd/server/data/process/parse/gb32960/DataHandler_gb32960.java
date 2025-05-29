@@ -1,6 +1,6 @@
 package cn.bcd.server.data.process.parse.gb32960;
 
-import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 
 public interface DataHandler_gb32960 {
     default void init(String vin, Context_gb32960 context)  throws Exception {

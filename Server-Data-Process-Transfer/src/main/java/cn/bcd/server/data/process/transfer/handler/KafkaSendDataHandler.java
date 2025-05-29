@@ -1,8 +1,8 @@
 package cn.bcd.server.data.process.transfer.handler;
 
 import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
 import cn.bcd.lib.storage.mongo.transfer.TransferData;
 import cn.bcd.server.data.process.transfer.tcp.Client;

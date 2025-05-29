@@ -1,7 +1,7 @@
 package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.Vertx;

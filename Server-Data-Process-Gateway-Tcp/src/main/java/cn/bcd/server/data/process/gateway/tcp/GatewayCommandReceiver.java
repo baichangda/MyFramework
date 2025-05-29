@@ -1,6 +1,6 @@
 package cn.bcd.server.data.process.gateway.tcp;
 
-import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.vehicle.command.CommandReceiver;
 import cn.bcd.lib.vehicle.command.Request;
 import cn.bcd.lib.vehicle.command.ResponseStatus;

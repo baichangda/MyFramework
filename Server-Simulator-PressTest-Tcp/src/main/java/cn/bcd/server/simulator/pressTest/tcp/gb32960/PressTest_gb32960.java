@@ -2,9 +2,9 @@ package cn.bcd.server.simulator.pressTest.tcp.gb32960;
 
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.processor.Processor;
-import cn.bcd.lib.parser.protocol.gb32960.Const;
-import cn.bcd.lib.parser.protocol.gb32960.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.data.VehicleRunData;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.Const;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.VehicleRunData;
 import cn.bcd.server.simulator.pressTest.tcp.PressTest;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;

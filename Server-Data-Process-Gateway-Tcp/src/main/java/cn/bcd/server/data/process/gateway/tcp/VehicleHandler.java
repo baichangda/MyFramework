@@ -2,8 +2,8 @@ package cn.bcd.server.data.process.gateway.tcp;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.parser.protocol.gb32960.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
