@@ -4,10 +4,10 @@ import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
 import cn.bcd.lib.parser.base.util.ParseUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PlatformLoginData;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PlatformLogoutData;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PlatformLoginData;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PlatformLogoutData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -175,8 +175,8 @@ public class PacketUtil {
      */
     public static byte[] build_bytes_timeData(String vin, PacketFlag flag, int replyFlag, Date time) {
         byte[] bytes = new byte[31];
-        bytes[0] = 0x23;
-        bytes[1] = 0x23;
+        bytes[0] = 0x24;
+        bytes[1] = 0x24;
         bytes[2] = (byte) flag.type;
         bytes[3] = (byte) replyFlag;
         System.arraycopy(vin.getBytes(), 0, bytes, 4, 17);
@@ -210,8 +210,8 @@ public class PacketUtil {
     public static byte[] build_bytes_packetData(String vin, PacketFlag flag, int replyFlag, byte[] content) {
         int length = content.length;
         byte[] bytes = new byte[length + 25];
-        bytes[0] = 0x23;
-        bytes[1] = 0x23;
+        bytes[0] = 0x24;
+        bytes[1] = 0x24;
         bytes[2] = (byte) flag.toInteger();
         bytes[3] = (byte) replyFlag;
         System.arraycopy(vin.getBytes(), 0, bytes, 4, 17);
@@ -245,7 +245,7 @@ public class PacketUtil {
         platformLoginData.password = password;
         platformLoginData.encode = new NumVal_byte(0, (byte) 1);
         Packet packet = new Packet();
-        packet.header = new byte[]{0x23, 0x23};
+        packet.header = new byte[]{0x24, 0x24};
         packet.flag = PacketFlag.platform_login_data;
         packet.replyFlag = 0xFE;
         packet.vin = vin;
@@ -268,7 +268,7 @@ public class PacketUtil {
         platformLogoutData.collectTime = DateUtil.clearMills(time);
         platformLogoutData.sn = sn;
         Packet packet = new Packet();
-        packet.header = new byte[]{0x23, 0x23};
+        packet.header = new byte[]{0x24, 0x24};
         packet.flag = PacketFlag.platform_logout_data;
         packet.replyFlag = 0xFE;
         packet.vin = vin;
