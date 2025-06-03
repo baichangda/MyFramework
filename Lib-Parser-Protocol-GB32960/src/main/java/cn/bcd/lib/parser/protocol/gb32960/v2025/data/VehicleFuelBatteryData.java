@@ -29,7 +29,7 @@ public class VehicleFuelBatteryData {
 
     //氢气最高压力
     @F_num(type = NumType.uint16, valExpr = "x/10")
-    public float maxPressure;
+    public NumVal_float maxPressure;
 
     //氢气最高压力传感器代号
     @F_num(type = NumType.uint8)

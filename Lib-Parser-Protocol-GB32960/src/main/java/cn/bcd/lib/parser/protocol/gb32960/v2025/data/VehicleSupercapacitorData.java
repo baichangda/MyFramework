@@ -13,7 +13,7 @@ public class VehicleSupercapacitorData {
     @F_num(type = NumType.uint8)
     public NumVal_short no;
 
-    @F_num(type = NumType.uint16, valExpr = "x10")
+    @F_num(type = NumType.uint16, valExpr = "x/10")
     public NumVal_float voltage;
 
     @F_num(type = NumType.uint16, valExpr = "(x-30000)/10")

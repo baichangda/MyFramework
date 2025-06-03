@@ -19,7 +19,7 @@ public enum PacketFlag {
     terminal_control_command(0x82, "车载终端控制命令"),
     ;
 
-    final static PacketFlag[] all = new PacketFlag[0x82];
+    final static PacketFlag[] all = new PacketFlag[0x83];
 
     static {
         for (PacketFlag value : PacketFlag.values()) {

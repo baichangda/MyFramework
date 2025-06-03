@@ -12,10 +12,10 @@ public class BatteryTemperatureData {
     public NumVal_byte no;
 
     //动力蓄电池包温度探针个数
-    @F_num(type = NumType.uint16)
+    @F_num(type = NumType.uint16,var = 'n')
     public short num;
 
     //各温度探针检测到的温度值
-    @F_num_array(singleType = NumType.uint8, singleValExpr = "x-40")
+    @F_num_array(lenExpr = "n",singleType = NumType.uint8, singleValExpr = "x-40")
     public NumVal_short[] currents;
 }
