@@ -89,4 +89,33 @@ public class PacketUtil {
         });
         return res;
     }
+
+
+    /**
+     * 修正异或校验位
+     *
+     * @param data 只包含一条数据的数据包
+     */
+    public static void fix_code(ByteBuf data) {
+        byte xor = 0;
+        int codeIndex = data.readableBytes() - 2;
+        for (int i = 1; i < codeIndex; i++) {
+            xor ^= data.getByte(i);
+        }
+        data.setByte(codeIndex, xor);
+    }
+
+    /**
+     * 修正异或校验位
+     *
+     * @param data 只包含一条数据的数据包
+     */
+    public static void fix_code(byte[] data) {
+        byte xor = 0;
+        int codeIndex = data.length - 2;
+        for (int i = 1; i < codeIndex; i++) {
+            xor ^= data[i];
+        }
+        data[codeIndex] = xor;
+    }
 }
