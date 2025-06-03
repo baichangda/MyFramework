@@ -15,7 +15,7 @@ import java.util.Date;
 
 public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
-    Logger logger= LoggerFactory.getLogger(VehicleRunDataProcessor.class);
+    Logger logger = LoggerFactory.getLogger(VehicleRunDataProcessor.class);
 
     final Processor<VehicleBaseData> processor_vehicleBaseData = Parser.getProcessor(VehicleBaseData.class);
     final Processor<VehicleMotorData> processor_vehicleMotorData = Parser.getProcessor(VehicleMotorData.class);
@@ -29,18 +29,13 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public VehicleRunData process(ByteBuf data, ProcessContext<?> processContext) {
-        ProcessContext<?> parentContext=new ProcessContext<>(data,processContext);
+        ProcessContext<?> parentContext = new ProcessContext<>(data, processContext);
         VehicleRunData instance = new VehicleRunData();
         instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
         final Packet packet = (Packet) processContext.instance;
         int allLen = packet.contentLength - 6;
         int beginLeave = data.readableBytes();
-        A:
-        while (data.isReadable()) {
-            int curLeave = data.readableBytes();
-            if (beginLeave - curLeave >= allLen) {
-                break;
-            }
+        while ((beginLeave - data.readableBytes()) < allLen) {
             short flag = data.readUnsignedByte();
             switch (flag) {
                 case 1 -> {
@@ -89,7 +84,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, VehicleRunData instance) {
-        ProcessContext<?> parentContext=new ProcessContext<>(data,processContext);
+        ProcessContext<?> parentContext = new ProcessContext<>(data, processContext);
         FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
         if (instance.vehicleBaseData != null) {
             data.writeByte(1);

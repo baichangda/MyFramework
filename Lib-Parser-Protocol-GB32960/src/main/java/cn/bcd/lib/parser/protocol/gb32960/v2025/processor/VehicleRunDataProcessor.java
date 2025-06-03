@@ -39,12 +39,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
         final Packet packet = (Packet) processContext.instance;
         int allLen = packet.contentLength - 6;
         int beginLeave = data.readableBytes();
-        A:
-        while (data.isReadable()) {
-            int curLeave = data.readableBytes();
-            if (beginLeave - curLeave >= allLen) {
-                break;
-            }
+        while ((beginLeave - data.readableBytes()) < allLen) {
             short flag = data.readUnsignedByte();
             switch (flag) {
                 case 1 -> {
