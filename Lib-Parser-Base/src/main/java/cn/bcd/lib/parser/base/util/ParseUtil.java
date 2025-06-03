@@ -1,13 +1,13 @@
 package cn.bcd.lib.parser.base.util;
 
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.anno.data.*;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.processor.Processor;
 import javassist.CannotCompileException;
 import javassist.CtClass;
@@ -668,12 +668,7 @@ public class ParseUtil {
 
             F_date_bcd f_date_bcd = parseField.getAnnotation(F_date_bcd.class);
             if (f_date_bcd != null) {
-                int len = f_date_bcd.len();
-                if (len > 0) {
-                    all += len;
-                } else {
-                    return -1;
-                }
+                all += 6;
                 continue;
             }
 
