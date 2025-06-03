@@ -16,6 +16,7 @@ public enum PacketFlag {
     data_encrypt_key_exchange(0x0B, "数据单元加密密钥交换"),
     param_query(0x80, "参数查询"),
     param_set(0x81, "参数设置"),
+    terminal_control_command(0x82, "车载终端控制命令"),
     ;
 
     final static PacketFlag[] all = new PacketFlag[0x82];

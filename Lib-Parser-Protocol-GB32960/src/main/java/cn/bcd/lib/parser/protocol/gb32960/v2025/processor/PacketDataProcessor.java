@@ -95,6 +95,13 @@ public class PacketDataProcessor implements Processor<PacketData> {
                     return processor_timeData.process(data, processContext);
                 }
             }
+            case terminal_control_command -> {
+                if (cmd) {
+                    return TerminalControlCommand.read(packet.contentLength, data);
+                } else {
+                    return processor_timeData.process(data, processContext);
+                }
+            }
             case heartbeat, terminal_time_validate -> {
                 return processor_timeData.process(data, processContext);
             }
@@ -169,6 +176,13 @@ public class PacketDataProcessor implements Processor<PacketData> {
             case param_set -> {
                 if (cmd) {
                     processor_paramSetRequest.deProcess(data, processContext, (ParamSetRequest) instance);
+                } else {
+                    processor_timeData.deProcess(data, processContext, (TimeData) instance);
+                }
+            }
+            case terminal_control_command -> {
+                if (cmd) {
+                    ((TerminalControlCommand) instance).write(data);
                 } else {
                     processor_timeData.deProcess(data, processContext, (TimeData) instance);
                 }
