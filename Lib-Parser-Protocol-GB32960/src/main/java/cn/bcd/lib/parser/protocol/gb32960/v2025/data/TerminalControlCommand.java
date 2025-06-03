@@ -10,9 +10,15 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.Date;
 
+/**
+ * 车载终端控制
+ */
 public class TerminalControlCommand implements PacketData {
+    //时间
     public Date time;
+    //命令id
     public byte id;
+    //命令参数
     public byte[] data;
 
     public static TerminalControlCommand read(int contentLength, ByteBuf byteBuf) {
