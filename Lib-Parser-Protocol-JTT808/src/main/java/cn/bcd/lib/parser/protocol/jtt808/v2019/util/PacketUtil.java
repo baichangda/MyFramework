@@ -96,9 +96,17 @@ public class PacketUtil {
      * @param data 只包含一条数据的数据包
      */
     public static void fix_msgLength(byte[] data) {
-        int actualLen = data.length - 25;
-        data[22] = (byte) (actualLen >> 8);
-        data[23] = (byte) actualLen;
+        int b3 = data[3] & 0xff;
+        int subPacketFlag = (b3 >> 5) & 0x01;
+        //去除除消息体之外的所有的长度
+        int actualLen = data.length - 20;
+        if (subPacketFlag == 1) {
+            //如果分包、则去除分包长度
+            actualLen -= 4;
+        }
+        //替换长度属性
+        data[3] = (byte) ((b3 & 0b11111100) | ((actualLen >> 8) & 0b00000011));
+        data[4] = (byte) actualLen;
     }
 
     /**
@@ -107,8 +115,17 @@ public class PacketUtil {
      * @param data 只包含一条数据的数据包
      */
     public static void fix_msgLength(ByteBuf data) {
-        int actualLen = data.readableBytes() - 25;
-        data.setShort(22, actualLen);
+        int b3 = data.getByte(3) & 0xff;
+        int subPacketFlag = (b3 >> 5) & 0x01;
+        //去除除消息体之外的所有的长度
+        int actualLen = data.readableBytes() - 20;
+        if (subPacketFlag == 1) {
+            //如果分包、则去除分包长度
+            actualLen -= 4;
+        }
+        //替换长度属性
+        data.setByte(3, (byte) ((b3 & 0b11111100) | ((actualLen >> 8) & 0b00000011)));
+        data.setByte(4, (byte) actualLen);
     }
 
 
