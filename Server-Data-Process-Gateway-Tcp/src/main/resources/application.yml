@@ -53,15 +53,15 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
 
-monitor:
-  request-topic: monitorRequest
-  response-list: monitorResponse
-  server-id: ${gateway.id}
-  server-type: 1
-
 lib:
+  monitor:
+    client:
+      requestTopic: monitorRequest
+      responseList: monitorResponse
+      serverId: ${gateway.id}
+      serverType: 1
   vehicle:
     command:
-      request-topic: commandRequest
-      response-topic: commandResponse
-      receiver: true
+      receiverGroupId: gw
+      requestTopic: commandRequest
+      responseTopic: commandResponse

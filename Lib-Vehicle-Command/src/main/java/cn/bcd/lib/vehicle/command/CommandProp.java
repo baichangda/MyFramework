@@ -8,8 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "lib.vehicle.command")
 public class CommandProp {
-    public boolean sender;
-    public boolean receiver;
+    public String senderGroupId;
+    public String receiverGroupId;
     public String requestTopic;
     public String responseTopic;
 }

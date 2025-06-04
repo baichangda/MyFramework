@@ -70,9 +70,11 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+lib:
+  monitor:
+    client:
+      request-topic: monitorRequest
+      response-list: monitorResponse
+      server-id: ${spring.application.name}
+      server-type: 3
 
-monitor:
-  request-topic: monitorRequest
-  response-list: monitorResponse
-  server-id: ${spring.application.name}
-  server-type: 3

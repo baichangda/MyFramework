@@ -88,5 +88,8 @@ dependencies {
         api("org.apache.cassandra:java-driver-core:${cassandraVersion}")
         api("org.apache.cassandra:java-driver-query-builder:${cassandraVersion}")
 
+        // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
+        api("com.xuxueli:xxl-job-core:3.1.0")
+
     }
 }

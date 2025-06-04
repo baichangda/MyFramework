@@ -54,9 +54,10 @@ lib:
   storage:
     mongo:
       dbs: mongodb://bcd:bcd@192.168.23.129:27017/gw1,mongodb://bcd:bcd@192.168.23.129:27017/gw2,mongodb://bcd:bcd@192.168.23.129:27017/gw3
+  monitor:
+    client:
+      requestTopic: monitorRequest
+      responseList: monitorResponse
+      serverId: ${parse.id}
+      serverType: 2
 
-monitor:
-  request-topic: monitorRequest
-  response-list: monitorResponse
-  server-id: ${parse.id}
-  server-type: 2

@@ -46,7 +46,7 @@ public class MonitorCollector {
         redisTemplate = RedisUtil.newRedisTemplate_string_jackson(redisConnectionFactory, MonitorData.class);
     }
 
-    @Scheduled(cron = "${monitor.collect-cron}")
+    @Scheduled(cron = "${monitor.collectCron}")
     public void collect() {
         String dateStr = DateZoneUtil.dateToString_second(new Date());
         long batch = Long.parseLong(dateStr);

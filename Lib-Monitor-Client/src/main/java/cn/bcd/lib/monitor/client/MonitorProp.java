@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "monitor")
+@ConfigurationProperties(prefix = "lib.monitor.client")
 public class MonitorProp {
     public String requestTopic;
     public String responseList;

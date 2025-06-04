@@ -1,8 +1,3 @@
-monitor:
-  request-topic: monitorRequest
-  response-list: monitorResponse
-  collect-cron: 0/15 * * * * *
-
 spring:
   application:
     name: server-monitor-collector
@@ -76,3 +71,9 @@ spring:
   #      host: 192.168.23.129
   #      port: 6379
 
+lib:
+  monitor:
+    client:
+      requestTopic: monitorRequest
+      responseList: monitorResponse
+      collectCron: 0/15 * * * * *

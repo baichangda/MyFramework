@@ -13,7 +13,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 @EnableConfigurationProperties(CommandProp.class)
-@ConditionalOnProperty("lib.vehicle.command.sender")
+@ConditionalOnProperty("lib.vehicle.command.senderGroupId")
 @Component
 public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implements ApplicationListener<ContextRefreshedEvent> {
 

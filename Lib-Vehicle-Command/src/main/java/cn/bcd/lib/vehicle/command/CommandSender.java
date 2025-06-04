@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @EnableConfigurationProperties(CommandProp.class)
-@ConditionalOnProperty("lib.vehicle.command.sender")
+@ConditionalOnProperty("lib.vehicle.command.senderGroupId")
 @Component
 public class CommandSender {
 

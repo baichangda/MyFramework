@@ -68,4 +68,7 @@ dependencies {
     implementation group: 'com.alibaba.cloud', name: 'spring-cloud-starter-alibaba-sentinel'
 
     implementation group: 'org.zeromq', name: 'jeromq'
+
+    // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
+    implementation("com.xuxueli:xxl-job-core")
 }
