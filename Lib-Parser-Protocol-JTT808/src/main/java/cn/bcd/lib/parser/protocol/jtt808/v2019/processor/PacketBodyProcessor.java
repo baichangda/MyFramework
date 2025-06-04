@@ -8,8 +8,7 @@ import cn.bcd.lib.parser.protocol.jtt808.v2019.data.*;
 import io.netty.buffer.ByteBuf;
 
 public class PacketBodyProcessor implements Processor<PacketBody> {
-    Processor<TerminalCommonResponse> processor_TerminalCommonResponse = Parser.getProcessor(TerminalCommonResponse.class);
-    Processor<PlatformCommonResponse> processor_PlatformCommonResponse = Parser.getProcessor(PlatformCommonResponse.class);
+    Processor<CommonResponse> processor_CommonResponse = Parser.getProcessor(CommonResponse.class);
     Processor<QueryServerTimeResponse> processor_QueryServerTimeResponse = Parser.getProcessor(QueryServerTimeResponse.class);
     Processor<ServerSubPacketRequest> processor_ServerSubPacketRequest = Parser.getProcessor(ServerSubPacketRequest.class);
     Processor<TerminalAuthentication> processor_TerminalAuthentication = Parser.getProcessor(TerminalAuthentication.class);
@@ -35,7 +34,6 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
     Processor<StorageMultiMediaDataFetchRequest> processor_StorageMultiMediaDataFetchRequest = Parser.getProcessor(StorageMultiMediaDataFetchRequest.class);
     Processor<StorageMultiMediaDataUploadCmd> processor_StorageMultiMediaDataUploadCmd = Parser.getProcessor(StorageMultiMediaDataUploadCmd.class);
     Processor<RecordingStartCmd> processor_RecordingStartCmd = Parser.getProcessor(RecordingStartCmd.class);
-
     Processor<SingleMultiMediaDataFetchUploadCmd> processor_SingleMultiMediaDataFetchUploadCmd = Parser.getProcessor(SingleMultiMediaDataFetchUploadCmd.class);
     Processor<PlatformRsa> processor_PlatformRsa = Parser.getProcessor(PlatformRsa.class);
     Processor<TerminalRsa> processor_TerminalRsa = Parser.getProcessor(TerminalRsa.class);
@@ -46,11 +44,8 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
         Packet packet = (Packet) processContext.instance;
         PacketBody packetBody;
         switch (packet.header.msgId) {
-            case 0x0001 -> {
-                packetBody = processor_TerminalCommonResponse.process(data, processContext);
-            }
-            case 0x8001 -> {
-                packetBody = processor_PlatformCommonResponse.process(data, processContext);
+            case 0x0001,0x8001 -> {
+                packetBody = processor_CommonResponse.process(data, processContext);
             }
             case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
                 packetBody = null;
@@ -220,11 +215,8 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, PacketBody instance) {
         Packet packet = (Packet) processContext.instance;
         switch (packet.header.msgId) {
-            case 0x0001 -> {
-                processor_TerminalCommonResponse.deProcess(data, processContext, (TerminalCommonResponse) instance);
-            }
-            case 0x8001 -> {
-                processor_PlatformCommonResponse.deProcess(data, processContext, (PlatformCommonResponse) instance);
+            case 0x0001,0x8001 -> {
+                processor_CommonResponse.deProcess(data, processContext, (CommonResponse) instance);
             }
             case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
 
