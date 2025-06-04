@@ -6,14 +6,15 @@ import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.jtt808.v2019.data.*;
 import io.netty.buffer.ByteBuf;
+import static cn.bcd.lib.parser.protocol.jtt808.v2019.data.MsgId.*;
 
 public class PacketBodyProcessor implements Processor<PacketBody> {
     Processor<CommonResponse> processor_commonResponse = Parser.getProcessor(CommonResponse.class);
     Processor<QueryServerTimeResponse> processor_queryServerTimeResponse = Parser.getProcessor(QueryServerTimeResponse.class);
-    Processor<ServerSubPacketRequest> processor_serverSubPacketRequest = Parser.getProcessor(ServerSubPacketRequest.class);
+    Processor<SubPacketRequest> processor_serverSubPacketRequest = Parser.getProcessor(SubPacketRequest.class);
     Processor<TerminalAuthentication> processor_terminalAuthentication = Parser.getProcessor(TerminalAuthentication.class);
     Processor<SetTerminalParam> processor_setTerminalParam = Parser.getProcessor(SetTerminalParam.class);
-    Processor<QueryTerminalParamRequest> processor_queryTerminalParamRequest = Parser.getProcessor(QueryTerminalParamRequest.class);
+    Processor<QueryTerminalSpecifyParamRequest> processor_queryTerminalSpecifyParamRequest = Parser.getProcessor(QueryTerminalSpecifyParamRequest.class);
     Processor<QueryTerminalParamResponse> processor_queryTerminalParamResponse = Parser.getProcessor(QueryTerminalParamResponse.class);
     Processor<QueryTerminalPropResponse> processor_queryTerminalPropResponse = Parser.getProcessor(QueryTerminalPropResponse.class);
     Processor<IssuedTerminalUpgradeRequest> processor_issuedTerminalUpgradeRequest = Parser.getProcessor(IssuedTerminalUpgradeRequest.class);
@@ -28,13 +29,13 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
     Processor<QueryAreaOrPathRequest> processor_queryAreaOrPathRequest = Parser.getProcessor(QueryAreaOrPathRequest.class);
     Processor<WaybillReport> processor_waybillReport = Parser.getProcessor(WaybillReport.class);
     Processor<CanDataUpload> processor_canDataUpload = Parser.getProcessor(CanDataUpload.class);
-    Processor<MultiMediaEventUpload> processor_multiMediaEventUpload = Parser.getProcessor(MultiMediaEventUpload.class);
+    Processor<MultimediaEventUpload> processor_multiMediaEventUpload = Parser.getProcessor(MultimediaEventUpload.class);
     Processor<CameraTakePhotoCmdRequest> processor_cameraTakePhotoCmdRequest = Parser.getProcessor(CameraTakePhotoCmdRequest.class);
     Processor<CameraTakePhotoCmdResponse> processor_cameraTakePhotoCmdResponse = Parser.getProcessor(CameraTakePhotoCmdResponse.class);
-    Processor<StorageMultiMediaDataFetchRequest> processor_storageMultiMediaDataFetchRequest = Parser.getProcessor(StorageMultiMediaDataFetchRequest.class);
-    Processor<StorageMultiMediaDataUploadCmd> processor_storageMultiMediaDataUploadCmd = Parser.getProcessor(StorageMultiMediaDataUploadCmd.class);
+    Processor<StorageMultimediaDataFetchRequest> processor_storageMultiMediaDataFetchRequest = Parser.getProcessor(StorageMultimediaDataFetchRequest.class);
+    Processor<StorageMultimediaDataUploadCmd> processor_storageMultiMediaDataUploadCmd = Parser.getProcessor(StorageMultimediaDataUploadCmd.class);
     Processor<RecordingStartCmd> processor_recordingStartCmd = Parser.getProcessor(RecordingStartCmd.class);
-    Processor<SingleMultiMediaDataFetchUploadCmd> processor_singleMultiMediaDataFetchUploadCmd = Parser.getProcessor(SingleMultiMediaDataFetchUploadCmd.class);
+    Processor<SingleMultimediaDataFetchUploadCmd> processor_singleMultiMediaDataFetchUploadCmd = Parser.getProcessor(SingleMultimediaDataFetchUploadCmd.class);
     Processor<PlatformRsa> processor_platformRsa = Parser.getProcessor(PlatformRsa.class);
     Processor<TerminalRsa> processor_terminalRsa = Parser.getProcessor(TerminalRsa.class);
 
@@ -44,166 +45,173 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
         Packet packet = (Packet) processContext.instance;
         PacketBody packetBody;
         switch (packet.header.msgId) {
-            case 0x0001,0x8001 -> {
+            case terminal_common_response, platform_common_response -> {
                 packetBody = processor_commonResponse.process(data, processContext);
             }
-            case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
+            case terminal_heartbeat,
+                 query_server_time_request,
+                 terminal_unregister,
+                 query_terminal_param_request,
+                 query_terminal_prop_request,
+                 query_position_request,
+                 link_detection,
+                 driver_identity_report_request -> {
                 packetBody = null;
             }
-            case 0x8004 -> {
+            case query_server_time_response -> {
                 packetBody = processor_queryServerTimeResponse.process(data, processContext);
             }
-            case 0x8003, 0x0005 -> {
+            case server_sub_packet_request, terminal_sub_packet_request -> {
                 packetBody = processor_serverSubPacketRequest.process(data, processContext);
             }
-            case 0x0100 -> {
+            case terminal_register_request -> {
                 packetBody = TerminalRegisterRequest.read(data, packet.header.msgLen);
             }
-            case 0x8100 -> {
+            case terminal_register_response -> {
                 packetBody = TerminalRegisterResponse.read(data, packet.header.msgLen);
             }
-            case 0x0102 -> {
+            case terminal_authentication -> {
                 packetBody = processor_terminalAuthentication.process(data, processContext);
             }
-            case 0x8103 -> {
+            case set_terminal_param -> {
                 packetBody = processor_setTerminalParam.process(data, processContext);
             }
-            case 0x8106 -> {
-                packetBody = processor_queryTerminalParamRequest.process(data, processContext);
+            case query_terminal_specify_param_request -> {
+                packetBody = processor_queryTerminalSpecifyParamRequest.process(data, processContext);
             }
-            case 0x0104 -> {
+            case query_terminal_param_response -> {
                 packetBody = processor_queryTerminalParamResponse.process(data, processContext);
             }
-            case 0x8105 -> {
+            case terminal_control -> {
                 packetBody = TerminalControl.read(data, packet.header.msgLen);
             }
-            case 0x0107 -> {
+            case query_terminal_prop_response -> {
                 packetBody = processor_queryTerminalPropResponse.process(data, processContext);
             }
-            case 0x8108 -> {
+            case issued_terminal_upgrade_request -> {
                 packetBody = processor_issuedTerminalUpgradeRequest.process(data, processContext);
             }
-            case 0x0108 -> {
+            case terminal_upgrade_res_response -> {
                 packetBody = processor_terminalUpgradeResResponse.process(data, processContext);
             }
-            case 0x0200 -> {
+            case position_data_upload -> {
                 packetBody = Position.read(data, packet.header.msgLen);
             }
-            case 0x0201 -> {
+            case query_position_response -> {
                 packetBody = QueryPositionResponse.read(data, packet.header.msgLen);
             }
-            case 0x8202 -> {
+            case temp_position_follow -> {
                 packetBody = processor_tempPositionFollow.process(data, processContext);
             }
-            case 0x8203 -> {
+            case confirm_alarm_msg -> {
                 packetBody = processor_confirmAlarmMsg.process(data, processContext);
             }
-            case 0x8300 -> {
+            case text_info_issued -> {
                 packetBody = TextInfoIssued.read(data, packet.header.msgLen);
             }
-            case 0x8400 -> {
+            case phone_callback -> {
                 packetBody = PhoneCallback.read(data, packet.header.msgLen);
             }
-            case 0x8401 -> {
+            case set_phone_text -> {
                 packetBody = processor_setPhoneText.process(data, processContext);
             }
-            case 0x8500 -> {
+            case vehicle_control_request -> {
                 packetBody = VehicleControlRequest.read(data);
             }
-            case 0x0500 -> {
+            case vehicle_control_response -> {
                 packetBody = VehicleControlResponse.read(data, packet.header.msgLen);
             }
-            case 0x8600 -> {
+            case set_circle_area -> {
                 packetBody = SetCircleArea.read(data);
             }
-            case 0x8601 -> {
+            case delete_circle_area -> {
                 packetBody = processor_deleteCircleArea.process(data, processContext);
             }
-            case 0x8602 -> {
+            case set_rectangle_area -> {
                 packetBody = SetRectangleArea.read(data);
             }
-            case 0x8603 -> {
+            case delete_rectangle_area -> {
                 packetBody = processor_deleteRectangleArea.process(data, processContext);
             }
-            case 0x8604 -> {
+            case set_polygon_area -> {
                 packetBody = SetPolygonArea.read(data);
             }
-            case 0x8605 -> {
+            case delete_polygon_area -> {
                 packetBody = processor_deletePolygonArea.process(data, processContext);
             }
-            case 0x8606 -> {
+            case set_path -> {
                 packetBody = SetPath.read(data);
             }
-            case 0x8607 -> {
+            case delete_path -> {
                 packetBody = processor_deletePath.process(data, processContext);
             }
-            case 0x8608 -> {
+            case query_area_or_path_request -> {
                 packetBody = processor_queryAreaOrPathRequest.process(data, processContext);
             }
-            case 0x0608 -> {
+            case query_area_or_path_response -> {
                 packetBody = QueryAreaOrPathResponse.read(data);
             }
-            case 0x8700 -> {
+            case driving_recorder_collect_command, driving_recorder_download_command -> {
+                packetBody = DrivingRecorderCollectCommand.read(data, packet.header.msgLen);
+            }
+            case driving_recorder_upload -> {
                 packetBody = DrivingRecorderUpload.read(data, packet.header.msgLen);
             }
-            case 0x8701 -> {
-                packetBody = DrivingRecorderDownStream.read(data, packet.header.msgLen);
-            }
-            case 0x0701 -> {
+            case waybill_report -> {
                 packetBody = processor_waybillReport.process(data, processContext);
             }
-            case 0x0702 -> {
-                packetBody = DriverIdentityReport.read(data);
+            case driver_identity_report_response -> {
+                packetBody = DriverIdentityReportResponse.read(data);
             }
-            case 0x0704 -> {
-                packetBody = PositionDataUpload.read(data);
+            case position_data_batch_upload -> {
+                packetBody = PositionDataBatchUpload.read(data);
             }
-            case 0x0705 -> {
+            case can_data_upload -> {
                 packetBody = processor_canDataUpload.process(data, processContext);
             }
-            case 0x0800 -> {
+            case multimedia_event_upload -> {
                 packetBody = processor_multiMediaEventUpload.process(data, processContext);
             }
-            case 0x0801 -> {
-                packetBody = MultiMediaDataUploadRequest.read(data, packet.header.msgLen);
+            case multimedia_data_upload_request -> {
+                packetBody = MultimediaDataUploadRequest.read(data, packet.header.msgLen);
             }
-            case 0x8800 -> {
-                packetBody = MultiMediaDataUploadResponse.read(data, packet.header.msgLen);
+            case multimedia_data_upload_response -> {
+                packetBody = MultimediaDataUploadResponse.read(data, packet.header.msgLen);
             }
-            case 0x8801 -> {
+            case camera_take_photo_cmd_request -> {
                 packetBody = processor_cameraTakePhotoCmdRequest.process(data, processContext);
             }
-            case 0x0805 -> {
+            case camera_take_photo_cmd_response -> {
                 packetBody = processor_cameraTakePhotoCmdResponse.process(data, processContext);
             }
-            case 0x8802 -> {
+            case storage_multimedia_data_fetch_request -> {
                 packetBody = processor_storageMultiMediaDataFetchRequest.process(data, processContext);
             }
-            case 0x0802 -> {
-                packetBody = StorageMultiMediaDataFetchResponse.read(data, packet.header.msgLen);
+            case storage_multimedia_data_fetch_response -> {
+                packetBody = StorageMultimediaDataFetchResponse.read(data, packet.header.msgLen);
             }
-            case 0x8803 -> {
+            case storage_multimedia_data_upload_cmd -> {
                 packetBody = processor_storageMultiMediaDataUploadCmd.process(data, processContext);
             }
-            case 0x8804 -> {
+            case recording_start_cmd -> {
                 packetBody = processor_recordingStartCmd.process(data, processContext);
             }
-            case 0x8805 -> {
+            case single_multimedia_data_fetch_upload_cmd -> {
                 packetBody = processor_singleMultiMediaDataFetchUploadCmd.process(data, processContext);
             }
-            case 0x8900 -> {
+            case data_down_stream -> {
                 packetBody = DataDownStream.read(data, packet.header.msgLen);
             }
-            case 0x0900 -> {
+            case data_up_stream -> {
                 packetBody = DataUpStream.read(data, packet.header.msgLen);
             }
-            case 0x0901 -> {
+            case data_compress_report -> {
                 packetBody = DataCompressReport.read(data, packet.header.msgLen);
             }
-            case 0x8A00 -> {
+            case platform_rsa -> {
                 packetBody = processor_platformRsa.process(data, processContext);
             }
-            case 0x0A00 -> {
+            case terminal_rsa -> {
                 packetBody = processor_terminalRsa.process(data, processContext);
             }
             default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);
@@ -215,166 +223,173 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, PacketBody instance) {
         Packet packet = (Packet) processContext.instance;
         switch (packet.header.msgId) {
-            case 0x0001,0x8001 -> {
+            case terminal_common_response, platform_common_response -> {
                 processor_commonResponse.deProcess(data, processContext, (CommonResponse) instance);
             }
-            case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
+            case terminal_heartbeat,
+                 query_server_time_request,
+                 terminal_unregister,
+                 query_terminal_param_request,
+                 query_terminal_prop_request,
+                 query_position_request,
+                 link_detection,
+                 driver_identity_report_request -> {
 
             }
-            case 0x8004 -> {
+            case query_server_time_response -> {
                 processor_queryServerTimeResponse.deProcess(data, processContext, (QueryServerTimeResponse) instance);
             }
-            case 0x8003, 0x0005 -> {
-                processor_serverSubPacketRequest.deProcess(data, processContext, (ServerSubPacketRequest) instance);
+            case server_sub_packet_request, terminal_sub_packet_request -> {
+                processor_serverSubPacketRequest.deProcess(data, processContext, (SubPacketRequest) instance);
             }
-            case 0x0100 -> {
+            case terminal_register_request -> {
                 ((TerminalRegisterRequest) instance).write(data);
             }
-            case 0x8100 -> {
+            case terminal_register_response -> {
                 ((TerminalRegisterResponse) instance).write(data);
             }
-            case 0x0102 -> {
+            case terminal_authentication -> {
                 processor_terminalAuthentication.deProcess(data, processContext, (TerminalAuthentication) instance);
             }
-            case 0x8103 -> {
+            case set_terminal_param -> {
                 processor_setTerminalParam.deProcess(data, processContext, (SetTerminalParam) instance);
             }
-            case 0x8106 -> {
-                processor_queryTerminalParamRequest.deProcess(data, processContext, (QueryTerminalParamRequest) instance);
+            case query_terminal_specify_param_request -> {
+                processor_queryTerminalSpecifyParamRequest.deProcess(data, processContext, (QueryTerminalSpecifyParamRequest) instance);
             }
-            case 0x0104 -> {
+            case query_terminal_param_response -> {
                 processor_queryTerminalParamResponse.deProcess(data, processContext, (QueryTerminalParamResponse) instance);
             }
-            case 0x8105 -> {
+            case terminal_control -> {
                 ((TerminalControl) instance).write(data);
             }
-            case 0x0107 -> {
+            case query_terminal_prop_response -> {
                 processor_queryTerminalPropResponse.deProcess(data, processContext, (QueryTerminalPropResponse) instance);
             }
-            case 0x8108 -> {
+            case issued_terminal_upgrade_request -> {
                 processor_issuedTerminalUpgradeRequest.deProcess(data, processContext, (IssuedTerminalUpgradeRequest) instance);
             }
-            case 0x0108 -> {
+            case terminal_upgrade_res_response -> {
                 processor_terminalUpgradeResResponse.deProcess(data, processContext, (TerminalUpgradeResResponse) instance);
             }
-            case 0x0200 -> {
+            case position_data_upload -> {
                 ((Position) instance).write(data);
             }
-            case 0x0201 -> {
+            case query_position_response -> {
                 ((QueryPositionResponse) instance).write(data);
             }
-            case 0x8202 -> {
+            case temp_position_follow -> {
                 processor_tempPositionFollow.deProcess(data, processContext, (TempPositionFollow) instance);
             }
-            case 0x8203 -> {
+            case confirm_alarm_msg -> {
                 processor_confirmAlarmMsg.deProcess(data, processContext, (ConfirmAlarmMsg) instance);
             }
-            case 0x8300 -> {
+            case text_info_issued -> {
                 ((TextInfoIssued) instance).write(data);
             }
-            case 0x8400 -> {
+            case phone_callback -> {
                 ((PhoneCallback) instance).write(data);
             }
-            case 0x8401 -> {
+            case set_phone_text -> {
                 processor_setPhoneText.deProcess(data, processContext, (SetPhoneText) instance);
             }
-            case 0x8500 -> {
+            case vehicle_control_request -> {
                 ((VehicleControlRequest) instance).write(data);
             }
-            case 0x0500 -> {
+            case vehicle_control_response -> {
                 ((VehicleControlResponse) instance).write(data);
             }
-            case 0x8600 -> {
+            case set_circle_area -> {
                 ((SetCircleArea) instance).write(data);
             }
-            case 0x8601 -> {
+            case delete_circle_area -> {
                 processor_deleteCircleArea.deProcess(data, processContext, (DeleteCircleArea) instance);
             }
-            case 0x8602 -> {
+            case set_rectangle_area -> {
                 ((SetRectangleArea) instance).write(data);
             }
-            case 0x8603 -> {
+            case delete_rectangle_area -> {
                 processor_deleteRectangleArea.deProcess(data, processContext, (DeleteRectangleArea) instance);
             }
-            case 0x8604 -> {
+            case set_polygon_area -> {
                 ((SetPolygonArea) instance).write(data);
             }
-            case 0x8605 -> {
+            case delete_polygon_area -> {
                 processor_deletePolygonArea.deProcess(data, processContext, (DeletePolygonArea) instance);
             }
-            case 0x8606 -> {
+            case set_path -> {
                 ((SetPath) instance).write(data);
             }
-            case 0x8607 -> {
+            case delete_path -> {
                 processor_deletePath.deProcess(data, processContext, (DeletePath) instance);
             }
-            case 0x8608 -> {
+            case query_area_or_path_request -> {
                 processor_queryAreaOrPathRequest.deProcess(data, processContext, (QueryAreaOrPathRequest) instance);
             }
-            case 0x0608 -> {
+            case query_area_or_path_response -> {
                 ((QueryAreaOrPathResponse) instance).write(data);
             }
-            case 0x8700 -> {
+            case driving_recorder_collect_command, driving_recorder_download_command -> {
+                ((DrivingRecorderCollectCommand) instance).write(data);
+            }
+            case driving_recorder_upload -> {
                 ((DrivingRecorderUpload) instance).write(data);
             }
-            case 0x8701 -> {
-                ((DrivingRecorderDownStream) instance).write(data);
-            }
-            case 0x0701 -> {
+            case waybill_report -> {
                 processor_waybillReport.deProcess(data, processContext, (WaybillReport) instance);
             }
-            case 0x0702 -> {
-                ((DriverIdentityReport) instance).write(data);
+            case driver_identity_report_response -> {
+                ((DriverIdentityReportResponse) instance).write(data);
             }
-            case 0x0704 -> {
-                ((PositionDataUpload) instance).write(data);
+            case position_data_batch_upload -> {
+                ((PositionDataBatchUpload) instance).write(data);
             }
-            case 0x0705 -> {
+            case can_data_upload -> {
                 processor_canDataUpload.deProcess(data, processContext, (CanDataUpload) instance);
             }
-            case 0x0800 -> {
-                processor_multiMediaEventUpload.deProcess(data, processContext, (MultiMediaEventUpload) instance);
+            case multimedia_event_upload -> {
+                processor_multiMediaEventUpload.deProcess(data, processContext, (MultimediaEventUpload) instance);
             }
-            case 0x0801 -> {
-                ((MultiMediaDataUploadRequest) instance).write(data);
+            case multimedia_data_upload_request -> {
+                ((MultimediaDataUploadRequest) instance).write(data);
             }
-            case 0x8800 -> {
-                ((MultiMediaDataUploadResponse) instance).write(data);
+            case multimedia_data_upload_response -> {
+                ((MultimediaDataUploadResponse) instance).write(data);
             }
-            case 0x8801 -> {
+            case camera_take_photo_cmd_request -> {
                 processor_cameraTakePhotoCmdRequest.deProcess(data, processContext, (CameraTakePhotoCmdRequest) instance);
             }
-            case 0x0805 -> {
+            case camera_take_photo_cmd_response -> {
                 processor_cameraTakePhotoCmdResponse.deProcess(data, processContext, (CameraTakePhotoCmdResponse) instance);
             }
-            case 0x8802 -> {
-                processor_storageMultiMediaDataFetchRequest.deProcess(data, processContext, (StorageMultiMediaDataFetchRequest) instance);
+            case storage_multimedia_data_fetch_request -> {
+                processor_storageMultiMediaDataFetchRequest.deProcess(data, processContext, (StorageMultimediaDataFetchRequest) instance);
             }
-            case 0x0802 -> {
-                ((StorageMultiMediaDataFetchResponse) instance).write(data);
+            case storage_multimedia_data_fetch_response -> {
+                ((StorageMultimediaDataFetchResponse) instance).write(data);
             }
-            case 0x8803 -> {
-                processor_storageMultiMediaDataUploadCmd.deProcess(data, processContext, (StorageMultiMediaDataUploadCmd) instance);
+            case storage_multimedia_data_upload_cmd -> {
+                processor_storageMultiMediaDataUploadCmd.deProcess(data, processContext, (StorageMultimediaDataUploadCmd) instance);
             }
-            case 0x8804 -> {
+            case recording_start_cmd -> {
                 processor_recordingStartCmd.deProcess(data, processContext, (RecordingStartCmd) instance);
             }
-            case 0x8805 -> {
-                processor_singleMultiMediaDataFetchUploadCmd.deProcess(data, processContext, (SingleMultiMediaDataFetchUploadCmd) instance);
+            case single_multimedia_data_fetch_upload_cmd -> {
+                processor_singleMultiMediaDataFetchUploadCmd.deProcess(data, processContext, (SingleMultimediaDataFetchUploadCmd) instance);
             }
-            case 0x8900 -> {
+            case data_down_stream -> {
                 ((DataDownStream) instance).write(data);
             }
-            case 0x0900 -> {
+            case data_up_stream -> {
                 ((DataUpStream) instance).write(data);
             }
-            case 0x0901 -> {
+            case data_compress_report -> {
                 ((DataCompressReport) instance).write(data);
             }
-            case 0x8A00 -> {
+            case platform_rsa -> {
                 processor_platformRsa.process(data, processContext);
             }
-            case 0x0A00 -> {
+            case terminal_rsa -> {
                 processor_terminalRsa.process(data, processContext);
             }
             default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);

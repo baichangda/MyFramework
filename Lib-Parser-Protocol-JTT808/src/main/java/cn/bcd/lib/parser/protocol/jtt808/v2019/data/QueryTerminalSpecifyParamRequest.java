@@ -5,7 +5,7 @@ import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 
-public class QueryTerminalParamRequest implements PacketBody {
+public class QueryTerminalSpecifyParamRequest implements PacketBody {
     //参数总数
     @F_num(type = NumType.uint8, var = 'n')
     public short total;

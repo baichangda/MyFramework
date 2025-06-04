@@ -90,6 +90,27 @@ public class PacketUtil {
         return res;
     }
 
+    /**
+     * 修正数据单元长度
+     *
+     * @param data 只包含一条数据的数据包
+     */
+    public static void fix_msgLength(byte[] data) {
+        int actualLen = data.length - 25;
+        data[22] = (byte) (actualLen >> 8);
+        data[23] = (byte) actualLen;
+    }
+
+    /**
+     * 修正数据单元长度
+     *
+     * @param data 只包含一条数据的数据包
+     */
+    public static void fix_msgLength(ByteBuf data) {
+        int actualLen = data.readableBytes() - 25;
+        data.setShort(22, actualLen);
+    }
+
 
     /**
      * 修正异或校验位

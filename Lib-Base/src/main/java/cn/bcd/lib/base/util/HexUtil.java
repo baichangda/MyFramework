@@ -43,6 +43,18 @@ public class HexUtil {
         return hexDump(new byte[]{b});
     }
 
+    public static String hexDump(short s) {
+        return hexDump(new byte[]{(byte) (s >> 8), (byte) s});
+    }
+
+    public static String hexDump(int i) {
+        return hexDump(new byte[]{(byte) (i >> 24), (byte) (i >> 16), (byte) (i >> 8), (byte) i});
+    }
+
+    public static String hexDump(long l) {
+        return hexDump(new byte[]{(byte) (l >> 56), (byte) (l >> 48), (byte) (l >> 40), (byte) (l >> 32), (byte) (l >> 24), (byte) (l >> 16), (byte) (l >> 8), (byte) l});
+    }
+
     public static String hexDump(byte[] array) {
         return hexDump(array, 0, array.length);
     }

@@ -1,10 +1,6 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
-import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.processor.Processor;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 
 import java.nio.charset.Charset;
 
@@ -52,40 +48,5 @@ public class TerminalRegisterRequest implements PacketBody {
         data.writeBytes(terminalId);
         data.writeByte(plateColor);
         data.writeCharSequence(plateNo, gbk);
-    }
-
-    public static void main(String[] args) {
-        Parser.enableGenerateClassFile();
-        Parser.enablePrintBuildLog();
-        Processor<Packet> processor = Parser.getProcessor(Packet.class);
-
-        TerminalRegisterRequest terminalRegisterRequest = new TerminalRegisterRequest();
-        terminalRegisterRequest.provinceId = 1;
-        terminalRegisterRequest.cityId = 1;
-        terminalRegisterRequest.manufacturerId = new byte[11];
-        terminalRegisterRequest.terminalType = new byte[30];
-        terminalRegisterRequest.terminalId = new byte[30];
-        terminalRegisterRequest.plateColor = 100;
-        terminalRegisterRequest.plateNo = "啊啊啊";
-
-        PacketHeader packetHeader = new PacketHeader();
-        packetHeader.msgId = 0x0100;
-        packetHeader.msgLen = 76 + terminalRegisterRequest.plateNo.getBytes(gbk).length;
-        packetHeader.sn = 1;
-
-        Packet packet = new Packet();
-        packet.startFlag = 0x7e;
-        packet.header = packetHeader;
-        packet.body = terminalRegisterRequest;
-        packet.code = 0;
-        packet.endFlag = 0x7e;
-
-        ByteBuf buffer = Unpooled.buffer();
-        processor.deProcess(buffer, null, packet);
-        System.out.println(ByteBufUtil.hexDump(buffer));
-
-
-        Packet process = processor.process(buffer, null);
-        System.out.println(process);
     }
 }

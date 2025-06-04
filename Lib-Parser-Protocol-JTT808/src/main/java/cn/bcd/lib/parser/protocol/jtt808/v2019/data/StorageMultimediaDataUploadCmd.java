@@ -7,7 +7,7 @@ import cn.bcd.lib.parser.base.anno.data.NumType;
 
 import java.util.Date;
 
-public class StorageMultiMediaDataUploadCmd implements PacketBody {
+public class StorageMultimediaDataUploadCmd implements PacketBody {
     //多媒体类型
     @F_num(type = NumType.uint8)
     public byte type;

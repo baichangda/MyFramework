@@ -4,7 +4,7 @@ import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 
-public class ServerSubPacketRequest implements PacketBody {
+public class SubPacketRequest implements PacketBody {
     //原始消息流水号
     @F_num(type = NumType.uint16)
     public int sn;

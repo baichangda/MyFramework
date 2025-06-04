@@ -11,7 +11,7 @@ import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-public class DriverIdentityReport implements PacketBody {
+public class DriverIdentityReportResponse implements PacketBody {
     //状态
     @F_num(type = NumType.uint8)
     public byte status;
@@ -34,21 +34,21 @@ public class DriverIdentityReport implements PacketBody {
     //驾驶员身份证号
     public String id;
 
-    public static DriverIdentityReport read(ByteBuf data) {
-        DriverIdentityReport driverIdentityReport = new DriverIdentityReport();
-        driverIdentityReport.status = data.readByte();
-        driverIdentityReport.time = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-        driverIdentityReport.res = data.readByte();
-        if (driverIdentityReport.res == 0) {
-            driverIdentityReport.nameLen = data.readUnsignedByte();
-            driverIdentityReport.name = data.readCharSequence(driverIdentityReport.nameLen, StandardCharsets.UTF_8).toString();
-            driverIdentityReport.code = FieldBuilder__F_string.read_highAddressAppend(data, 20, StandardCharsets.UTF_8);
-            driverIdentityReport.orgLen = data.readUnsignedByte();
-            driverIdentityReport.org = data.readCharSequence(driverIdentityReport.orgLen, StandardCharsets.UTF_8).toString();
-            driverIdentityReport.expired = FieldBuilder__F_string_bcd.read_noAppend(data, 4);
-            driverIdentityReport.id = FieldBuilder__F_string.read_highAddressAppend(data, 20, StandardCharsets.UTF_8);
+    public static DriverIdentityReportResponse read(ByteBuf data) {
+        DriverIdentityReportResponse driverIdentityReportResponse = new DriverIdentityReportResponse();
+        driverIdentityReportResponse.status = data.readByte();
+        driverIdentityReportResponse.time = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
+        driverIdentityReportResponse.res = data.readByte();
+        if (driverIdentityReportResponse.res == 0) {
+            driverIdentityReportResponse.nameLen = data.readUnsignedByte();
+            driverIdentityReportResponse.name = data.readCharSequence(driverIdentityReportResponse.nameLen, StandardCharsets.UTF_8).toString();
+            driverIdentityReportResponse.code = FieldBuilder__F_string.read_highAddressAppend(data, 20, StandardCharsets.UTF_8);
+            driverIdentityReportResponse.orgLen = data.readUnsignedByte();
+            driverIdentityReportResponse.org = data.readCharSequence(driverIdentityReportResponse.orgLen, StandardCharsets.UTF_8).toString();
+            driverIdentityReportResponse.expired = FieldBuilder__F_string_bcd.read_noAppend(data, 4);
+            driverIdentityReportResponse.id = FieldBuilder__F_string.read_highAddressAppend(data, 20, StandardCharsets.UTF_8);
         }
-        return driverIdentityReport;
+        return driverIdentityReportResponse;
     }
 
     public void write(ByteBuf data) {

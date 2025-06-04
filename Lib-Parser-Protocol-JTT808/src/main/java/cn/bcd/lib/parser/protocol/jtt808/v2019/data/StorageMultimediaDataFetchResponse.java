@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
 import io.netty.buffer.ByteBuf;
 
-public class StorageMultiMediaDataFetchResponse implements PacketBody{
+public class StorageMultimediaDataFetchResponse implements PacketBody{
     //应答流水号
     public int sn;
     //多媒体数据总项数
@@ -18,8 +18,8 @@ public class StorageMultiMediaDataFetchResponse implements PacketBody{
     //位置信息汇报
     public Position position;
 
-    public static StorageMultiMediaDataFetchResponse read(ByteBuf data,int len){
-        StorageMultiMediaDataFetchResponse storageMultiMediaDataFetchResponse=new StorageMultiMediaDataFetchResponse();
+    public static StorageMultimediaDataFetchResponse read(ByteBuf data, int len){
+        StorageMultimediaDataFetchResponse storageMultiMediaDataFetchResponse=new StorageMultimediaDataFetchResponse();
         storageMultiMediaDataFetchResponse.sn=data.readUnsignedShort();
         storageMultiMediaDataFetchResponse.num=data.readUnsignedShort();
         storageMultiMediaDataFetchResponse.id=data.readUnsignedInt();

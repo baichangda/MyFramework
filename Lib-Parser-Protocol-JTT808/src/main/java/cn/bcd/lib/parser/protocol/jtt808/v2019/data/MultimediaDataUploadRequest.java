@@ -5,7 +5,7 @@ import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 import io.netty.buffer.ByteBuf;
 
-public class MultiMediaDataUploadRequest implements PacketBody {
+public class MultimediaDataUploadRequest implements PacketBody {
     //多媒体数据id
     @F_num(type = NumType.uint32)
     public long id;
@@ -28,8 +28,8 @@ public class MultiMediaDataUploadRequest implements PacketBody {
     //多媒体数据包
     public byte[] data;
 
-    public static MultiMediaDataUploadRequest read(ByteBuf data, int len) {
-        MultiMediaDataUploadRequest multiMediaDataUploadRequest = new MultiMediaDataUploadRequest();
+    public static MultimediaDataUploadRequest read(ByteBuf data, int len) {
+        MultimediaDataUploadRequest multiMediaDataUploadRequest = new MultimediaDataUploadRequest();
         multiMediaDataUploadRequest.id = data.readUnsignedInt();
         multiMediaDataUploadRequest.type = data.readByte();
         multiMediaDataUploadRequest.code = data.readByte();

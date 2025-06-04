@@ -3,7 +3,7 @@ package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.data.NumType;
 
-public class MultiMediaEventUpload implements PacketBody {
+public class MultimediaEventUpload implements PacketBody {
     //多媒体数据id
     @F_num(type = NumType.uint32)
     public long id;
