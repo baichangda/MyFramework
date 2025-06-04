@@ -8,35 +8,35 @@ import cn.bcd.lib.parser.protocol.jtt808.v2019.data.*;
 import io.netty.buffer.ByteBuf;
 
 public class PacketBodyProcessor implements Processor<PacketBody> {
-    Processor<CommonResponse> processor_CommonResponse = Parser.getProcessor(CommonResponse.class);
-    Processor<QueryServerTimeResponse> processor_QueryServerTimeResponse = Parser.getProcessor(QueryServerTimeResponse.class);
-    Processor<ServerSubPacketRequest> processor_ServerSubPacketRequest = Parser.getProcessor(ServerSubPacketRequest.class);
-    Processor<TerminalAuthentication> processor_TerminalAuthentication = Parser.getProcessor(TerminalAuthentication.class);
-    Processor<SetTerminalParam> processor_SetTerminalParam = Parser.getProcessor(SetTerminalParam.class);
-    Processor<QueryTerminalParamRequest> processor_QueryTerminalParamRequest = Parser.getProcessor(QueryTerminalParamRequest.class);
-    Processor<QueryTerminalParamResponse> processor_QueryTerminalParamResponse = Parser.getProcessor(QueryTerminalParamResponse.class);
-    Processor<QueryTerminalPropResponse> processor_QueryTerminalPropResponse = Parser.getProcessor(QueryTerminalPropResponse.class);
-    Processor<IssuedTerminalUpgradeRequest> processor_IssuedTerminalUpgradeRequest = Parser.getProcessor(IssuedTerminalUpgradeRequest.class);
-    Processor<TerminalUpgradeResResponse> processor_TerminalUpgradeResResponse = Parser.getProcessor(TerminalUpgradeResResponse.class);
-    Processor<TempPositionFollow> processor_TempPositionFollow = Parser.getProcessor(TempPositionFollow.class);
-    Processor<ConfirmAlarmMsg> processor_ConfirmAlarmMsg = Parser.getProcessor(ConfirmAlarmMsg.class);
-    Processor<SetPhoneText> processor_SetPhoneText = Parser.getProcessor(SetPhoneText.class);
-    Processor<DeleteCircleArea> processor_DeleteCircleArea = Parser.getProcessor(DeleteCircleArea.class);
-    Processor<DeleteRectangleArea> processor_DeleteRectangleArea = Parser.getProcessor(DeleteRectangleArea.class);
-    Processor<DeletePolygonArea> processor_DeletePolygonArea = Parser.getProcessor(DeletePolygonArea.class);
-    Processor<DeletePath> processor_DeletePath = Parser.getProcessor(DeletePath.class);
-    Processor<QueryAreaOrPathRequest> processor_QueryAreaOrPathRequest = Parser.getProcessor(QueryAreaOrPathRequest.class);
-    Processor<WaybillReport> processor_WaybillReport = Parser.getProcessor(WaybillReport.class);
-    Processor<CanDataUpload> processor_CanDataUpload = Parser.getProcessor(CanDataUpload.class);
-    Processor<MultiMediaEventUpload> processor_MultiMediaEventUpload = Parser.getProcessor(MultiMediaEventUpload.class);
-    Processor<CameraTakePhotoCmdRequest> processor_CameraTakePhotoCmdRequest = Parser.getProcessor(CameraTakePhotoCmdRequest.class);
-    Processor<CameraTakePhotoCmdResponse> processor_CameraTakePhotoCmdResponse = Parser.getProcessor(CameraTakePhotoCmdResponse.class);
-    Processor<StorageMultiMediaDataFetchRequest> processor_StorageMultiMediaDataFetchRequest = Parser.getProcessor(StorageMultiMediaDataFetchRequest.class);
-    Processor<StorageMultiMediaDataUploadCmd> processor_StorageMultiMediaDataUploadCmd = Parser.getProcessor(StorageMultiMediaDataUploadCmd.class);
-    Processor<RecordingStartCmd> processor_RecordingStartCmd = Parser.getProcessor(RecordingStartCmd.class);
-    Processor<SingleMultiMediaDataFetchUploadCmd> processor_SingleMultiMediaDataFetchUploadCmd = Parser.getProcessor(SingleMultiMediaDataFetchUploadCmd.class);
-    Processor<PlatformRsa> processor_PlatformRsa = Parser.getProcessor(PlatformRsa.class);
-    Processor<TerminalRsa> processor_TerminalRsa = Parser.getProcessor(TerminalRsa.class);
+    Processor<CommonResponse> processor_commonResponse = Parser.getProcessor(CommonResponse.class);
+    Processor<QueryServerTimeResponse> processor_queryServerTimeResponse = Parser.getProcessor(QueryServerTimeResponse.class);
+    Processor<ServerSubPacketRequest> processor_serverSubPacketRequest = Parser.getProcessor(ServerSubPacketRequest.class);
+    Processor<TerminalAuthentication> processor_terminalAuthentication = Parser.getProcessor(TerminalAuthentication.class);
+    Processor<SetTerminalParam> processor_setTerminalParam = Parser.getProcessor(SetTerminalParam.class);
+    Processor<QueryTerminalParamRequest> processor_queryTerminalParamRequest = Parser.getProcessor(QueryTerminalParamRequest.class);
+    Processor<QueryTerminalParamResponse> processor_queryTerminalParamResponse = Parser.getProcessor(QueryTerminalParamResponse.class);
+    Processor<QueryTerminalPropResponse> processor_queryTerminalPropResponse = Parser.getProcessor(QueryTerminalPropResponse.class);
+    Processor<IssuedTerminalUpgradeRequest> processor_issuedTerminalUpgradeRequest = Parser.getProcessor(IssuedTerminalUpgradeRequest.class);
+    Processor<TerminalUpgradeResResponse> processor_terminalUpgradeResResponse = Parser.getProcessor(TerminalUpgradeResResponse.class);
+    Processor<TempPositionFollow> processor_tempPositionFollow = Parser.getProcessor(TempPositionFollow.class);
+    Processor<ConfirmAlarmMsg> processor_confirmAlarmMsg = Parser.getProcessor(ConfirmAlarmMsg.class);
+    Processor<SetPhoneText> processor_setPhoneText = Parser.getProcessor(SetPhoneText.class);
+    Processor<DeleteCircleArea> processor_deleteCircleArea = Parser.getProcessor(DeleteCircleArea.class);
+    Processor<DeleteRectangleArea> processor_deleteRectangleArea = Parser.getProcessor(DeleteRectangleArea.class);
+    Processor<DeletePolygonArea> processor_deletePolygonArea = Parser.getProcessor(DeletePolygonArea.class);
+    Processor<DeletePath> processor_deletePath = Parser.getProcessor(DeletePath.class);
+    Processor<QueryAreaOrPathRequest> processor_queryAreaOrPathRequest = Parser.getProcessor(QueryAreaOrPathRequest.class);
+    Processor<WaybillReport> processor_waybillReport = Parser.getProcessor(WaybillReport.class);
+    Processor<CanDataUpload> processor_canDataUpload = Parser.getProcessor(CanDataUpload.class);
+    Processor<MultiMediaEventUpload> processor_multiMediaEventUpload = Parser.getProcessor(MultiMediaEventUpload.class);
+    Processor<CameraTakePhotoCmdRequest> processor_cameraTakePhotoCmdRequest = Parser.getProcessor(CameraTakePhotoCmdRequest.class);
+    Processor<CameraTakePhotoCmdResponse> processor_cameraTakePhotoCmdResponse = Parser.getProcessor(CameraTakePhotoCmdResponse.class);
+    Processor<StorageMultiMediaDataFetchRequest> processor_storageMultiMediaDataFetchRequest = Parser.getProcessor(StorageMultiMediaDataFetchRequest.class);
+    Processor<StorageMultiMediaDataUploadCmd> processor_storageMultiMediaDataUploadCmd = Parser.getProcessor(StorageMultiMediaDataUploadCmd.class);
+    Processor<RecordingStartCmd> processor_recordingStartCmd = Parser.getProcessor(RecordingStartCmd.class);
+    Processor<SingleMultiMediaDataFetchUploadCmd> processor_singleMultiMediaDataFetchUploadCmd = Parser.getProcessor(SingleMultiMediaDataFetchUploadCmd.class);
+    Processor<PlatformRsa> processor_platformRsa = Parser.getProcessor(PlatformRsa.class);
+    Processor<TerminalRsa> processor_terminalRsa = Parser.getProcessor(TerminalRsa.class);
 
 
     @Override
@@ -45,16 +45,16 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
         PacketBody packetBody;
         switch (packet.header.msgId) {
             case 0x0001,0x8001 -> {
-                packetBody = processor_CommonResponse.process(data, processContext);
+                packetBody = processor_commonResponse.process(data, processContext);
             }
             case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
                 packetBody = null;
             }
             case 0x8004 -> {
-                packetBody = processor_QueryServerTimeResponse.process(data, processContext);
+                packetBody = processor_queryServerTimeResponse.process(data, processContext);
             }
             case 0x8003, 0x0005 -> {
-                packetBody = processor_ServerSubPacketRequest.process(data, processContext);
+                packetBody = processor_serverSubPacketRequest.process(data, processContext);
             }
             case 0x0100 -> {
                 packetBody = TerminalRegisterRequest.read(data, packet.header.msgLen);
@@ -63,28 +63,28 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = TerminalRegisterResponse.read(data, packet.header.msgLen);
             }
             case 0x0102 -> {
-                packetBody = processor_TerminalAuthentication.process(data, processContext);
+                packetBody = processor_terminalAuthentication.process(data, processContext);
             }
             case 0x8103 -> {
-                packetBody = processor_SetTerminalParam.process(data, processContext);
+                packetBody = processor_setTerminalParam.process(data, processContext);
             }
             case 0x8106 -> {
-                packetBody = processor_QueryTerminalParamRequest.process(data, processContext);
+                packetBody = processor_queryTerminalParamRequest.process(data, processContext);
             }
             case 0x0104 -> {
-                packetBody = processor_QueryTerminalParamResponse.process(data, processContext);
+                packetBody = processor_queryTerminalParamResponse.process(data, processContext);
             }
             case 0x8105 -> {
                 packetBody = TerminalControl.read(data, packet.header.msgLen);
             }
             case 0x0107 -> {
-                packetBody = processor_QueryTerminalPropResponse.process(data, processContext);
+                packetBody = processor_queryTerminalPropResponse.process(data, processContext);
             }
             case 0x8108 -> {
-                packetBody = processor_IssuedTerminalUpgradeRequest.process(data, processContext);
+                packetBody = processor_issuedTerminalUpgradeRequest.process(data, processContext);
             }
             case 0x0108 -> {
-                packetBody = processor_TerminalUpgradeResResponse.process(data, processContext);
+                packetBody = processor_terminalUpgradeResResponse.process(data, processContext);
             }
             case 0x0200 -> {
                 packetBody = Position.read(data, packet.header.msgLen);
@@ -93,10 +93,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = QueryPositionResponse.read(data, packet.header.msgLen);
             }
             case 0x8202 -> {
-                packetBody = processor_TempPositionFollow.process(data, processContext);
+                packetBody = processor_tempPositionFollow.process(data, processContext);
             }
             case 0x8203 -> {
-                packetBody = processor_ConfirmAlarmMsg.process(data, processContext);
+                packetBody = processor_confirmAlarmMsg.process(data, processContext);
             }
             case 0x8300 -> {
                 packetBody = TextInfoIssued.read(data, packet.header.msgLen);
@@ -105,7 +105,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = PhoneCallback.read(data, packet.header.msgLen);
             }
             case 0x8401 -> {
-                packetBody = processor_SetPhoneText.process(data, processContext);
+                packetBody = processor_setPhoneText.process(data, processContext);
             }
             case 0x8500 -> {
                 packetBody = VehicleControlRequest.read(data);
@@ -117,28 +117,28 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = SetCircleArea.read(data);
             }
             case 0x8601 -> {
-                packetBody = processor_DeleteCircleArea.process(data, processContext);
+                packetBody = processor_deleteCircleArea.process(data, processContext);
             }
             case 0x8602 -> {
                 packetBody = SetRectangleArea.read(data);
             }
             case 0x8603 -> {
-                packetBody = processor_DeleteRectangleArea.process(data, processContext);
+                packetBody = processor_deleteRectangleArea.process(data, processContext);
             }
             case 0x8604 -> {
                 packetBody = SetPolygonArea.read(data);
             }
             case 0x8605 -> {
-                packetBody = processor_DeletePolygonArea.process(data, processContext);
+                packetBody = processor_deletePolygonArea.process(data, processContext);
             }
             case 0x8606 -> {
                 packetBody = SetPath.read(data);
             }
             case 0x8607 -> {
-                packetBody = processor_DeletePath.process(data, processContext);
+                packetBody = processor_deletePath.process(data, processContext);
             }
             case 0x8608 -> {
-                packetBody = processor_QueryAreaOrPathRequest.process(data, processContext);
+                packetBody = processor_queryAreaOrPathRequest.process(data, processContext);
             }
             case 0x0608 -> {
                 packetBody = QueryAreaOrPathResponse.read(data);
@@ -150,7 +150,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = DrivingRecorderDownStream.read(data, packet.header.msgLen);
             }
             case 0x0701 -> {
-                packetBody = processor_WaybillReport.process(data, processContext);
+                packetBody = processor_waybillReport.process(data, processContext);
             }
             case 0x0702 -> {
                 packetBody = DriverIdentityReport.read(data);
@@ -159,10 +159,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = PositionDataUpload.read(data);
             }
             case 0x0705 -> {
-                packetBody = processor_CanDataUpload.process(data, processContext);
+                packetBody = processor_canDataUpload.process(data, processContext);
             }
             case 0x0800 -> {
-                packetBody = processor_MultiMediaEventUpload.process(data, processContext);
+                packetBody = processor_multiMediaEventUpload.process(data, processContext);
             }
             case 0x0801 -> {
                 packetBody = MultiMediaDataUploadRequest.read(data, packet.header.msgLen);
@@ -171,25 +171,25 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = MultiMediaDataUploadResponse.read(data, packet.header.msgLen);
             }
             case 0x8801 -> {
-                packetBody = processor_CameraTakePhotoCmdRequest.process(data, processContext);
+                packetBody = processor_cameraTakePhotoCmdRequest.process(data, processContext);
             }
             case 0x0805 -> {
-                packetBody = processor_CameraTakePhotoCmdResponse.process(data, processContext);
+                packetBody = processor_cameraTakePhotoCmdResponse.process(data, processContext);
             }
             case 0x8802 -> {
-                packetBody = processor_StorageMultiMediaDataFetchRequest.process(data, processContext);
+                packetBody = processor_storageMultiMediaDataFetchRequest.process(data, processContext);
             }
             case 0x0802 -> {
                 packetBody = StorageMultiMediaDataFetchResponse.read(data, packet.header.msgLen);
             }
             case 0x8803 -> {
-                packetBody = processor_StorageMultiMediaDataUploadCmd.process(data, processContext);
+                packetBody = processor_storageMultiMediaDataUploadCmd.process(data, processContext);
             }
             case 0x8804 -> {
-                packetBody = processor_RecordingStartCmd.process(data, processContext);
+                packetBody = processor_recordingStartCmd.process(data, processContext);
             }
             case 0x8805 -> {
-                packetBody = processor_SingleMultiMediaDataFetchUploadCmd.process(data, processContext);
+                packetBody = processor_singleMultiMediaDataFetchUploadCmd.process(data, processContext);
             }
             case 0x8900 -> {
                 packetBody = DataDownStream.read(data, packet.header.msgLen);
@@ -201,10 +201,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = DataCompressReport.read(data, packet.header.msgLen);
             }
             case 0x8A00 -> {
-                packetBody = processor_PlatformRsa.process(data, processContext);
+                packetBody = processor_platformRsa.process(data, processContext);
             }
             case 0x0A00 -> {
-                packetBody = processor_TerminalRsa.process(data, processContext);
+                packetBody = processor_terminalRsa.process(data, processContext);
             }
             default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);
         }
@@ -216,16 +216,16 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
         Packet packet = (Packet) processContext.instance;
         switch (packet.header.msgId) {
             case 0x0001,0x8001 -> {
-                processor_CommonResponse.deProcess(data, processContext, (CommonResponse) instance);
+                processor_commonResponse.deProcess(data, processContext, (CommonResponse) instance);
             }
             case 0x0002, 0x0004, 0x0003, 0x8104, 0x8107, 0x8201, 0x8204, 0x8702 -> {
 
             }
             case 0x8004 -> {
-                processor_QueryServerTimeResponse.deProcess(data, processContext, (QueryServerTimeResponse) instance);
+                processor_queryServerTimeResponse.deProcess(data, processContext, (QueryServerTimeResponse) instance);
             }
             case 0x8003, 0x0005 -> {
-                processor_ServerSubPacketRequest.deProcess(data, processContext, (ServerSubPacketRequest) instance);
+                processor_serverSubPacketRequest.deProcess(data, processContext, (ServerSubPacketRequest) instance);
             }
             case 0x0100 -> {
                 ((TerminalRegisterRequest) instance).write(data);
@@ -234,28 +234,28 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((TerminalRegisterResponse) instance).write(data);
             }
             case 0x0102 -> {
-                processor_TerminalAuthentication.deProcess(data, processContext, (TerminalAuthentication) instance);
+                processor_terminalAuthentication.deProcess(data, processContext, (TerminalAuthentication) instance);
             }
             case 0x8103 -> {
-                processor_SetTerminalParam.deProcess(data, processContext, (SetTerminalParam) instance);
+                processor_setTerminalParam.deProcess(data, processContext, (SetTerminalParam) instance);
             }
             case 0x8106 -> {
-                processor_QueryTerminalParamRequest.deProcess(data, processContext, (QueryTerminalParamRequest) instance);
+                processor_queryTerminalParamRequest.deProcess(data, processContext, (QueryTerminalParamRequest) instance);
             }
             case 0x0104 -> {
-                processor_QueryTerminalParamResponse.deProcess(data, processContext, (QueryTerminalParamResponse) instance);
+                processor_queryTerminalParamResponse.deProcess(data, processContext, (QueryTerminalParamResponse) instance);
             }
             case 0x8105 -> {
                 ((TerminalControl) instance).write(data);
             }
             case 0x0107 -> {
-                processor_QueryTerminalPropResponse.deProcess(data, processContext, (QueryTerminalPropResponse) instance);
+                processor_queryTerminalPropResponse.deProcess(data, processContext, (QueryTerminalPropResponse) instance);
             }
             case 0x8108 -> {
-                processor_IssuedTerminalUpgradeRequest.deProcess(data, processContext, (IssuedTerminalUpgradeRequest) instance);
+                processor_issuedTerminalUpgradeRequest.deProcess(data, processContext, (IssuedTerminalUpgradeRequest) instance);
             }
             case 0x0108 -> {
-                processor_TerminalUpgradeResResponse.deProcess(data, processContext, (TerminalUpgradeResResponse) instance);
+                processor_terminalUpgradeResResponse.deProcess(data, processContext, (TerminalUpgradeResResponse) instance);
             }
             case 0x0200 -> {
                 ((Position) instance).write(data);
@@ -264,10 +264,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((QueryPositionResponse) instance).write(data);
             }
             case 0x8202 -> {
-                processor_TempPositionFollow.deProcess(data, processContext, (TempPositionFollow) instance);
+                processor_tempPositionFollow.deProcess(data, processContext, (TempPositionFollow) instance);
             }
             case 0x8203 -> {
-                processor_ConfirmAlarmMsg.deProcess(data, processContext, (ConfirmAlarmMsg) instance);
+                processor_confirmAlarmMsg.deProcess(data, processContext, (ConfirmAlarmMsg) instance);
             }
             case 0x8300 -> {
                 ((TextInfoIssued) instance).write(data);
@@ -276,7 +276,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((PhoneCallback) instance).write(data);
             }
             case 0x8401 -> {
-                processor_SetPhoneText.deProcess(data, processContext, (SetPhoneText) instance);
+                processor_setPhoneText.deProcess(data, processContext, (SetPhoneText) instance);
             }
             case 0x8500 -> {
                 ((VehicleControlRequest) instance).write(data);
@@ -288,28 +288,28 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((SetCircleArea) instance).write(data);
             }
             case 0x8601 -> {
-                processor_DeleteCircleArea.deProcess(data, processContext, (DeleteCircleArea) instance);
+                processor_deleteCircleArea.deProcess(data, processContext, (DeleteCircleArea) instance);
             }
             case 0x8602 -> {
                 ((SetRectangleArea) instance).write(data);
             }
             case 0x8603 -> {
-                processor_DeleteRectangleArea.deProcess(data, processContext, (DeleteRectangleArea) instance);
+                processor_deleteRectangleArea.deProcess(data, processContext, (DeleteRectangleArea) instance);
             }
             case 0x8604 -> {
                 ((SetPolygonArea) instance).write(data);
             }
             case 0x8605 -> {
-                processor_DeletePolygonArea.deProcess(data, processContext, (DeletePolygonArea) instance);
+                processor_deletePolygonArea.deProcess(data, processContext, (DeletePolygonArea) instance);
             }
             case 0x8606 -> {
                 ((SetPath) instance).write(data);
             }
             case 0x8607 -> {
-                processor_DeletePath.deProcess(data, processContext, (DeletePath) instance);
+                processor_deletePath.deProcess(data, processContext, (DeletePath) instance);
             }
             case 0x8608 -> {
-                processor_QueryAreaOrPathRequest.deProcess(data, processContext, (QueryAreaOrPathRequest) instance);
+                processor_queryAreaOrPathRequest.deProcess(data, processContext, (QueryAreaOrPathRequest) instance);
             }
             case 0x0608 -> {
                 ((QueryAreaOrPathResponse) instance).write(data);
@@ -321,7 +321,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((DrivingRecorderDownStream) instance).write(data);
             }
             case 0x0701 -> {
-                processor_WaybillReport.deProcess(data, processContext, (WaybillReport) instance);
+                processor_waybillReport.deProcess(data, processContext, (WaybillReport) instance);
             }
             case 0x0702 -> {
                 ((DriverIdentityReport) instance).write(data);
@@ -330,10 +330,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((PositionDataUpload) instance).write(data);
             }
             case 0x0705 -> {
-                processor_CanDataUpload.deProcess(data, processContext, (CanDataUpload) instance);
+                processor_canDataUpload.deProcess(data, processContext, (CanDataUpload) instance);
             }
             case 0x0800 -> {
-                processor_MultiMediaEventUpload.deProcess(data, processContext, (MultiMediaEventUpload) instance);
+                processor_multiMediaEventUpload.deProcess(data, processContext, (MultiMediaEventUpload) instance);
             }
             case 0x0801 -> {
                 ((MultiMediaDataUploadRequest) instance).write(data);
@@ -342,25 +342,25 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((MultiMediaDataUploadResponse) instance).write(data);
             }
             case 0x8801 -> {
-                processor_CameraTakePhotoCmdRequest.deProcess(data, processContext, (CameraTakePhotoCmdRequest) instance);
+                processor_cameraTakePhotoCmdRequest.deProcess(data, processContext, (CameraTakePhotoCmdRequest) instance);
             }
             case 0x0805 -> {
-                processor_CameraTakePhotoCmdResponse.deProcess(data, processContext, (CameraTakePhotoCmdResponse) instance);
+                processor_cameraTakePhotoCmdResponse.deProcess(data, processContext, (CameraTakePhotoCmdResponse) instance);
             }
             case 0x8802 -> {
-                processor_StorageMultiMediaDataFetchRequest.deProcess(data, processContext, (StorageMultiMediaDataFetchRequest) instance);
+                processor_storageMultiMediaDataFetchRequest.deProcess(data, processContext, (StorageMultiMediaDataFetchRequest) instance);
             }
             case 0x0802 -> {
                 ((StorageMultiMediaDataFetchResponse) instance).write(data);
             }
             case 0x8803 -> {
-                processor_StorageMultiMediaDataUploadCmd.deProcess(data, processContext, (StorageMultiMediaDataUploadCmd) instance);
+                processor_storageMultiMediaDataUploadCmd.deProcess(data, processContext, (StorageMultiMediaDataUploadCmd) instance);
             }
             case 0x8804 -> {
-                processor_RecordingStartCmd.deProcess(data, processContext, (RecordingStartCmd) instance);
+                processor_recordingStartCmd.deProcess(data, processContext, (RecordingStartCmd) instance);
             }
             case 0x8805 -> {
-                processor_SingleMultiMediaDataFetchUploadCmd.deProcess(data, processContext, (SingleMultiMediaDataFetchUploadCmd) instance);
+                processor_singleMultiMediaDataFetchUploadCmd.deProcess(data, processContext, (SingleMultiMediaDataFetchUploadCmd) instance);
             }
             case 0x8900 -> {
                 ((DataDownStream) instance).write(data);
@@ -372,10 +372,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 ((DataCompressReport) instance).write(data);
             }
             case 0x8A00 -> {
-                processor_PlatformRsa.process(data, processContext);
+                processor_platformRsa.process(data, processContext);
             }
             case 0x0A00 -> {
-                processor_TerminalRsa.process(data, processContext);
+                processor_terminalRsa.process(data, processContext);
             }
             default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);
         }
