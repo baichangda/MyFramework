@@ -25,9 +25,6 @@ public class SubPacketProcessor implements Processor<SubPacket> {
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, SubPacket instance) {
         PacketHeader packetHeader = (PacketHeader) processContext.instance;
         if (packetHeader.subPacketFlag == 1) {
-            if (instance == null) {
-                throw BaseException.get("subPacketFlag[1] but subPacket is null");
-            }
             data.writeShort(instance.total);
             data.writeShort(instance.no);
         }
