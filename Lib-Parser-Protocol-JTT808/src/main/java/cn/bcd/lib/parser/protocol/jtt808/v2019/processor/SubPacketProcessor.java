@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.processor;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.jtt808.v2019.data.PacketHeader;
