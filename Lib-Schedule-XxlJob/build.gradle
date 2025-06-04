@@ -1,0 +1,10 @@
+apply plugin: "org.springframework.boot"
+apply plugin: "io.spring.dependency-management"
+
+dependencies {
+    api project(":Lib-Base")
+    api("org.springframework.boot:spring-boot-starter")
+    // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
+    api("com.xuxueli:xxl-job-core")
+}
+

@@ -9,6 +9,7 @@ dependencies {
     implementation project(":Lib-Microservice-Common")
     implementation project(":Lib-Database-Jdbc")
     implementation project(":Lib-Database-Mongo")
+    implementation project(":Lib-Schedule-XxlJob")
 
     //springboot cache支持
     implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -69,6 +70,5 @@ dependencies {
 
     implementation group: 'org.zeromq', name: 'jeromq'
 
-    // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
-    implementation("com.xuxueli:xxl-job-core")
+
 }
