@@ -91,5 +91,8 @@ dependencies {
         // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
         api("com.xuxueli:xxl-job-core:3.1.0")
 
+        // https://mvnrepository.com/artifact/org.apache.iotdb/iotdb-session
+        api("org.apache.iotdb:iotdb-session:2.0.3")
+
     }
 }

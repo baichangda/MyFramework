@@ -8,13 +8,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@ConditionalOnProperty(prefix = "lib.schedule.xxl-job.adminAddresses")
-@EnableConfigurationProperties(XxlJobProp.class)
+@ConditionalOnProperty(prefix = "lib.schedule.xxljob.adminAddresses")
+@EnableConfigurationProperties(XxljobProp.class)
 @Configuration
-public class XxlJobConfig {
-    static Logger logger= LoggerFactory.getLogger(XxlJobConfig.class);
+public class XxljobConfig {
+    static Logger logger= LoggerFactory.getLogger(XxljobConfig.class);
     @Bean
-    public XxlJobSpringExecutor xxlJobExecutor(XxlJobProp xxlJobProp) {
+    public XxlJobSpringExecutor xxlJobExecutor(XxljobProp xxlJobProp) {
         logger.info(">>>>>>>>>>> xxl-job config init.");
         XxlJobSpringExecutor xxlJobSpringExecutor = new XxlJobSpringExecutor();
         xxlJobSpringExecutor.setAdminAddresses(xxlJobProp.adminAddresses);

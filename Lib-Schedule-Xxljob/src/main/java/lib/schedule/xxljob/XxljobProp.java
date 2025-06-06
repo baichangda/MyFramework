@@ -4,8 +4,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "lib.schedule.xxl-job")
-public class XxlJobProp {
+@ConfigurationProperties(prefix = "lib.schedule.xxljob")
+public class XxljobProp {
     public String adminAddresses;
     public String accessToken;
     public int timeout;
