@@ -30,7 +30,7 @@ public abstract class ConsumeEntity<T> {
 
     public abstract void onMessage(T t) throws Exception;
 
-    public void init(T t) throws Exception {
+    public void init(T first) throws Exception {
 
     }
 
