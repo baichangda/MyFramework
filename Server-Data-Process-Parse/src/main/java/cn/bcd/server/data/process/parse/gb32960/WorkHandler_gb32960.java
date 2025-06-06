@@ -33,7 +33,7 @@ public class WorkHandler_gb32960 extends WorkHandler {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init(ConsumerRecord<String,byte[]> first) throws Exception {
         for (DataHandler_gb32960 handler : handlers) {
             try {
                 handler.init(id, context);

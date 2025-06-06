@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 /**
  * 本类中所有的方法为了保证数据并发安全，都是在executor中执行的、包括
  * {@link #WorkHandler(String)}
- * {@link #init()}
+ * {@link #init(ConsumerRecord)}
  * {@link #destroy()}
  * {@link #onMessage(ConsumerRecord)}
  * 同时、为了保证线程安全性、建议所有异步操作交给executor执行、但是不要阻塞、因为{@link #executor}只有一个线程
@@ -36,7 +36,6 @@ public abstract class WorkHandler {
     public long lastMessageTime;
 
     /**
-     *
      * @param id id
      */
     public WorkHandler(String id) {
@@ -55,7 +54,7 @@ public abstract class WorkHandler {
 
     public abstract void onMessage(ConsumerRecord<String, byte[]> msg) throws Exception;
 
-    public void init() throws Exception {
+    public void init(ConsumerRecord<String, byte[]> first) throws Exception {
 
     }
 

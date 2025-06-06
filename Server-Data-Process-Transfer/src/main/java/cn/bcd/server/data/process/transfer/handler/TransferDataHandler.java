@@ -32,7 +32,7 @@ public class TransferDataHandler extends WorkHandler {
     }
 
     @Override
-    public void init() {
+    public void init(ConsumerRecord<String,byte[]> first) {
         context.executor = executor;
         context.setVehicleData(VehicleDataInit.vin_vehicleData.get(id));
         for (KafkaDataHandler handler : kafkaDataHandlers) {

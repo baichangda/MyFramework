@@ -186,7 +186,7 @@ public abstract class ConsumeExecutorGroup<T> {
                 try {
                     ConsumeEntity<T> e = newEntity(id);
                     e.executor = executor;
-                    e.init();
+                    e.init(t);
                     if (monitor_period > 0) {
                         monitor_entityNum.increment();
                     }
@@ -201,7 +201,7 @@ public abstract class ConsumeExecutorGroup<T> {
             });
             if (entity != null) {
                 try {
-                    entity.onMessage(t);
+                    entity.onMessageInternal(t);
                 } catch (Exception ex) {
                     logger.error("consumeEntity onMessage error groupName[{}] id[{}]", groupName, id, ex);
                 }

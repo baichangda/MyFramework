@@ -23,14 +23,14 @@ public abstract class ConsumeEntity<T> {
     }
 
 
-    public void onMessageInternal(T t) throws Exception {
+    void onMessageInternal(T t) throws Exception {
         lastMessageTime = DateUtil.CacheSecond.current();
         onMessage(t);
     }
 
     public abstract void onMessage(T t) throws Exception;
 
-    public void init() throws Exception {
+    public void init(T t) throws Exception {
 
     }
 

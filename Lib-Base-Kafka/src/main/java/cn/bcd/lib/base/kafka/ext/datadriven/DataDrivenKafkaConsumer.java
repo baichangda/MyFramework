@@ -455,7 +455,7 @@ public abstract class DataDrivenKafkaConsumer {
                                 try {
                                     WorkHandler temp = newHandler(id);
                                     temp.afterConstruct(workExecutor, this);
-                                    temp.init();
+                                    temp.init(consumerRecord);
                                     if (monitor_period > 0) {
                                         monitor_workHandlerCount.increment();
                                     }

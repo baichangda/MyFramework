@@ -9,7 +9,7 @@ dependencies {
     implementation project(":Lib-Microservice-Common")
     implementation project(":Lib-Database-Jdbc")
     implementation project(":Lib-Database-Mongo")
-    implementation project(":Lib-Schedule-XxlJob")
+    implementation project(":Lib-Schedule-Xxljob")
 
     //springboot cache支持
     implementation("org.springframework.boot:spring-boot-starter-cache")
