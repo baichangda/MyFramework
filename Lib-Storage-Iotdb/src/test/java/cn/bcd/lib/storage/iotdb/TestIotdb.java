@@ -17,9 +17,10 @@ public class TestIotdb {
                 .password("root")
                 .maxSize(5)
                 .build();
+        long ts = 1749432478000L;
         sessionPool.insertRecord(
                 "root.vehicle.rawData.TEST0000000000001",
-                System.currentTimeMillis(),
+                ts,
                 List.of("hex"),
                 List.of(TSDataType.STRING),
                 List.of("2323"));
