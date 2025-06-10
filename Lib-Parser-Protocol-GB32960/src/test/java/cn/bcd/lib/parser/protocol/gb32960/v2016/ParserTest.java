@@ -34,7 +34,7 @@ public class ParserTest {
         byte[] bytes = ByteBufUtil.decodeHexDump(data);
         ByteBuf byteBuf = Unpooled.wrappedBuffer(bytes);
         Packet packet = Packet.read(byteBuf);
-        ((VehicleRunData)packet.data).vehicleBaseData.totalMileage=new NumVal_double(2,0);
+//        ((VehicleRunData)packet.data).vehicleBaseData.totalMileage=new NumVal_double(2,0);
         ByteBuf dest = Unpooled.buffer();
         packet.write(dest);
         logger.info(data.toUpperCase());
