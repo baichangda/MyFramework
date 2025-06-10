@@ -263,9 +263,18 @@ public class FieldBuilder__F_num extends FieldBuilder {
         //获取值类型
         String varNameNumValType = varNameField + "_numValType";
         String varNameNumValGetter = context.getNumValGetterVarName();
-        ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
-                varNameNumValType, varNameNumValGetter,
-                NumType.class.getName(), type.name(), varNameRawVal);
+
+        if (type == NumType.uint32) {
+            //特殊处理、避免调用参数为long的方法
+            ParseUtil.append(body, "final int {}={}.getType({}.{},(int){});\n",
+                    varNameNumValType, varNameNumValGetter,
+                    NumType.class.getName(), type.name(), varNameRawVal);
+        } else {
+            ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
+                    varNameNumValType, varNameNumValGetter,
+                    NumType.class.getName(), type.name(), varNameRawVal);
+        }
+
 
         String varNameExprVal = varNameField + "_exprVal";
         String varExprValDefineInIfCode;
@@ -381,7 +390,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
             }
         }
         final NumType type = anno.type();
-        ParseUtil.append(body,getWriteCode(type, bigEndian,valCode));
+        ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
     }
 
     public boolean buildDeParse_numVal(BuilderContext context) {
@@ -438,22 +447,29 @@ public class FieldBuilder__F_num extends FieldBuilder {
             ParseUtil.appendPutGlobalVar(context, anno.globalVar(), varNameRawVal);
         }
 
+        //判断最后write的类型
+        NumType type = anno.type();
+        String funcSuffix = switch (type) {
+            case uint8, int8, uint16, int16, uint24, int24, uint32, int32 -> "int";
+            case uint40, int40, uint48, int48, uint56, int56, uint64, int64 -> "long";
+            default -> null;
+        };
+
         //计算表达式
         String varNameExprVal;
         if (anno.valExpr().isEmpty()) {
             varNameExprVal = varNameRawVal;
         } else {
+            varNameExprVal = varNameField + "_exprVal";
             String exprValCode;
             if (isFloat) {
                 exprValCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(anno.valExpr()), varNameRawVal);
             } else {
                 exprValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), varNameRawVal);
             }
-            varNameExprVal = varNameField + "_exprVal";
-            ParseUtil.append(body, "final {} {}=({}){};\n",
-                    rawValTypeName, varNameExprVal, rawValTypeName, exprValCode);
+            ParseUtil.append(body, "final {} {}=({}){};\n", funcSuffix, varNameExprVal, funcSuffix, exprValCode);
         }
-        NumType type = anno.type();
+
         //写入
         ParseUtil.append(body, getWriteCode(type, bigEndian, varNameExprVal));
 
@@ -461,11 +477,6 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         String varNameNumValGetter = context.getNumValGetterVarName();
 
-        String funcSuffix = switch (type) {
-            case uint8, int8, uint16, int16, uint24, int24, uint32, int32 -> "int";
-            case uint40, int40, uint48, int48, uint56, int56, uint64, int64 -> "long";
-            default -> null;
-        };
 
         String valCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), type.name(), varNameNumValType);
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));

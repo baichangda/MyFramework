@@ -8,7 +8,6 @@ public class DefaultNumValChecker extends NumValGetter {
     }
 
 
-
     @Override
     public int getType(NumType numType, int val) {
         return switch (numType) {
@@ -27,7 +26,7 @@ public class DefaultNumValChecker extends NumValGetter {
                 case 0xFFFFFE -> 2;
                 default -> 0;
             };
-            case uint32, int32 -> switch (val) {
+            case int32, uint32 -> switch (val) {
                 case 0xFFFFFFFF -> 1;
                 case 0xFFFFFFFE -> 2;
                 default -> 0;
@@ -88,14 +87,14 @@ public class DefaultNumValChecker extends NumValGetter {
                 case uint8, int8 -> 0xFF;
                 case uint16, int16 -> 0xFFFF;
                 case uint24, int24 -> 0xFFFFFF;
-                case uint32, int32 -> 0xFFFFFFFF;
+                case int32, uint32 -> 0xFFFFFFFF;
                 default -> 0;
             };
             case 2 -> switch (numType) {
                 case uint8, int8 -> 0xFE;
                 case uint16, int16 -> 0xFFFE;
                 case uint24, int24 -> 0xFFFFFE;
-                case uint32, int32 -> 0xFFFFFFFE;
+                case int32, uint32 -> 0xFFFFFFFE;
                 default -> 0;
             };
             default -> 0;
@@ -125,6 +124,6 @@ public class DefaultNumValChecker extends NumValGetter {
 
     public static void main(String[] args) {
         DefaultNumValChecker defaultNumValChecker = new DefaultNumValChecker();
-        System.out.println(defaultNumValChecker.getType(NumType.uint8, (byte) 0xFF));
+        System.out.println(defaultNumValChecker.getType(NumType.uint32, 0xFFFFFFFF));
     }
 }

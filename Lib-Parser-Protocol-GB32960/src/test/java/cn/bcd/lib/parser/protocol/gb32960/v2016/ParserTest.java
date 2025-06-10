@@ -2,8 +2,10 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
+import cn.bcd.lib.parser.base.anno.data.NumVal_double;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.VehicleRunData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -32,7 +34,7 @@ public class ParserTest {
         byte[] bytes = ByteBufUtil.decodeHexDump(data);
         ByteBuf byteBuf = Unpooled.wrappedBuffer(bytes);
         Packet packet = Packet.read(byteBuf);
-//        ((VehicleRunData)packet.data).vehicleBaseData.vehicleSpeed=new NumVal_float(0,(short)33.3);
+        ((VehicleRunData)packet.data).vehicleBaseData.totalMileage=new NumVal_double(2,0);
         ByteBuf dest = Unpooled.buffer();
         packet.write(dest);
         logger.info(data.toUpperCase());
