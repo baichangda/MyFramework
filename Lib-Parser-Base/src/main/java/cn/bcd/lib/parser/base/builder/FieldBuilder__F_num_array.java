@@ -297,9 +297,15 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         //获取值类型
         String varNameArrEleNumValType = varNameField + "_arrEleNumValType";
         String varNameNumValGetter = context.getNumValGetterVarName();
-        ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
-                varNameArrEleNumValType, varNameNumValGetter,
-                NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
+        if (singleType == NumType.uint32) {
+            ParseUtil.append(body, "final int {}={}.getType({}.{},(int){});\n",
+                    varNameArrEleNumValType, varNameNumValGetter,
+                    NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
+        }else{
+            ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
+                    varNameArrEleNumValType, varNameNumValGetter,
+                    NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
+        }
 
         //判断值类型
         ParseUtil.append(body, "if({}==0){\n", varNameArrEleNumValType);
@@ -445,6 +451,13 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "final {} {}={}.val();\n",
                 arrEleRawValTypeName, varNameArrEleRawVal, varNameArrEle);
 
+        //判断最后write的类型
+        String funcSuffix = switch (singleType) {
+            case uint8, int8, uint16, int16, uint24, int24, uint32, int32 -> "int";
+            case uint40, int40, uint48, int48, uint56, int56, uint64, int64 -> "long";
+            default -> null;
+        };
+
         //计算表达式
         String varNameArrEleExprVal;
         if (singleValExpr.isEmpty()) {
@@ -457,8 +470,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 arrEleExprValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(singleValExpr), varNameArrEleRawVal);
             }
             varNameArrEleExprVal = varNameField + "_arrEleExprVal";
-            ParseUtil.append(body, "final {} {}=({}){};\n",
-                    arrEleRawValTypeName, varNameArrEleExprVal, arrEleRawValTypeName, arrEleExprValCode);
+            ParseUtil.append(body, "final {} {}=({}){};\n", funcSuffix, varNameArrEleExprVal, funcSuffix, arrEleExprValCode);
         }
 
         //写入
@@ -473,11 +485,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         String varNameNumValGetter = context.getNumValGetterVarName();
 
-        String funcSuffix = switch (singleType) {
-            case uint8, int8, uint16, int16, uint24, int24, uint32, int32 -> "int";
-            case uint40, int40, uint48, int48, uint56, int56, uint64, int64 -> "long";
-            default -> null;
-        };
+
 
         String arrEleValCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), singleType.name(), varNameArrEleNumValType);
         //写入
