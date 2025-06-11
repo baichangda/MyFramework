@@ -22,9 +22,17 @@ public class ParamDataProcessor implements Processor<ParamData> {
         Object obj = processContext.instance;
         int num;
         if (obj instanceof ParamQueryResponse paramQueryResponse) {
-            num = paramQueryResponse.num;
+            if (paramQueryResponse.num.type() == 0) {
+                num = paramQueryResponse.num.val();
+            } else {
+                num = 0;
+            }
         } else if (obj instanceof ParamSetRequest paramSetRequest) {
-            num = paramSetRequest.num;
+            if (paramSetRequest.num.type() == 0) {
+                num = paramSetRequest.num.val();
+            } else {
+                num = 0;
+            }
         } else {
             throw BaseException.get("instance[{}] not support", obj.getClass().getName());
         }
