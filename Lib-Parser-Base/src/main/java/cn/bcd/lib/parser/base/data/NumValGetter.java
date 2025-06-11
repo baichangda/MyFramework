@@ -1,4 +1,4 @@
-package cn.bcd.lib.parser.base.anno.data;
+package cn.bcd.lib.parser.base.data;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;

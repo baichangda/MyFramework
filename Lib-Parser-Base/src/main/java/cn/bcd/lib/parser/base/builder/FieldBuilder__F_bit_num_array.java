@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.base.builder;
 
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
-import cn.bcd.lib.parser.base.anno.data.BitRemainingMode;
+import cn.bcd.lib.parser.base.data.BitRemainingMode;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;

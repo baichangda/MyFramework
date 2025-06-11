@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.anno.data.BitOrder;
-import cn.bcd.lib.parser.base.anno.data.BitRemainingMode;
+import cn.bcd.lib.parser.base.data.BitOrder;
+import cn.bcd.lib.parser.base.data.BitRemainingMode;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 
 import java.lang.annotation.ElementType;

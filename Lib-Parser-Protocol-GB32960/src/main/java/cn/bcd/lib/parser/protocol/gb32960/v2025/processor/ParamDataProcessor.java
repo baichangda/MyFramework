@@ -1,9 +1,9 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.processor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.parser.base.anno.data.DefaultNumValChecker;
-import cn.bcd.lib.parser.base.anno.data.NumType;
-import cn.bcd.lib.parser.base.anno.data.NumValGetter;
+import cn.bcd.lib.parser.base.data.DefaultNumValChecker;
+import cn.bcd.lib.parser.base.data.NumType;
+import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.ParamData;

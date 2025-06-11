@@ -1,6 +1,6 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.anno.data.StringAppendMode;
+import cn.bcd.lib.parser.base.data.StringAppendMode;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

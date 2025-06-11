@@ -1,6 +1,6 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.anno.data.*;
+import cn.bcd.lib.parser.base.data.*;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 
 import java.lang.annotation.ElementType;

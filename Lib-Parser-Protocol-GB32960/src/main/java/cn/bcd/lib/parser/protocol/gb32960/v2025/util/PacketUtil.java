@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.util;
 
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
+import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;

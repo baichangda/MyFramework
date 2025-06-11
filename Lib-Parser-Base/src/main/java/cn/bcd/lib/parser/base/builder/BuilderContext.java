@@ -1,9 +1,9 @@
 package cn.bcd.lib.parser.base.builder;
 
 import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.anno.data.BitOrder;
-import cn.bcd.lib.parser.base.anno.data.ByteOrder;
-import cn.bcd.lib.parser.base.anno.data.NumValGetter;
+import cn.bcd.lib.parser.base.data.BitOrder;
+import cn.bcd.lib.parser.base.data.ByteOrder;
+import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.*;

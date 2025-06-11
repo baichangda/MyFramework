@@ -2,10 +2,8 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.anno.data.NumVal_double;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.VehicleRunData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;

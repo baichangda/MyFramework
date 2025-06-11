@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
-import cn.bcd.lib.parser.base.anno.data.*;
+import cn.bcd.lib.parser.base.data.*;
 
 /**
  * 燃料电池数据

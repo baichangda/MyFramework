@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025;
 
 import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.anno.data.*;
+import cn.bcd.lib.parser.base.data.*;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.*;
 import io.netty.buffer.ByteBuf;

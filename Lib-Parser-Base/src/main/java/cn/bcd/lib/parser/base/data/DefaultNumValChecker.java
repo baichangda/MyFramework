@@ -1,4 +1,4 @@
-package cn.bcd.lib.parser.base.anno.data;
+package cn.bcd.lib.parser.base.data;
 
 public class DefaultNumValChecker extends NumValGetter {
     public final static DefaultNumValChecker instance = new DefaultNumValChecker();

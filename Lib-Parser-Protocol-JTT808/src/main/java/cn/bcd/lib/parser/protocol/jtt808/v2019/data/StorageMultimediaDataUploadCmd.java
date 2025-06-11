@@ -3,7 +3,7 @@ package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
 import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 import cn.bcd.lib.parser.base.anno.F_num;
-import cn.bcd.lib.parser.base.anno.data.NumType;
+import cn.bcd.lib.parser.base.data.NumType;
 
 import java.util.Date;
 

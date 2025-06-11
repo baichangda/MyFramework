@@ -2,7 +2,7 @@ package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.SingleThreadExecutor;
-import cn.bcd.lib.parser.base.anno.data.NumVal_byte;
+import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;

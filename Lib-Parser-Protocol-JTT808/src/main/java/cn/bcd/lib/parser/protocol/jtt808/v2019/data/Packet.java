@@ -3,7 +3,7 @@ package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 import cn.bcd.lib.parser.base.anno.F_bean;
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_num;
-import cn.bcd.lib.parser.base.anno.data.NumType;
+import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.protocol.jtt808.v2019.processor.PacketBodyProcessor;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;

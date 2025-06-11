@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.anno.data.ByteOrder;
-import cn.bcd.lib.parser.base.anno.data.DateTsMode;
+import cn.bcd.lib.parser.base.data.ByteOrder;
+import cn.bcd.lib.parser.base.data.DateTsMode;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

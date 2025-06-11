@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 
 import cn.bcd.lib.parser.base.anno.*;
-import cn.bcd.lib.parser.base.anno.data.NumType;
+import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.processor.VehicleLoginPackCodeProcessor;
 
 import java.util.Date;

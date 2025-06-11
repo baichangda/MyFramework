@@ -5,8 +5,8 @@ import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_string_bcd;
-import cn.bcd.lib.parser.base.anno.data.NumType;
-import cn.bcd.lib.parser.base.anno.data.StringAppendMode;
+import cn.bcd.lib.parser.base.data.NumType;
+import cn.bcd.lib.parser.base.data.StringAppendMode;
 import cn.bcd.lib.parser.protocol.jtt808.v2019.processor.SubPacketProcessor;
 
 public class PacketHeader {
