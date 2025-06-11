@@ -46,7 +46,7 @@ public class ParserTest {
         vehicleRunData.vehicleBaseData = vehicleBaseData;
 
         VehicleMotorData vehicleMotorData = new VehicleMotorData();
-        vehicleMotorData.num = 1;
+        vehicleMotorData.num = new NumVal_short(0, (short) 1);
         MotorData motorData = new MotorData();
         motorData.no = 1;
         motorData.status = new NumVal_byte(0, (byte) 1);
@@ -83,25 +83,24 @@ public class ParserTest {
         VehicleAlarmData vehicleAlarmData = new VehicleAlarmData();
         vehicleAlarmData.maxAlarmLevel = new NumVal_byte(0, (byte) 1);
         vehicleAlarmData.alarmFlag = 1;
-        vehicleAlarmData.chargeBadNum = 2;
+        vehicleAlarmData.chargeBadNum = new NumVal_short(0, (short) 2);
         vehicleAlarmData.chargeBadCodes = new long[]{100, 112};
-        vehicleAlarmData.driverBadNum = 3;
+        vehicleAlarmData.driverBadNum = new NumVal_short(0, (short) 3);
         vehicleAlarmData.driverBadCodes = new long[]{111, 222, 333};
-        vehicleAlarmData.engineBadNum = 2;
-        vehicleAlarmData.engineBadCodes = new long[]{156, 166};
-        vehicleAlarmData.otherBadNum = 2;
+        vehicleAlarmData.engineBadNum = new NumVal_short(1, (short) 2);
+        vehicleAlarmData.otherBadNum = new NumVal_short(0, (short) 2);
         vehicleAlarmData.otherBadCodes = new long[]{66, 77};
-        vehicleAlarmData.commonBadNum = 1;
+        vehicleAlarmData.commonBadNum = new NumVal_short(0, (short) 1);
         vehicleAlarmData.commonBadCodes = new int[]{99};
         vehicleRunData.vehicleAlarmData = vehicleAlarmData;
 
         VehicleBatteryMinVoltageData vehicleBatteryMinVoltageData = new VehicleBatteryMinVoltageData();
-        vehicleBatteryMinVoltageData.num = 1;
+        vehicleBatteryMinVoltageData.num = new NumVal_byte(0, (byte) 1);
         BatteryMinVoltageData batteryMinVoltageData = new BatteryMinVoltageData();
         batteryMinVoltageData.no = new NumVal_byte(0, (byte) 1);
         batteryMinVoltageData.voltage = new NumVal_float(0, 12.3f);
         batteryMinVoltageData.current = new NumVal_float(0, 12.44f);
-        batteryMinVoltageData.total = 5;
+        batteryMinVoltageData.total = new NumVal_int(0, 5);
         batteryMinVoltageData.minVoltages = new NumVal_float[]{
                 new NumVal_float(0, 12.3f),
                 new NumVal_float(0, 12.4f),
@@ -113,10 +112,10 @@ public class ParserTest {
         vehicleRunData.vehicleBatteryMinVoltageData = vehicleBatteryMinVoltageData;
 
         VehicleBatteryTemperatureData vehicleBatteryTemperatureData = new VehicleBatteryTemperatureData();
-        vehicleBatteryTemperatureData.num = 1;
+        vehicleBatteryTemperatureData.num = new NumVal_byte(0, (byte) 1);
         BatteryTemperatureData batteryTemperatureData = new BatteryTemperatureData();
         batteryTemperatureData.no = new NumVal_byte(0, (byte) 1);
-        batteryTemperatureData.num = 2;
+        batteryTemperatureData.num = new NumVal_int(0, 2);
         batteryTemperatureData.currents = new NumVal_short[]{
                 new NumVal_short(1, (short) 12),
                 new NumVal_short(0, (short) 13)
@@ -125,46 +124,41 @@ public class ParserTest {
         vehicleRunData.vehicleBatteryTemperatureData = vehicleBatteryTemperatureData;
 
         VehicleFuelBatteryHeapData vehicleFuelBatteryHeapData = new VehicleFuelBatteryHeapData();
-        vehicleFuelBatteryHeapData.maxTemperature = 1;
+        vehicleFuelBatteryHeapData.num = new NumVal_short(0, (short) 1);
         FuelBatteryHeapData fuelBatteryHeapData = new FuelBatteryHeapData();
-        fuelBatteryHeapData.no = new NumVal_short(1, (short) 1);
-        fuelBatteryHeapData.voltage = new NumVal_float(1, (float) 1.1);
-        fuelBatteryHeapData.current = new NumVal_float(1, (float) 1.1);
-        fuelBatteryHeapData.hydrogenPressure = new NumVal_float(1, (float) 1.1);
-        fuelBatteryHeapData.airPressure = new NumVal_float(1, (float) 1.1);
-        fuelBatteryHeapData.airTemperature = new NumVal_short(1, (short) 2);
-        fuelBatteryHeapData.num = 3;
-        fuelBatteryHeapData.temperatures = new NumVal_short[]{
-                new NumVal_short(1, (short) 2),
-                new NumVal_short(2, (short) 2),
-                new NumVal_short(0, (short) 2)
-        };
+        fuelBatteryHeapData.no = new NumVal_short(0, (short) 1);
+        fuelBatteryHeapData.voltage = new NumVal_float(0, (float) 1.1);
+        fuelBatteryHeapData.current = new NumVal_float(0, (float) 1.1);
+        fuelBatteryHeapData.hydrogenPressure = new NumVal_float(0, (float) 1.1);
+        fuelBatteryHeapData.airPressure = new NumVal_float(0, (float) 1.1);
+        fuelBatteryHeapData.airTemperature = new NumVal_short(0, (short) 2);
+        fuelBatteryHeapData.num = new NumVal_int(0, 0);
         vehicleFuelBatteryHeapData.datas = new FuelBatteryHeapData[]{fuelBatteryHeapData};
         vehicleRunData.vehicleFuelBatteryHeapData = vehicleFuelBatteryHeapData;
 
         VehicleSupercapacitorData vehicleSupercapacitorData = new VehicleSupercapacitorData();
-        vehicleSupercapacitorData.no = new NumVal_short(1, (short) 2);
-        vehicleSupercapacitorData.voltage = new NumVal_float(1, 1.1f);
+        vehicleSupercapacitorData.no = new NumVal_short(0, (short) 2);
+        vehicleSupercapacitorData.voltage = new NumVal_float(0, 1.1f);
         vehicleSupercapacitorData.current = new NumVal_float(1, 1.1f);
-        vehicleSupercapacitorData.voltageNum = 1;
+        vehicleSupercapacitorData.voltageNum = new NumVal_int(0, 1);
         vehicleSupercapacitorData.voltages = new NumVal_float[]{new NumVal_float(1, 1.1f)};
-        vehicleSupercapacitorData.temperatureNum = 1;
+        vehicleSupercapacitorData.temperatureNum = new NumVal_int(0, 1);
         vehicleSupercapacitorData.temperatures = new NumVal_short[]{new NumVal_short(1, (short) 2)};
         vehicleRunData.vehicleSupercapacitorData = vehicleSupercapacitorData;
 
         VehicleSupercapacitorLimitValueData vehicleSupercapacitorLimitValueData = new VehicleSupercapacitorLimitValueData();
-        vehicleSupercapacitorLimitValueData.maxVoltageSystemNo = new NumVal_short(1, (short) 2);
-        vehicleSupercapacitorLimitValueData.maxVoltageCode = new NumVal_int(1, 2);
-        vehicleSupercapacitorLimitValueData.maxVoltage = new NumVal_float(1, 2.0f);
-        vehicleSupercapacitorLimitValueData.minVoltageSystemNo = new NumVal_short(1, (short) 2);
-        vehicleSupercapacitorLimitValueData.minVoltageCode = new NumVal_int(1, 2);
-        vehicleSupercapacitorLimitValueData.minVoltage = new NumVal_float(1, 2.0f);
-        vehicleSupercapacitorLimitValueData.maxTemperatureSystemNo = new NumVal_short(1, (short) 2);
-        vehicleSupercapacitorLimitValueData.maxTemperatureNo = new NumVal_int(1, 2);
-        vehicleSupercapacitorLimitValueData.maxTemperature = new NumVal_short(1, (short) 33);
-        vehicleSupercapacitorLimitValueData.minTemperatureSystemNo = new NumVal_short(1, (short) 2);
-        vehicleSupercapacitorLimitValueData.minTemperatureNo = new NumVal_int(1, 2);
-        vehicleSupercapacitorLimitValueData.minTemperature = new NumVal_short(1, (short) 44);
+        vehicleSupercapacitorLimitValueData.maxVoltageSystemNo = new NumVal_short(0, (short) 2);
+        vehicleSupercapacitorLimitValueData.maxVoltageCode = new NumVal_int(0, 2);
+        vehicleSupercapacitorLimitValueData.maxVoltage = new NumVal_float(0, 2.0f);
+        vehicleSupercapacitorLimitValueData.minVoltageSystemNo = new NumVal_short(0, (short) 2);
+        vehicleSupercapacitorLimitValueData.minVoltageCode = new NumVal_int(0, 2);
+        vehicleSupercapacitorLimitValueData.minVoltage = new NumVal_float(0, 2.0f);
+        vehicleSupercapacitorLimitValueData.maxTemperatureSystemNo = new NumVal_short(0, (short) 2);
+        vehicleSupercapacitorLimitValueData.maxTemperatureNo = new NumVal_int(0, 2);
+        vehicleSupercapacitorLimitValueData.maxTemperature = new NumVal_short(0, (short) 33);
+        vehicleSupercapacitorLimitValueData.minTemperatureSystemNo = new NumVal_short(0, (short) 2);
+        vehicleSupercapacitorLimitValueData.minTemperatureNo = new NumVal_int(0, 2);
+        vehicleSupercapacitorLimitValueData.minTemperature = new NumVal_short(0, (short) 44);
         vehicleRunData.vehicleSupercapacitorLimitValueData = vehicleSupercapacitorLimitValueData;
 
         VehicleSignatureData vehicleSignatureData = new VehicleSignatureData();

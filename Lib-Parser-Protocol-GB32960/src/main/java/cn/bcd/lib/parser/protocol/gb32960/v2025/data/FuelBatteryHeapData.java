@@ -4,6 +4,7 @@ import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.data.NumVal_float;
+import cn.bcd.lib.parser.base.data.NumVal_int;
 import cn.bcd.lib.parser.base.data.NumVal_short;
 
 public class FuelBatteryHeapData {
@@ -33,7 +34,7 @@ public class FuelBatteryHeapData {
 
     //冷却水出水口温度探针总数
     @F_num(type = NumType.uint16, var = 'n')
-    public int num;
+    public NumVal_int num;
 
     //冷却水出水口温度
     @F_num_array(singleType = NumType.uint8, lenExpr = "n", singleValExpr = "x-40")

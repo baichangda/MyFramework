@@ -5,6 +5,7 @@ import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.base.data.NumVal_float;
+import cn.bcd.lib.parser.base.data.NumVal_int;
 
 public class BatteryMinVoltageData {
     //动力蓄电池包号
@@ -21,7 +22,7 @@ public class BatteryMinVoltageData {
 
     //最小并联单元总数
     @F_num(type = NumType.uint16, var = 'n')
-    public int total;
+    public NumVal_int total;
 
     //本帧最小并联单元电压
     @F_num_array(singleType = NumType.uint16, lenExpr = "n", singleValExpr = "x/1000")
