@@ -11,13 +11,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class IotdbConfig {
 
+    public static SessionPool session;
+
     @Bean
     public SessionPool sessionPool(IotdbProp iotdbProp) {
-        return new SessionPool.Builder()
+        session = new SessionPool.Builder()
                 .nodeUrls(iotdbProp.urls)
                 .user(iotdbProp.user)
                 .password(iotdbProp.password)
                 .maxSize(iotdbProp.maxSize)
                 .build();
+        return session;
     }
 }
