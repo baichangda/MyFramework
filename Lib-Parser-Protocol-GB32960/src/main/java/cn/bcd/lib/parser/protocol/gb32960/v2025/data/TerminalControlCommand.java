@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.parser.base.data.DefaultNumValChecker;
+import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
@@ -48,13 +48,13 @@ public class TerminalControlCommand implements PacketData {
 
         public static Alarm from(byte[] data) {
             Alarm alarm = new Alarm();
-            alarm.level = DefaultNumValChecker.instance.getNumVal_byte(NumType.uint8, data[0]);
+            alarm.level = DefaultNumValGetter.instance.getNumVal_byte(NumType.uint8, data[0]);
             return alarm;
         }
 
         public byte[] to() {
             byte[] data = new byte[1];
-            data[0] = DefaultNumValChecker.instance.getVal(NumType.uint8, level);
+            data[0] = DefaultNumValGetter.instance.getVal(NumType.uint8, level);
             return data;
         }
     }

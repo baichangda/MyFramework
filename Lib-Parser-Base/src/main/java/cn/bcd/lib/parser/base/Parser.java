@@ -6,7 +6,7 @@ import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.anno.F_skip;
 import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
-import cn.bcd.lib.parser.base.data.DefaultNumValChecker;
+import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
@@ -531,7 +531,7 @@ public class Parser {
      * @return
      */
     public static <T> Processor<T> getProcessor(Class<T> clazz) {
-        return getProcessor(clazz, ByteOrder.Default, BitOrder.Default, DefaultNumValChecker.instance);
+        return getProcessor(clazz, ByteOrder.Default, BitOrder.Default, DefaultNumValGetter.instance);
     }
 
     /**

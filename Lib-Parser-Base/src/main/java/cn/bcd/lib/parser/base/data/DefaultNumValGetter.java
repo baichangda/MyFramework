@@ -1,9 +1,9 @@
 package cn.bcd.lib.parser.base.data;
 
-public class DefaultNumValChecker extends NumValGetter {
-    public final static DefaultNumValChecker instance = new DefaultNumValChecker();
+public class DefaultNumValGetter extends NumValGetter {
+    public final static DefaultNumValGetter instance = new DefaultNumValGetter();
 
-    private DefaultNumValChecker() {
+    private DefaultNumValGetter() {
 
     }
 
@@ -123,7 +123,7 @@ public class DefaultNumValChecker extends NumValGetter {
     }
 
     public static void main(String[] args) {
-        DefaultNumValChecker defaultNumValChecker = new DefaultNumValChecker();
-        System.out.println(defaultNumValChecker.getType(NumType.uint32, 0xFFFFFFFF));
+        DefaultNumValGetter defaultNumValGetter = new DefaultNumValGetter();
+        System.out.println(defaultNumValGetter.getType(NumType.uint32, 0xFFFFFFFF));
     }
 }

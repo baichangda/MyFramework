@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.processor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.parser.base.data.DefaultNumValChecker;
+import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 public class ParamDataProcessor implements Processor<ParamData> {
 
-    public final NumValGetter numValGetter = DefaultNumValChecker.instance;
+    public final NumValGetter numValGetter = DefaultNumValGetter.instance;
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext<?> processContext) {
@@ -39,7 +39,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();
-            DefaultNumValChecker.instance.getType(NumType.uint16, data.readUnsignedByte());
+            DefaultNumValGetter.instance.getType(NumType.uint16, data.readUnsignedByte());
             switch (paramId) {
                 case 0x01 ->
                         paramData.localStorageTimeCycle = numValGetter.getNumVal_int(NumType.uint16, data.readUnsignedShort());
