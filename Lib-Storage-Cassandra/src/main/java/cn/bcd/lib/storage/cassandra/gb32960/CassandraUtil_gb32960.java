@@ -2,6 +2,7 @@ package cn.bcd.lib.storage.cassandra.gb32960;
 
 import cn.bcd.lib.storage.cassandra.CassandraConfig;
 import cn.bcd.lib.storage.cassandra.PageResult;
+import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.google.common.base.Function;
 
@@ -32,35 +33,39 @@ public class CassandraUtil_gb32960 {
      * @param beginTime       开始时间 包含 必填
      * @param endTime         结束时间 不包含 必填
      * @param pagingState     分页状态器
-     * @param limit           限制返回最大条数
+     * @param pageSize        页大小
      * @param collectTimeDesc 是否时间采集时间降序
      * @return
      */
-    public static PageResult<RawData> page_rawData(String vin, Instant beginTime, Instant endTime, String pagingState, int limit, boolean collectTimeDesc) {
+    public static CompletableFuture<PageResult<RawData>> page_rawData(String vin, Instant beginTime, Instant endTime, String pagingState, int pageSize, boolean collectTimeDesc) {
         List<RawData> list = new ArrayList<>();
-        SimpleStatementBuilder statementBuilder = new SimpleStatementBuilder("select * from " + CassandraConfig.keySpace + ".raw_data where vin=? and collect_time>=? and collect_time<? order by collect_time " + (collectTimeDesc ? "desc" : "asc") + " limit ?")
-                .addPositionalValues(vin, beginTime, endTime, limit);
+        SimpleStatementBuilder statementBuilder = new SimpleStatementBuilder("select * from " + CassandraConfig.keySpace + ".raw_data where vin=? and collect_time>=? and collect_time<? order by collect_time " + (collectTimeDesc ? "desc" : "asc"))
+                .addPositionalValues(vin, beginTime, endTime);
+        statementBuilder.setPageSize(pageSize);
         if (pagingState != null) {
             statementBuilder.setPagingState(PagingState.fromString(pagingState).getRawPagingState());
         }
         SimpleStatement statement = statementBuilder.build();
-        ResultSet resultSet = CassandraConfig.session.execute(statement);
-        PagingState safePagingState = resultSet.getExecutionInfo().getSafePagingState();
-        for (Row row : resultSet) {
-            list.add(rowFunction.apply(row));
-        }
-        return new PageResult<>(list, safePagingState);
+        return CassandraConfig.session.executeAsync(statement).thenApply(resultSet -> {
+            for (Row row : resultSet.currentPage()) {
+                list.add(rowFunction.apply(row));
+            }
+            return new PageResult<>(list, resultSet.getExecutionInfo().getSafePagingState());
+        }).toCompletableFuture();
     }
 
-    public static RawData get_rawData(String vin, Instant collectTime, int type) {
+    public static CompletableFuture<RawData> get_rawData(String vin, Instant collectTime, int type) {
         SimpleStatement statement = new SimpleStatementBuilder("select * from " + CassandraConfig.keySpace + ".raw_data where vin=? and collect_time=? and type=?")
                 .addPositionalValues(vin, collectTime, type)
                 .build();
-        Row row = CassandraConfig.session.execute(statement).one();
-        if (row == null) {
-            return null;
-        }
-        return rowFunction.apply(row);
+        return CassandraConfig.session.executeAsync(statement).thenApply(resultSet -> {
+            Row one = resultSet.one();
+            if (one == null) {
+                return null;
+            } else {
+                return rowFunction.apply(one);
+            }
+        }).toCompletableFuture();
     }
 
     /**
@@ -73,7 +78,8 @@ public class CassandraUtil_gb32960 {
             return null;
         }
         PreparedStatement preparedStatement = CassandraConfig.session.prepare("insert into " + CassandraConfig.keySpace + ".raw_data(vin,collect_time,type,gw_receive_time,gw_send_time,parse_receive_time,hex) values(?,?,?,?,?,?,?)");
-        BatchStatementBuilder batchStatementBuilder = new BatchStatementBuilder(BatchType.LOGGED);
+        BatchStatementBuilder batchStatementBuilder = new BatchStatementBuilder(BatchType.UNLOGGED)
+                .setConsistencyLevel(ConsistencyLevel.ONE);
         for (RawData rawData : list) {
             BoundStatement boundStatement = preparedStatement.bind(rawData.vin, rawData.collectTime, rawData.type, rawData.gwReceiveTime, rawData.gwSendTime, rawData.parseReceiveTime, rawData.hex);
             batchStatementBuilder.addStatement(boundStatement);

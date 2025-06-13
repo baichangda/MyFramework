@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 
 public class TestCassandra_gb32960 {
@@ -30,14 +31,16 @@ public class TestCassandra_gb32960 {
                                 .build()
                 )
                 .withLocalDatacenter("datacenter1")
-                .addContactPoint(new InetSocketAddress("10.0.11.50", 9042))
+                .addContactPoint(new InetSocketAddress("127.0.0.1", 19042))
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
-            PageResult<RawData> pageResult = CassandraUtil_gb32960.page_rawData("TEST0000000000000", LocalDateTime.now().plusDays(-30).toInstant(DateZoneUtil.ZONE_OFFSET), Instant.now(), null, 10, true);
+            PageResult<RawData> pageResult = CassandraUtil_gb32960.page_rawData("TEST0000000000001", LocalDateTime.now().plusDays(-30).toInstant(DateZoneUtil.ZONE_OFFSET), Instant.now(), null, 10, true).get();
             for (RawData rawData : pageResult.list) {
                 logger.info(JsonUtil.toJson(rawData));
             }
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -50,12 +53,14 @@ public class TestCassandra_gb32960 {
                                 .build()
                 )
                 .withLocalDatacenter("datacenter1")
-                .addContactPoint(new InetSocketAddress("10.0.11.50", 9042))
+                .addContactPoint(new InetSocketAddress("127.0.0.1", 19042))
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
-            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000000", LocalDateTime.of(2025,5,27,11,0,30,154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1);
+            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000001", LocalDateTime.of(2025,5,27,11,0,30,154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1).get();
             logger.info(JsonUtil.toJson(rawData));
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -68,7 +73,7 @@ public class TestCassandra_gb32960 {
                                 .build()
                 )
                 .withLocalDatacenter("datacenter1")
-                .addContactPoint(new InetSocketAddress("10.0.11.50", 9042))
+                .addContactPoint(new InetSocketAddress("127.0.0.1", 19042))
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
