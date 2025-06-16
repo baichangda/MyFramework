@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class CassandraUtil_gb32960 {
 
-    static Function<Row, RawData> rowFunction = row -> {
+    static final Function<Row, RawData> rowFunction = row -> {
         RawData rawData = new RawData();
         rawData.vin = row.getString("vin");
         rawData.collectTime = row.getInstant("collect_time");
