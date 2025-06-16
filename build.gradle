@@ -94,6 +94,16 @@ subprojects {
             if (isLib) {
                 bootJar {
                     enabled = false
+                    /**
+                     如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
+                     apply plugin: "org.springframework.boot"
+                     apply plugin: "io.spring.dependency-management"
+                     然后在这里开启bootJar 、 同时设置manifest
+                     */
+//                    enabled = true
+//                    manifest {
+//                        attributes 'Start-Class': ''
+//                    }
                 }
                 bootRun {
                     enabled = false
