@@ -92,7 +92,7 @@ public @interface F_num_array {
     int singlePrecision() default -1;
 
     /**
-     * 检查值是否可用
+     * 检查数值元素值是否有效
      * 此属性为true时候、必须指定一个伴生字段public byte[] {field}__type、伴生字段值来源于{@link NumValGetter}
      */
     boolean singleCheckValid() default false;

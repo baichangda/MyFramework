@@ -77,7 +77,7 @@ public @interface F_num {
     int precision() default -1;
 
     /**
-     * 检查值是否可用
+     * 检查值是否有效
      * 此属性为true时候、必须指定一个伴生字段public byte {field}__type、伴生字段值来源于{@link NumValGetter}
      */
     boolean checkValid() default false;
