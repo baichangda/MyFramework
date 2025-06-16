@@ -7,7 +7,9 @@ import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
-import cn.bcd.lib.parser.base.data.*;
+import cn.bcd.lib.parser.base.data.BitOrder;
+import cn.bcd.lib.parser.base.data.ByteOrder;
+import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.Processor;
 import javassist.CannotCompileException;
 import javassist.CtClass;
@@ -234,12 +236,31 @@ public class ParseUtil {
         final String fieldLogBytesVarName = getFieldLogBytesVarName(context);
         append(context.method_body, "final byte[] {}=new byte[{}.readerIndex()-{}];\n", fieldLogBytesVarName, FieldBuilder.varNameByteBuf, fieldByteBufReaderIndexVarName);
         append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufReaderIndexVarName, fieldLogBytesVarName);
-        append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
-                Parser.class.getName(),
-                context.clazz.getName(),
-                context.field.getName(),
-                fieldLogBytesVarName,
-                boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()));
+        F_num f_num = context.field.getAnnotation(F_num.class);
+        F_num_array f_num_array = context.field.getAnnotation(F_num_array.class);
+        if ((f_num != null && f_num.checkValid()) || (f_num_array != null && f_num_array.singleCheckValid())) {
+            Field field__type;
+            try {
+                field__type = context.clazz.getField(context.field.getName() + "__type");
+            } catch (NoSuchFieldException e) {
+                throw BaseException.get(e);
+            }
+            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
+                    Parser.class.getName(),
+                    context.clazz.getName(),
+                    context.field.getName(),
+                    fieldLogBytesVarName,
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__type", field__type.getType())
+            );
+        } else {
+            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
+                    Parser.class.getName(),
+                    context.clazz.getName(),
+                    context.field.getName(),
+                    fieldLogBytesVarName,
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()));
+        }
     }
 
     public static void prependLogCode_deParse(final BuilderContext context) {
@@ -259,12 +280,30 @@ public class ParseUtil {
         final String fieldLogBytesVarName = getFieldLogBytesVarName(context);
         append(context.method_body, "final byte[] {}=new byte[{}.writerIndex()-{}];\n", fieldLogBytesVarName, FieldBuilder.varNameByteBuf, fieldByteBufWriterIndexVarName);
         append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufWriterIndexVarName, fieldLogBytesVarName);
-        append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
-                Parser.class.getName(),
-                context.clazz.getName(),
-                context.field.getName(),
-                boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
-                fieldLogBytesVarName);
+        F_num f_num = context.field.getAnnotation(F_num.class);
+        F_num_array f_num_array = context.field.getAnnotation(F_num_array.class);
+        if ((f_num != null && f_num.checkValid()) || (f_num_array != null && f_num_array.singleCheckValid())) {
+            Field field__type;
+            try {
+                field__type = context.clazz.getField(context.field.getName() + "__type");
+            } catch (NoSuchFieldException e) {
+                throw BaseException.get(e);
+            }
+            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
+                    Parser.class.getName(),
+                    context.clazz.getName(),
+                    context.field.getName(),
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
+                    fieldLogBytesVarName,
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__type", field__type.getType()));
+        } else {
+            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
+                    Parser.class.getName(),
+                    context.clazz.getName(),
+                    context.field.getName(),
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
+                    fieldLogBytesVarName);
+        }
     }
 
     public static String getFieldVarName(final BuilderContext context) {
@@ -822,33 +861,6 @@ public class ParseUtil {
         return "globalVar_" + var;
     }
 
-    public static String getNumValDefaultValue(BuilderContext context) {
-        Class<?> fieldType;
-        if (context.field.isAnnotationPresent(F_num.class)) {
-            fieldType = context.field.getType();
-        } else {
-            fieldType = context.field.getType().getComponentType();
-        }
-        String defaultValCode;
-        if (fieldType == NumVal_byte.class) {
-            defaultValCode = "(byte)0";
-        } else if (fieldType == NumVal_short.class) {
-            defaultValCode = "(short)0";
-        } else if (fieldType == NumVal_int.class) {
-            defaultValCode = "0";
-        } else if (fieldType == NumVal_long.class) {
-            defaultValCode = "0L";
-        } else if (fieldType == NumVal_float.class) {
-            defaultValCode = "0F";
-        } else if (fieldType == NumVal_double.class) {
-            defaultValCode = "0D";
-        } else {
-            notSupport(context, "fieldType[{}] not support", fieldType.getName());
-            defaultValCode = null;
-        }
-        return defaultValCode;
-    }
-
     public static Class<?> getNumFieldValType(BuilderContext context) {
         Class<?> fieldType;
         if (context.field.isAnnotationPresent(F_num.class)) {
@@ -860,18 +872,6 @@ public class ParseUtil {
         if (fieldType == byte.class || fieldType == short.class || fieldType == int.class
                 || fieldType == long.class || fieldType == float.class || fieldType == double.class) {
             valType = fieldType;
-        } else if (fieldType == NumVal_byte.class) {
-            valType = byte.class;
-        } else if (fieldType == NumVal_short.class) {
-            valType = short.class;
-        } else if (fieldType == NumVal_int.class) {
-            valType = int.class;
-        } else if (fieldType == NumVal_long.class) {
-            valType = long.class;
-        } else if (fieldType == NumVal_float.class) {
-            valType = float.class;
-        } else if (fieldType == NumVal_double.class) {
-            valType = double.class;
         } else {
             if (fieldType.isEnum()) {
                 valType = int.class;

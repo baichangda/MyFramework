@@ -5,7 +5,6 @@ import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_string;
 import cn.bcd.lib.parser.base.data.NumType;
-import cn.bcd.lib.parser.base.data.NumVal_byte;
 
 import java.util.Date;
 
@@ -27,6 +26,7 @@ public class PlatformLoginData implements PacketData {
     public String password;
 
     //加密规则
-    @F_num(type = NumType.uint8)
-    public NumVal_byte encode;
+    @F_num(type = NumType.uint8, checkValid = true)
+    public byte encode;
+    public byte encode__type;
 }

@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.base.builder;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.*;
 import cn.bcd.lib.parser.base.util.ParseUtil;
@@ -11,7 +12,7 @@ import java.lang.reflect.Field;
 public class FieldBuilder__F_num extends FieldBuilder {
     @Override
     public void buildParse(BuilderContext context) {
-        if (buildParse_numVal(context)) {
+        if (buildParse_checkValid(context)) {
             return;
         }
         final Class<F_num> annoClass = F_num.class;
@@ -137,22 +138,27 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
     }
 
-    public boolean buildParse_numVal(BuilderContext context) {
+    public boolean buildParse_checkValid(BuilderContext context) {
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
         final F_num anno = field.getAnnotation(annoClass);
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
-        final Class<?> fieldTypeClass = field.getType();
-        final String fieldValTypeName = ParseUtil.getNumFieldValType(context).getName();
-        final String fieldTypeName = fieldTypeClass.getName();
-
-        if (fieldTypeClass != NumVal_byte.class && fieldTypeClass != NumVal_short.class
-                && fieldTypeClass != NumVal_int.class && fieldTypeClass != NumVal_long.class
-                && fieldTypeClass != NumVal_float.class && fieldTypeClass != NumVal_double.class) {
+        if (!anno.checkValid()) {
             return false;
         }
+        //检查值类型的伴生字段
+        String fieldName__type = field.getName() + "__type";
+        try {
+            final Field field__type = context.clazz.getField(fieldName__type);
+            Class<?> field__typeType = field__type.getType();
+            if (field__typeType != byte.class) {
+                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type, field__typeType);
+            }
+        } catch (NoSuchFieldException e) {
+            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type);
+        }
 
-
+        final Class<?> fieldTypeClass = field.getType();
+        final String fieldTypeName = fieldTypeClass.getName();
         final StringBuilder body = context.method_body;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final String varNameField = ParseUtil.getFieldVarName(context);
@@ -162,7 +168,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         String rawValTypeName;
         switch (type) {
             case uint8 -> {
-                if (fieldValTypeName.equals("byte")) {
+                if (fieldTypeName.equals("byte")) {
                     funcName = varNameByteBuf + ".readByte()";
                     rawValTypeName = "byte";
                 } else {
@@ -171,7 +177,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
                 }
             }
             case uint16 -> {
-                if (fieldValTypeName.equals("short")) {
+                if (fieldTypeName.equals("short")) {
                     funcName = varNameByteBuf + ".readShort" + (bigEndian ? "" : "LE") + "()";
                     rawValTypeName = "short";
                 } else {
@@ -184,7 +190,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
                 rawValTypeName = "int";
             }
             case uint32 -> {
-                if (fieldValTypeName.equals("int")) {
+                if (fieldTypeName.equals("int")) {
                     funcName = varNameByteBuf + ".readInt" + (bigEndian ? "" : "LE") + "()";
                     rawValTypeName = "int";
                 } else {
@@ -266,11 +272,11 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         if (type == NumType.uint32) {
             //特殊处理、避免调用参数为long的方法
-            ParseUtil.append(body, "final int {}={}.getType({}.{},(int){});\n",
+            ParseUtil.append(body, "final byte {}={}.getType({}.{},(int){});\n",
                     varNameNumValType, varNameNumValGetter,
                     NumType.class.getName(), type.name(), varNameRawVal);
         } else {
-            ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
+            ParseUtil.append(body, "final byte {}={}.getType({}.{},{});\n",
                     varNameNumValType, varNameNumValGetter,
                     NumType.class.getName(), type.name(), varNameRawVal);
         }
@@ -280,32 +286,32 @@ public class FieldBuilder__F_num extends FieldBuilder {
         String varExprValDefineInIfCode;
         //如果定义了变量、则定义在if外面
         if (var != '0') {
-            ParseUtil.append(body, "final {} {};\n", fieldValTypeName, varNameExprVal);
+            ParseUtil.append(body, "final {} {};\n", fieldTypeName, varNameExprVal);
             varExprValDefineInIfCode = varNameExprVal;
         } else {
-            varExprValDefineInIfCode = ParseUtil.format("final {} {}", fieldValTypeName, varNameExprVal);
+            varExprValDefineInIfCode = ParseUtil.format("final {} {}", fieldTypeName, varNameExprVal);
         }
         //判断值类型
         ParseUtil.append(body, "if({}==0){\n", varNameNumValType);
 
         //计算表达式、格式化精度
         String rawValCode;
-        if (rawValTypeName.equals(fieldValTypeName)) {
+        if (rawValTypeName.equals(fieldTypeName)) {
             rawValCode = varNameRawVal;
         } else {
-            rawValCode = ParseUtil.format("({}){}", fieldValTypeName, varNameRawVal);
+            rawValCode = ParseUtil.format("({}){}", fieldTypeName, varNameRawVal);
         }
-        if ((fieldValTypeName.equals("float") || fieldValTypeName.equals("double")) && anno.precision() >= 0) {
+        if ((fieldTypeName.equals("float") || fieldTypeName.equals("double")) && anno.precision() >= 0) {
             ParseUtil.append(body, "{}=({}){}.round((double){},{});\n",
                     varExprValDefineInIfCode,
-                    fieldValTypeName,
+                    fieldTypeName,
                     ParseUtil.class.getName(),
                     ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode),
                     anno.precision());
         } else {
             ParseUtil.append(body, "{}=({}){};\n",
                     varExprValDefineInIfCode,
-                    fieldValTypeName,
+                    fieldTypeName,
                     ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode));
         }
 
@@ -319,13 +325,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
 
         //设置值
-        ParseUtil.append(body, "{}.{}=new {}(0,{});\n", varNameInstance, field.getName(), fieldTypeName, varNameExprVal);
-
+        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameExprVal);
 
         ParseUtil.append(body, "}else{\n");
 
         if (var != '0') {
-            ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldValTypeName);
+            ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldTypeName);
         }
 
         //添加全局变量
@@ -333,8 +338,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
             ParseUtil.appendPutGlobalVar(context, globalVar, "0");
         }
 
-        //设置值
-        ParseUtil.append(body, "{}.{}=new {}({},{});\n", varNameInstance, field.getName(), fieldTypeName, varNameNumValType, ParseUtil.getNumValDefaultValue(context));
+        //设置值类型
+        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, fieldName__type, varNameNumValType);
 
         ParseUtil.append(body, "}\n");
         return true;
@@ -343,7 +348,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
     @Override
     public void buildDeParse(BuilderContext context) {
-        if (buildDeParse_numVal(context)) {
+        if (buildDeParse_checkValid(context)) {
             return;
         }
         final Class<F_num> annoClass = F_num.class;
@@ -393,41 +398,39 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
     }
 
-    public boolean buildDeParse_numVal(BuilderContext context) {
+
+    public boolean buildDeParse_checkValid(BuilderContext context) {
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
-        final F_num anno = context.field.getAnnotation(annoClass);
+        final F_num anno = field.getAnnotation(annoClass);
+        if (!anno.checkValid()) {
+            return false;
+        }
+
+        String fieldName__type = field.getName() + "__type";
+
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
         final StringBuilder body = context.method_body;
         final String fieldName = field.getName();
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldTypeClass = field.getType();
+        String fieldTypeName = fieldTypeClass.getName();
 
         final char var = anno.var();
         final char globalVar = anno.globalVar();
 
-        if (fieldTypeClass != NumVal_byte.class && fieldTypeClass != NumVal_short.class
-                && fieldTypeClass != NumVal_int.class && fieldTypeClass != NumVal_long.class
-                && fieldTypeClass != NumVal_float.class && fieldTypeClass != NumVal_double.class) {
-            return false;
-        }
-
-
         //获取值类型
         String varNameNumValType = varNameField + "_numValType";
-        String rawValTypeName = ParseUtil.getNumFieldValType(context).getName();
-        ParseUtil.append(body, "final int {}={}.{}.type();\n",
-                varNameNumValType, FieldBuilder.varNameInstance, fieldName);
-        final boolean isFloat = rawValTypeName.equals("float") || rawValTypeName.equals("double");
+        ParseUtil.append(body, "final byte {}={}.{};\n", varNameNumValType, FieldBuilder.varNameInstance, fieldName__type);
+        final boolean isFloat = fieldTypeName.equals("float") || fieldTypeName.equals("double");
         String varNameRawVal = varNameField + "_rawVal";
         String varExprValDefineInIfCode;
         if (var != '0') {
-            ParseUtil.append(body, "final {} {};\n",
-                    rawValTypeName, varNameRawVal);
+            ParseUtil.append(body, "final {} {};\n", fieldTypeName, varNameRawVal);
             varExprValDefineInIfCode = varNameRawVal;
         } else {
-            varExprValDefineInIfCode = ParseUtil.format("final {} {}", rawValTypeName, varNameRawVal);
+            varExprValDefineInIfCode = ParseUtil.format("final {} {}", fieldTypeName, varNameRawVal);
         }
 
 
@@ -435,8 +438,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, "if({}==0){\n", varNameNumValType);
 
         //取出值
-        ParseUtil.append(body, "{}={}.{}.val();\n",
-                varExprValDefineInIfCode, FieldBuilder.varNameInstance, fieldName);
+        ParseUtil.append(body, "{}={}.{};\n", varExprValDefineInIfCode, FieldBuilder.varNameInstance, fieldName);
 
         //设置变量
         if (var != '0') {
@@ -482,7 +484,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
 
         if (var != '0') {
-            ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, rawValTypeName);
+            ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldTypeName);
         }
 
         //设置全局变量

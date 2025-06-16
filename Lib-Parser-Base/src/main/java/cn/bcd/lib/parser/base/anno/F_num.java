@@ -13,13 +13,6 @@ import java.lang.annotation.Target;
  * <p>
  * 适用如下字段类型
  * byte、short、int、long、float、double、枚举类
- * 还有如下基础类型包装类、用于对原始值需要进行无效异常判断、然后再进行偏移量倍率处理
- * {@link NumVal_byte}
- * {@link NumVal_short}
- * {@link NumVal_int}
- * {@link NumVal_long}
- * {@link NumVal_float}
- * {@link NumVal_double}
  * <p>
  * 枚举类
  * 仅支持整型数字
@@ -82,4 +75,10 @@ public @interface F_num {
      * 仅当字段类型为float、double时候、此属性才有效
      */
     int precision() default -1;
+
+    /**
+     * 检查值是否可用
+     * 此属性为true时候、必须指定一个伴生字段public byte {field}__type、伴生字段值来源于{@link NumValGetter}
+     */
+    boolean checkValid() default false;
 }

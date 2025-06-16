@@ -1,16 +1,16 @@
 package cn.bcd.lib.parser.base;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.anno.F_skip;
+import cn.bcd.lib.parser.base.builder.BuilderContext;
+import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
-import cn.bcd.lib.parser.base.builder.BuilderContext;
-import cn.bcd.lib.parser.base.builder.FieldBuilder;
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.BitBuf_reader_log;
@@ -146,7 +146,7 @@ public class Parser {
                     switch (type) {
                         case 1 -> {
                             byte[] content = (byte[]) args[0];
-                            logger.info("--parse skip field{}--[{}].[{}] skip len[{}] hex[{}]"
+                            logger.info("--parse skip field{}--[{}.{}] skip len[{}] hex[{}]"
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
                                     , fieldName
@@ -158,7 +158,7 @@ public class Parser {
                             BitBuf_reader_log.Log[] logs = (BitBuf_reader_log.Log[]) args[0];
                             Object val = args[1];
                             for (BitBuf_reader_log.Log log : logs) {
-                                logger.info("--parse bit field{}--[{}].[{}] val[{}] {}"
+                                logger.info("--parse bit field{}--[{}.{}] val[{}] {}"
                                         , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                         , clazz.getSimpleName()
                                         , fieldName
@@ -166,12 +166,28 @@ public class Parser {
                                         , log.msg());
                             }
                         }
+                        case 3 -> {
+                            byte[] content = (byte[]) args[0];
+                            Object val = args[1];
+                            Object valTypeContent = args[2];
+                            logger.info("--parse field{}--[{}.{}] {}[{}] {}[{}]->[{}]"
+                                    , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
+                                    , clazz.getSimpleName()
+                                    , fieldName
+                                    , fieldName + "__type"
+                                    , valTypeContent
+                                    , fieldName
+                                    , ByteBufUtil.hexDump(content).toUpperCase()
+                                    , val
+                            );
+                        }
                         default -> {
                             byte[] content = (byte[]) args[0];
                             Object val = args[1];
-                            logger.info("--parse field{}--[{}].[{}] [{}]->[{}]"
+                            logger.info("--parse field{}--[{}.{}] {}[{}]->[{}]"
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
+                                    , fieldName
                                     , fieldName
                                     , ByteBufUtil.hexDump(content).toUpperCase()
                                     , val
@@ -208,7 +224,7 @@ public class Parser {
                     switch (type) {
                         case 1 -> {
                             byte[] content = (byte[]) args[0];
-                            logger.info("--deParse skip field{}--[{}].[{}] append len[{}] [{}]"
+                            logger.info("--deParse skip field{}--[{}.{}] append len[{}] [{}]"
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
                                     , fieldName
@@ -219,7 +235,7 @@ public class Parser {
                             Object val = args[0];
                             BitBuf_writer_log.Log[] logs = (BitBuf_writer_log.Log[]) args[1];
                             for (BitBuf_writer_log.Log log : logs) {
-                                logger.info("--deParse bit field{}--[{}].[{}] val[{}] {}"
+                                logger.info("--deParse bit field{}--[{}.{}] val[{}] {}"
                                         , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                         , clazz.getSimpleName()
                                         , fieldName
@@ -227,12 +243,28 @@ public class Parser {
                                         , log.msg());
                             }
                         }
+                        case 3 -> {
+                            Object val = args[0];
+                            byte[] content = (byte[]) args[1];
+                            Object valTypeContent = args[2];
+                            logger.info("--deParse field{}--[{}.{}] {}[{}] {}[{}]->[{}]"
+                                    , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
+                                    , clazz.getSimpleName()
+                                    , fieldName
+                                    , fieldName + "__type"
+                                    , valTypeContent
+                                    , fieldName
+                                    , val
+                                    , ByteBufUtil.hexDump(content).toUpperCase()
+                            );
+                        }
                         default -> {
                             Object val = args[0];
                             byte[] content = (byte[]) args[1];
-                            logger.info("--deParse field{}--[{}].[{}] [{}]->[{}]"
+                            logger.info("--deParse field{}--[{}.{}] {}[{}]->[{}]"
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
+                                    , fieldName
                                     , fieldName
                                     , val
                                     , ByteBufUtil.hexDump(content).toUpperCase());

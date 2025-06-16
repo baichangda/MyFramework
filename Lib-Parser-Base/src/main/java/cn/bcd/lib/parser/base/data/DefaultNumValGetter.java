@@ -9,7 +9,7 @@ public class DefaultNumValGetter extends NumValGetter {
 
 
     @Override
-    public int getType(NumType numType, int val) {
+    public byte getType(NumType numType, int val) {
         return switch (numType) {
             case uint8, int8 -> switch (val & 0xff) {
                 case 0xFF -> 1;
@@ -36,7 +36,7 @@ public class DefaultNumValGetter extends NumValGetter {
     }
 
     @Override
-    public int getType(NumType numType, long val) {
+    public byte getType(NumType numType, long val) {
         switch (numType) {
             case uint40, int40 -> {
                 if (val == 0xFFFFFFFFFFL) {
@@ -81,7 +81,7 @@ public class DefaultNumValGetter extends NumValGetter {
     }
 
     @Override
-    public int getVal_int(NumType numType, int type) {
+    public int getVal_int(NumType numType, byte type) {
         return switch (type) {
             case 1 -> switch (numType) {
                 case uint8, int8 -> 0xFF;
@@ -102,7 +102,7 @@ public class DefaultNumValGetter extends NumValGetter {
     }
 
     @Override
-    public long getVal_long(NumType numType, int type) {
+    public long getVal_long(NumType numType, byte type) {
         return switch (type) {
             case 1 -> switch (numType) {
                 case uint40, int40 -> 0xFFFFFFFFFFL;

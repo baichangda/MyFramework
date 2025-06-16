@@ -1,8 +1,8 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.parser.base.data.*;
+import cn.bcd.lib.parser.base.anno.F_num_array;
+import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;
 
@@ -11,7 +11,7 @@ import java.lang.reflect.Field;
 public class FieldBuilder__F_num_array extends FieldBuilder {
     @Override
     public void buildParse(BuilderContext context) {
-        if (buildParse_numVal(context)) {
+        if (buildParse_checkValid(context)) {
             return;
         }
         final Field field = context.field;
@@ -152,21 +152,17 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "{}.{}={};\n", FieldBuilder.varNameInstance, field.getName(), arrVarName);
     }
 
-    public boolean buildParse_numVal(BuilderContext context) {
+    public boolean buildParse_checkValid(BuilderContext context) {
+        final Class<F_num_array> annoClass = F_num_array.class;
+        final F_num_array anno = context.field.getAnnotation(annoClass);
+        if(!anno.singleCheckValid()){
+            return false;
+        }
         final Field field = context.field;
         final Class<?> fieldTypeClass = field.getType();
         final Class<?> arrEleType = fieldTypeClass.componentType();
         final String arrEleTypeName = arrEleType.getName();
         final String arrEleValTypeName = ParseUtil.getNumFieldValType(context).getName();
-        final Class<F_num_array> annoClass = F_num_array.class;
-        final F_num_array anno = context.field.getAnnotation(annoClass);
-
-        if (arrEleType != NumVal_byte.class && arrEleType != NumVal_short.class
-                && arrEleType != NumVal_int.class && arrEleType != NumVal_long.class
-                && arrEleType != NumVal_float.class && arrEleType != NumVal_double.class) {
-            return false;
-        }
-
         final String arrLenRes;
         if (anno.len() == 0) {
             if (anno.lenExpr().isEmpty()) {
@@ -178,15 +174,29 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
             arrLenRes = String.valueOf(anno.len());
         }
 
+        //检查值类型的伴生字段
+        String fieldName__type = field.getName() + "__type";
+        try {
+            final Field field__type = context.clazz.getField(fieldName__type);
+            Class<?> field__typeType = field__type.getType();
+            if (field__typeType != byte[].class) {
+                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte[]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type, field__typeType);
+            }
+        } catch (NoSuchFieldException e) {
+            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type);
+        }
+
 
         final NumType singleType = anno.singleType();
         final String singleValExpr = anno.singleValExpr();
         final StringBuilder body = context.method_body;
         final String varNameField = ParseUtil.getFieldVarName(context);
         String varNameArr = varNameField + "_arr";
+        String varNameArr__type = varNameField + "_arr__type";
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
         final int singleSkip = anno.singleSkip();
         ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", arrEleTypeName, varNameArr, arrEleTypeName, arrLenRes);
+        ParseUtil.append(body, "final byte[] {}=new byte[{}];\n", varNameArr__type, arrLenRes);
         String funcName;
         String singleRawValTypeName;
         switch (singleType) {
@@ -295,15 +305,13 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
 
         //获取值类型
-        String varNameArrEleNumValType = varNameField + "_arrEleNumValType";
+        String varNameArrEleNumValType = varNameField + "_arrEleRawVal__type";
         String varNameNumValGetter = context.getNumValGetterVarName();
         if (singleType == NumType.uint32) {
-            ParseUtil.append(body, "final int {}={}.getType({}.{},(int){});\n",
-                    varNameArrEleNumValType, varNameNumValGetter,
+            ParseUtil.append(body, "final byte {}={}.getType({}.{},(int){});\n", varNameArrEleNumValType, varNameNumValGetter,
                     NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
-        }else{
-            ParseUtil.append(body, "final int {}={}.getType({}.{},{});\n",
-                    varNameArrEleNumValType, varNameNumValGetter,
+        } else {
+            ParseUtil.append(body, "final byte {}={}.getType({}.{},{});\n", varNameArrEleNumValType, varNameNumValGetter,
                     NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
         }
 
@@ -335,29 +343,31 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         }
 
         //设置值
-        ParseUtil.append(body, "{}[i]=new {}(0,{});\n", varNameArr, arrEleTypeName, varNameArrEleExprVal);
+        ParseUtil.append(body, "{}[i]={};\n", varNameArr, varNameArrEleExprVal);
 
         ParseUtil.append(body, "}else{\n");
 
-        //设置值
-        ParseUtil.append(body, "{}[i]=new {}({},{});\n", varNameArr, arrEleTypeName, varNameArrEleNumValType, ParseUtil.getNumValDefaultValue(context));
+        //设置值类型
+        ParseUtil.append(body, "{}[i]={};\n", varNameArr__type, varNameArrEleNumValType);
 
         ParseUtil.append(body, "}\n");
         ParseUtil.append(body, "}\n");
 
         ParseUtil.append(body, "{}.{}={};\n", FieldBuilder.varNameInstance, field.getName(), varNameArr);
-
+        ParseUtil.append(body, "{}.{}={};\n", FieldBuilder.varNameInstance, fieldName__type, varNameArr__type);
         return true;
     }
 
     @Override
     public void buildDeParse(BuilderContext context) {
-        if (buildDeParse_numVal(context)) {
+        if (buildDeParse_checkValid(context)) {
             return;
         }
+
         final Field field = context.field;
         final Class<F_num_array> annoClass = F_num_array.class;
         final F_num_array anno = context.field.getAnnotation(annoClass);
+
         final Class<?> fieldTypeClass = field.getType();
         final NumType singleType = anno.singleType();
         final int singleSkip = anno.singleSkip();
@@ -394,7 +404,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 }
             }
             final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
-            ParseUtil.append(body,FieldBuilder__F_num.getWriteCode(singleType, bigEndian,arrEleValCode));
+            ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(singleType, bigEndian, arrEleValCode));
             if (singleSkip > 0) {
                 ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkip);
             }
@@ -403,10 +413,14 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "}\n");
     }
 
-    public boolean buildDeParse_numVal(BuilderContext context) {
-        final Field field = context.field;
+    public boolean buildDeParse_checkValid(BuilderContext context) {
         final Class<F_num_array> annoClass = F_num_array.class;
         final F_num_array anno = context.field.getAnnotation(annoClass);
+        if (!anno.singleCheckValid()) {
+            return false;
+        }
+
+        final Field field = context.field;
         final Class<?> arrEleType = field.getType().componentType();
         final String arrEleTypeName = arrEleType.getName();
         final String arrEleRawValTypeName = ParseUtil.getNumFieldValType(context).getName();
@@ -419,37 +433,31 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
         final String varNameField = ParseUtil.getFieldVarName(context);
 
-
-        if (arrEleType != NumVal_byte.class && arrEleType != NumVal_short.class
-                && arrEleType != NumVal_int.class && arrEleType != NumVal_long.class
-                && arrEleType != NumVal_float.class && arrEleType != NumVal_double.class) {
-            return false;
-        }
+        String fieldName__type = field.getName() + "__type";
 
         ParseUtil.append(body, "if({}.{}!=null){\n", varNameInstance, fieldName);
 
 
         String varNameArr = varNameField + "_arr";
+        String varNameArr__type = varNameField + "_arr__type";
         ParseUtil.append(body, "final {}[] {}={}.{};\n", arrEleTypeName, varNameArr, varNameInstance, fieldName);
+        ParseUtil.append(body, "final byte[] {}={}.{};\n", varNameArr__type, varNameInstance, fieldName__type);
         ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", varNameArr);
 
         //取出数组值
         String varNameArrEle = varNameField + "_arrEle";
+        String varNameArrEle__type = varNameField + "_arrEle__type";
         ParseUtil.append(body, "final {} {}={}[i];\n", arrEleTypeName, varNameArrEle, varNameArr);
+        ParseUtil.append(body, "final byte {}={}[i];\n", varNameArrEle__type, varNameArr__type);
 
-        //获取值类型
-        String varNameArrEleNumValType = varNameField + "_arrEleNumValType";
-        ParseUtil.append(body, "final int {}={}.type();\n",
-                varNameArrEleNumValType, varNameArrEle);
         final boolean isFloat = arrEleRawValTypeName.equals("float") || arrEleRawValTypeName.equals("double");
 
         //判断值类型正常
-        ParseUtil.append(body, "if({}==0){\n", varNameArrEleNumValType);
+        ParseUtil.append(body, "if({}==0){\n", varNameArrEle__type);
 
         //取出值
         String varNameArrEleRawVal = varNameField + "_arrEleRawVal";
-        ParseUtil.append(body, "final {} {}={}.val();\n",
-                arrEleRawValTypeName, varNameArrEleRawVal, varNameArrEle);
+        ParseUtil.append(body, "final {} {}={};\n", arrEleRawValTypeName, varNameArrEleRawVal, varNameArrEle);
 
         //判断最后write的类型
         String funcSuffix = switch (singleType) {
@@ -485,9 +493,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         String varNameNumValGetter = context.getNumValGetterVarName();
 
-
-
-        String arrEleValCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), singleType.name(), varNameArrEleNumValType);
+        String arrEleValCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), singleType.name(), varNameArrEle__type);
         //写入
         ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(anno.singleType(), bigEndian, arrEleValCode));
 

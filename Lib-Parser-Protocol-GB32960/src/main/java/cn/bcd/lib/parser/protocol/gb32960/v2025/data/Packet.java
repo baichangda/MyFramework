@@ -6,7 +6,6 @@ import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.F_string;
 import cn.bcd.lib.parser.base.data.NumType;
-import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.processor.PacketDataProcessor;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
@@ -28,8 +27,10 @@ public class Packet {
     @F_string(len = 17)
     public String vin;
     //数据单元加密方式 21-22
-    @F_num(type = NumType.uint8)
-    public NumVal_byte encodeWay;
+    @F_num(type = NumType.uint8, checkValid = true)
+    public byte encodeWay;
+    public byte encodeWay__type;
+
     //数据单元长度 22-24
     @F_num(type = NumType.uint16)
     public int contentLength;

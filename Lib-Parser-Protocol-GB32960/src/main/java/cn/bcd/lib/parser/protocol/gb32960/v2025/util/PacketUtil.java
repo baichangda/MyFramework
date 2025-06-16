@@ -2,7 +2,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.util;
 
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
@@ -243,13 +242,13 @@ public class PacketUtil {
         platformLoginData.sn = sn;
         platformLoginData.username = username;
         platformLoginData.password = password;
-        platformLoginData.encode = new NumVal_byte(0, (byte) 1);
+        platformLoginData.encode = 1;
         Packet packet = new Packet();
         packet.header = new byte[]{0x24, 0x24};
         packet.flag = PacketFlag.platform_login_data;
         packet.replyFlag = 0xFE;
         packet.vin = vin;
-        packet.encodeWay = new NumVal_byte(0, (byte) 1);
+        packet.encodeWay = 1;
         packet.contentLength = 41;
         packet.data = platformLoginData;
         return packet;
@@ -272,7 +271,7 @@ public class PacketUtil {
         packet.flag = PacketFlag.platform_logout_data;
         packet.replyFlag = 0xFE;
         packet.vin = vin;
-        packet.encodeWay = new NumVal_byte(0, (byte) 1);
+        packet.encodeWay = 1;
         packet.contentLength = 8;
         packet.data = platformLogoutData;
         return packet;

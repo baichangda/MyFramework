@@ -11,15 +11,18 @@ import cn.bcd.lib.parser.base.data.NumVal_int;
  */
 public class VehicleEngineData {
     //发动机状态
-    @F_num(type = NumType.uint8)
-    public NumVal_byte status;
+    @F_num(type = NumType.uint8,checkValid = true)
+    public byte status;
+    public byte status__type;
 
     //曲轴转速
-    @F_num(type = NumType.uint16)
-    public NumVal_int speed;
+    @F_num(type = NumType.uint16,checkValid = true)
+    public int speed;
+    public byte speed__type;
 
     //燃料消耗率
-    @F_num(type = NumType.uint16, valExpr = "x/100")
-    public NumVal_float rate;
+    @F_num(type = NumType.uint16, valExpr = "x/100",checkValid = true)
+    public float rate;
+    public byte rate__type;
 
 }

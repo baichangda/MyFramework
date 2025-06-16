@@ -3,7 +3,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 import cn.bcd.lib.parser.base.anno.F_bean_list;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
-import cn.bcd.lib.parser.base.data.NumVal_short;
 
 
 /**
@@ -11,8 +10,9 @@ import cn.bcd.lib.parser.base.data.NumVal_short;
  */
 public class VehicleMotorData {
     //驱动电机个数
-    @F_num(type = NumType.uint8, var = 'a')
-    public NumVal_short num;
+    @F_num(type = NumType.uint8, var = 'a',checkValid = true)
+    public short num;
+    public byte num__type;
 
     //驱动电机总成信息列表
     @F_bean_list(listLenExpr = "a")
