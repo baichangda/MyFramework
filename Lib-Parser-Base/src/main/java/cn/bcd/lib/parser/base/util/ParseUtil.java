@@ -442,21 +442,21 @@ public class ParseUtil {
 
     public static long round(double d) {
         if (d > 0d) {
-            return Math.round(d);
-        } else if (d == 0d) {
-            return 0;
+            return (long) (d + 0.5);
+        } else if (d < 0d) {
+            return (long) (d - 0.5);
         } else {
-            return -Math.round(-d);
+            return 0;
         }
     }
 
     public static int round(float f) {
         if (f > 0d) {
-            return Math.round(f);
-        } else if (f == 0d) {
-            return 0;
+            return (int) (f + 0.5);
+        } else if (f < 0d) {
+            return (int) (f - 0.5);
         } else {
-            return -Math.round(-f);
+            return 0;
         }
     }
 

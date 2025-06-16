@@ -93,7 +93,7 @@ subprojects {
             //统一配置springboot应用的bootJar和bootRun
             if (isLib) {
                 bootJar {
-                    enabled = false
+                    enabled = true
                 }
                 bootRun {
                     enabled = false
