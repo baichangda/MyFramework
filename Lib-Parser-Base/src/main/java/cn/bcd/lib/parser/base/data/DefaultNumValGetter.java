@@ -1,5 +1,14 @@
 package cn.bcd.lib.parser.base.data;
 
+/**
+ * 默认数值获取器
+ * 目的是判断解析出来的原始值、是否正常
+ * 正常、则进行偏移量运算、否则直接标注值的异常类型
+ * 只针对数值类型
+ * 目前有如下几种异常情况
+ * 0xFF为异常值
+ * 0xFE为无效值
+ */
 public class DefaultNumValGetter extends NumValGetter {
     public final static DefaultNumValGetter instance = new DefaultNumValGetter();
 
