@@ -199,7 +199,7 @@ public class ParserTest {
         int threadNum = 1;
         logger.info("param threadNum[{}]", threadNum);
         int num = Integer.MAX_VALUE;
-        PerformanceUtil.testPerformance(ByteBufUtil.decodeHexDump(data), threadNum, num, Packet::read, (buf, instance) -> instance.write(buf), false);
+        PerformanceUtil.testPerformance(ByteBufUtil.decodeHexDump(data), threadNum, num, Packet::read, (buf, instance) -> instance.write(buf), true);
     }
 
 }
