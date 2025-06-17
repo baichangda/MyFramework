@@ -9,37 +9,37 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleSupercapacitorData {
     //超级电容管理系统号
-    @F_num(type = NumType.uint8,checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public short no;
-    public byte no__type;
+    public byte no__v;
 
     //超级电容总电压
-    @F_num(type = NumType.uint16, valExpr = "x/10",checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "x/10", checkVal = true)
     public float voltage;
-    public byte voltage__type;
+    public byte voltage__v;
 
     //超级电容总电流
-    @F_num(type = NumType.uint16, valExpr = "(x-30000)/10",checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "(x-30000)/10", checkVal = true)
     public float current;
-    public byte current__type;
+    public byte current__v;
 
     //超级电容单体总数
-    @F_num(type = NumType.uint16, var = 'm',checkValid = true)
+    @F_num(type = NumType.uint16, var = 'm', checkVal = true)
     public int voltageNum;
-    public byte voltageNum__type;
+    public byte voltageNum__v;
 
     //超级电容单体电压
-    @F_num_array(singleType = NumType.uint16, lenExpr = "m", singleValExpr = "x/1000",singleCheckValid = true)
+    @F_num_array(singleType = NumType.uint16, lenExpr = "m", singleValExpr = "x/1000", singleCheckVal = true)
     public float[] voltages;
-    public byte[] voltages__type;
+    public byte[] voltages__v;
 
     //超级电容温度探针总数
-    @F_num(type = NumType.uint16, var = 'n',checkValid = true)
+    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
     public int temperatureNum;
-    public byte temperatureNum__type;
+    public byte temperatureNum__v;
 
     //探针温度值
-    @F_num_array(singleType = NumType.uint8, lenExpr = "n", singleValExpr = "x-40",singleCheckValid = true)
+    @F_num_array(singleType = NumType.uint8, lenExpr = "n", singleValExpr = "x-40", singleCheckVal = true)
     public short[] temperatures;
-    public byte[] temperatures__type;
+    public byte[] temperatures__v;
 }

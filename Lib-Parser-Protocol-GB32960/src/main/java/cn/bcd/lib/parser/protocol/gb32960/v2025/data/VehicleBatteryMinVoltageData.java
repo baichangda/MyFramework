@@ -9,9 +9,9 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleBatteryMinVoltageData {
     //动力蓄电池包个数
-    @F_num(type = NumType.uint8,var = 'm',checkValid = true)
+    @F_num(type = NumType.uint8,var = 'm', checkVal = true)
     public byte num;
-    public byte num__type;
+    public byte num__v;
 
     //动力蓄电池最小并联单元电压信息列表
     @F_bean_list(listLenExpr = "m")

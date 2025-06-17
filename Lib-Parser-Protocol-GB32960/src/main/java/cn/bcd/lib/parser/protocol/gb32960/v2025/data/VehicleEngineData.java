@@ -8,7 +8,7 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleEngineData {
     //曲轴转速
-    @F_num(type = NumType.uint16, checkValid = true)
+    @F_num(type = NumType.uint16, checkVal = true)
     public int speed;
-    public byte speed__type;
+    public byte speed__v;
 }

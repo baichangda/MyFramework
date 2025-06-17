@@ -9,9 +9,9 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleStorageTemperatureData {
     //可充电储能子系统个数
-    @F_num(type = NumType.uint8, var = 'a',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'a', checkVal = true)
     public short num;
-    public byte num__type;
+    public byte num__v;
 
     //可充电储能子系统温度信息列表
     @F_bean_list(listLenExpr = "a")

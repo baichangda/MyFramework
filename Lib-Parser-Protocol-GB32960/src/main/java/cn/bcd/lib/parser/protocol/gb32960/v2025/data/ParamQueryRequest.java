@@ -10,9 +10,9 @@ import java.util.Date;
 public class ParamQueryRequest implements PacketData {
     @F_date_bytes_6
     public Date queryTime;
-    @F_num(type = NumType.uint8, var = 'n', checkValid = true)
+    @F_num(type = NumType.uint8, var = 'n', checkVal = true)
     public short num;
-    public byte num__type;
+    public byte num__v;
     @F_num_array(singleType = NumType.uint8, lenExpr = "n")
     public short[] paramIds;
 }

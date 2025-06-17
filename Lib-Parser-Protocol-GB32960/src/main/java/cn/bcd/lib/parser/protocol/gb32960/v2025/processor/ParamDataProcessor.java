@@ -22,13 +22,13 @@ public class ParamDataProcessor implements Processor<ParamData> {
         Object obj = processContext.instance;
         int num;
         if (obj instanceof ParamQueryResponse paramQueryResponse) {
-            if (paramQueryResponse.num__type == 0) {
+            if (paramQueryResponse.num__v == 0) {
                 num = paramQueryResponse.num;
             } else {
                 num = 0;
             }
         } else if (obj instanceof ParamSetRequest paramSetRequest) {
-            if (paramSetRequest.num__type == 0) {
+            if (paramSetRequest.num__v == 0) {
                 num = paramSetRequest.num;
             } else {
                 num = 0;
@@ -44,7 +44,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x01 -> {
                     int v = data.readUnsignedShort();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint16, v);
-                    paramData.localStorageTimeCycle__type = type;
+                    paramData.localStorageTimeCycle__v = type;
                     if (type == 0) {
                         paramData.localStorageTimeCycle = v;
                     }
@@ -52,7 +52,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x02 -> {
                     short v = data.readUnsignedByte();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint8, v);
-                    paramData.normalReportTime__type = type;
+                    paramData.normalReportTime__v = type;
                     if (type == 0) {
                         paramData.normalReportTime = v;
                     }
@@ -60,7 +60,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x03 -> {
                     short v = data.readUnsignedByte();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint8, v);
-                    paramData.alarmReportTime__type = type;
+                    paramData.alarmReportTime__v = type;
                     if (type == 0) {
                         paramData.alarmReportTime = v;
                     }
@@ -71,7 +71,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x06 -> {
                     int v = data.readUnsignedShort();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint16, v);
-                    paramData.remotePlatformPort__type = type;
+                    paramData.remotePlatformPort__v = type;
                     if (type == 0) {
                         paramData.remotePlatformPort = v;
                     }
@@ -83,7 +83,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x09 -> {
                     short v = data.readUnsignedByte();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint8, v);
-                    paramData.heartbeatSendCycleData__type = type;
+                    paramData.heartbeatSendCycleData__v = type;
                     if (type == 0) {
                         paramData.heartbeatSendCycleData = v;
                     }
@@ -91,7 +91,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x0A -> {
                     int v = data.readUnsignedShort();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint16, v);
-                    paramData.terminalResponseTimeoutData__type = type;
+                    paramData.terminalResponseTimeoutData__v = type;
                     if (type == 0) {
                         paramData.terminalResponseTimeoutData = v;
                     }
@@ -99,7 +99,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x0B -> {
                     int v = data.readUnsignedShort();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint16, v);
-                    paramData.domainResponseTimeoutData__type = type;
+                    paramData.domainResponseTimeoutData__v = type;
                     if (type == 0) {
                         paramData.domainResponseTimeoutData = v;
                     }
@@ -107,7 +107,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x0C -> {
                     short v = data.readUnsignedByte();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint8, v);
-                    paramData.loginFailureData__type = type;
+                    paramData.loginFailureData__v = type;
                     if (type == 0) {
                         paramData.loginFailureData = v;
                     }
@@ -118,7 +118,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x0F -> {
                     int v = data.readUnsignedShort();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint16, v);
-                    paramData.publicPlatformPort__type = type;
+                    paramData.publicPlatformPort__v = type;
                     if (type == 0) {
                         paramData.publicPlatformPort = v;
                     }
@@ -126,7 +126,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 case 0x10 -> {
                     short v = data.readUnsignedByte();
                     byte type = DefaultNumValGetter.instance.getType(NumType.uint8, v);
-                    paramData.samplingDetectionData__type = type;
+                    paramData.samplingDetectionData__v = type;
                     if (type == 0) {
                         paramData.samplingDetectionData = v;
                     }
@@ -140,26 +140,26 @@ public class ParamDataProcessor implements Processor<ParamData> {
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, ParamData instance) {
         if (instance.localStorageTimeCycle != null) {
             data.writeByte(0x01);
-            if (instance.localStorageTimeCycle__type == 0) {
+            if (instance.localStorageTimeCycle__v == 0) {
                 data.writeShort(instance.localStorageTimeCycle);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.localStorageTimeCycle__type));
+                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.localStorageTimeCycle__v));
             }
         }
         if (instance.normalReportTime != null) {
             data.writeByte(0x02);
-            if (instance.normalReportTime__type == 0) {
+            if (instance.normalReportTime__v == 0) {
                 data.writeByte(instance.normalReportTime);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.normalReportTime__type));
+                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.normalReportTime__v));
             }
         }
         if (instance.alarmReportTime != null) {
             data.writeByte(0x03);
-            if (instance.alarmReportTime__type == 0) {
+            if (instance.alarmReportTime__v == 0) {
                 data.writeByte(instance.alarmReportTime);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.alarmReportTime__type));
+                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.alarmReportTime__v));
             }
         }
         if (instance.remotePlatformName != null) {
@@ -170,10 +170,10 @@ public class ParamDataProcessor implements Processor<ParamData> {
         }
         if (instance.remotePlatformPort != null) {
             data.writeByte(0x06);
-            if (instance.remotePlatformPort__type == 0) {
+            if (instance.remotePlatformPort__v == 0) {
                 data.writeShort(instance.remotePlatformPort);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.remotePlatformPort__type));
+                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.remotePlatformPort__v));
             }
         }
         if (instance.terminalHardwareData != null) {
@@ -186,34 +186,34 @@ public class ParamDataProcessor implements Processor<ParamData> {
         }
         if (instance.heartbeatSendCycleData != null) {
             data.writeByte(0x09);
-            if (instance.heartbeatSendCycleData__type == 0) {
+            if (instance.heartbeatSendCycleData__v == 0) {
                 data.writeByte(instance.heartbeatSendCycleData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.heartbeatSendCycleData__type));
+                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.heartbeatSendCycleData__v));
             }
         }
         if (instance.terminalResponseTimeoutData != null) {
             data.writeByte(0x0A);
-            if (instance.terminalResponseTimeoutData__type == 0) {
+            if (instance.terminalResponseTimeoutData__v == 0) {
                 data.writeShort(instance.terminalResponseTimeoutData);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.terminalResponseTimeoutData__type));
+                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.terminalResponseTimeoutData__v));
             }
         }
         if (instance.domainResponseTimeoutData != null) {
             data.writeByte(0x0B);
-            if (instance.domainResponseTimeoutData__type == 0) {
+            if (instance.domainResponseTimeoutData__v == 0) {
                 data.writeShort(instance.domainResponseTimeoutData);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.domainResponseTimeoutData__type));
+                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.domainResponseTimeoutData__v));
             }
         }
         if (instance.loginFailureData != null) {
             data.writeByte(0x0C);
-            if (instance.loginFailureData__type == 0) {
+            if (instance.loginFailureData__v == 0) {
                 data.writeByte(instance.loginFailureData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.loginFailureData__type));
+                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.loginFailureData__v));
             }
         }
         if (instance.publicPlatformName != null) {
@@ -224,18 +224,18 @@ public class ParamDataProcessor implements Processor<ParamData> {
         }
         if (instance.publicPlatformPort != null) {
             data.writeByte(0x0F);
-            if (instance.publicPlatformPort__type == 0) {
+            if (instance.publicPlatformPort__v == 0) {
                 data.writeShort(instance.publicPlatformPort);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.publicPlatformPort__type));
+                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.publicPlatformPort__v));
             }
         }
         if (instance.samplingDetectionData != null) {
             data.writeByte(0x10);
-            if (instance.samplingDetectionData__type == 0) {
+            if (instance.samplingDetectionData__v == 0) {
                 data.writeByte(instance.samplingDetectionData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.samplingDetectionData__type));
+                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.samplingDetectionData__v));
             }
         }
     }

@@ -78,10 +78,10 @@ public @interface F_num {
 
     /**
      * 检查值是否有效
-     * 此属性为true时候、必须指定一个伴生字段public byte {field}__type
+     * 此属性为true时候、必须指定一个伴生字段public byte {field}__v
      * 伴生字段值来源于方法
      * {@link cn.bcd.lib.parser.base.Parser#getProcessor(Class, ByteOrder, BitOrder, NumValGetter)}
      * 其中参数{@link NumValGetter}
      */
-    boolean checkValid() default false;
+    boolean checkVal() default false;
 }

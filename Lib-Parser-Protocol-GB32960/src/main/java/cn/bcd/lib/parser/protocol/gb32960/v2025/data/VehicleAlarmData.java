@@ -9,54 +9,54 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleAlarmData {
     //最高报警等级
-    @F_num(type = NumType.uint8,checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public byte maxAlarmLevel;
-    public byte maxAlarmLevel__type;
+    public byte maxAlarmLevel__v;
 
     //通用报警标志
     @F_num(type = NumType.int32)
     public int alarmFlag;
 
     //可充电储能装置故障总数
-    @F_num(type = NumType.uint8, var = 'a',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'a', checkVal = true)
     public short chargeBadNum;
-    public byte chargeBadNum__type;
+    public byte chargeBadNum__v;
 
     //可充电储能装置故障代码列表
     @F_num_array(lenExpr = "a", singleType = NumType.uint32)
     public long[] chargeBadCodes;
 
     //驱动电机故障总数
-    @F_num(type = NumType.uint8, var = 'b',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'b', checkVal = true)
     public short driverBadNum;
-    public byte driverBadNum__type;
+    public byte driverBadNum__v;
 
     //驱动电机故障代码列表
     @F_num_array(lenExpr = "b", singleType = NumType.uint32)
     public long[] driverBadCodes;
 
     //发动机故障总数
-    @F_num(type = NumType.uint8, var = 'c',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'c', checkVal = true)
     public short engineBadNum;
-    public byte engineBadNum__type;
+    public byte engineBadNum__v;
 
     //发动机故障代码列表
     @F_num_array(lenExpr = "c", singleType = NumType.uint32)
     public long[] engineBadCodes;
 
     //其他故障总数
-    @F_num(type = NumType.uint8, var = 'd',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'd', checkVal = true)
     public short otherBadNum;
-    public byte otherBadNum__type;
+    public byte otherBadNum__v;
 
     //其他故障代码列表
     @F_num_array(lenExpr = "d", singleType = NumType.uint32)
     public long[] otherBadCodes;
 
     //通用故障总数
-    @F_num(type = NumType.uint8, var = 'e',checkValid = true)
+    @F_num(type = NumType.uint8, var = 'e', checkVal = true)
     public short commonBadNum;
-    public byte commonBadNum__type;
+    public byte commonBadNum__v;
 
     //通用故障代码列表
     @F_num_array(lenExpr = "e", singleType = NumType.uint16)

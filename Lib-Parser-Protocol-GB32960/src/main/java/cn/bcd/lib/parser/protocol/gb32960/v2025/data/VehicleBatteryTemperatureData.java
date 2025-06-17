@@ -9,9 +9,9 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleBatteryTemperatureData {
     //动力蓄电池包个数
-    @F_num(type = NumType.uint8,var = 'n',checkValid = true)
+    @F_num(type = NumType.uint8,var = 'n', checkVal = true)
     public byte num;
-    public byte num__type;
+    public byte num__v;
 
     //动力蓄电池温度信息列表
     @F_bean_list(listLenExpr = "n")

@@ -27,9 +27,9 @@ public class Packet {
     @F_string(len = 17)
     public String vin;
     //数据单元加密方式 21-22
-    @F_num(type = NumType.uint8, checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public byte encodeWay;
-    public byte encodeWay__type;
+    public byte encodeWay__v;
 
     //数据单元长度 22-24
     @F_num(type = NumType.uint16)

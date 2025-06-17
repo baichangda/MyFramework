@@ -174,7 +174,7 @@ public class Parser {
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
                                     , fieldName
-                                    , fieldName + "__type"
+                                    , fieldName + "__v"
                                     , valTypeContent
                                     , fieldName
                                     , ByteBufUtil.hexDump(content).toUpperCase()
@@ -251,7 +251,7 @@ public class Parser {
                                     , LogUtil.getFieldStackTrace(fieldDeclaringClass, fieldName)
                                     , clazz.getSimpleName()
                                     , fieldName
-                                    , fieldName + "__type"
+                                    , fieldName + "__v"
                                     , valTypeContent
                                     , fieldName
                                     , val

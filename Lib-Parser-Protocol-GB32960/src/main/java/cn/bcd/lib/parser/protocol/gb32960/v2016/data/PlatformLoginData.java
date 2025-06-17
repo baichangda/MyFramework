@@ -26,7 +26,7 @@ public class PlatformLoginData implements PacketData {
     public String password;
 
     //加密规则
-    @F_num(type = NumType.uint8,checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public byte encode;
-    public byte encode__type;
+    public byte encode__v;
 }

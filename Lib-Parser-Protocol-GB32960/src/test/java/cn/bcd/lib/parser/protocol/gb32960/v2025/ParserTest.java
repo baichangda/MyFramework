@@ -86,7 +86,7 @@ public class ParserTest {
         vehicleAlarmData.chargeBadCodes = new long[]{100, 112};
         vehicleAlarmData.driverBadNum = 3;
         vehicleAlarmData.driverBadCodes = new long[]{111, 222, 333};
-        vehicleAlarmData.engineBadNum__type = 1;
+        vehicleAlarmData.engineBadNum__v = 1;
         vehicleAlarmData.otherBadNum = 2;
         vehicleAlarmData.otherBadCodes = new long[]{66, 77};
         vehicleAlarmData.commonBadNum = 1;
@@ -101,7 +101,7 @@ public class ParserTest {
         batteryMinVoltageData.current = 12.44F;
         batteryMinVoltageData.total = 5;
         batteryMinVoltageData.minVoltages = new float[]{12.3f, 12.4f, 12.5f, 12.6f, 12.7f};
-        batteryMinVoltageData.minVoltages__type = new byte[5];
+        batteryMinVoltageData.minVoltages__v = new byte[5];
         vehicleBatteryMinVoltageData.datas = new BatteryMinVoltageData[]{batteryMinVoltageData};
         vehicleRunData.vehicleBatteryMinVoltageData = vehicleBatteryMinVoltageData;
 
@@ -111,7 +111,7 @@ public class ParserTest {
         batteryTemperatureData.no = 1;
         batteryTemperatureData.num = 2;
         batteryTemperatureData.currents = new short[]{12, 13};
-        batteryTemperatureData.currents__type = new byte[]{0, 1};
+        batteryTemperatureData.currents__v = new byte[]{0, 1};
         vehicleBatteryTemperatureData.datas = new BatteryTemperatureData[]{batteryTemperatureData};
         vehicleRunData.vehicleBatteryTemperatureData = vehicleBatteryTemperatureData;
 
@@ -132,13 +132,13 @@ public class ParserTest {
         vehicleSupercapacitorData.no = 2;
         vehicleSupercapacitorData.voltage = 1.1F;
         vehicleSupercapacitorData.current = 1.1F;
-        vehicleSupercapacitorData.current__type = 1;
+        vehicleSupercapacitorData.current__v = 1;
         vehicleSupercapacitorData.voltageNum = 1;
         vehicleSupercapacitorData.voltages = new float[]{1.1F};
-        vehicleSupercapacitorData.voltages__type = new byte[]{1};
+        vehicleSupercapacitorData.voltages__v = new byte[]{1};
         vehicleSupercapacitorData.temperatureNum = 1;
         vehicleSupercapacitorData.temperatures = new short[]{1};
-        vehicleSupercapacitorData.temperatures__type = new byte[]{1};
+        vehicleSupercapacitorData.temperatures__v = new byte[]{1};
         vehicleRunData.vehicleSupercapacitorData = vehicleSupercapacitorData;
 
         VehicleSupercapacitorLimitValueData vehicleSupercapacitorLimitValueData = new VehicleSupercapacitorLimitValueData();

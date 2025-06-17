@@ -12,27 +12,27 @@ public class MotorData {
     public short no;
 
     //驱动电机状态
-    @F_num(type = NumType.uint8, checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public byte status;
-    public byte status__type;
+    public byte status__v;
 
     //驱动电机控制器温度
-    @F_num(type = NumType.uint8, valExpr = "x-40", checkValid = true)
+    @F_num(type = NumType.uint8, valExpr = "x-40", checkVal = true)
     public short controllerTemperature;
-    public byte controllerTemperature__type;
+    public byte controllerTemperature__v;
 
     //驱动电机转速
-    @F_num(type = NumType.uint16, valExpr = "x-32000", checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "x-32000", checkVal = true)
     public int rotateSpeed;
-    public byte rotateSpeed__type;
+    public byte rotateSpeed__v;
 
     //驱动电机转矩
-    @F_num(type = NumType.uint16, valExpr = "(x-20000)/10", checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "(x-20000)/10", checkVal = true)
     public float rotateRectangle;
-    public byte rotateRectangle__type;
+    public byte rotateRectangle__v;
 
     //驱动电机温度
-    @F_num(type = NumType.uint8, valExpr = "x-40", checkValid = true)
+    @F_num(type = NumType.uint8, valExpr = "x-40", checkVal = true)
     public short temperature;
-    public byte temperature__type;
+    public byte temperature__v;
 }

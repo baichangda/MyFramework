@@ -44,13 +44,13 @@ public class TerminalControlCommand implements PacketData {
 
     public static class Alarm {
         public byte level;
-        public byte level__type;
+        public byte level__v;
 
         public static Alarm from(byte[] data) {
             Alarm alarm = new Alarm();
             byte b = data[0];
             byte type = DefaultNumValGetter.instance.getType(NumType.uint8, b);
-            alarm.level__type = type;
+            alarm.level__v = type;
             if (type == 0) {
                 alarm.level = b;
             }
@@ -59,10 +59,10 @@ public class TerminalControlCommand implements PacketData {
 
         public byte[] to() {
             byte[] data = new byte[1];
-            if (level__type == 0) {
+            if (level__v == 0) {
                 data[0] = level;
             } else {
-                data[0] = (byte) DefaultNumValGetter.instance.getVal_int(NumType.uint8, level__type);
+                data[0] = (byte) DefaultNumValGetter.instance.getVal_int(NumType.uint8, level__v);
             }
             return data;
         }

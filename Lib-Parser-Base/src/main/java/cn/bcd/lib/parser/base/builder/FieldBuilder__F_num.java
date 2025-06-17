@@ -12,7 +12,7 @@ import java.lang.reflect.Field;
 public class FieldBuilder__F_num extends FieldBuilder {
     @Override
     public void buildParse(BuilderContext context) {
-        if (buildParse_checkValid(context)) {
+        if (buildParse_checkVal(context)) {
             return;
         }
         final Class<F_num> annoClass = F_num.class;
@@ -138,23 +138,23 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
     }
 
-    public boolean buildParse_checkValid(BuilderContext context) {
+    public boolean buildParse_checkVal(BuilderContext context) {
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
         final F_num anno = field.getAnnotation(annoClass);
-        if (!anno.checkValid()) {
+        if (!anno.checkVal()) {
             return false;
         }
         //检查值类型的伴生字段
-        String fieldName__type = field.getName() + "__type";
+        String fieldName__v = field.getName() + "__v";
         try {
-            final Field field__type = context.clazz.getField(fieldName__type);
-            Class<?> field__typeType = field__type.getType();
-            if (field__typeType != byte.class) {
-                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type, field__typeType);
+            final Field field__v = context.clazz.getField(fieldName__v);
+            Class<?> field__vType = field__v.getType();
+            if (field__vType != byte.class) {
+                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v, field__vType);
             }
         } catch (NoSuchFieldException e) {
-            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__type);
+            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v);
         }
 
         final Class<?> fieldTypeClass = field.getType();
@@ -339,7 +339,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
 
         //设置值类型
-        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, fieldName__type, varNameNumValType);
+        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, fieldName__v, varNameNumValType);
 
         ParseUtil.append(body, "}\n");
         return true;
@@ -348,7 +348,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
     @Override
     public void buildDeParse(BuilderContext context) {
-        if (buildDeParse_checkValid(context)) {
+        if (buildDeParse_checkVal(context)) {
             return;
         }
         final Class<F_num> annoClass = F_num.class;
@@ -399,15 +399,15 @@ public class FieldBuilder__F_num extends FieldBuilder {
     }
 
 
-    public boolean buildDeParse_checkValid(BuilderContext context) {
+    public boolean buildDeParse_checkVal(BuilderContext context) {
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
         final F_num anno = field.getAnnotation(annoClass);
-        if (!anno.checkValid()) {
+        if (!anno.checkVal()) {
             return false;
         }
 
-        String fieldName__type = field.getName() + "__type";
+        String fieldName__v = field.getName() + "__v";
 
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
@@ -422,7 +422,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         //获取值类型
         String varNameNumValType = varNameField + "_numValType";
-        ParseUtil.append(body, "final byte {}={}.{};\n", varNameNumValType, FieldBuilder.varNameInstance, fieldName__type);
+        ParseUtil.append(body, "final byte {}={}.{};\n", varNameNumValType, FieldBuilder.varNameInstance, fieldName__v);
         final boolean isFloat = fieldTypeName.equals("float") || fieldTypeName.equals("double");
         String varNameRawVal = varNameField + "_rawVal";
         String varExprValDefineInIfCode;

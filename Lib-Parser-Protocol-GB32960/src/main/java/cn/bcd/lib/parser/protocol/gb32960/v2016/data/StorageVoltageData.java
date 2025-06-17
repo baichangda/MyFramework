@@ -13,19 +13,19 @@ public class StorageVoltageData {
     public short no;
 
     //可充电储能装置电压
-    @F_num(type = NumType.uint16, valExpr = "x/10", checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "x/10", checkVal = true)
     public float voltage;
-    public byte voltage__type;
+    public byte voltage__v;
 
     //可充电储能状态电流
-    @F_num(type = NumType.uint16, valExpr = "(x-10000)/10", checkValid = true)
+    @F_num(type = NumType.uint16, valExpr = "(x-10000)/10", checkVal = true)
     public float current;
-    public byte current__type;
+    public byte current__v;
 
     //单体电池总数
-    @F_num(type = NumType.uint16, checkValid = true)
+    @F_num(type = NumType.uint16, checkVal = true)
     public int total;
-    public byte total__type;
+    public byte total__v;
 
     //本帧起始电池序号
     @F_num(type = NumType.uint16)
@@ -36,7 +36,7 @@ public class StorageVoltageData {
     public short frameTotal;
 
     //单体电池电压
-    @F_num_array(singleType = NumType.uint16, lenExpr = "m", singleValExpr = "x/1000",singleCheckValid = true)
+    @F_num_array(singleType = NumType.uint16, lenExpr = "m", singleValExpr = "x/1000", singleCheckVal = true)
     public float[] singleVoltage;
-    public byte[] singleVoltage__type;
+    public byte[] singleVoltage__v;
 }

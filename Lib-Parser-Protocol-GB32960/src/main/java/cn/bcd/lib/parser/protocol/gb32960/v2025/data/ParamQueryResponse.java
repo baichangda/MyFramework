@@ -11,9 +11,9 @@ import java.util.Date;
 public class ParamQueryResponse implements PacketData {
     @F_date_bytes_6
     public Date queryTime;
-    @F_num(type = NumType.uint8,checkValid = true)
+    @F_num(type = NumType.uint8, checkVal = true)
     public short num;
-    public byte num__type;
+    public byte num__v;
     @F_customize(processorClass = ParamDataProcessor.class)
     public ParamData paramData;
 }

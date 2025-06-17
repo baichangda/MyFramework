@@ -13,12 +13,12 @@ public class StorageTemperatureData {
     public short no;
 
     //可充电储能温度探针个数
-    @F_num(type = NumType.uint16, var = 'n', checkValid = true)
+    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
     public int num;
-    public byte num__type;
+    public byte num__v;
 
     //可充电储能子系统各温度探针检测到的温度值
-    @F_num_array(lenExpr = "n", singleValExpr = "x-40", singleType = NumType.uint8, singleCheckValid = true)
+    @F_num_array(lenExpr = "n", singleValExpr = "x-40", singleType = NumType.uint8, singleCheckVal = true)
     public short[] temperatures;
-    public byte[] temperatures__type;
+    public byte[] temperatures__v;
 }

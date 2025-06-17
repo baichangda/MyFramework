@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public class ParseUtil {
     static Logger logger = LoggerFactory.getLogger(ParseUtil.class);
 
-
     static final double[] pows;
 
     static {
@@ -238,10 +237,10 @@ public class ParseUtil {
         append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufReaderIndexVarName, fieldLogBytesVarName);
         F_num f_num = context.field.getAnnotation(F_num.class);
         F_num_array f_num_array = context.field.getAnnotation(F_num_array.class);
-        if ((f_num != null && f_num.checkValid()) || (f_num_array != null && f_num_array.singleCheckValid())) {
-            Field field__type;
+        if ((f_num != null && f_num.checkVal()) || (f_num_array != null && f_num_array.singleCheckVal())) {
+            Field field__v;
             try {
-                field__type = context.clazz.getField(context.field.getName() + "__type");
+                field__v = context.clazz.getField(context.field.getName() + "__v");
             } catch (NoSuchFieldException e) {
                 throw BaseException.get(e);
             }
@@ -251,7 +250,7 @@ public class ParseUtil {
                     context.field.getName(),
                     fieldLogBytesVarName,
                     boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
-                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__type", field__type.getType())
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__v", field__v.getType())
             );
         } else {
             append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
@@ -282,10 +281,10 @@ public class ParseUtil {
         append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufWriterIndexVarName, fieldLogBytesVarName);
         F_num f_num = context.field.getAnnotation(F_num.class);
         F_num_array f_num_array = context.field.getAnnotation(F_num_array.class);
-        if ((f_num != null && f_num.checkValid()) || (f_num_array != null && f_num_array.singleCheckValid())) {
-            Field field__type;
+        if ((f_num != null && f_num.checkVal()) || (f_num_array != null && f_num_array.singleCheckVal())) {
+            Field field__v;
             try {
-                field__type = context.clazz.getField(context.field.getName() + "__type");
+                field__v = context.clazz.getField(context.field.getName() + "__v");
             } catch (NoSuchFieldException e) {
                 throw BaseException.get(e);
             }
@@ -295,7 +294,7 @@ public class ParseUtil {
                     context.field.getName(),
                     boxing(FieldBuilder.varNameInstance + "." + context.field.getName(), context.field.getType()),
                     fieldLogBytesVarName,
-                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__type", field__type.getType()));
+                    boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__v", field__v.getType()));
         } else {
             append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
                     Parser.class.getName(),
