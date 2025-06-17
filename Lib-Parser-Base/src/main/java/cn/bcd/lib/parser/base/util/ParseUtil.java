@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -882,22 +883,29 @@ public class ParseUtil {
         return valType;
     }
 
-    public static void main(String[] args) {
-//        getAllFieldBuild();
-//        System.out.println(getClassByteLenIfPossible(Evt_0001.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_0800.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_0006.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D006.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D010.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D011.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D012.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D013.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D014.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D015.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D016.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D017.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D008.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D009.class));
-//        System.out.println(getClassByteLenIfPossible(Evt_D00A.class));
+    public final static ConcurrentHashMap<Class<?>, HashMap<String, Field>> field_classFields = new ConcurrentHashMap<>();
+
+    public static Field getField__v(Class<?> clazz, String field) {
+        HashMap<String, Field> map = field_classFields.computeIfAbsent(clazz, k -> {
+            HashMap<String, Field> m = new HashMap<>();
+            for (Field f : clazz.getFields()) {
+                m.put(f.getName(), f);
+            }
+            return m;
+        });
+        return map.get(field + "__v");
+    }
+
+    public static Byte getFieldVal__v(Class<?> clazz, String field, Object obj) {
+        Field f = getField__v(clazz, field);
+        if (f == null) {
+            return null;
+        } else {
+            try {
+                return (Byte) f.get(obj);
+            } catch (IllegalAccessException e) {
+                throw BaseException.get(e);
+            }
+        }
     }
 }
