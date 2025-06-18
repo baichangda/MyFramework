@@ -83,7 +83,7 @@ public class KafkaExtUtil {
                     String threadName = getConsumerThreadName(name, i, partitions.length, partitions[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName,topic, partitions[i]);
+                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName, topic, partitions[i]);
                 }
             }
             case 3 -> {
@@ -104,11 +104,11 @@ public class KafkaExtUtil {
                     String threadName = getConsumerThreadName(name, i, ps.length, ps[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName,topic, ps[i]);
+                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName, topic, ps[i]);
                 }
             }
             default ->
-                    throw BaseException.get("DataDrivenKafkaConsumer[{}] partitionMode[{}] not support", partitionMode.mode);
+                    throw BaseException.get("DataDrivenKafkaConsumer[{}] partitionMode[{}] not support", name, partitionMode.mode);
         }
         return new ConsumerThreadHolder(consumeThread, consumeThreads);
     }
