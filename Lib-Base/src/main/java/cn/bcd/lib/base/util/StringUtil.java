@@ -2,6 +2,7 @@ package cn.bcd.lib.base.util;
 
 import org.slf4j.helpers.MessageFormatter;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class StringUtil {
@@ -99,6 +100,16 @@ public class StringUtil {
     public static void main(String[] args) {
         System.out.println(format("{}-{}", 123, null));
         System.out.println(format("{}-\\{}-{}", 123, null, "abc"));
+
+        List<String[]> list = List.of(new String[]{"a", "b", "c"}, new String[]{"1", "2", "3"});
+        String[][] arr1 = list.toArray(new String[0][0]);
+        String[][] arr2 = list.toArray(new String[0][]);
+        for (String[] arr : arr1) {
+            System.out.println(Arrays.toString(arr));
+        }
+        for (String[] arr : arr2) {
+            System.out.println(Arrays.toString(arr));
+        }
     }
 
 
