@@ -4,4 +4,5 @@ dependencies {
     api group: 'org.slf4j', name: 'slf4j-api'
     // https://mvnrepository.com/artifact/com.google.guava/guava
     api group: 'com.google.guava', name: 'guava'
+    api("com.jakewharton.fliptables:fliptables")
 }
