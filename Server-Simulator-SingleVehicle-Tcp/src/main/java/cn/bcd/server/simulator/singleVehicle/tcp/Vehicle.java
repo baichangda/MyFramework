@@ -2,7 +2,6 @@ package cn.bcd.server.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.SingleThreadExecutor;
-import cn.bcd.lib.parser.base.data.NumVal_byte;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
@@ -17,6 +16,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.vertx.core.net.NetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,7 +185,7 @@ public class Vehicle {
         packet.flag = PacketFlag.vehicle_run_data;
         packet.replyFlag = 0xfe;
         packet.vin = vin;
-        packet.encodeWay = new NumVal_byte(0, (byte) 1);
+        packet.encodeWay = 1;
         packet.code = 0;
         vehicleData.vehicleRunData.collectTime = new Date();
         packet.data = vehicleData.vehicleRunData;
