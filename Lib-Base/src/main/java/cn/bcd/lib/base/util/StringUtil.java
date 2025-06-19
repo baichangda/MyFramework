@@ -86,17 +86,6 @@ public class StringUtil {
         return MessageFormatter.format(message, arg1, arg2).getMessage();
     }
 
-    public static boolean isChineseChar(char c) {
-        Character.UnicodeBlock ub = Character.UnicodeBlock.of(c);
-        return ub == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS // 常用汉字
-                || ub == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS // 兼容汉字
-                || ub == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A // 扩展A
-                || ub == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B // 扩展B
-                || ub == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION // 中文符号
-                || ub == Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS // 全角字符
-                || ub == Character.UnicodeBlock.GENERAL_PUNCTUATION; // 通用标点
-    }
-
     public static void main(String[] args) {
         System.out.println(format("{}-{}", 123, null));
         System.out.println(format("{}-\\{}-{}", 123, null, "abc"));
