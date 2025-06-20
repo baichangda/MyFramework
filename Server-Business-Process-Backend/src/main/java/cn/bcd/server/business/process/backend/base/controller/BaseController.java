@@ -42,7 +42,7 @@ public class BaseController {
      */
     protected String toDateFileName(String fileName) {
         int index = fileName.lastIndexOf('.');
-        long dateNum = Long.parseLong(DateZoneUtil.dateToString_second(new Date()));
+        long dateNum = Long.parseLong(DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
         if (index == -1) {
             return fileName + "-" + dateNum;
         } else {

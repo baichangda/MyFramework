@@ -18,7 +18,7 @@ public class ZeroMqTest {
                 ZMQ.Socket socket = context.createSocket(SocketType.REQ);
                 socket.connect("tcp://*:5555");
                 while (!Thread.currentThread().isInterrupted()) {
-                    socket.send(DateZoneUtil.dateToString_second(new Date()));
+                    socket.send(DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
                     byte[] recv = socket.recv(0);
                     String s = new String(recv);
                     System.out.println(s);

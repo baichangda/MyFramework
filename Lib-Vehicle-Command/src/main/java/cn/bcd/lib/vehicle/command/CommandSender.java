@@ -71,7 +71,7 @@ public class CommandSender {
 
     public static boolean tryLock(String vin, PacketFlag flag, int timeout) {
         String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag.type);
-        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToString_second(new Date()), timeout * 2L, TimeUnit.SECONDS));
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), timeout * 2L, TimeUnit.SECONDS));
     }
 
     public static void releaseLock(String vin, PacketFlag flag) {

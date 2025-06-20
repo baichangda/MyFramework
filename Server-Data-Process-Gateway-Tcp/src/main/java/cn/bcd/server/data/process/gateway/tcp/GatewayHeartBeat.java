@@ -33,7 +33,7 @@ public class GatewayHeartBeat implements ApplicationListener<ContextRefreshedEve
         pool_saveRedis_heartBeat.scheduleAtFixedRate(() -> {
             redisTemplate.opsForHash().put(gatewayOnline_redisHashKey,
                     gatewayProp.id,
-                    DateZoneUtil.dateToString_second(new Date()));
+                    DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
         }, seconds, seconds, TimeUnit.SECONDS);
     }
 

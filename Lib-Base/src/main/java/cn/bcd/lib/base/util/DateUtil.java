@@ -24,9 +24,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class DateUtil {
 
-    public final static String DATE_FORMAT_DAY = "yyyyMMdd";
-    public final static String DATE_FORMAT_SECOND = "yyyyMMddHHmmss";
-    public final static String DATE_FORMAT_MILLISECOND = "yyyyMMddHHmmssSSS";
     private final static Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
 

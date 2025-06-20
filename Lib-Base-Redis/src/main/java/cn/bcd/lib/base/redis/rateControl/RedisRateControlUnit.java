@@ -64,7 +64,7 @@ public class RedisRateControlUnit {
     public synchronized void init() {
         int period = (REDIS_KEY_TIMEOUT_SECOND_RESET / 2) + 1;
         //尝试抢占reset
-        reset = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToString_second(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
+        reset = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
         if (reset) {
             logger.info("setIfAbsent reset succeed key[{}]", redisKeyReset);
             //启动周期任务清除redis计数
@@ -75,11 +75,11 @@ public class RedisRateControlUnit {
             if (reset) {
                 //如果抢占成功、则此时为续期模式
                 //尝试续期
-                Boolean b = redisTemplate.opsForValue().setIfPresent(redisKeyReset, DateZoneUtil.dateToString_second(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
+                Boolean b = redisTemplate.opsForValue().setIfPresent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
                 if (!b) {
                     //正常情况下不可能续期失败、如果失败、则尝试重新抢占
                     logger.warn("setIfPresent reset in executor failed key[{}]", redisKeyReset);
-                    b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToString_second(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
+                    b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
                     //如果抢占失败、说明此时被其他服务抢占、转换为抢占模式
                     if (!b) {
                         reset = false;
@@ -89,7 +89,7 @@ public class RedisRateControlUnit {
             } else {
                 //如果抢占失败、则此时为抢占模式
                 //尝试抢占
-                Boolean b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToString_second(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
+                Boolean b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
                 if (b) {
                     //如果抢占成功、则转换为续期模式
                     reset = true;

@@ -79,10 +79,10 @@ public class TransferDataHandler extends WorkHandler {
                 logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}] parseInTime[{}] parseOutTime[{}]:\n{}",
                         PacketUtil.getVin(message),
                         flag,
-                        DateZoneUtil.dateToString_second(dates[0]),
-                        DateZoneUtil.dateToString_second(dates[1]),
-                        DateZoneUtil.dateToString_second(dates[2]),
-                        DateZoneUtil.dateToString_second(dates[3]),
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[0]),
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[1]),
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[2]),
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[3]),
                         ByteBufUtil.hexDump(message));
             }
             context.gwInTime = dates[0];

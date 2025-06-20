@@ -71,8 +71,8 @@ public class WorkHandler_gb32960 extends WorkHandler {
             logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}]:\n{}",
                     PacketUtil.getVin(message),
                     flag,
-                    DateZoneUtil.dateToString_second(dates[0]),
-                    DateZoneUtil.dateToString_second(dates[1]),
+                    DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[0]),
+                    DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[1]),
                     ByteBufUtil.hexDump(message));
         }
         context.gwInTime = dates[0];

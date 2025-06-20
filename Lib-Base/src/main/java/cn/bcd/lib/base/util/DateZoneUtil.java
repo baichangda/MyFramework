@@ -26,14 +26,12 @@ public class DateZoneUtil {
     public final static ZoneId ZONE_ID = ZoneId.of("Asia/Shanghai");
     public final static ZoneOffset ZONE_OFFSET = ZoneOffset.of("+8");
 
-    public final static DateTimeFormatter DATE_TIME_FORMATTER_DAY = DateTimeFormatter.ofPattern(DateUtil.DATE_FORMAT_DAY).withZone(ZONE_OFFSET);
-    public final static DateTimeFormatter DATE_TIME_FORMATTER_SECOND = DateTimeFormatter.ofPattern(DateUtil.DATE_FORMAT_SECOND).withZone(ZONE_OFFSET);
-    public final static DateTimeFormatter DATE_TIME_FORMATTER_MILLISECOND = DateTimeFormatter.ofPattern(DateUtil.DATE_FORMAT_MILLISECOND).withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyyMMdd = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmss = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmssSSS = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").withZone(ZONE_OFFSET);
 
     /**
      * 根据dateStr长度转换成不同的时间
-     * {@link DateUtil#DATE_FORMAT_DAY} 长度8
-     * {@link DateUtil#DATE_FORMAT_SECOND} 长度14
      *
      * @param dateStr
      * @return
@@ -44,9 +42,9 @@ public class DateZoneUtil {
         }
         int len = dateStr.length();
         return switch (len) {
-            case 8 -> DateZoneUtil.stringToDate_day(dateStr);
-            case 14 -> DateZoneUtil.stringToDate_second(dateStr);
-            case 17 -> DateZoneUtil.stringToDate_millisecond(dateStr);
+            case 8 -> DateZoneUtil.strToDate_yyyyMMdd(dateStr);
+            case 14 -> DateZoneUtil.strToDate_yyyyMMddHHmmss(dateStr);
+            case 17 -> DateZoneUtil.strToDate_yyyyMMddHHmmssSSS(dateStr);
             default -> throw BaseException.get("dateStr[{}] not support", dateStr);
         };
     }
@@ -55,66 +53,66 @@ public class DateZoneUtil {
      * @param dateStr
      * @return
      */
-    public static Date stringToDate_day(String dateStr) {
+    public static Date strToDate_yyyyMMdd(String dateStr) {
         if (dateStr == null) {
             return null;
         }
-        return Date.from(Instant.from(DATE_TIME_FORMATTER_DAY.parse(dateStr)));
+        return Date.from(Instant.from(FORMATTER_yyyyMMdd.parse(dateStr)));
     }
 
     /**
      * @param dateStr
      * @return
      */
-    public static Date stringToDate_second(String dateStr) {
+    public static Date strToDate_yyyyMMddHHmmss(String dateStr) {
         if (dateStr == null) {
             return null;
         }
-        return Date.from(Instant.from(DATE_TIME_FORMATTER_SECOND.parse(dateStr)));
+        return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmss.parse(dateStr)));
     }
 
     /**
      * @param dateStr
      * @return
      */
-    public static Date stringToDate_millisecond(String dateStr) {
+    public static Date strToDate_yyyyMMddHHmmssSSS(String dateStr) {
         if (dateStr == null) {
             return null;
         }
-        return Date.from(Instant.from(DATE_TIME_FORMATTER_MILLISECOND.parse(dateStr)));
+        return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmssSSS.parse(dateStr)));
     }
 
     /**
      * @param date
      * @return
      */
-    public static String dateToString_day(Date date) {
+    public static String dateToStr_yyyyMMdd(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_TIME_FORMATTER_DAY.format(date.toInstant());
+        return FORMATTER_yyyyMMdd.format(date.toInstant());
     }
 
     /**
      * @param date
      * @return
      */
-    public static String dateToString_second(Date date) {
+    public static String dateToStr_yyyyMMddHHmmss(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_TIME_FORMATTER_SECOND.format(date.toInstant());
+        return FORMATTER_yyyyMMddHHmmss.format(date.toInstant());
     }
 
     /**
      * @param date
      * @return
      */
-    public static String dateToString_millisecond(Date date) {
+    public static String dateToStr_yyyyMMddHHmmssSSS(Date date) {
         if (date == null) {
             return null;
         }
-        return DATE_TIME_FORMATTER_MILLISECOND.format(date.toInstant());
+        return FORMATTER_yyyyMMddHHmmssSSS.format(date.toInstant());
     }
 
 
@@ -160,10 +158,10 @@ public class DateZoneUtil {
     }
 
     public static void main(String[] args) {
-//        Date time = stringToDate_day("20111111");
+//        Date time = strToDate_yyyyMMdd("20111111");
 //        System.out.println(time);
-//        System.out.println(dateToString_day(time));
-//        System.out.println(dateToString_second(time));
+//        System.out.println(dateToStr_yyyyMMdd(time));
+//        System.out.println(dateToStr_yyyyMMddHHmmss(time));
 //
 //
 //        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern(DateUtil.DATE_FORMAT_DAY).withZone(ZONE_OFFSET);
@@ -187,7 +185,7 @@ public class DateZoneUtil {
         Duration between = Duration.between(ldt1, ldt2);
         System.out.println(between.toDays());
         System.out.println(between.toHours());
-        System.out.println(ChronoUnit.DAYS.between(ldt1,ldt2));
-        System.out.println(ChronoUnit.MONTHS.between(ldt1,ldt2));
+        System.out.println(ChronoUnit.DAYS.between(ldt1, ldt2));
+        System.out.println(ChronoUnit.MONTHS.between(ldt1, ldt2));
     }
 }

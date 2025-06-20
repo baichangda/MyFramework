@@ -35,7 +35,7 @@ public class TcpReceiveDataHandler implements TcpDataHandler {
             if (Const.logEnable) {
                 logger.info("transfer response data vin[{}] collectTime[{}] type[{}] replyFlag[{}] hex[{}]",
                         vin,
-                        DateZoneUtil.dateToString_second(time),
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(time),
                         HexUtil.hexDump((byte) type),
                         replyFlag,
                         hex);

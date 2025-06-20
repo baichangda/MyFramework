@@ -115,7 +115,7 @@ public class MongoUtil_transferData {
         return Hashing.md5().hashString(vin, StandardCharsets.UTF_8).toString().substring(0, 4)
                 + vin
                 + Strings.padEnd(platformCode, 20, '#')
-                + DateZoneUtil.dateToString_second(collectTime)
+                + DateZoneUtil.dateToStr_yyyyMMddHHmmss(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
 }

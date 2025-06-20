@@ -65,7 +65,7 @@ public class MongoUtil_gb32960 {
     public static String toId(String vin, Date collectTime, int type) {
         return Hashing.md5().hashString(vin, StandardCharsets.UTF_8).toString().substring(0, 4)
                 + vin
-                + DateZoneUtil.dateToString_second(collectTime)
+                + DateZoneUtil.dateToStr_yyyyMMddHHmmss(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
 }

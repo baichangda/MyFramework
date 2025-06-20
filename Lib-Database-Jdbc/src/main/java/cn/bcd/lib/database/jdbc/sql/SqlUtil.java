@@ -17,7 +17,17 @@ public class SqlUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(SqlUtil.class);
 
-    public record InsertSqlResult<T>(String sql, Class<T> clazz, Field[] insertFields) {
+    public static class InsertSqlResult<T> {
+        public final String sql;
+        public final Class<T> clazz;
+        public final Field[] insertFields;
+
+        public InsertSqlResult(String sql, Class<T> clazz, Field[] insertFields) {
+            this.sql = sql;
+            this.clazz = clazz;
+            this.insertFields = insertFields;
+        }
+
         public int[] insertBatch(final List<T> dataList, final JdbcTemplate jdbcTemplate) {
             final List<Object[]> paramList = new ArrayList<>();
             try {
@@ -35,7 +45,20 @@ public class SqlUtil {
         }
     }
 
-    public record UpdateSqlResult<T>(String sql, Class<T> clazz, Field[] updateFields, Field[] whereFields) {
+
+    public static class UpdateSqlResult<T> {
+        public final String sql;
+        public final Class<T> clazz;
+        public final Field[] updateFields;
+        public final Field[] whereFields;
+
+        public UpdateSqlResult(String sql, Class<T> clazz, Field[] updateFields, Field[] whereFields) {
+            this.sql = sql;
+            this.clazz = clazz;
+            this.updateFields = updateFields;
+            this.whereFields = whereFields;
+        }
+
         public int[] updateBatch(final List<T> dataList, final JdbcTemplate jdbcTemplate) {
             final List<Object[]> paramList = new ArrayList<>();
             final int fieldsLength = updateFields.length;
@@ -58,11 +81,11 @@ public class SqlUtil {
         }
     }
 
-
     /**
      * 将class转换为insert sql语句对象
      * 会获取父类的字段
      * insert字段会去除掉静态字段
+     * sql中所有的字段名驼峰格式会转换为下划线格式
      *
      * @param clazz       实体类class
      * @param table       表名
@@ -100,6 +123,7 @@ public class SqlUtil {
      * 将class转换为update sql语句对象
      * 会获取父类的所有字段
      * update字段会去除掉静态字段
+     * sql中所有的字段名驼峰格式会转换为下划线格式
      *
      * @param clazz           实体类
      * @param table           表名
@@ -165,7 +189,7 @@ public class SqlUtil {
 
     public static void main(String[] args) {
         InsertSqlResult<Test> insertSqlResult = toInsertSqlResult(Test.class, "t_test", field -> !field.getName().equals("id"));
-        UpdateSqlResult<Test> updateSqlResult = toUpdateSqlResult(Test.class, "t_test", field -> !field.getName().equals("id"),"id");
+        UpdateSqlResult<Test> updateSqlResult = toUpdateSqlResult(Test.class, "t_test", field -> !field.getName().equals("id"), "id");
         System.out.println(insertSqlResult.sql);
         System.out.println(updateSqlResult.sql);
     }

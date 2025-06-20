@@ -54,7 +54,7 @@ public class DataBaseBackupSchedule {
 
     @Scheduled(cron = "${database.backup.cron}")
     public void backup() {
-        String fileName = "backup-" + DateZoneUtil.dateToString_second(new Date());
+        String fileName = "backup-" + DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date());
         String cmd = "mysqldump -h" + host + " -P" + port + " -u" + username + " -p" + password + " --databases " + databases + " > " + fileName;
         String[] command = {"/bin/bash", "-c", cmd};
         logger.info("execute backup[{}]", cmd);

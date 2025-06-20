@@ -48,7 +48,7 @@ public class MonitorCollector {
 
     @Scheduled(cron = "${monitor.collectCron}")
     public void collect() {
-        String dateStr = DateZoneUtil.dateToString_second(new Date());
+        String dateStr = DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date());
         long batch = Long.parseLong(dateStr);
         logger.info("start batch[{}]", batch);
         monitorRedisTopicMQ.send(dateStr);

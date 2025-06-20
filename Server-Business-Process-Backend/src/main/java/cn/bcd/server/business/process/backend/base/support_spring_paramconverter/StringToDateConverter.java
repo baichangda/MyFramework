@@ -11,7 +11,7 @@ import java.util.Date;
  * 设别如下几种date参数
  * 1、毫秒时间戳、example: source=1611629450000
  * 2、日期类型字符串
- * 此时日期格式有两种{@link DateUtil#DATE_FORMAT_DAY}、{@link DateUtil#DATE_FORMAT_SECOND}
+ * 此时日期格式有两种{@link DateUtil#DATE_FORMAT_yyyyMMdd}、{@link DateUtil#DATE_FORMAT_yyyyMMddHHmmss}
  * 字符串必须以s开头
  * example: s20210126、s20210126111111、s20210126111111111
  */

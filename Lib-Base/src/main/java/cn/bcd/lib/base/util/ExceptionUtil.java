@@ -49,16 +49,18 @@ public class ExceptionUtil {
         Throwable temp = throwable;
         while (true) {
             if (temp instanceof BaseException ex) {
-                if (ex.getTargetException() == null) {
+                Throwable t = ex.getTargetException();
+                if (t == null) {
                     return temp;
                 } else {
-                    temp = ex.getTargetException();
+                    temp = t;
                 }
             } else if (temp instanceof InvocationTargetException ex) {
-                if (ex.getTargetException() == null) {
+                Throwable t = ex.getTargetException();
+                if (t == null) {
                     return temp;
                 } else {
-                    temp = ex.getTargetException();
+                    temp = t;
                 }
             } else {
                 return temp;

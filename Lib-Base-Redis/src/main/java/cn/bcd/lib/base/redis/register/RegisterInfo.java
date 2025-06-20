@@ -44,7 +44,7 @@ public final class RegisterInfo {
                         int i = 0;
                         for (Map.Entry<String, String> entry : entries.entrySet()) {
                             final String value = entry.getValue();
-                            if (DateZoneUtil.stringToDate_second(value).getTime() >= server.consumer_providerInfoExpired_ms) {
+                            if (DateZoneUtil.strToDate_yyyyMMddHHmmss(value).getTime() >= server.consumer_providerInfoExpired_ms) {
                                 hosts[i++] = entry.getKey();
                             }
                         }
