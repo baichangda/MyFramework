@@ -57,7 +57,7 @@ public class DateZoneUtil {
         if (dateStr == null) {
             return null;
         }
-        return Date.from(Instant.from(FORMATTER_yyyyMMdd.parse(dateStr)));
+        return Date.from(LocalDate.from(FORMATTER_yyyyMMdd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
     }
 
     /**
@@ -158,10 +158,10 @@ public class DateZoneUtil {
     }
 
     public static void main(String[] args) {
-//        Date time = strToDate_yyyyMMdd("20111111");
-//        System.out.println(time);
-//        System.out.println(dateToStr_yyyyMMdd(time));
-//        System.out.println(dateToStr_yyyyMMddHHmmss(time));
+        Date time = strToDate_yyyyMMdd("20111111");
+        System.out.println(time);
+        System.out.println(dateToStr_yyyyMMdd(time));
+        System.out.println(dateToStr_yyyyMMddHHmmss(time));
 //
 //
 //        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern(DateUtil.DATE_FORMAT_DAY).withZone(ZONE_OFFSET);
