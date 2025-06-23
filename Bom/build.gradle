@@ -57,7 +57,7 @@ dependencies {
 
         api group: 'org.xerial', name: 'sqlite-jdbc', version: "3.48.0.0"
 
-        var saTokenVersion = "1.40.0"
+        var saTokenVersion = "1.44.0"
         api group: 'cn.dev33', name: 'sa-token-spring-boot3-starter', version: "${saTokenVersion}"
         api group: 'cn.dev33', name: 'sa-token-redis-jackson', version: "${saTokenVersion}"
         api group: 'cn.dev33', name: 'sa-token-reactor-spring-boot3-starter', version: "${saTokenVersion}"

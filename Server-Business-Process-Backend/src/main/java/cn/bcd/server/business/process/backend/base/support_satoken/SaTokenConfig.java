@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,10 +49,12 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
             }
 
             @Override
-            public void checkMethod(SaCheckAction anno, Method method) {
+            public void checkMethod(SaCheckAction at, AnnotatedElement element) {
+                Method method = (Method) element;
                 final String className = method.getDeclaringClass().getName();
                 final String methodName = method.getName();
                 StpUtil.checkPermissionAnd(className + ":" + methodName);
+
             }
         });
 
@@ -62,7 +65,8 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
             }
 
             @Override
-            public void checkMethod(SaCheckRequestMappingUrl anno, Method method) {
+            public void checkMethod(SaCheckRequestMappingUrl at, AnnotatedElement element) {
+                Method method = (Method) element;
                 Class<?> clazz = method.getDeclaringClass();
                 RequestMapping classRequestMapping = clazz.getAnnotation(RequestMapping.class);
                 RequestMapping methodRequestMapping = method.getAnnotation(RequestMapping.class);
