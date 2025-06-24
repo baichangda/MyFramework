@@ -10,6 +10,7 @@ dependencies {
     implementation group: 'cn.dev33', name: 'sa-token-reactor-spring-boot3-starter'
     implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
 
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-gateway
     implementation group: 'org.springframework.cloud', name: 'spring-cloud-gateway-server-webflux'
 
