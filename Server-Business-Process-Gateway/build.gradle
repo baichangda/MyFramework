@@ -11,7 +11,7 @@ dependencies {
     implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
 
     // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-gateway
-    implementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-gateway'
+    implementation group: 'org.springframework.cloud', name: 'spring-cloud-gateway-server-webflux'
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
     implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'

@@ -20,8 +20,6 @@ dependencies {
     //springboot websocket支持
     implementation("org.springframework.boot:spring-boot-starter-websocket")
 
-    implementation group: 'com.lmax', name: 'disruptor'
-
     //springboot jdbc支持
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     //邮件支持
@@ -64,9 +62,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     implementation group: 'org.xerial', name: 'sqlite-jdbc'
-
-    // https://mvnrepository.com/artifact/com.alibaba.cloud/spring-cloud-starter-alibaba-sentinel
-    implementation group: 'com.alibaba.cloud', name: 'spring-cloud-starter-alibaba-sentinel'
 
     implementation group: 'org.zeromq', name: 'jeromq'
 

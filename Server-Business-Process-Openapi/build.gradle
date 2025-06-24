@@ -11,8 +11,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     //springboot web支持
     implementation("org.springframework.boot:spring-boot-starter-web")
-    //springboot aop支持
-    implementation("org.springframework.boot:spring-boot-starter-aop")
     //springboot websocket支持
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     //springboot jdbc支持
