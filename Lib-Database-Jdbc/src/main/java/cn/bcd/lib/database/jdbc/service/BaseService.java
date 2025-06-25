@@ -306,6 +306,8 @@ public class BaseService<T extends SuperBaseBean> {
      * 会验证{@link Unique}
      * 会设置更新信息
      *
+     * 如果继承于{@link BaseBean}、则不会更新创建信息
+     *
      * @param t
      */
     public void update(T t) {
@@ -327,6 +329,8 @@ public class BaseService<T extends SuperBaseBean> {
      * <p>
      * 会验证{@link Unique}
      * 会设置更新信息
+     *
+     * 如果继承于{@link BaseBean}、则不会更新创建信息
      *
      * @param list
      */
