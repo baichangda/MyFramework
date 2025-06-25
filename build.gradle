@@ -44,6 +44,12 @@ subprojects {
         var lombokVersion = '1.18.36'
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
         annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+
+        // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
+        testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
+        // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
+        testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl'
     }
 
     //下载源码和文档
