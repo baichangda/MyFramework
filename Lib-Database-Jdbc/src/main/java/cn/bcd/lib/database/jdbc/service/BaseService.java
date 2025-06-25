@@ -227,7 +227,7 @@ public class BaseService<T extends SuperBaseBean> {
             final KeyHolder keyHolder = new GeneratedKeyHolder();
             getJdbcTemplate().update(conn -> {
                 final PreparedStatement ps = conn.prepareStatement(info.insertSql_noId, Statement.RETURN_GENERATED_KEYS);
-                final ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(info.getValues_noId(t).toArray());
+                final ArgumentPreparedStatementSetter argumentPreparedStatementSetter = new ArgumentPreparedStatementSetter(info.getInsertValues_noId(t).toArray());
                 argumentPreparedStatementSetter.setValues(ps);
                 return ps;
             }, keyHolder);
@@ -236,7 +236,7 @@ public class BaseService<T extends SuperBaseBean> {
                 t.setId(key.longValue());
             }
         } else {
-            getJdbcTemplate().update(info.insertSql, info.getValues(t).toArray());
+            getJdbcTemplate().update(info.insertSql, info.getInsertValues(t).toArray());
         }
     }
 
@@ -291,10 +291,10 @@ public class BaseService<T extends SuperBaseBean> {
         }
         T t = list.getFirst();
         if (t.getId() == null) {
-            final List<Object[]> argList = list.stream().map(e1 -> info.getValues_noId(e1).toArray()).collect(Collectors.toList());
+            final List<Object[]> argList = list.stream().map(e1 -> info.getInsertValues_noId(e1).toArray()).collect(Collectors.toList());
             getJdbcTemplate().batchUpdate(info.insertSql_noId, argList);
         } else {
-            final List<Object[]> argList = list.stream().map(e1 -> info.getValues(e1).toArray()).collect(Collectors.toList());
+            final List<Object[]> argList = list.stream().map(e1 -> info.getInsertValues(e1).toArray()).collect(Collectors.toList());
             getJdbcTemplate().batchUpdate(info.insertSql, argList);
         }
     }
@@ -316,10 +316,35 @@ public class BaseService<T extends SuperBaseBean> {
         if (info.autoSetUpdateInfo) {
             setUpdateInfo(t);
         }
-        final String sql = info.updateSql_noId + " where id=?";
-        final List<Object> args = info.getValues_noId(t);
-        args.add(t.getId());
-        getJdbcTemplate().update(sql, args.toArray());
+        final List<Object> args = info.getUpdateValues(t);
+        getJdbcTemplate().update(info.updateSql, args.toArray());
+    }
+
+
+    /**
+     * 批量更新
+     * 更新所有字段、即使是null
+     * <p>
+     * 会验证{@link Unique}
+     * 会设置更新信息
+     *
+     * @param list
+     */
+    public void updateBatch(List<T> list) {
+        if (list.isEmpty()) {
+            return;
+        }
+        BeanInfo<T> info = getBeanInfo();
+        if (!info.uniqueInfoList.isEmpty()) {
+            validateUnique(list);
+        }
+        if (info.autoSetUpdateInfo) {
+            for (T t : list) {
+                setUpdateInfo(t);
+            }
+        }
+        final List<Object[]> argList = list.stream().map(e -> info.getUpdateValues(e).toArray()).collect(Collectors.toList());
+        getJdbcTemplate().batchUpdate(info.updateSql, argList);
     }
 
 
@@ -387,36 +412,7 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
 
-    /**
-     * 批量更新
-     * 更新所有字段、即使是null
-     * <p>
-     * 会验证{@link Unique}
-     * 会设置更新信息
-     *
-     * @param list
-     */
-    public void updateBatch(List<T> list) {
-        if (list.isEmpty()) {
-            return;
-        }
-        BeanInfo<T> info = getBeanInfo();
-        if (!info.uniqueInfoList.isEmpty()) {
-            validateUnique(list);
-        }
-        if (info.autoSetUpdateInfo) {
-            for (T t : list) {
-                setUpdateInfo(t);
-            }
-        }
-        String sql = info.updateSql_noId + " where id=?";
-        final List<Object[]> argList = list.stream().map(e1 -> {
-            final List<Object> args = info.getValues_noId(e1);
-            args.add(e1.getId());
-            return args.toArray();
-        }).collect(Collectors.toList());
-        getJdbcTemplate().batchUpdate(sql, argList);
-    }
+
 
     /**
      * 根据id批量删除、使用批量删除
