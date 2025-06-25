@@ -65,5 +65,7 @@ dependencies {
 
     implementation group: 'org.zeromq', name: 'jeromq'
 
+    implementation("me.tongfei:progressbar")
+
 
 }

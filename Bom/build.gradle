@@ -73,5 +73,8 @@ dependencies {
 
         // https://mvnrepository.com/artifact/com.jakewharton.fliptables/fliptables
         api("com.jakewharton.fliptables:fliptables:1.1.1")
+
+        // https://mvnrepository.com/artifact/me.tongfei/progressbar
+        api("me.tongfei:progressbar:0.10.1")
     }
 }
