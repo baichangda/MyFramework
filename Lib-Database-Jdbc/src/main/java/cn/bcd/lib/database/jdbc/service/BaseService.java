@@ -104,6 +104,24 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
+     * 批量迭代器
+     * @param batch
+     * @return
+     */
+    public Iterator<List<T>> batchIterator(int batch, Condition condition, Sort sort) {
+        return new BeanIterator<>(batch, this, condition, sort);
+    }
+
+    /**
+     * 批量迭代器
+     * @param batch
+     * @return
+     */
+    public Iterator<List<T>> batchIterator(int batch) {
+        return batchIterator(batch, null, null);
+    }
+
+    /**
      * 查询所有数据
      *
      * @return
@@ -305,7 +323,7 @@ public class BaseService<T extends SuperBaseBean> {
      * <p>
      * 会验证{@link Unique}
      * 会设置更新信息
-     *
+     * <p>
      * 如果继承于{@link BaseBean}、则不会更新创建信息
      *
      * @param t
@@ -329,7 +347,7 @@ public class BaseService<T extends SuperBaseBean> {
      * <p>
      * 会验证{@link Unique}
      * 会设置更新信息
-     *
+     * <p>
      * 如果继承于{@link BaseBean}、则不会更新创建信息
      *
      * @param list
@@ -414,8 +432,6 @@ public class BaseService<T extends SuperBaseBean> {
         }
         getJdbcTemplate().update(sql.toString(), args.toArray());
     }
-
-
 
 
     /**
