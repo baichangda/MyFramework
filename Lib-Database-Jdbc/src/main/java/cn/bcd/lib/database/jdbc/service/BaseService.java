@@ -8,6 +8,11 @@ import cn.bcd.lib.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.lib.database.jdbc.bean.UserInterface;
 import cn.bcd.lib.database.jdbc.condition.ConditionUtil;
 import cn.bcd.lib.database.jdbc.condition.ConvertRes;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.builder.ExcelWriterBuilder;
+import com.alibaba.excel.write.builder.ExcelWriterSheetBuilder;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,10 +26,13 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
@@ -172,7 +180,56 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
+     * 数据导出
+     *
+     * @param condition
+     * @param sort
+     * @param os                              写入的流
+     * @param excelWriterBuilderConsumer      excelWriter修改器、可以为null
+     * @param excelWriterSheetBuilderConsumer excelWriterSheet修改器、可以为null
+     * @param function                        对象转换为一行row、可以为null、
+     *                                        当null时候、会设置{@link ExcelWriterSheetBuilder#head(Class)}、此时读取bean里面{@link com.alibaba.excel.annotation.ExcelProperty}字段
+     *                                        不为null、会调用此方法一个对象转为一行数据、如果需要设置head、需要自己调用{@link ExcelWriterSheetBuilder#head(List)}、
+     */
+    public void export(Condition condition, Sort sort, OutputStream os,
+                       Consumer<ExcelWriterBuilder> excelWriterBuilderConsumer,
+                       Consumer<ExcelWriterSheetBuilder> excelWriterSheetBuilderConsumer,
+                       Function<T, List<String>> function) {
+        int batch = 1000;
+        ExcelWriterBuilder excelWriterBuilder = EasyExcel.write(os);
+        if (excelWriterBuilderConsumer != null) {
+            excelWriterBuilderConsumer.accept(excelWriterBuilder);
+        }
+        ExcelWriterSheetBuilder excelWriterSheetBuilder = EasyExcel.writerSheet(0);
+        if (excelWriterSheetBuilderConsumer != null) {
+            excelWriterSheetBuilderConsumer.accept(excelWriterSheetBuilder);
+        }
+        if (function == null) {
+            excelWriterSheetBuilder.head(beanInfo.clazz);
+            try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
+                WriteSheet writeSheet = excelWriterSheetBuilder.build();
+                for (List<T> list : batchIterable(batch, condition, sort)) {
+                    excelWriter.write(list, writeSheet);
+                }
+            }
+        } else {
+            try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
+                WriteSheet writeSheet = excelWriterSheetBuilder.build();
+                for (List<T> list : batchIterable(batch, condition, sort)) {
+                    List<List<String>> dataList = new ArrayList<>();
+                    for (T t : list) {
+                        List<String> row = function.apply(t);
+                        dataList.add(row);
+                    }
+                    excelWriter.write(dataList, writeSheet);
+                }
+            }
+        }
+    }
+
+    /**
      * 批量迭代器
+     *
      * @param batch
      * @return
      */
@@ -182,6 +239,7 @@ public class BaseService<T extends SuperBaseBean> {
 
     /**
      * 批量迭代器
+     *
      * @param batch
      * @return
      */
