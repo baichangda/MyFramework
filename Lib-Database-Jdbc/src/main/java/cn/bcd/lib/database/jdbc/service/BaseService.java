@@ -176,8 +176,8 @@ public class BaseService<T extends SuperBaseBean> {
      * @param batch
      * @return
      */
-    public BatchIterator<T> batchIterator(int batch, Condition condition, Sort sort) {
-        return new BatchIterator<>(batch, this, condition, sort);
+    public BatchIterable<T> batchIterable(int batch, Condition condition, Sort sort) {
+        return new BatchIterable<>(batch, this, condition, sort);
     }
 
     /**
@@ -185,10 +185,9 @@ public class BaseService<T extends SuperBaseBean> {
      * @param batch
      * @return
      */
-    public BatchIterator<T> batchIterator(int batch) {
-        return batchIterator(batch, null, null);
+    public BatchIterable<T> batchIterable(int batch) {
+        return batchIterable(batch, null, null);
     }
-
 
     /**
      * 根据id查找对象
