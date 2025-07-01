@@ -26,7 +26,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -180,26 +179,37 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
+     * 默认导出到第一个sheet
+     * 默认使用bean里面的{@link com.alibaba.excel.annotation.ExcelProperty}字段进行导出
+     * 参考{@link #export(Condition, Sort, Consumer, Consumer, Function)}
+     *
+     * @param condition                  条件
+     * @param excelWriterBuilderConsumer excelWriter修改器、不为null
+     *                                   必须设置导出的结果文件或者输出流
+     */
+    public void export(Condition condition, Consumer<ExcelWriterBuilder> excelWriterBuilderConsumer) {
+        export(condition, null, excelWriterBuilderConsumer, null, null);
+    }
+
+    /**
      * 数据导出
      *
-     * @param condition
-     * @param sort
-     * @param os                              写入的流
-     * @param excelWriterBuilderConsumer      excelWriter修改器、可以为null
-     * @param excelWriterSheetBuilderConsumer excelWriterSheet修改器、可以为null
+     * @param condition                       条件
+     * @param sort                            排序、可以为null
+     * @param excelWriterBuilderConsumer      excelWriter修改器、不为null
+     *                                        必须设置导出的结果文件或者输出流
+     * @param excelWriterSheetBuilderConsumer excelWriterSheet修改器、可以为null、默认sheet0
      * @param function                        对象转换为一行row、可以为null、
      *                                        当null时候、会设置{@link ExcelWriterSheetBuilder#head(Class)}、此时读取bean里面{@link com.alibaba.excel.annotation.ExcelProperty}字段
      *                                        不为null、会调用此方法一个对象转为一行数据、如果需要设置head、需要自己调用{@link ExcelWriterSheetBuilder#head(List)}、
      */
-    public void export(Condition condition, Sort sort, OutputStream os,
+    public void export(Condition condition, Sort sort,
                        Consumer<ExcelWriterBuilder> excelWriterBuilderConsumer,
                        Consumer<ExcelWriterSheetBuilder> excelWriterSheetBuilderConsumer,
                        Function<T, List<String>> function) {
         int batch = 1000;
-        ExcelWriterBuilder excelWriterBuilder = EasyExcel.write(os);
-        if (excelWriterBuilderConsumer != null) {
-            excelWriterBuilderConsumer.accept(excelWriterBuilder);
-        }
+        ExcelWriterBuilder excelWriterBuilder = EasyExcel.write();
+        excelWriterBuilderConsumer.accept(excelWriterBuilder);
         ExcelWriterSheetBuilder excelWriterSheetBuilder = EasyExcel.writerSheet(0);
         if (excelWriterSheetBuilderConsumer != null) {
             excelWriterSheetBuilderConsumer.accept(excelWriterSheetBuilder);
