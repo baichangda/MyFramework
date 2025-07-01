@@ -10,14 +10,14 @@ import org.springframework.data.domain.Sort;
 import java.util.Iterator;
 import java.util.List;
 
-public class BeanIterator<T extends SuperBaseBean> implements Iterator<List<T>> {
+public class BatchIterator<T extends SuperBaseBean> implements Iterator<List<T>> {
     private boolean hasNext;
     private Pageable pageable;
 
     private final BaseService<T> baseService;
     private final Condition condition;
 
-    public BeanIterator(int batch, BaseService<T> baseService, Condition condition, Sort sort) {
+    public BatchIterator(int batch, BaseService<T> baseService, Condition condition, Sort sort) {
         if (sort == null) {
             pageable = PageRequest.of(0, batch);
         } else {
@@ -27,7 +27,7 @@ public class BeanIterator<T extends SuperBaseBean> implements Iterator<List<T>> 
         this.condition = condition;
     }
 
-    public BeanIterator(int pageSize, BaseService<T> baseService) {
+    public BatchIterator(int pageSize, BaseService<T> baseService) {
         this(pageSize, baseService, null, null);
     }
 

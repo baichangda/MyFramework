@@ -176,8 +176,8 @@ public class BaseService<T extends SuperBaseBean> {
      * @param batch
      * @return
      */
-    public Iterator<List<T>> batchIterator(int batch, Condition condition, Sort sort) {
-        return new BeanIterator<>(batch, this, condition, sort);
+    public BatchIterator<T> batchIterator(int batch, Condition condition, Sort sort) {
+        return new BatchIterator<>(batch, this, condition, sort);
     }
 
     /**
@@ -185,7 +185,7 @@ public class BaseService<T extends SuperBaseBean> {
      * @param batch
      * @return
      */
-    public Iterator<List<T>> batchIterator(int batch) {
+    public BatchIterator<T> batchIterator(int batch) {
         return batchIterator(batch, null, null);
     }
 
