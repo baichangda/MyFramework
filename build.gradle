@@ -39,7 +39,6 @@ subprojects {
     }
 
 
-
     dependencies {
         //统一配置lombok
         var lombokVersion = '1.18.38'
@@ -114,6 +113,8 @@ subprojects {
                 bootRun {
                     enabled = false
                 }
+
+
             } else {
                 bootJar {
                     exclude "**/application-local.yml"

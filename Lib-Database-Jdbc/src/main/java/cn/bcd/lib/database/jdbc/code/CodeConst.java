@@ -12,7 +12,7 @@ import java.util.Set;
 public class CodeConst {
     public final static Version FREEMARKER_VERSION = Configuration.VERSION_2_3_32;
 
-    public final static String MODULE_DIR_PATH = System.getProperty("user.dir") + "/Server-Business-Process-Backend";
+    public final static String MODULE_DIR_PATH = System.getProperty("user.dir") + "/Lib-Database-Jdbc";
 
     public final static String TEMPLATE_DIR_PATH = MODULE_DIR_PATH + "/src/main/resources/template";
 

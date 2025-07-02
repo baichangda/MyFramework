@@ -15,7 +15,7 @@ public class CodeConst {
     public final static String CLASS_BUILD_DIR_PATH = "build/classes/java/main";
     public final static String SOURCE_DIR_PATH = "src/main/java";
 
-    public final static String MODULE_DIR_PATH = System.getProperty("user.dir") + "/Server-BusinessProcess-Backend";
+    public final static String MODULE_DIR_PATH = System.getProperty("user.dir") + "/Lib-Database-Mongo";
 
     public final static String TEMPLATE_DIR_PATH = MODULE_DIR_PATH + "/src/main/resources/template";
 
