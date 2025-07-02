@@ -25,12 +25,12 @@ public class BaseException extends RuntimeException {
     }
 
     private BaseException(Throwable target) {
-        super(null, (Throwable) null);
+        super(null, null);
         this.target = target;
     }
 
     private BaseException(String message, Throwable target) {
-        super(message, (Throwable) null);
+        super(message, null);
         this.target = target;
     }
 
