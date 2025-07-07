@@ -218,8 +218,13 @@ public class BaseService<T extends SuperBaseBean> {
             excelWriterSheetBuilder.head(beanInfo.clazz);
             try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
                 WriteSheet writeSheet = excelWriterSheetBuilder.build();
+                boolean empty = true;
                 for (List<T> list : batchIterable(batch, condition, sort)) {
                     excelWriter.write(list, writeSheet);
+                    empty = false;
+                }
+                if (empty) {
+                    excelWriter.write(new ArrayList<>(), writeSheet);
                 }
             }
         } else {
