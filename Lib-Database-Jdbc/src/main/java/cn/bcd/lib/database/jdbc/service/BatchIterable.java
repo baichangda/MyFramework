@@ -40,6 +40,7 @@ public class BatchIterable<T extends SuperBaseBean> implements Iterable<List<T>>
         private final Condition condition;
 
         public BatchIterator(int batch, BaseService<T> baseService, Condition condition, Sort sort) {
+            hasNext = true;
             if (sort == null) {
                 pageable = PageRequest.of(0, batch);
             } else {
