@@ -55,16 +55,14 @@ public class TaskRunnable<T extends Task<K>, K extends Serializable> implements 
         taskBuilder.onStarted(task);
         try {
             //执行任务
-            function.execute(this);
-            //执行完毕之后、task可能被更新、此时重新加载
-            taskBuilder.taskDao.doRead(task.getId());
-            if (stop) {
+            boolean done = function.execute(this);
+            if (stop && !done) {
                 taskBuilder.onStopped(task);
             } else {
                 taskBuilder.onSucceed(task);
             }
         } catch (Exception ex) {
-            logger.error("execute task[{}] failed", task.getId(), ex);
+            logger.error("execute task failed id[{}] function[{}]", task.getId(), function.getClass().getName(), ex);
             taskBuilder.onFailed(task, ex);
         } finally {
             //最后从当前服务器任务id和结果映射结果集中移除

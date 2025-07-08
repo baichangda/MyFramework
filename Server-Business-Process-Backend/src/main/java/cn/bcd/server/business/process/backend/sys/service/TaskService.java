@@ -84,25 +84,29 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
                     for (List<?> list : service.batchIterable(1000, condition, null)) {
                         //检测停止
                         if (runnable.stop) {
-                            return;
+                            return false;
                         }
                         excelWriter.write(list, writeSheet);
                         empty = false;
                         //检测停止
                         if (runnable.stop) {
-                            return;
+                            return false;
                         }
                     }
                     if (empty) {
                         excelWriter.write(new ArrayList<>(), writeSheet);
                     }
                 }
+                //检测停止
+                if (runnable.stop) {
+                    return false;
+                }
                 //上传到文件服务器
                 String serverPath = serverDirPath + "/" + fileName;
                 fileService.upload(serverPath, exportPath);
                 runnable.task.result = serverPath;
-            } catch (Exception ex) {
-                logger.error("error", ex);
+
+                return true;
             } finally {
                 try {
                     Files.deleteIfExists(exportPath);

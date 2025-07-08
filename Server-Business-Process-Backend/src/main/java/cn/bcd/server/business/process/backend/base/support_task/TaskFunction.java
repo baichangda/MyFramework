@@ -16,7 +16,7 @@ public interface TaskFunction<T extends Task<K>, K extends Serializable> {
      * @param runnable 上下文环境
      * @return true: 执行成功、false: 任务被打断
      */
-    void execute(TaskRunnable<T, K> runnable);
+    boolean execute(TaskRunnable<T, K> runnable) throws Exception;
 
     /**
      * 启动一个线程池、周期更新任务信息
