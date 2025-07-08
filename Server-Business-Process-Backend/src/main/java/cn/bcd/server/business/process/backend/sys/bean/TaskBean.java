@@ -5,14 +5,12 @@ import cn.bcd.lib.database.jdbc.anno.Table;
 import cn.bcd.lib.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.server.business.process.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.server.business.process.backend.base.support_task.Task;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.context.annotation.Lazy;
 
 import java.util.Date;
 
@@ -64,8 +62,9 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
     @Schema(description = "创建人姓名", maxLength = 50)
     public String createUserName;
 
-    public TaskBean(String name) {
+    public TaskBean(String name, int type) {
         this.name = name;
+        this.type = type;
     }
 
     public TaskBean() {

@@ -70,6 +70,18 @@ public class FileService {
         }
     }
 
+    public void upload(String path, InputStream is) {
+        try {
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(minioProp.bucket)
+                    .object(path)
+                    .stream(is, -1, 5 * 1024 * 1024)
+                    .build());
+        } catch (Exception ex) {
+            throw BaseException.get(ex);
+        }
+    }
+
     public void upload(String path, Path file) {
         try (InputStream is = Files.newInputStream(file)) {
             minioClient.putObject(PutObjectArgs.builder()

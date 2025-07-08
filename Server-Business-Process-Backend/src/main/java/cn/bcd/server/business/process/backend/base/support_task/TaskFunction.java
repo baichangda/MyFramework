@@ -1,65 +1,22 @@
 package cn.bcd.server.business.process.backend.base.support_task;
 
-
-import cn.bcd.lib.base.exception.BaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cn.bcd.lib.base.util.DateUtil;
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public abstract class TaskFunction<T extends Task<K>, K extends Serializable> {
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
-
-    private final static HashMap<String, TaskFunction> storage = new HashMap<>();
-
-    public static <T extends Task<K>, K extends Serializable> TaskFunction<T, K> from(String name) {
-        return storage.get(name);
-    }
-
-    private final String name;
-
-    public String getName() {
-        return name;
-    }
-
-    public TaskFunction(String name) {
-        this.name = name;
-        synchronized (storage) {
-            if (storage.containsKey(name)) {
-                throw BaseException.get("TaskFunction[{}] [{}] exist", name, storage.get(name));
-            } else {
-                storage.put(name, this);
-            }
-        }
-    }
-
-    public TaskFunction() {
-        this.name = this.getClass().getName();
-        storage.put(this.name, this);
-    }
-
+public interface TaskFunction<T extends Task<K>, K extends Serializable> {
     /**
      * task执行任务内容
      *
      * @param runnable 上下文环境
      * @return true: 执行成功、false: 任务被打断
      */
-    public abstract void execute(TaskRunnable<T, K> runnable);
-
-    /**
-     * 方法是否支持打断操作
-     *
-     * @return
-     */
-    public boolean supportStop() {
-        return false;
-    }
+    void execute(TaskRunnable<T, K> runnable);
 
     /**
      * 启动一个线程池、周期更新任务信息
@@ -71,18 +28,17 @@ public abstract class TaskFunction<T extends Task<K>, K extends Serializable> {
      * @param doBeforeUpdate
      * @return
      */
-    public ScheduledExecutorService updateTaskPeriodInNewThread(TaskRunnable<T, K> runnable, Duration period, Consumer<T> doBeforeUpdate) {
+    default ScheduledExecutorService updateTaskPeriodInNewThread(TaskRunnable<T, K> runnable, Duration period, Consumer<T> doBeforeUpdate) {
         final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledExecutorService.scheduleAtFixedRate(() -> {
-            final T task = runnable.getTask();
+            final T task = runnable.task;
             doBeforeUpdate.accept(task);
-            runnable.getTaskDao().doUpdate(task);
+            runnable.taskDao.doUpdate(task);
         }, period.toMillis(), period.toMillis(), TimeUnit.MILLISECONDS);
         return scheduledExecutorService;
     }
 
 
-    private final ThreadLocal<Long> prevSaveTsThreadLocal = new ThreadLocal<>();
     /**
      * 在循环中使用更新任务、保证更新的周期不小于 period 参数
      * 主要是使用在for循环中、避免过快的更新
@@ -90,22 +46,24 @@ public abstract class TaskFunction<T extends Task<K>, K extends Serializable> {
      * 备注:
      * 需要显式的在for循环中需要保存的地方调用
      *
-     * @param runnable
-     * @param period
-     * @param doBeforeUpdate
-     * @return 是否保存
+     * @param runnable        上下文环境
+     * @param doBeforeUpdate  执行保存之前的回调
+     * @param minUpdatePeriod 最小保存的间隔(秒)
+     * @param prevSaveTs      上一次保存的时间戳(毫秒)
+     * @return 最近一次保存的ts
      */
-    protected boolean updateTaskPeriodInCurrentThread(TaskRunnable<T, K> runnable, Duration period, Consumer<T> doBeforeUpdate) {
-        final Long prevSaveTs = prevSaveTsThreadLocal.get();
-        final long curTs = System.currentTimeMillis();
-        if (prevSaveTs == null || (curTs - prevSaveTs) > period.toMillis()) {
-            final T task = runnable.getTask();
+    default long updateTaskPeriodInCurrentThread(TaskRunnable<T, K> runnable, Consumer<T> doBeforeUpdate, int minUpdatePeriod, long prevSaveTs) {
+        final long curTs = DateUtil.CacheMillisecond.current();
+        if (prevSaveTs == 0) {
+            return curTs;
+        }
+        if ((curTs - prevSaveTs) > minUpdatePeriod * 1000L) {
+            final T task = runnable.task;
             doBeforeUpdate.accept(task);
-            runnable.getTaskDao().doUpdate(task);
-            prevSaveTsThreadLocal.set(curTs);
-            return true;
+            runnable.taskDao.doUpdate(task);
+            return curTs;
         } else {
-            return false;
+            return prevSaveTs;
         }
     }
 }
