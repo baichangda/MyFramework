@@ -88,26 +88,6 @@ sa-token:
   is-read-header: false
   is-read-cookie: true
 
-knife4j:
-  gateway:
-    # 是否开启
-    enabled: true
-    # 排序规则(tag/operation排序自4.2.0版本新增)
-    # 取值：alpha-默认排序规则，官方swagger-ui默认实现,order-Knife4j提供的增强排序规则，开发者可扩展x-order，根据数值来自定义排序
-    tags-sorter: order
-    operations-sorter: order
-    # 指定服务发现的模式聚合微服务文档，并且是默认`default`分组
-    strategy: manual
-    routes:
-      - name: 业务后端服务
-        # 真实子服务访问url地址-提供OpenAPI的文档
-        url: /service/backend/v3/api-docs?group=default
-        service-name: business-process-backend
-        # 路由前缀
-        # 兼容OpenAPI3规范在聚合时丢失contextPath属性的异常情况，由开发者自己配置contextPath,Knife4j的前端Ui做兼容处理,与url属性独立不冲突，仅OpenAPI3规范聚合需要，OpenAPI2规范不需要设置此属性,默认为(apiPathPrefix)
-        context-path: /service/backend
-        order: 1
-
 lib:
   data:
     init:

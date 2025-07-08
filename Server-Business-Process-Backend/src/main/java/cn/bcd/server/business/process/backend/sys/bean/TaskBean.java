@@ -31,10 +31,10 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
 
     @NotNull(message = "[任务状态]不能为空")
     @Schema(description = "任务状态(1:等待中;2:执行中;3:执行成功;4:执行失败;5:任务被取消;:6:任务被终止)", requiredMode = Schema.RequiredMode.REQUIRED)
-    public Integer status;
+    public int status;
 
-    @Schema(description = "任务类型(1:普通任务;2:文件类型任务)", requiredMode = Schema.RequiredMode.REQUIRED)
-    public Integer type;
+    @Schema(description = "任务类型(1:导出任务)", requiredMode = Schema.RequiredMode.REQUIRED)
+    public int type;
 
     @Size(max = 255, message = "[任务信息]长度不能超过255")
     @Schema(description = "任务信息(失败时记录失败原因)", maxLength = 255)
@@ -53,9 +53,9 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
     @Schema(description = "创建时间")
     public Date createTime;
 
-    @Size(max = 100, message = "[文件路径]长度不能超过100")
-    @Schema(description = "文件路径(如果是生成文件的任务,存储的是文件路径;可以存储多个,以;分割)", maxLength = 100)
-    public String filePaths;
+    @Size(max = 255, message = "[任务执行结果]长度不能超过255")
+    @Schema(description = "任务执行结果(不同的任务类型结果不同、记录导出任务这里存储的是导出文件在文件服务器的路径)", maxLength = 255)
+    public String result;
 
     @Schema(description = "创建人id")
     public Long createUserId;

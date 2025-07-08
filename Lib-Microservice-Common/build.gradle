@@ -7,9 +7,6 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter")
     api("org.springframework.boot:spring-boot-configuration-processor")
     api("org.springframework.boot:spring-boot-starter-aop")
-    // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-openapi3-jakarta-spring-boot-starter
-    api group: 'com.github.xiaoymin', name: 'knife4j-openapi3-jakarta-spring-boot-starter'
-    // https://mvnrepository.com/artifact/org.springframework.cloud/spring-cloud-starter-consul-discovery
     api group: 'org.springframework.cloud', name: 'spring-cloud-loadbalancer'
     api group: 'com.alibaba.cloud', name: 'spring-cloud-starter-alibaba-nacos-discovery'
     //引入feign支持

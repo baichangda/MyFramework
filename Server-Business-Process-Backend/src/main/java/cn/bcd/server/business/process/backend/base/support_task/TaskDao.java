@@ -25,11 +25,4 @@ public interface TaskDao<T extends Task<K>,K extends Serializable> {
      * @param task
      */
     void doUpdate(T task);
-
-    /**
-     * 删除task
-     *
-     * @param task
-     */
-    void doDelete(T task);
 }

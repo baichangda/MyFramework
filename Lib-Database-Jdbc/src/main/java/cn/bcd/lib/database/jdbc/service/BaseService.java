@@ -13,6 +13,7 @@ import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.builder.ExcelWriterBuilder;
 import com.alibaba.excel.write.builder.ExcelWriterSheetBuilder;
 import com.alibaba.excel.write.metadata.WriteSheet;
+import com.google.common.base.Strings;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -95,6 +96,24 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
+     * 根据id查找对象
+     *
+     * @param id
+     * @return
+     */
+    public T get(long id) {
+        BeanInfo<T> info = getBeanInfo();
+        final String sql = "select * from " + info.tableName + " where id=?";
+        final List<T> list = getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(info.clazz), id);
+        if (list.isEmpty()) {
+            return null;
+        } else {
+            return list.getFirst();
+        }
+    }
+
+
+    /**
      * 查询一条数据、如果有多条则取第一条、如果没有数据返回null
      *
      * @param condition
@@ -110,6 +129,12 @@ public class BaseService<T extends SuperBaseBean> {
         }
     }
 
+    public List<T> list(long... ids) {
+        BeanInfo<T> info = getBeanInfo();
+        String repeat = Strings.repeat(",?", ids.length);
+        final String sql = "select * from " + info.tableName + " where id in (" + repeat.substring(1) + ")";
+        return getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(info.clazz), Arrays.stream(ids).toArray());
+    }
 
     /**
      * 查询所有数据
@@ -262,22 +287,6 @@ public class BaseService<T extends SuperBaseBean> {
         return batchIterable(batch, null, null);
     }
 
-    /**
-     * 根据id查找对象
-     *
-     * @param id
-     * @return
-     */
-    public T get(long id) {
-        BeanInfo<T> info = getBeanInfo();
-        final String sql = "select * from " + info.tableName + " where id=?";
-        final List<T> list = getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(info.clazz), id);
-        if (list.isEmpty()) {
-            return null;
-        } else {
-            return list.getFirst();
-        }
-    }
 
     /**
      * 保存

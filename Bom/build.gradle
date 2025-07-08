@@ -14,6 +14,7 @@ dependencies {
     api platform("cn.dev33:sa-token-bom:1.44.0")
     api platform("io.netty:netty-bom:4.2.2.Final")
     api platform("com.github.xiaoymin:knife4j-dependencies:4.5.0")
+    api platform("org.springdoc:springdoc-openapi-bom:2.8.9")
 
     constraints {
         // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
