@@ -17,4 +17,5 @@ dependencies {
     // https://mvnrepository.com/artifact/com.alibaba/easyexcel
     api(group: 'com.alibaba', name: 'easyexcel')
     api group: 'com.mysql', name: 'mysql-connector-j'
+    api group: 'org.postgresql', name: 'postgresql'
 }
