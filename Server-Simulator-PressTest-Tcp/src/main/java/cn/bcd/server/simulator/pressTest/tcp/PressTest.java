@@ -1,6 +1,7 @@
 package cn.bcd.server.simulator.pressTest.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.util.DateUtil;
 import com.google.common.base.Strings;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -98,7 +99,7 @@ public abstract class PressTest<T> implements Runnable {
             boolean add = false;
             try {
                 Bootstrap bootstrap = new Bootstrap();
-                bootstrap.group(tcp_workerGroup);
+                bootstrap.group(new NioEventLoopGroup());
                 bootstrap.channel(NioSocketChannel.class);
                 bootstrap.option(ChannelOption.TCP_NODELAY, true);
                 bootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -110,9 +111,9 @@ public abstract class PressTest<T> implements Runnable {
                 Channel channel = bootstrap.connect(split[0], Integer.parseInt(split[1])).sync().channel();
                 clientNum.incrementAndGet();
                 add = true;
-                long sendTs = System.currentTimeMillis();
+                long sendTs = DateUtil.CacheMillisecond.current();
                 while (running.get()) {
-                    long waitMills = sendTs - System.currentTimeMillis();
+                    long waitMills = sendTs - DateUtil.CacheMillisecond.current();
                     if (waitMills > 0) {
                         TimeUnit.MILLISECONDS.sleep(waitMills);
                     }
@@ -120,6 +121,7 @@ public abstract class PressTest<T> implements Runnable {
                         return;
                     }
                     ByteBuf buffer = toByteBuf(sample, sendTs);
+                    logger.info("client[{}] vin[{}] waitMills[{}]", clientNum.get(), vin, waitMills);
                     channel.writeAndFlush(buffer);
                     sendNum.incrementAndGet();
                     sendTs += period * 1000L;

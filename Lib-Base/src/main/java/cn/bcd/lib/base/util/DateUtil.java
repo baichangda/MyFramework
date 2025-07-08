@@ -319,6 +319,7 @@ public class DateUtil {
 
     /**
      * date转换为时间戳字节数组
+     *
      * @param date
      * @return
      */
@@ -333,6 +334,7 @@ public class DateUtil {
 
     /**
      * bytes时间戳格式转换为date
+     *
      * @param bytes
      * @param offset
      * @return
@@ -348,6 +350,7 @@ public class DateUtil {
 
     /**
      * 添加多个date到bytes前面、得到新的bytes
+     *
      * @param bytes
      * @param dates
      * @return
@@ -367,6 +370,7 @@ public class DateUtil {
 
     /**
      * 从bytes中获取多个date
+     *
      * @param bytes
      * @param num
      * @return
@@ -389,6 +393,7 @@ public class DateUtil {
         private volatile long l;
 
         CacheMillisecond() {
+            l = System.currentTimeMillis();
             System.out.println("CacheMillisecond init");
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheMillisecond");
@@ -413,6 +418,7 @@ public class DateUtil {
         private volatile long l;
 
         CacheSecond() {
+            l = System.currentTimeMillis() / 1000L;
             System.out.println("CacheSecond init");
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheSecond");
