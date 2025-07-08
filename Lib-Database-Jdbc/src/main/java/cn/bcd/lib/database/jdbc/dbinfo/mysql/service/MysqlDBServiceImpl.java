@@ -30,8 +30,7 @@ public class MysqlDBServiceImpl implements DBService {
 
     public static void main(String[] args) {
         MysqlDBServiceImpl tableService = new MysqlDBServiceImpl();
-        tableService.exportDBDesignerExcelToDisk("192.168.23.129", "root", "bcd", "bcd", "d:/db-bcd.xlsx");
-
+        tableService.exportDBDesignerExcelToDisk("10.0.11.21:33067", "immotors", "incar@2023", "immotors_rvm3", "d:/immotors_rvm3.xlsx");
     }
 
     public void exportSpringDBDesignerExcel(String dbName, OutputStream os, Runnable doBeforeWrite) throws IOException {
@@ -123,4 +122,5 @@ public class MysqlDBServiceImpl implements DBService {
             throw BaseException.get(e);
         }
     }
+
 }
