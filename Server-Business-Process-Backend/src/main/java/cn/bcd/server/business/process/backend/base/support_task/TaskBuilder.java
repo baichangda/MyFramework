@@ -78,7 +78,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    public K registerTask(T task, TaskFunction<T, K> function, Object... params) {
+    public K register(T task, TaskFunction<T, K> function, Object... params) {
         final T t = onCreated(task);
         //初始化
         TaskRunnable<T, K> runnable = new TaskRunnable<>(task, function, params, this);
@@ -89,7 +89,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
 
     }
 
-    public StopResult[] stopTask(K... ids) {
+    public StopResult[] stop(K... ids) {
         StopResult[] stopResults = new StopResult[ids.length];
         if (ids.length > 0) {
             for (int i = 0; i < ids.length; i++) {

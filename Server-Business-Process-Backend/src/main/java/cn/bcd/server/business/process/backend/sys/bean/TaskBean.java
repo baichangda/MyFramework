@@ -44,12 +44,6 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
     @Schema(description = "任务处理进度", requiredMode = Schema.RequiredMode.REQUIRED)
     public float percent;
 
-    @Size(max = 65535, message = "[失败堆栈信息]长度不能超过65535")
-    @Schema(hidden = true, description = "失败堆栈信息(失败时后台异常堆栈信息)", maxLength = 65535)
-    @Lazy
-    @JsonIgnore
-    public String stackMessage;
-
     @Schema(description = "任务开始时间")
     public Date startTime;
 
@@ -108,7 +102,6 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
         finishTime = new Date();
         Throwable realException = ExceptionUtil.getRealException(ex);
         message = realException.getMessage();
-        stackMessage = ExceptionUtil.getStackTraceMessage(realException);
     }
 
     @Override

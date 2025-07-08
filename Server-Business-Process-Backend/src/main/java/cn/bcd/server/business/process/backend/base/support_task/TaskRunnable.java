@@ -4,6 +4,7 @@ package cn.bcd.server.business.process.backend.base.support_task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class TaskRunnable<T extends Task<K>, K extends Serializable> implements Runnable,Serializable{
     private final static Logger logger = LoggerFactory.getLogger(TaskRunnable.class);
 
+    @Serial
     private final static long serialVersionUID = 1L;
 
     private T task;
