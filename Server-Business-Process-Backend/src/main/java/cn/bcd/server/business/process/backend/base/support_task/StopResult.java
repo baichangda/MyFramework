@@ -1,6 +1,8 @@
 package cn.bcd.server.business.process.backend.base.support_task;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum StopResult {
@@ -9,6 +11,7 @@ public enum StopResult {
     IN_EXECUTING_INTERRUPT_SUCCEED(2, "任务执行中、已请求打断、等待停止"),
     ;
 
+    @JsonValue
     public final int flag;
 
     public final String name;
@@ -18,6 +21,7 @@ public enum StopResult {
         this.name = name;
     }
 
+    @JsonCreator
     public static StopResult from(int flag) {
         for (StopResult value : values()) {
             if (value.flag == flag) {
