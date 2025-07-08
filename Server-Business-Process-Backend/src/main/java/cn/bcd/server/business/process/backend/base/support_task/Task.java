@@ -44,7 +44,7 @@ public interface Task<K extends Serializable> extends Serializable {
     }
 
     /**
-     * 任务取消时触发方法
+     * 待执行的任务取消时触发方法
      * 在数据库保存前执行
      */
     default void onCanceled() {
@@ -52,7 +52,7 @@ public interface Task<K extends Serializable> extends Serializable {
     }
 
     /**
-     * 任务停止时触发方法
+     * 执行中的任务停止时触发方法
      * 在数据库保存前执行
      */
     default void onStopped() {
