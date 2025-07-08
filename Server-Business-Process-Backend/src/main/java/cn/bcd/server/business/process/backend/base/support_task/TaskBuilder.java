@@ -59,7 +59,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    public K register(T task, TaskFunction<T, K> function, Object... params) {
+    public final K register(T task, TaskFunction<T, K> function, Object... params) {
         final T t = onCreated(task);
         //初始化
         TaskRunnable<T, K> runnable = new TaskRunnable<>(task, function, params, this);
@@ -69,7 +69,8 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
 
     }
 
-    public StopResult[] stop(K... ids) {
+    @SafeVarargs
+    public final StopResult[] stop(K... ids) {
         StopResult[] stopResults = new StopResult[ids.length];
         if (ids.length > 0) {
             for (int i = 0; i < ids.length; i++) {
@@ -86,7 +87,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         return stopResults;
     }
 
-    protected T onCreated(T task) {
+    T onCreated(T task) {
         try {
             task.setStatus(TaskStatus.WAITING.getStatus());
             task.onCreated();
@@ -96,7 +97,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         return taskDao.doCreate(task);
     }
 
-    protected void onStarted(T task) {
+    void onStarted(T task) {
         try {
             task.setStatus(TaskStatus.EXECUTING.getStatus());
             task.onStarted();
@@ -106,7 +107,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    protected void onSucceed(T task) {
+    void onSucceed(T task) {
         try {
             task.setStatus(TaskStatus.SUCCEED.getStatus());
             task.onSucceed();
@@ -116,7 +117,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    protected void onFailed(T task, Exception ex) {
+    void onFailed(T task, Exception ex) {
         try {
             task.setStatus(TaskStatus.FAILED.getStatus());
             task.onFailed(ex);
@@ -126,7 +127,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    protected void onCanceled(T task) {
+    void onCanceled(T task) {
         try {
             task.setStatus(TaskStatus.CANCELED.getStatus());
             task.onCanceled();
@@ -136,7 +137,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         }
     }
 
-    protected void onStopped(T task) {
+    void onStopped(T task) {
         try {
             task.setStatus(TaskStatus.STOPPED.getStatus());
             task.onStopped();
