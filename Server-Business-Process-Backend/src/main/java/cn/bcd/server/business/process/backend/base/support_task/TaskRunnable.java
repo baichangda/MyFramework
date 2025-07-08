@@ -8,7 +8,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.ThreadPoolExecutor;
 
-@SuppressWarnings("unchecked")
 public class TaskRunnable<T extends Task<K>, K extends Serializable> implements Runnable, Serializable {
     private final static Logger logger = LoggerFactory.getLogger(TaskRunnable.class);
 
