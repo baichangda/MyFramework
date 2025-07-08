@@ -38,7 +38,7 @@ public class RedisTopicMQ<V> {
 
     private final RedisSerializer<V> redisSerializer;
 
-    private final RedisTemplate<String, byte[]> redisTemplate;
+    protected final RedisTemplate<String, byte[]> redisTemplate;
 
     private RedisMessageListenerContainer redisMessageListenerContainer;
 

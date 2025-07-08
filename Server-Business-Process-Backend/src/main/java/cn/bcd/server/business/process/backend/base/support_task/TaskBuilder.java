@@ -24,13 +24,25 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
     //任务id和任务对应
     protected final ConcurrentHashMap<String, TaskRunnable<T, K>> taskIdToRunnable = new ConcurrentHashMap<>();
 
-    protected TaskBuilder(TaskDao<T, K> taskDao, int poolSize) {
+    final BroadcastStopper broadcastStopper;
+
+    protected TaskBuilder(TaskDao<T, K> taskDao, int poolSize, BroadcastStopper broadcastStopper) {
         this.taskDao = taskDao;
         this.poolSize = poolSize;
+        if (broadcastStopper != null) {
+            broadcastStopper.taskBuilder = this;
+            this.broadcastStopper = broadcastStopper;
+        } else {
+            this.broadcastStopper = null;
+        }
     }
 
     public static <T extends Task<K>, K extends Serializable> TaskBuilder<T, K> newInstance(TaskDao<T, K> taskDao, int poolSize) {
-        return new TaskBuilder<>(taskDao, poolSize);
+        return new TaskBuilder<>(taskDao, poolSize, null);
+    }
+
+    public static <T extends Task<K>, K extends Serializable> TaskBuilder<T, K> newInstance(TaskDao<T, K> taskDao, int poolSize, BroadcastStopper broadcastStopper) {
+        return new TaskBuilder<>(taskDao, poolSize, broadcastStopper);
     }
 
     public synchronized void init() {
@@ -71,10 +83,36 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
 
     @SafeVarargs
     public final StopResult[] stop(K... ids) {
+        if (ids.length == 0) {
+            return new StopResult[0];
+        }
+        String[] arr = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            arr[i] = ids[i].toString();
+        }
+        return stopInternal(arr);
+    }
+
+    @SafeVarargs
+    public final StopResult[] stop_broadcast(K... ids) {
+        if (broadcastStopper == null) {
+            throw BaseException.get("stop_broadcast not support");
+        }
+        if (ids.length == 0) {
+            return new StopResult[0];
+        }
+        String[] arr = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            arr[i] = ids[i].toString();
+        }
+        return broadcastStopper.stop(arr);
+    }
+
+    final StopResult[] stopInternal(String... ids) {
         StopResult[] stopResults = new StopResult[ids.length];
         if (ids.length > 0) {
             for (int i = 0; i < ids.length; i++) {
-                TaskRunnable<T, K> runnable = taskIdToRunnable.get(ids[i].toString());
+                TaskRunnable<T, K> runnable = taskIdToRunnable.get(ids[i]);
                 if (runnable == null) {
                     //此时找不到任务
                     stopResults[i] = StopResult.WAIT_OR_IN_EXECUTING_NOT_FOUND;
