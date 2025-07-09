@@ -8,7 +8,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.netty.buffer.Unpooled;
-import org.checkerframework.checker.index.qual.NonNegative;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -24,12 +23,12 @@ public class GatewayCommandReceiver implements CommandReceiver {
         }
 
         @Override
-        public long expireAfterUpdate(String key, Request<?, ?> value, long currentTime, @NonNegative long currentDuration) {
+        public long expireAfterUpdate(String key, Request<?, ?> value, long currentTime, long currentDuration) {
             return currentDuration;
         }
 
         @Override
-        public long expireAfterRead(String key, Request<?, ?> value, long currentTime, @NonNegative long currentDuration) {
+        public long expireAfterRead(String key, Request<?, ?> value, long currentTime, long currentDuration) {
             return currentDuration;
         }
     }).build();
