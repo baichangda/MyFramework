@@ -8,6 +8,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Paths;
+import org.junit.jupiter.api.Test;
 
 public class TestAsm {
 
@@ -23,7 +24,7 @@ public class TestAsm {
         return var2;
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void test1() throws Exception {
         String className = "Test1";
         String classPath = "D:\\work\\bcd\\MyFramework\\Server-Business-Process-Backend\\src\\test\\java\\cn\\bcd\\server\\business\\process\\backend\\asm\\" + className + ".class";
@@ -63,7 +64,7 @@ public class TestAsm {
 
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     public void test2() throws Exception {
         String className = "Test2";
         String classPath = "D:\\work\\bcd\\MyFramework\\Server-Business-Process-Backend\\src\\test\\java\\cn\\bcd\\server\\business\\process\\backend\\asm\\" + className + ".class";
