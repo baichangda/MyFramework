@@ -43,7 +43,7 @@ import java.util.Map;
  * 字段必须符合如下规则
  * 1、public、非final、非static
  * 2、必须标注了如下注解之一
- * {@link cn.bcd.parser.base.anno}下 F_ 开头的注解(F_skip除外)
+ * {@link cn.bcd.lib.parser.base.anno}下 F_ 开头的注解(F_skip除外)
  *
  * <p>
  * 工作原理:
