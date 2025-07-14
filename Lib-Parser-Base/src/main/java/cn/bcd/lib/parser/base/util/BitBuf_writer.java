@@ -48,24 +48,21 @@ public class BitBuf_writer {
 
             final ByteBuf bb = Unpooled.buffer();
             final BitBuf_writer bitBufWriter = new BitBuf_writer(bb);
-            bitBufWriter.write(4, 3, true);
-            bitBufWriter.write(0, 3, true);
+            bitBufWriter.write(4, 3);
+            bitBufWriter.write(0, 3);
             bitBufWriter.skip(3);
-            bitBufWriter.write(-217, 9, false);
+            bitBufWriter.write(-217, 9);
             bitBufWriter.finish();
             System.out.println(ByteBufUtil.hexDump(bb));
         }
         System.out.println(System.currentTimeMillis() - t1);
     }
 
-    public void write(long l, int bit, boolean bigEndian) {
+    public void write(long l, int bit) {
         l = l & ((1L << bit) - 1);
         final ByteBuf byteBuf = this.byteBuf;
         int bitOffset = this.bitOffset;
         byte b = this.b;
-        if (!bigEndian) {
-            l = Long.reverse(l) >>> (64 - bit);
-        }
         final int temp = bit + bitOffset;
         final int finalBitOffset = temp & 7;
         final long newL;

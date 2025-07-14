@@ -38,16 +38,16 @@ public final class BitBuf_reader_log extends BitBuf_reader {
             };
             ByteBuf bb2 = Unpooled.wrappedBuffer(source2);
             BitBuf_reader_log bitBuf2 = new BitBuf_reader_log(bb2);
-            bitBuf2.read(3, true, true);
-            bitBuf2.read(3, true, true);
+            bitBuf2.read(3, true);
+            bitBuf2.read(3, true);
             bitBuf2.skip(3);
-            bitBuf2.read(9, false, false);
+            bitBuf2.read(9, false);
         }
         System.out.println(System.currentTimeMillis() - t1);
 
     }
 
-    public long read(int bit, boolean bigEndian, boolean unsigned) {
+    public long read(int bit, boolean unsigned) {
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
         byte b;
@@ -69,7 +69,7 @@ public final class BitBuf_reader_log extends BitBuf_reader {
             l = (b & 0xffL) << (temp - finalBitOffset);
         }
 
-        final ReadLog log = new ReadLog(byteLen, bitOffset, bit, bigEndian, unsigned);
+        final ReadLog log = new ReadLog(byteLen, bitOffset, bit, unsigned);
         log.bytes[0] = b;
 
         for (int i = 1; i < byteLen; i++) {
@@ -81,25 +81,18 @@ public final class BitBuf_reader_log extends BitBuf_reader {
         this.bitOffset = finalBitOffset;
         this.b = b;
 
-        log.val1 = (l >>> (byteLen * 8 - bitOffset - bit)) & ((0x01L << bit) - 1);
 
-        //如果是小端模式、则翻转bit
-        final long cRight;
-        if (bigEndian) {
-            cRight = l >>> ((byteLen << 3) - bitOffset - bit);
-        } else {
-            cRight = Long.reverse(l) >>> (64 - (byteLen << 3) + bitOffset);
-        }
+        final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
-        log.val2 = cRight & ((0x01L << bit) - 1);
+        log.val1 = cRight & ((0x01L << bit) - 1);
 
         if (!unsigned && ((cRight >> (bit - 1)) & 0x01) == 1) {
-            log.val3 = cRight | (-1L << bit);
+            log.val2 = cRight | (-1L << bit);
         } else {
-            log.val3 = cRight & ((0x01L << bit) - 1);
+            log.val2 = cRight & ((0x01L << bit) - 1);
         }
         logs.add(log);
-        return log.val3;
+        return log.val2;
     }
 
     public void skip(int bit) {
@@ -246,17 +239,13 @@ public final class BitBuf_reader_log extends BitBuf_reader {
 
         public final boolean unsigned;
 
-        public final boolean bigEndian;
         //原始值
         public long val1;
-        //处理大小端之后的值
-        public long val2;
         //最终解析值
-        public long val3;
+        public long val2;
 
-        public ReadLog(int byteLen, int bitStart, int bit, boolean bigEndian, boolean unsigned) {
+        public ReadLog(int byteLen, int bitStart, int bit, boolean unsigned) {
             super(byteLen, bitStart, bit);
-            this.bigEndian = bigEndian;
             this.unsigned = unsigned;
         }
 
@@ -266,13 +255,12 @@ public final class BitBuf_reader_log extends BitBuf_reader {
 
         @Override
         public String msg() {
-            return StringUtil.format("read bit_hex[{}] bit_pos[{}-{}] bit_bigEndian[{}] bit_unsigned[{}] bit_binary[{}->{}->{}] bit_val[{}->{}->{}]",
+            return StringUtil.format("read bit_hex[{}] bit_pos[{}-{}] bit_unsigned[{}] bit_binary[{}->{}] bit_val[{}->{}]",
                     getLogHex().toUpperCase(),
                     bitStart, bitEnd,
-                    bigEndian ? "yes" : "no",
                     unsigned ? "yes" : "no",
-                    getLogBit(val1), getLogBit(val2), getLogBit(val3),
-                    val1, val2, val3);
+                    getLogBit(val1), getLogBit(val2),
+                    val1, val2);
         }
     }
 }

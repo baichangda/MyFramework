@@ -26,17 +26,17 @@ public final class BitBuf_writer_log extends BitBuf_writer {
 
             final ByteBuf bb = Unpooled.buffer();
             final BitBuf_writer_log bitBufWriter = new BitBuf_writer_log(bb);
-            bitBufWriter.write(4, 3, true);
-            bitBufWriter.write(0, 3, true);
+            bitBufWriter.write(4, 3);
+            bitBufWriter.write(0, 3);
             bitBufWriter.skip(3);
-            bitBufWriter.write(-217, 9, false);
+            bitBufWriter.write(-217, 9);
             bitBufWriter.finish();
 //            System.out.println(ByteBufUtil.hexDump(bb));
         }
         System.out.println(System.currentTimeMillis() - t1);
     }
 
-    public void write(long l, int bit, boolean bigEndian) {
+    public void write(long l, int bit) {
         l = l & ((0x01L << bit) - 1);
         final ByteBuf byteBuf = this.byteBuf;
         int bitOffset = this.bitOffset;
@@ -51,15 +51,9 @@ public final class BitBuf_writer_log extends BitBuf_writer {
             byteLen = (temp >> 3) + 1;
         }
 
-        final WriteLog log = new WriteLog(byteLen, bitOffset, bit, bigEndian);
+        final WriteLog log = new WriteLog(byteLen, bitOffset, bit);
 
         log.val1 = l;
-
-        if (!bigEndian) {
-            l = Long.reverse(l) >>> (64 - bit);
-        }
-
-        log.val2 = l;
 
         final long newL;
         if (finalBitOffset == 0) {
@@ -216,13 +210,11 @@ public final class BitBuf_writer_log extends BitBuf_writer {
     }
 
     public static class WriteLog extends Log {
-        public final boolean bigEndian;
         public long val1;
         public long val2;
 
-        public WriteLog(int byteLen, int bitStart, int bit, boolean bigEndian) {
+        public WriteLog(int byteLen, int bitStart, int bit) {
             super(byteLen, bitStart, bit);
-            this.bigEndian = bigEndian;
         }
 
         public final String getLogBit(long l) {
@@ -231,10 +223,9 @@ public final class BitBuf_writer_log extends BitBuf_writer {
 
         @Override
         public String msg() {
-            return StringUtil.format("write bit_bigEndian[{}] bit_val[{}->{}] bit_binary[{}->{}] bit_hex[{}] bit_pos[{}-{}]",
-                    bigEndian ? "yes" : "no",
-                    val1, val2,
-                    getLogBit(val1), getLogBit(val2),
+            return StringUtil.format("write bit_val[{}] bit_binary[{}] bit_hex[{}] bit_pos[{}-{}]",
+                    val1,
+                    getLogBit(val1),
                     getLogHex().toUpperCase(),
                     bitStart, bitEnd);
         }

@@ -7,7 +7,6 @@ import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.anno.F_skip;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
-import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
@@ -48,7 +47,7 @@ import java.util.Map;
  * 使用方法:
  * 1、首先获取类处理器
  * {@link #getProcessor(Class)}
- * {@link #getProcessor(Class, ByteOrder, BitOrder, NumValGetter)}
+ * {@link #getProcessor(Class, ByteOrder, NumValGetter)}
  * 2、调用解析或者反解析
  * <p>
  * 解析调用入口:
@@ -214,12 +213,12 @@ public class Parser {
         }
     }
 
-    private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, BitOrder bitOrder, NumValGetter numValGetter) throws CannotCompileException, NotFoundException, IOException {
+    private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) throws CannotCompileException, NotFoundException, IOException {
         final String processor_class_name = Processor.class.getName();
         final String byteBufClassName = ByteBuf.class.getName();
         final String clazzName = clazz.getName();
 
-        String implProcessor_class_name = ParseUtil.getProcessorClassName(clazz, byteOrder, bitOrder, numValGetter);
+        String implProcessor_class_name = ParseUtil.getProcessorClassName(clazz, byteOrder, numValGetter);
         final CtClass cc = ClassPool.getDefault().makeClass(implProcessor_class_name);
 
         //添加泛型
@@ -258,7 +257,7 @@ public class Parser {
         processBody.append("\n{\n");
         ParseUtil.append(processBody, "final {} {}=new {}();\n", clazzName, FieldBuilder.varNameInstance, clazzName);
         final List<Field> fieldList = ParseUtil.getParseFields(clazz);
-        BuilderContext parseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, processBody, clazz, cc, classVarDefineToVarName, byteOrder, bitOrder, fieldList, numValGetter);
+        BuilderContext parseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, processBody, clazz, cc, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
 
         C_skip c_skip = clazz.getAnnotation(C_skip.class);
         if (c_skip == null) {
@@ -319,7 +318,7 @@ public class Parser {
         StringBuilder deProcessBody = new StringBuilder();
         deProcessBody.append("\n{\n");
         ParseUtil.append(deProcessBody, "final {} {}=({})$3;\n", clazzName, FieldBuilder.varNameInstance, clazzName);
-        BuilderContext deParseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, deProcessBody, clazz, cc, classVarDefineToVarName, byteOrder, bitOrder, fieldList, numValGetter);
+        BuilderContext deParseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, deProcessBody, clazz, cc, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
         if (c_skip == null) {
             buildMethodBody_deProcess(deParseBuilderContext);
         } else {
@@ -402,7 +401,7 @@ public class Parser {
      * @return
      */
     public static <T> Processor<T> getProcessor(Class<T> clazz) {
-        return getProcessor(clazz, ByteOrder.Default, BitOrder.Default, DefaultNumValGetter.instance);
+        return getProcessor(clazz, ByteOrder.Default, DefaultNumValGetter.instance);
     }
 
     /**
@@ -410,21 +409,20 @@ public class Parser {
      *
      * @param clazz        实体类类型
      * @param byteOrder    实体类字节码实现 字节序模式
-     * @param bitOrder     实体类字节码实现 位模式
      * @param numValGetter 数值字段获取器、可以为null
      *                     为null时候不支持NumVal_字段类型
      * @param <T>
      * @return
      */
-    public static <T> Processor<T> getProcessor(Class<T> clazz, ByteOrder byteOrder, BitOrder bitOrder, NumValGetter numValGetter) {
-        final String key = ParseUtil.getProcessorKey(clazz, byteOrder, bitOrder, numValGetter);
+    public static <T> Processor<T> getProcessor(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
+        final String key = ParseUtil.getProcessorKey(clazz, byteOrder, numValGetter);
         Processor<T> processor = (Processor<T>) beanProcessorKey_processor.get(key);
         if (processor == null) {
             synchronized (beanProcessorKey_processor) {
                 processor = (Processor<T>) beanProcessorKey_processor.get(key);
                 if (processor == null) {
                     try {
-                        final Class<T> processClass = Parser.buildClass(clazz, byteOrder, bitOrder, numValGetter);
+                        final Class<T> processClass = Parser.buildClass(clazz, byteOrder, numValGetter);
                         processor = (Processor<T>) processClass.getConstructor().newInstance();
                         beanProcessorKey_processor.put(key, processor);
                     } catch (Exception ex) {

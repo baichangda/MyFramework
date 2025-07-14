@@ -57,10 +57,10 @@ public class BitBuf_reader {
             };
             ByteBuf bb2 = Unpooled.wrappedBuffer(source2);
             BitBuf_reader bitBuf2 = new BitBuf_reader(bb2);
-            final long res1 = bitBuf2.read(3, true, true);
-            final long res2 = bitBuf2.read(8, true, true);
+            final long res1 = bitBuf2.read(3, true);
+            final long res2 = bitBuf2.read(8, true);
             bitBuf2.skip(3);
-            final long res3 = bitBuf2.read(9, false, false);
+            final long res3 = bitBuf2.read(9,  false);
             System.out.println(res1);
             System.out.println(res2);
             System.out.println(res3);
@@ -69,7 +69,7 @@ public class BitBuf_reader {
 
     }
 
-    public long read(int bit, boolean bigEndian, boolean unsigned) {
+    public long read(int bit, boolean unsigned) {
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
         byte b;
@@ -97,13 +97,7 @@ public class BitBuf_reader {
         this.bitOffset = finalBitOffset;
         this.b = b;
 
-        //如果是小端模式、则翻转bit
-        final long cRight;
-        if (bigEndian) {
-            cRight = l >>> ((byteLen << 3) - bitOffset - bit);
-        } else {
-            cRight = Long.reverse(l) >>> (64 - (byteLen << 3) + bitOffset);
-        }
+        final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
         if (!unsigned && ((cRight >> (bit - 1)) & 0x01) == 1) {
             return cRight | (-1L << bit);

@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 
@@ -61,10 +60,6 @@ public @interface F_bit_num {
      */
     boolean unsigned() default true;
 
-    /**
-     * bit位序模式
-     */
-    BitOrder order() default BitOrder.Default;
 
     /**
      * 变量名称、仅作用于当前类

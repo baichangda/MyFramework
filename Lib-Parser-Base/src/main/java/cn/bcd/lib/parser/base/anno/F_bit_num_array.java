@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.anno;
 
-import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
 
 import java.lang.annotation.ElementType;
@@ -71,12 +70,6 @@ public @interface F_bit_num_array {
      * 负数、所有bit位取反+1、求值后、代表负数
      */
     boolean singleUnsigned() default true;
-
-    /**
-     * 每个元素
-     * bit位序模式
-     */
-    BitOrder singleOrder() default BitOrder.Default;
 
     /**
      * 每个元素

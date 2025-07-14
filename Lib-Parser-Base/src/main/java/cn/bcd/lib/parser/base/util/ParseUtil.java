@@ -7,7 +7,6 @@ import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
-import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.Processor;
@@ -66,25 +65,6 @@ public class ParseUtil {
         throw BaseException.get("class[{}] field[{}] " + msg, args);
     }
 
-    public static boolean bigEndian(BitOrder order, BitOrder parentOrder) {
-        if (parentOrder == null) {
-            if (order == BitOrder.Default) {
-                return true;
-            } else {
-                return order == BitOrder.bigEndian;
-            }
-        } else {
-            if (order == BitOrder.Default) {
-                if (parentOrder == BitOrder.Default) {
-                    return true;
-                } else {
-                    return parentOrder == BitOrder.bigEndian;
-                }
-            } else {
-                return order == BitOrder.bigEndian;
-            }
-        }
-    }
 
     public static boolean bigEndian(ByteOrder order, ByteOrder parentOrder) {
         if (parentOrder == null) {
@@ -493,17 +473,16 @@ public class ParseUtil {
         return ClassUtil.getAllFields(clazz).stream().filter(ParseUtil::needParse).collect(Collectors.toList());
     }
 
-    private static String getProcessorSuffix(ByteOrder byteOrder, BitOrder bitOrder, NumValGetter numValGetter) {
+    private static String getProcessorSuffix(ByteOrder byteOrder, NumValGetter numValGetter) {
         return "_" + (byteOrder == ByteOrder.smallEndian ? 0 : 1)
-                + "_" + (bitOrder == BitOrder.smallEndian ? 0 : 1)
                 + "_" + (Parser.logCollector_parse == null ? 0 : 1)
                 + "_" + (Parser.logCollector_deParse == null ? 0 : 1)
                 + "_" + (numValGetter.index)
                 ;
     }
 
-    public static String getProcessorKey(Class<?> clazz, ByteOrder byteOrder, BitOrder bitOrder, NumValGetter numValGetter) {
-        return clazz.getName() + getProcessorSuffix(byteOrder, bitOrder, numValGetter);
+    public static String getProcessorKey(Class<?> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
+        return clazz.getName() + getProcessorSuffix(byteOrder, numValGetter);
     }
 
 
@@ -512,13 +491,13 @@ public class ParseUtil {
      */
     private static int processorIndex = 0;
 
-    public static String getProcessorClassName(Class<?> clazz, ByteOrder byteOrder, BitOrder bitOrder, NumValGetter numValGetter) {
+    public static String getProcessorClassName(Class<?> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         String clazzName = Processor.class.getName();
         return clazzName.substring(0, clazzName.lastIndexOf("."))
                 + ".P_"
                 + (processorIndex++) + "_"
                 + clazz.getSimpleName()
-                + getProcessorSuffix(byteOrder, bitOrder, numValGetter);
+                + getProcessorSuffix(byteOrder, numValGetter);
     }
 
     public static Map<Class<? extends Annotation>, FieldBuilder> getAllFieldBuild() {

@@ -1,7 +1,6 @@
 package cn.bcd.lib.parser.base.builder;
 
 import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.data.BitOrder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
@@ -39,7 +38,6 @@ public class BuilderContext {
      * 传递进来的字节序
      */
     public final ByteOrder byteOrder;
-    public final BitOrder bitOrder;
 
     /**
      * 类变量定义体
@@ -101,7 +99,7 @@ public class BuilderContext {
     public final NumValGetter numValGetter;
 
     public BuilderContext(StringBuilder class_fieldDefineBody, StringBuilder class_constructBody, StringBuilder method_body, Class<?> clazz,
-                          CtClass implCc, Map<String, String> class_varDefineToVarName, ByteOrder byteOrder, BitOrder bitOrder,
+                          CtClass implCc, Map<String, String> class_varDefineToVarName, ByteOrder byteOrder,
                           List<Field> class_fieldList, NumValGetter numValGetter) {
         this.class_fieldDefineBody = class_fieldDefineBody;
         this.class_constructBody = class_constructBody;
@@ -110,7 +108,6 @@ public class BuilderContext {
         this.implCc = implCc;
         this.class_varDefineToVarName = class_varDefineToVarName;
         this.byteOrder = byteOrder;
-        this.bitOrder = bitOrder;
         this.class_fieldList = class_fieldList;
         this.numValGetter = numValGetter;
     }
@@ -144,11 +141,11 @@ public class BuilderContext {
 
     public final String getProcessorVarName(Class<?> beanClazz) {
         return ParseUtil.defineClassVar(this, e -> {
-                    Parser.getProcessor(beanClazz, byteOrder, bitOrder, numValGetter);
+                    Parser.getProcessor(beanClazz, byteOrder, numValGetter);
                 }, Processor.class,
                 Processor.class.getSimpleName() + "_" + beanClazz.getSimpleName(),
                 "{}.beanProcessorKey_processor.get(\"{}\")",
-                Parser.class.getName(), ParseUtil.getProcessorKey(beanClazz, byteOrder, bitOrder, numValGetter));
+                Parser.class.getName(), ParseUtil.getProcessorKey(beanClazz, byteOrder, numValGetter));
     }
 
     public final String getGlobalVarName(char c) {
