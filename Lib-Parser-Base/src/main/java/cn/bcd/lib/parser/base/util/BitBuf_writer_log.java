@@ -211,7 +211,6 @@ public final class BitBuf_writer_log extends BitBuf_writer {
 
     public static class WriteLog extends Log {
         public long val1;
-        public long val2;
 
         public WriteLog(int byteLen, int bitStart, int bit) {
             super(byteLen, bitStart, bit);
