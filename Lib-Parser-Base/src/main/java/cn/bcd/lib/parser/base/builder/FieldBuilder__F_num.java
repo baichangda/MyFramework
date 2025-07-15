@@ -2,7 +2,7 @@ package cn.bcd.lib.parser.base.builder;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_num;
-import cn.bcd.lib.parser.base.data.*;
+import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;
 import io.netty.buffer.ByteBuf;
@@ -122,9 +122,14 @@ public class FieldBuilder__F_num extends FieldBuilder {
         if (fieldTypeClass.isEnum()) {
             ParseUtil.append(body, "{}.{}={}.fromInteger((int)({}));\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         } else {
+            int precision = anno.precision();
             //格式化精度
-            if ((fieldTypeClass == float.class || fieldTypeClass == double.class) && anno.precision() >= 0) {
-                valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, anno.precision());
+            if ((fieldTypeClass == float.class || fieldTypeClass == double.class) && precision >= 0) {
+                if (precision == 0) {
+                    valCode = ParseUtil.format("{}.round((double){})", ParseUtil.class.getName(), valCode);
+                } else {
+                    valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, precision);
+                }
             }
             ParseUtil.append(body, "{}.{}=({}){};\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
         }
@@ -301,13 +306,23 @@ public class FieldBuilder__F_num extends FieldBuilder {
         } else {
             rawValCode = ParseUtil.format("({}){}", fieldTypeName, varNameRawVal);
         }
-        if ((fieldTypeName.equals("float") || fieldTypeName.equals("double")) && anno.precision() >= 0) {
-            ParseUtil.append(body, "{}=({}){}.round((double){},{});\n",
-                    varExprValDefineInIfCode,
-                    fieldTypeName,
-                    ParseUtil.class.getName(),
-                    ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode),
-                    anno.precision());
+        int precision = anno.precision();
+        if ((fieldTypeName.equals("float") || fieldTypeName.equals("double")) && precision >= 0) {
+            if (precision == 0) {
+                ParseUtil.append(body, "{}=({}){}.round((double){});\n",
+                        varExprValDefineInIfCode,
+                        fieldTypeName,
+                        ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode));
+            } else {
+                ParseUtil.append(body, "{}=({}){}.round((double){},{});\n",
+                        varExprValDefineInIfCode,
+                        fieldTypeName,
+                        ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode),
+                        precision);
+            }
+
         } else {
             ParseUtil.append(body, "{}=({}){};\n",
                     varExprValDefineInIfCode,

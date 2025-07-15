@@ -141,8 +141,13 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 ParseUtil.append(body, "{}[i]={}.fromInteger((int)({}));\n", arrVarName, arrayElementTypeName, valCode);
             } else {
                 //格式化精度
-                if ((arrayElementType == float.class || arrayElementType == double.class) && anno.singlePrecision() >= 0) {
-                    valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, anno.singlePrecision());
+                int singlePrecision = anno.singlePrecision();
+                if ((arrayElementType == float.class || arrayElementType == double.class) && singlePrecision >= 0) {
+                    if (singlePrecision == 0) {
+                        valCode = ParseUtil.format("{}.round((double){})", ParseUtil.class.getName(), valCode);
+                    } else {
+                        valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, singlePrecision);
+                    }
                 }
                 ParseUtil.append(body, "{}[i]=({})({});\n", arrVarName, arrayElementTypeName, valCode);
             }
@@ -155,7 +160,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
     public boolean buildParse_checkVal(BuilderContext context) {
         final Class<F_num_array> annoClass = F_num_array.class;
         final F_num_array anno = context.field.getAnnotation(annoClass);
-        if(!anno.singleCheckVal()){
+        if (!anno.singleCheckVal()) {
             return false;
         }
         final Field field = context.field;
@@ -326,14 +331,25 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
             arrEleRawValCode = ParseUtil.format("({}){}", arrEleValTypeName, varNameArrEleRawVal);
         }
         String varNameArrEleExprVal = varNameField + "_arrEleExprVal";
-        if ((arrEleValTypeName.equals("float") || arrEleValTypeName.equals("double")) && anno.singlePrecision() >= 0) {
-            ParseUtil.append(body, "final {} {}=({}){}.round((double){},{});\n",
-                    arrEleValTypeName,
-                    varNameArrEleExprVal,
-                    arrEleValTypeName,
-                    ParseUtil.class.getName(),
-                    ParseUtil.replaceValExprToCode(singleValExpr, arrEleRawValCode),
-                    anno.singlePrecision());
+        int singlePrecision = anno.singlePrecision();
+        if ((arrEleValTypeName.equals("float") || arrEleValTypeName.equals("double")) && singlePrecision >= 0) {
+            if (singlePrecision == 0) {
+                ParseUtil.append(body, "final {} {}=({}){}.round((double){});\n",
+                        arrEleValTypeName,
+                        varNameArrEleExprVal,
+                        arrEleValTypeName,
+                        ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(singleValExpr, arrEleRawValCode));
+            } else {
+                ParseUtil.append(body, "final {} {}=({}){}.round((double){},{});\n",
+                        arrEleValTypeName,
+                        varNameArrEleExprVal,
+                        arrEleValTypeName,
+                        ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(singleValExpr, arrEleRawValCode),
+                        singlePrecision);
+            }
+
         } else {
             ParseUtil.append(body, "final {} {}=({})({});\n",
                     arrEleValTypeName,

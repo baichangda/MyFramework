@@ -1,9 +1,9 @@
 package cn.bcd.lib.parser.base.builder;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;
 
@@ -89,8 +89,13 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         }
         String valCode = ParseUtil.replaceValExprToCode(valExpr, varNameArrayElement);
         //格式化精度
-        if ((arrayElementType == float.class || arrayElementType == double.class) && anno.singlePrecision() >= 0) {
-            valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, anno.singlePrecision());
+        int singlePrecision = anno.singlePrecision();
+        if ((arrayElementType == float.class || arrayElementType == double.class) && singlePrecision >= 0) {
+            if (singlePrecision == 0) {
+                valCode = ParseUtil.format("{}.round((double){})", ParseUtil.class.getName(), valCode);
+            } else {
+                valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, singlePrecision);
+            }
         }
         ParseUtil.append(body, "{}[i]=({})({});\n", arrVarName, arrayElementTypeName, valCode);
         ParseUtil.append(body, "}\n");

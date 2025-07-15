@@ -420,6 +420,7 @@ public class ParseUtil {
         sb.append(format(message, params));
     }
 
+
     public static long round(double d) {
         if (d > 0d) {
             return (long) (d + 0.5);
@@ -441,21 +442,14 @@ public class ParseUtil {
     }
 
     public static double round(double d, int i) {
-        if (d > 0) {
-            if (i == 0) {
-                return Math.round(d);
-            } else {
-                return Math.round(d * pows[i]) / pows[i];
-            }
-
-        } else if (d < 0) {
-            if (i == 0) {
-                return -Math.round(-d);
-            } else {
-                return -Math.round(-d * pows[i]) / pows[i];
-            }
-        } else {
+        if (d == 0) {
             return 0;
+        } else {
+            if (i == 0) {
+                return round(d);
+            } else {
+                return round(d * pows[i]) / pows[i];
+            }
         }
     }
 

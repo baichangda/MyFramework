@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;
 
@@ -115,8 +115,13 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={}.fromInteger((int){});\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         } else {
             //格式化精度
-            if ((fieldTypeClass == float.class || fieldTypeClass == double.class) && anno.precision() >= 0) {
-                valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, anno.precision());
+            int precision = anno.precision();
+            if ((fieldTypeClass == float.class || fieldTypeClass == double.class) && precision >= 0) {
+                if (precision == 0) {
+                    valCode = ParseUtil.format("{}.round((double){})", ParseUtil.class.getName(), valCode);
+                } else {
+                    valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, precision);
+                }
             }
             ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         }

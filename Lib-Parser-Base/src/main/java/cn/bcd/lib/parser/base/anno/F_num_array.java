@@ -95,7 +95,7 @@ public @interface F_num_array {
      * 检查数值元素值是否有效
      * 此属性为true时候、必须指定一个伴生字段public byte[] {field}__v
      * 伴生字段值来源于方法
-     * {@link cn.bcd.lib.parser.base.Parser#getProcessor(Class, ByteOrder, BitOrder, NumValGetter)}
+     * {@link cn.bcd.lib.parser.base.Parser#getProcessor(Class, ByteOrder, NumValGetter)}
      * 其中参数{@link NumValGetter}
      */
     boolean singleCheckVal() default false;
