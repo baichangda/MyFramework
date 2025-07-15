@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
 import cn.bcd.lib.parser.base.anno.F_num;
-import cn.bcd.lib.parser.base.data.*;
+import cn.bcd.lib.parser.base.data.NumType;
 
 /**
  * 每个驱动电机数据格式
