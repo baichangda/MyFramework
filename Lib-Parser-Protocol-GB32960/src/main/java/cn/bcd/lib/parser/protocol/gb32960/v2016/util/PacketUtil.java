@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.util;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.util.ParseUtil;
@@ -237,6 +238,15 @@ public class PacketUtil {
      * @return
      */
     public static Packet build_packet_command_platformLogin(String vin, Date time, int sn, String username, String password) {
+        if (!(sn >= 1 && sn <= 65531)) {
+            throw BaseException.get("sn must be between 1 and 65531,now is {}", sn);
+        }
+        if (username.length() != 12) {
+            throw BaseException.get("username length must be 12,now is {}", username.length());
+        }
+        if (password.length() != 20) {
+            throw BaseException.get("password length must be 20,now is {}", password.length());
+        }
         PlatformLoginData platformLoginData = new PlatformLoginData();
         platformLoginData.collectTime = DateUtil.clearMills(time);
         platformLoginData.sn = sn;
@@ -263,6 +273,9 @@ public class PacketUtil {
      * @return
      */
     public static Packet build_packet_command_platformLogout(String vin, Date time, int sn) {
+        if (!(sn >= 1 && sn <= 65531)) {
+            throw BaseException.get("sn must be between 1 and 65531,now is {}", sn);
+        }
         PlatformLogoutData platformLogoutData = new PlatformLogoutData();
         platformLogoutData.collectTime = DateUtil.clearMills(time);
         platformLogoutData.sn = sn;
