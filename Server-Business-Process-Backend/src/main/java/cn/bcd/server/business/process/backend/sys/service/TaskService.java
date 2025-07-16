@@ -14,6 +14,7 @@ import com.alibaba.excel.write.metadata.WriteSheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -69,7 +70,15 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
         }
     }
 
-    public long startTask_export(String taskName, BaseService<?> service, Condition condition) {
+    /**
+     * 开始导出任内务
+     * @param taskName
+     * @param service
+     * @param condition
+     * @param sort
+     * @return
+     */
+    public long startTask_export(String taskName, BaseService<?> service, Condition condition, Sort sort) {
         TaskBean taskBean = new TaskBean(taskName, 1);
         return taskBuilder.register(taskBean, runnable -> {
             String fileName = taskName + "_" + DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".xlsx";
@@ -81,7 +90,7 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
                 try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
                     boolean empty = true;
                     WriteSheet writeSheet = excelWriterSheetBuilder.build();
-                    for (List<?> list : service.batchIterable(1000, condition, null)) {
+                    for (List<?> list : service.batchIterable(1000, condition, sort)) {
                         //检测停止
                         if (runnable.stop) {
                             return false;

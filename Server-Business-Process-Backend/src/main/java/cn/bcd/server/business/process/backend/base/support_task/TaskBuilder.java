@@ -24,6 +24,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
     //任务id和任务对应
     protected final ConcurrentHashMap<String, TaskRunnable<T, K>> taskIdToRunnable = new ConcurrentHashMap<>();
 
+    //广播停止器、用于redis广播停止任务到其他节点中、用于集群服务环境
     final BroadcastStopper broadcastStopper;
 
     protected TaskBuilder(TaskDao<T, K> taskDao, int poolSize, BroadcastStopper broadcastStopper) {
@@ -41,6 +42,16 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
         return new TaskBuilder<>(taskDao, poolSize, null);
     }
 
+    /**
+     * 新建任务构造器
+     *
+     * @param taskDao          任务数据访问接口
+     * @param poolSize         执行任务线程池大小
+     * @param broadcastStopper 广播任务停止器
+     * @param <T>
+     * @param <K>
+     * @return
+     */
     public static <T extends Task<K>, K extends Serializable> TaskBuilder<T, K> newInstance(TaskDao<T, K> taskDao, int poolSize, BroadcastStopper broadcastStopper) {
         return new TaskBuilder<>(taskDao, poolSize, broadcastStopper);
     }
@@ -48,10 +59,8 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
     public synchronized void init() {
         //初始化线程池
         pools = new ThreadPoolExecutor[poolSize];
-        {
-            for (int i = 0; i < poolSize; i++) {
-                pools[i] = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-            }
+        for (int i = 0; i < poolSize; i++) {
+            pools[i] = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
         }
         this.executorChooser = ExecutorChooser.getChooser(pools);
     }

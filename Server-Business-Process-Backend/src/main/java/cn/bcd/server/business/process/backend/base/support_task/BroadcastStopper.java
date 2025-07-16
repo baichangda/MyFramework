@@ -6,6 +6,7 @@ import cn.bcd.lib.base.redis.mq.ValueSerializerType;
 import cn.bcd.lib.base.redis.mq.topic.RedisTopicMQ;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
