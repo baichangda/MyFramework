@@ -12,7 +12,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
@@ -41,7 +44,8 @@ public abstract class ConsumeExecutorGroup<T> {
     ScheduledExecutorService monitor_pool;
     LongAdder monitor_blockingNum;
     LongAdder monitor_entityNum;
-    LongAdder monitor_messageNum;
+    LongAdder monitor_receiveNum;
+    LongAdder monitor_workNum;
 
     public ConsumeExecutorGroup(String groupName,
                                 int executorNum,
@@ -76,7 +80,7 @@ public abstract class ConsumeExecutorGroup<T> {
                     }
                 }
                 for (String id : ids) {
-                    removeEntity(id,executor);
+                    removeEntity(id, executor);
                 }
             });
         }
@@ -104,7 +108,8 @@ public abstract class ConsumeExecutorGroup<T> {
             if (monitor_period > 0) {
                 monitor_blockingNum = new LongAdder();
                 monitor_entityNum = new LongAdder();
-                monitor_messageNum = new LongAdder();
+                monitor_receiveNum = new LongAdder();
+                monitor_workNum = new LongAdder();
                 monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
                 monitor_pool.scheduleAtFixedRate(() -> {
                     logger.info(monitor_log());
@@ -121,7 +126,7 @@ public abstract class ConsumeExecutorGroup<T> {
                 try {
                     futureList.add(executor.destroy(() -> {
                         for (String id : executor.entityMap.keySet()) {
-                            removeEntity(id,executor);
+                            removeEntity(id, executor);
                         }
                     }));
                 } catch (Exception ex) {
@@ -141,7 +146,8 @@ public abstract class ConsumeExecutorGroup<T> {
             monitor_pool = null;
             monitor_blockingNum = null;
             monitor_entityNum = null;
-            monitor_messageNum = null;
+            monitor_receiveNum = null;
+            monitor_workNum=null;
         }
 
     }
@@ -181,6 +187,9 @@ public abstract class ConsumeExecutorGroup<T> {
         }
         String id = id(t);
         ConsumeExecutor<T> executor = getExecutor(id);
+        if (monitor_period > 0) {
+            monitor_receiveNum.increment();
+        }
         executor.execute(() -> {
             ConsumeEntity<T> entity = executor.entityMap.computeIfAbsent(id, k -> {
                 try {
@@ -210,19 +219,21 @@ public abstract class ConsumeExecutorGroup<T> {
                 }
             }
             if (monitor_period > 0) {
-                monitor_messageNum.increment();
+                monitor_workNum.increment();
             }
         });
     }
 
     public String monitor_log() {
         String queueLog = Arrays.stream(executors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
-        return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] messageSpeed[{}/s] queues[{}]",
+        return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] receiveSpeed[{}/s] queues[{}] workSpeed[{}/s]",
                 groupName,
                 monitor_blockingNum.sum(),
                 monitor_entityNum.sum(),
-                FloatUtil.format(monitor_messageNum.sumThenReset() / ((double) monitor_period), 2),
-                queueLog);
+                FloatUtil.format(monitor_receiveNum.sumThenReset() / ((double) monitor_period), 2),
+                queueLog,
+                FloatUtil.format(monitor_workNum.sumThenReset() / ((double) monitor_period), 2)
+        );
     }
 
 
