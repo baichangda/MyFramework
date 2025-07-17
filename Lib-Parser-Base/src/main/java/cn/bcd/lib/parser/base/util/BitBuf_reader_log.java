@@ -63,10 +63,10 @@ public final class BitBuf_reader_log extends BitBuf_reader {
         long l;
         if (finalBitOffset == 0) {
             byteLen = temp >> 3;
-            l = (b & 0xffL) << (temp - 8);
+            l = (b & 0xFFL) << (temp - 8);
         } else {
             byteLen = (temp >> 3) + 1;
-            l = (b & 0xffL) << (temp - finalBitOffset);
+            l = (b & 0xFFL) << (temp - finalBitOffset);
         }
 
         final ReadLog log = new ReadLog(byteLen, bitOffset, bit, unsigned);
@@ -75,7 +75,7 @@ public final class BitBuf_reader_log extends BitBuf_reader {
         for (int i = 1; i < byteLen; i++) {
             b = byteBuf.readByte();
             log.bytes[i] = b;
-            l |= (b & 0xffL) << ((byteLen - 1 - i) << 3);
+            l |= (b & 0xFFL) << ((byteLen - 1 - i) << 3);
         }
 
         this.bitOffset = finalBitOffset;
@@ -84,12 +84,12 @@ public final class BitBuf_reader_log extends BitBuf_reader {
 
         final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
-        log.val1 = cRight & ((0x01L << bit) - 1);
+        log.val1 = cRight & ((1L << bit) - 1);
 
-        if (!unsigned && ((cRight >> (bit - 1)) & 0x01) == 1) {
+        if (!unsigned && ((cRight >> (bit - 1)) & 1) == 1) {
             log.val2 = cRight | (-1L << bit);
         } else {
-            log.val2 = cRight & ((0x01L << bit) - 1);
+            log.val2 = cRight & ((1L << bit) - 1);
         }
         logs.add(log);
         return log.val2;

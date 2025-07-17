@@ -85,24 +85,24 @@ public class BitBuf_reader {
         long l;
         if (finalBitOffset == 0) {
             byteLen = temp >> 3;
-            l = (b & 0xffL) << (temp - 8);
+            l = (b & 0xFFL) << (temp - 8);
         } else {
             byteLen = (temp >> 3) + 1;
-            l = (b & 0xffL) << (temp - finalBitOffset);
+            l = (b & 0xFFL) << (temp - finalBitOffset);
         }
         for (int i = 1; i < byteLen; i++) {
             b = byteBuf.readByte();
-            l |= ((b & 0xffL) << ((byteLen - 1 - i) << 3));
+            l |= ((b & 0xFFL) << ((byteLen - 1 - i) << 3));
         }
         this.bitOffset = finalBitOffset;
         this.b = b;
 
         final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
-        if (!unsigned && ((cRight >> (bit - 1)) & 0x01) == 1) {
+        if (!unsigned && ((cRight >> (bit - 1)) & 1) == 1) {
             return cRight | (-1L << bit);
         } else {
-            return cRight & ((0x01L << bit) - 1);
+            return cRight & ((1L << bit) - 1);
         }
     }
 
