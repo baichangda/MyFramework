@@ -1,0 +1,39 @@
+server:
+  port: 58888
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,application/xhtml+xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  servlet:
+    session:
+      timeout: 1800
+
+spring:
+  application:
+    name: tool-stock
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  web:
+    resources:
+      chain:
+        cache: false
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
+
+springdoc:
+  packages-to-scan:
+    - cn.bcd
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
