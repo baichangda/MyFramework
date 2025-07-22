@@ -100,6 +100,11 @@ spring:
       group-id: ${spring.application.name}
       key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+#      properties:
+#        security.protocol: SASL_PLAINTEXT
+#        sasl:
+#          mechanism: PLAIN
+#          jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username=srih_rvm30_sy password=!QAZ2wsx
     producer:
       #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
       #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
