@@ -31,3 +31,5 @@ include 'Lib-Parser-Protocol-JTT808'
 include 'Lib-Schedule-Xxljob'
 include 'Lib-Parser-Protocol-Immotors'
 include 'App-Tool-Stock'
+
+include 'Lib-Prometheus-Exporter'
