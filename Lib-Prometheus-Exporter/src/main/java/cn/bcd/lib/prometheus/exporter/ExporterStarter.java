@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty("lib.prometheus.exporter.port")
 @EnableConfigurationProperties(ExporterProp.class)
 @Component
-public class ExporterStarter implements CommandLineRunner {
+class ExporterStarter implements CommandLineRunner {
 
     static Logger logger = LoggerFactory.getLogger(ExporterStarter.class);
 

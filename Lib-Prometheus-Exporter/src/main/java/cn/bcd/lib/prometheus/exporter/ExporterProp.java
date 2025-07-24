@@ -5,6 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
 @ConfigurationProperties(prefix = "lib.prometheus.exporter")
-public class ExporterProp {
+class ExporterProp {
     public int port;
 }
