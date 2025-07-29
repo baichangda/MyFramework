@@ -4,10 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.util.ParseUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PlatformLoginData;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PlatformLogoutData;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -225,6 +222,25 @@ public class PacketUtil {
 
     public static ByteBuf build_byteBuf_packetData(String vin, PacketFlag flag, int replyFlag, byte[] content) {
         return Unpooled.wrappedBuffer(build_bytes_packetData(vin, flag, replyFlag, content));
+    }
+
+    public static byte[] build_bytes_packetData(String vin, PacketFlag flag, short replyFlag, PacketData packetData) {
+        ByteBuf buffer = build_byteBuf_packetData(vin, flag, replyFlag, packetData);
+        byte[] arr = new byte[buffer.readableBytes()];
+        buffer.readBytes(arr);
+        return arr;
+    }
+
+    public static ByteBuf build_byteBuf_packetData(String vin, PacketFlag flag, short replyFlag, PacketData packetData) {
+        Packet packet = new Packet();
+        packet.header = new byte[]{0x23, 0x23};
+        packet.flag = flag;
+        packet.replyFlag = replyFlag;
+        packet.vin = vin;
+        packet.encodeWay = 1;
+        packet.code = 0;
+        packet.data = packetData;
+        return packet.toByteBuf_fixAll();
     }
 
     /**
