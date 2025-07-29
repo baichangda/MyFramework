@@ -1,4 +1,4 @@
-package cn.bcd.app.tool.minio.client.server;
+package cn.bcd.app.tool.minio.client.web;
 
 import io.minio.MinioClient;
 import org.slf4j.Logger;

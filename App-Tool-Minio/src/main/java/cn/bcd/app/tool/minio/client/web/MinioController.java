@@ -1,4 +1,4 @@
-package cn.bcd.app.tool.minio.client.server;
+package cn.bcd.app.tool.minio.client.web;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -14,7 +14,7 @@ spring:
   threads:
     virtual:
       enabled: true
-  # 允许循环依赖
+  # 允许循环依赖\
   main:
     allow-circular-references: true
   servlet:
