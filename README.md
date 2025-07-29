@@ -11,8 +11,9 @@
 - ***App-Data-Process-Parse*** 数据层解析服务
 - ***App-Data-Process-Transfer*** 数据层转发服务
 - ***App-Monitor-Collector*** 性能监控服务
-- ***App-Simulator-SingleVehicle-Tcp*** TCP单车模拟器服务
-- ***App-Simulator-PressTest-Tcp*** TCP压测模拟器服务
+- ***App-Simulator-SingleVehicle-Tcp-GB32960*** GB32960 TCP单车模拟器服务
+- ***App-Simulator-PressTest-Tcp-GB32960*** GB32960 TCP压测模拟器服务
 - ***App-Mqtt-Server*** mqtt服务器
-- ***App-Tool-Minio-Client-Server*** minio客户端工具服务
+- ***App-Tool-Minio-Client-Web*** minio客户端工具服务
+- ***App-Tool-Kafka-Client-Web*** kafka客户端工具服务
 - ***App-Tool-Stock*** 股票分析工具
