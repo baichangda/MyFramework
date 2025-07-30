@@ -36,11 +36,11 @@ public class WsSession {
         }
     }
 
-    public WsSession(String vin, Function<String, VehicleData> vehicleDataFunction, ServerWebSocket channel) {
+    public WsSession(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, ServerWebSocket channel) {
         this.vin = vin;
         this.executor = executorGroup.getExecutor(vin);
         this.channel = channel;
-        this.vehicle = new Vehicle(vin, vehicleDataFunction, executor);
+        this.vehicle = new Vehicle(vin, sendPeriod, vehicleDataFunction, executor);
         this.closed = false;
     }
 

@@ -32,6 +32,7 @@ public class Vehicle {
     public VehicleData vehicleData;
     public final SingleThreadExecutor executor;
     public final Function<String, VehicleData> vehicleDataFunction;
+    public final int sendPeriod;
 
     Channel channel;
     Runnable onConnected;
@@ -41,8 +42,9 @@ public class Vehicle {
     Consumer<VehicleData> onDataUpdate;
     ScheduledFuture<?> scheduledFuture;
 
-    public Vehicle(String vin, Function<String, VehicleData> vehicleDataFunction, SingleThreadExecutor executor) {
+    public Vehicle(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, SingleThreadExecutor executor) {
         this.vin = vin;
+        this.sendPeriod = sendPeriod;
         this.vehicleDataFunction = vehicleDataFunction;
         this.executor = executor;
     }
@@ -116,7 +118,7 @@ public class Vehicle {
     public CompletableFuture<Void> startSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture == null) {
-                scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, 10, TimeUnit.SECONDS);
+                scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, sendPeriod, TimeUnit.SECONDS);
             }
         });
     }

@@ -10,4 +10,6 @@ import picocli.CommandLine;
 public class Starter {
     @CommandLine.Option(names = {"-p", "--httpServerPort"}, description = "http server port", required = false, defaultValue = "45678", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
     int httpServerPort;
+    @CommandLine.Option(names = {"-s", "--sendPeriod"}, description = "send period in second", required = false, defaultValue = "10", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+    int sendPeriod;
 }

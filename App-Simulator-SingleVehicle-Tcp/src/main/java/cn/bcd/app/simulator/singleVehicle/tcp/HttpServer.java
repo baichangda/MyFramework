@@ -94,7 +94,7 @@ public class HttpServer implements Runnable {
                     ctx.request().toWebSocket().onSuccess(webSocket -> {
                         String vin = ctx.queryParam("vin").getFirst();
                         logger.info("-------------ws open vin[{}]--------------", vin);
-                        WsSession wsSession = new WsSession(vin, vehicleDataFunction, webSocket);
+                        WsSession wsSession = new WsSession(vin, starter.sendPeriod, vehicleDataFunction, webSocket);
                         webSocket.closeHandler(e -> {
                             try {
                                 wsSession.ws_onClose();
