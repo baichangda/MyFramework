@@ -42,7 +42,7 @@ public class HttpServer implements Runnable {
         Router router = Router.router(vertx);
         router.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
         router.route("/*")
-                .handler(StaticHandler.create("server/simulator/singleVehicle/tcp")
+                .handler(StaticHandler.create("app/simulator/singleVehicle/tcp")
                         .setDefaultContentEncoding("UTF-8")
                         .setCachingEnabled(true)
                 );

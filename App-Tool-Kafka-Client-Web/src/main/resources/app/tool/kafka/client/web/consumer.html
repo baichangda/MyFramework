@@ -1,0 +1,238 @@
+<html>
+<script src="/jquery.min.js"></script>
+
+<body>
+<table style="width: 100%;height: 100%">
+    <tr>
+        <td style="width:80%;border: solid 1px">
+            <table style="width: 100%;height: 100%;">
+                <tr style="height: 20px">
+                    <td style="width: 100px;border: solid 1px">kafka地址</td>
+                    <td style="border: solid 1px">
+                        <input style="width: 100%;height: 25px" id="kafkaAddrs_input" value="10.0.11.50:39003"/>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td style="border: solid 1px">kafka topic</td>
+                    <td style="border: solid 1px">
+                        <input style="width: 100%;height: 25px" id="kafkaTopic_input" value="gw-test"/>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td style="border: solid 1px">kafka groupId</td>
+                    <td style="border: solid 1px">
+                        <input style="width: 100%;height: 25px" id="kafkaGroupId_input" value="test"/>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td style="border: solid 1px">是否16进制数据</td>
+                    <td style="border: solid 1px">
+                        <input type="checkbox" id="isHexData_input"/>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td colspan="2">
+                        <button id="connectWs_btn" onclick="connectWs()"
+                                style="width: 100%;font-size: 18px;color: red">开始消费
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <textarea id="data_textarea" readonly style="width: 100%;height: 100%"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style="border: solid 1px">
+            <table style="width: 100%;height: 100%">
+                <tr style="height: 20px">
+                    <td>
+                        <button onclick="clearOutput()">清除日志
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="output" readonly style="width: 100%;height: 100%"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+<script type="text/javascript">
+    function getWsUrl() {
+        let loc = window.location, new_uri;
+        if (loc.protocol === "https:") {
+            new_uri = "wss:";
+        } else {
+            new_uri = "ws:";
+        }
+        return new_uri + "//" + loc.host + "/ws/consumer";
+    }
+
+    let ws
+
+    function connectWs() {
+        let kafkaAddrs = $("#kafkaAddrs_input").val().trim();
+        if (kafkaAddrs === "") {
+            appendToOutput("kafka地址不能为空", 1)
+            return
+        }
+        let kafkaTopic = $("#kafkaTopic_input").val().trim();
+        if (kafkaTopic === "") {
+            appendToOutput("kafka topic不能为空", 1)
+            return
+        }
+        let kafkaGroupId = $("#kafkaGroupId_input").val().trim();
+        if (kafkaGroupId === "") {
+            appendToOutput("kafka groupId不能为空", 1)
+            return
+        }
+        let isHexData = $("#isHexData_input").prop("checked")
+        ws = new WebSocket(getWsUrl() + "?kafkaAddrs=" + encodeURIComponent(kafkaAddrs) + "&kafkaTopic=" + encodeURIComponent(kafkaTopic) + "&kafkaGroupId=" + encodeURIComponent(kafkaGroupId) + "&isHexData=" + isHexData);
+
+        ws.onopen = function () {
+            appendToOutput("连接ws成功、开始连接kafka消费...", 1)
+            $("#connectWs_btn").prop("disabled", true)
+            $("#connectWs_btn").css("color", "green")
+        };
+
+        ws.onmessage = function (evt) {
+            onMsg(evt.data)
+        };
+
+        ws.onclose = function () {
+            appendToOutput("ws服务断开,停止消费", 1)
+            $("#connectWs_btn").prop("disabled", false)
+            $("#connectWs_btn").css("color", "red")
+        };
+    }
+
+    function onMsg(msg) {
+        let parse = JSON.parse(msg);
+        switch (parse.flag) {
+            case 101: {
+                appendToData(parse.data)
+                break
+            }
+            case 102: {
+                appendToOutput("kafka消费错误:\n" + parse.data, 2)
+                break
+            }
+        }
+    }
+
+
+    let dataCount = 0
+    const maxDataCount = 20
+
+    function appendToData(msg) {
+        let output = $("#data_textarea");
+        if (dataCount >= maxDataCount) {
+            output.val("")
+            dataCount = 0;
+        }
+        dataCount++
+        let val = output.val();
+        let date = new Date();
+        let pre = getNowDateStr(date)
+        const curMsg = pre + "\n" + msg + "\n"
+        if (val === "") {
+            output.val(curMsg)
+        } else {
+            output.val(curMsg + "\n" + val)
+        }
+    }
+
+    let outputCount = 0
+    const maxOutputCount = 20
+
+    function clearOutput() {
+        $("#output").val("")
+        outputCount = 0
+    }
+
+    function appendToOutput(msg, type) {
+        let output = $("#output");
+        if (outputCount >= maxOutputCount) {
+            output.val("")
+            outputCount = 0;
+        }
+        outputCount++
+        let val = output.val();
+        let date = new Date();
+        let pre = getNowDateStr(date)
+        if (type === 1) {
+            pre += "(client)"
+        } else {
+            pre += "(server)"
+        }
+        const curMsg = pre + "\n" + msg + "\n"
+        if (val === "") {
+            output.val(curMsg)
+        } else {
+            output.val(curMsg + "\n" + val)
+        }
+    }
+
+
+    function getNowDateStr(date) {
+        const fullYear = date.getFullYear();
+        const month = date.getMonth() + 1;
+        let monthStr
+        if (month < 10) {
+            monthStr = "0" + month
+        } else {
+            monthStr = month
+        }
+
+        const day = date.getDate();
+        let dayStr
+        if (day < 10) {
+            dayStr = "0" + day
+        } else {
+            dayStr = day
+        }
+
+        const hour = date.getHours();
+        let hourStr
+        if (hour < 10) {
+            hourStr = "0" + hour
+        } else {
+            hourStr = hour
+        }
+
+        const minute = date.getMinutes();
+        let minuteStr
+        if (minute < 10) {
+            minuteStr = "0" + minute
+        } else {
+            minuteStr = minute
+        }
+
+        const second = date.getSeconds();
+        let secondStr
+        if (second < 10) {
+            secondStr = "0" + second
+        } else {
+            secondStr = second
+        }
+
+        const ms = date.getMilliseconds();
+        let msStr
+        if (ms < 10) {
+            msStr = "00" + ms;
+        } else if (ms < 100) {
+            msStr = "0" + ms;
+        } else {
+            msStr = ms;
+        }
+        return fullYear + "-" + monthStr + "-" + dayStr + " " + hourStr + ":" + minuteStr + ":" + secondStr + "." + msStr
+
+    }
+</script>
+</html>

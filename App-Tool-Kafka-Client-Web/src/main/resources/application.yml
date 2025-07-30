@@ -1,0 +1,36 @@
+server:
+  port: 16666
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,application/xhtml+xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  servlet:
+    session:
+      timeout: 1800
+    encoding:
+      charset: UTF-8
+      force-response: true
+
+spring:
+  application:
+    name: tool-kafka-client-server
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  web:
+    resources:
+      chain:
+        cache: false
+      static-locations: classpath:/app/tool/kafka/client/web/
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
+

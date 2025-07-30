@@ -1,0 +1,205 @@
+<html>
+<script src="/jquery.min.js"></script>
+
+<body>
+<table style="width: 100%;height: 100%">
+    <tr>
+        <td style="width:80%;border: solid 1px">
+            <table style="width: 100%;height: 100%;">
+                <tr style="height: 20px">
+                    <td style="width: 120px;border: solid 1px">kafka地址</td>
+                    <td style="border: solid 1px">
+                        <input style="width: 100%;height: 25px" id="kafkaAddrs_input" value="10.0.11.50:39003"></input>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td style="border: solid 1px">kafka topic</td>
+                    <td style="border: solid 1px">
+                        <input style="width: 100%;height: 25px" id="kafkaTopic_input" value="gw-test"></input>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td style="border: solid 1px">
+                        是否发送多条<input type="checkbox" id="msgSplit_checkbox"/></td>
+                    <td style="border: solid 1px">
+                        <select style="height: 25px" id="msgSplit_select">
+                            <option value="1">换行符</option>
+                            <option value="2">其他</option>
+                        </select>
+                        <input style="width: 200px;height: 25px" id="msgSplit_input" value=""/>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <textarea id="data_textarea" style="width: 100%;height: 100%"
+                                  placeholder="在这里输入要发送到kafka的数据"></textarea>
+                    </td>
+                </tr>
+                <tr style="height: 20px">
+                    <td>
+                        <button id="send_btn" onclick="send()"
+                                style="width: 100%;font-size: 18px;color: green">发送
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style="border: solid 1px">
+            <table style="width: 100%;height: 100%">
+                <tr style="height: 20px">
+                    <td>
+                        <button onclick="clearOutput()">清除日志
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="output" readonly style="width: 100%;height: 100%"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+</body>
+<script type="text/javascript">
+    function send() {
+        let kafkaAddrs = $("#kafkaAddrs_input").val().trim();
+        if (kafkaAddrs === "") {
+            appendToOutput("kafka地址不能为空", 1)
+            return
+        }
+        let kafkaTopic = $("#kafkaTopic_input").val();
+        if (kafkaTopic === "") {
+            appendToOutput("kafka topic不能为空", 1)
+            return
+        }
+        let isMsgSplit = $("#msgSplit_checkbox").prop("checked");
+        let msgSplit = "";
+        let msgSplitType = "";
+        if (isMsgSplit) {
+            msgSplitType = $("#msgSplit_select").val().trim();
+            if(msgSplitType === "2"){
+                msgSplit = $("#msgSplit_input").val().trim();
+                if (msgSplit === "") {
+                    appendToOutput("其他分隔符不能为空", 1)
+                    return
+                }
+            }
+        }
+        let data = $("#data_textarea").val().trim();
+        if (data === "") {
+            appendToOutput("发送数据不能为空", 1)
+            return
+        }
+
+        $.ajax({
+            url: "/producer",
+            method: "post",
+            contentType: "application/json;charset=utf-8",
+            data: JSON.stringify({
+                kafkaAddrs: kafkaAddrs.split(","),
+                kafkaTopic: kafkaTopic,
+                data: data,
+                msgSplit: msgSplit,
+                msgSplitType: msgSplitType
+            }),
+            success: function (res) {
+                appendToOutput(res.message, 2)
+            },
+            error:function (xhr,textStatus,errorThrown){
+                appendToOutput("请求失败:"+textStatus,2)
+            }
+        })
+        appendToOutput("发送数据到web成功", 1)
+    }
+
+    let outputCount = 0
+    const maxOutputCount = 20
+
+    function clearOutput() {
+        $("#output").val("")
+        outputCount = 0
+    }
+
+    function appendToOutput(msg, type) {
+        let output = $("#output");
+        if (outputCount >= maxOutputCount) {
+            output.val("")
+            outputCount = 0;
+        }
+        outputCount++
+        let val = output.val();
+        let date = new Date();
+        let pre = getNowDateStr(date)
+        if (type === 1) {
+            pre += "(client)"
+        } else {
+            pre += "(server)"
+        }
+        const curMsg = pre + "\n" + msg + "\n"
+        if (val === "") {
+            output.val(curMsg)
+        } else {
+            output.val(curMsg + "\n" + val)
+        }
+    }
+
+
+    function getNowDateStr(date) {
+        const fullYear = date.getFullYear();
+        const month = date.getMonth() + 1;
+        let monthStr
+        if (month < 10) {
+            monthStr = "0" + month
+        } else {
+            monthStr = month
+        }
+
+        const day = date.getDate();
+        let dayStr
+        if (day < 10) {
+            dayStr = "0" + day
+        } else {
+            dayStr = day
+        }
+
+        const hour = date.getHours();
+        let hourStr
+        if (hour < 10) {
+            hourStr = "0" + hour
+        } else {
+            hourStr = hour
+        }
+
+        const minute = date.getMinutes();
+        let minuteStr
+        if (minute < 10) {
+            minuteStr = "0" + minute
+        } else {
+            minuteStr = minute
+        }
+
+        const second = date.getSeconds();
+        let secondStr
+        if (second < 10) {
+            secondStr = "0" + second
+        } else {
+            secondStr = second
+        }
+
+        const ms = date.getMilliseconds();
+        let msStr
+        if (ms < 10) {
+            msStr = "00" + ms;
+        } else if (ms < 100) {
+            msStr = "0" + ms;
+        } else {
+            msStr = ms;
+        }
+        return fullYear + "-" + monthStr + "-" + dayStr + " " + hourStr + ":" + minuteStr + ":" + secondStr + "." + msStr
+
+    }
+</script>
+</html>
