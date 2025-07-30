@@ -1,9 +1,11 @@
 package cn.bcd.app.simulator.pressTest.tcp;
 
 import cn.bcd.app.simulator.pressTest.tcp.v2016.Starter_v2016;
+import cn.bcd.app.simulator.pressTest.tcp.v2025.Starter_v2025;
 import picocli.CommandLine;
 
-@CommandLine.Command(name = "pressTest", mixinStandardHelpOptions = true,subcommands = {Starter_v2016.class})
+@CommandLine.Command(name = "pressTest", mixinStandardHelpOptions = true
+        , subcommands = {Starter_v2016.class, Starter_v2025.class})
 public class Starter {
     @CommandLine.Option(names = {"-p", "--period"}, description = "report period", required = false, defaultValue = "10", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
     int period;
