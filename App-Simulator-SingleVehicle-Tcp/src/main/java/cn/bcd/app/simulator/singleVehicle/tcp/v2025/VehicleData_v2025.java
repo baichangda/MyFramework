@@ -1,11 +1,11 @@
 package cn.bcd.app.simulator.singleVehicle.tcp.v2025;
 
 import cn.bcd.app.simulator.singleVehicle.tcp.VehicleData;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.Const;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.VehicleRunData;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.Const;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.VehicleRunData;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
