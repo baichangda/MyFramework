@@ -1,0 +1,45 @@
+server:
+  port: 28989
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,application/xhtml+xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+  servlet:
+    session:
+      timeout: 1800
+
+spring:
+  ai:
+    mcp:
+      server:
+        name: mcp-server
+        version: 1.0.0
+        type: ASYNC
+        instructions: "This server provides weather information tools and resources"
+        sse-message-endpoint: /mcp/message
+        capabilities:
+          tool: true
+          resource: true
+          prompt: true
+          completion: true
+
+  application:
+    name: ai-mcp-server
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  web:
+    resources:
+      chain:
+        cache: false
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
