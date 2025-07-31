@@ -1,12 +1,10 @@
 package cn.bcd.lib.vehicle.command;
 
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-
 public enum ResponseStatus {
     /**
      * 成功有两种情况
      * {@link Request#waitVehicleResponse}表示不同的成功场景
-     * true - 此时表示成功接收到了响应报文、具体的响应码参考{@link Packet#replyFlag}
+     * true - 此时表示成功接收到了响应报文、具体的响应码参考replyFlag
      * false - 此时请求不会考虑响应、表示请求发送成功
      */
     success(0, "成功"),

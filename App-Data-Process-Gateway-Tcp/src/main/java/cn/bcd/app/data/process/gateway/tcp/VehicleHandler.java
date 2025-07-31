@@ -63,7 +63,7 @@ public class VehicleHandler extends ChannelInboundHandlerAdapter {
             //刷新redis最后一包数据时间
             redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, System.currentTimeMillis() + "");
             //响应下行指令的结果
-            gatewayCommandReceiver.onResponse(vin, packetFlag, bytes);
+            gatewayCommandReceiver.onResponse(vin, packetFlag.type, bytes);
             //发送到解析队列
             sendToKafka(vin, DateUtil.prependDatesToBytes(bytes, receiveTime, new Date()));
         } catch (Exception e) {

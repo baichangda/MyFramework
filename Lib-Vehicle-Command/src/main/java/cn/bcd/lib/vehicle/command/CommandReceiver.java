@@ -14,7 +14,7 @@ public interface CommandReceiver {
 
     static void response(Request<?, ?> request, ResponseStatus status, byte[] packetBytes) {
         logger.info("response command vin[{}] flag[{}] requestId[{}] status[{}] packetBytes[{}]", request.vin, request.flag, request.id, status, packetBytes == null ? null : ByteBufUtil.hexDump(packetBytes));
-        Response<?, ?> response = new Response<>(request.getVin(), request.getFlag(), status, packetBytes);
+        Response<?, ?> response = new Response<>(request.getVin(), request.getFlag(), status, request.getVersion(), packetBytes);
         ProducerRecord<String, byte[]> record = new ProducerRecord<>(CommandRequestConsumer.commandProp.responseTopic, request.id, JsonUtil.toJsonAsBytes(response));
         CommandRequestConsumer.kafkaProducer.send(record);
     }

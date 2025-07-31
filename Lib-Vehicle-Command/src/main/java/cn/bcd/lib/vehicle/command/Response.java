@@ -1,15 +1,15 @@
 package cn.bcd.lib.vehicle.command;
 
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.ProtocolVersion;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
 public class Response<T, R> {
     public String vin;
-    public PacketFlag flag;
+    public int flag;
     public ResponseStatus status;
+    public ProtocolVersion version;
 
     /**
      * 以下属性可能为null或默认值、取决于是否接收到车辆的响应报文
@@ -28,15 +28,21 @@ public class Response<T, R> {
      * @param vin
      * @param flag
      * @param status
+     * @param version
      * @param packetBytes 响应报文、可能为null
      */
-    public Response(String vin, PacketFlag flag, ResponseStatus status, byte[] packetBytes) {
+    public Response(String vin, int flag, ResponseStatus status, ProtocolVersion version, byte[] packetBytes) {
         this.vin = vin;
         this.flag = flag;
         this.status = status;
         if (packetBytes != null) {
-            this.replyFlag = PacketUtil.getReplyFlag(packetBytes);
-            this.content = PacketUtil.getPacketData_bytes(packetBytes);
+            if (version == ProtocolVersion.v_2016) {
+                this.replyFlag = cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil.getReplyFlag(packetBytes);
+                this.content = cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil.getPacketData_bytes(packetBytes);
+            } else {
+                this.replyFlag = cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil.getReplyFlag(packetBytes);
+                this.content = cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil.getPacketData_bytes(packetBytes);
+            }
         }
     }
 

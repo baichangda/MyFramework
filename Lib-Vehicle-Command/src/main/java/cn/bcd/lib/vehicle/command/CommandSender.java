@@ -5,7 +5,7 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.kafka.KafkaUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.base.util.HexUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.ProtocolVersion;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -69,13 +69,13 @@ public class CommandSender {
         }
     }
 
-    public static boolean tryLock(String vin, PacketFlag flag, int timeout) {
-        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag.type);
+    public static boolean tryLock(String vin, int flag, int timeout) {
+        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag);
         return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), timeout * 2L, TimeUnit.SECONDS));
     }
 
-    public static void releaseLock(String vin, PacketFlag flag) {
-        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag.type);
+    public static void releaseLock(String vin, int flag) {
+        String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag);
         redisTemplate.delete(key);
     }
 
@@ -96,14 +96,15 @@ public class CommandSender {
                                    int timeout,
                                    CommandCallback<T, R> callback,
                                    boolean waitVehicleResponse) {
+        ProtocolVersion version = command.version;
         boolean online = online(vin);
-        PacketFlag flag = command.flag;
+        int flag = command.flag;
         if (!online) {
-            callback.callback(new Response<>(vin, flag, ResponseStatus.offline, null));
+            callback.callback(new Response<>(vin, flag, ResponseStatus.offline, version, null));
             return;
         }
         if (!tryLock(vin, flag, timeout)) {
-            callback.callback(new Response<>(vin, flag, ResponseStatus.busy, null));
+            callback.callback(new Response<>(vin, flag, ResponseStatus.busy, version, null));
             return;
         }
         Request<T, R> request = new Request<>();
@@ -111,6 +112,7 @@ public class CommandSender {
         request.setFlag(flag);
         request.setContent(command.toRequestBytes());
         request.setVin(vin);
+        request.setVersion(version);
         request.setCommand(command);
         request.setWaitVehicleResponse(waitVehicleResponse);
         request.setTimeout(timeout);
@@ -120,7 +122,7 @@ public class CommandSender {
                     Request<?, ?> remove = requestMap.remove(request.getId());
                     if (remove != null) {
                         try {
-                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.timeout, null));
+                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.timeout, version, null));
                         } catch (Exception ex) {
                             logger.error("error", ex);
                         } finally {

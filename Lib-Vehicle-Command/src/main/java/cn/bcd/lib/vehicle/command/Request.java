@@ -1,7 +1,6 @@
 package cn.bcd.lib.vehicle.command;
 
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.ProtocolVersion;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
@@ -11,10 +10,11 @@ import java.util.concurrent.ScheduledFuture;
 public class Request<T, R> {
     public String id;
     public String vin;
-    public PacketFlag flag;
+    public int flag;
     public byte[] content;
     public boolean waitVehicleResponse;
     public int timeout;
+    public ProtocolVersion version;
 
     @JsonIgnore
     public Command<T, R> command;
@@ -23,11 +23,15 @@ public class Request<T, R> {
     @JsonIgnore
     public ScheduledFuture<?> timeoutFuture;
 
-    public static String toId(String vin, PacketFlag flag) {
-        return vin + "," + flag.type;
+    public static String toId(String vin, int flag) {
+        return vin + "," + flag;
     }
 
     public byte[] toPacketBytes() {
-        return PacketUtil.build_bytes_packetData(vin, flag, 0xFE, content);
+        if (version == ProtocolVersion.v_2016) {
+            return cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil.build_bytes_packetData(vin, cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag.fromInteger(flag), 0xFE, content);
+        } else {
+            return cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil.build_bytes_packetData(vin, cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag.fromInteger(flag), 0xFE, content);
+        }
     }
 }
