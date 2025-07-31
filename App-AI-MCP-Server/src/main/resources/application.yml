@@ -15,7 +15,8 @@ spring:
         name: mcp-server
         version: 1.0.0
         type: ASYNC
-        instructions: "This server provides weather information tools and resources"
+        instructions: "This server provides many tools"
+        sse-endpoint: /sse
         sse-message-endpoint: /mcp/message
         capabilities:
           tool: true
