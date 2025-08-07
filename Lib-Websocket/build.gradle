@@ -1,0 +1,5 @@
+dependencies {
+    api project(":Lib-Base")
+    // https://mvnrepository.com/artifact/io.vertx/vertx-web
+    implementation group: 'io.vertx', name: 'vertx-web'
+}
