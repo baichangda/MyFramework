@@ -200,7 +200,7 @@ public class SingleThreadExecutor implements Executor {
         if (inThread()) {
             runnable.run();
         } else {
-            CompletableFuture.runAsync(runnable, executor);
+            executor.execute(runnable);
         }
     }
 
