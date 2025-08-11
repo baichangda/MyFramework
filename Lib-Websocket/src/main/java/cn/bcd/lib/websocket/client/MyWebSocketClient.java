@@ -5,7 +5,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
-import io.vertx.core.http.WebSocketConnectOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,11 +77,12 @@ public class MyWebSocketClient {
             logger.info("connect ws[{}]", url);
             webSocketClient.connect(8080, "127.0.0.1", "")
                     .onSuccess(w -> {
+                        logger.error("connect url[{}] succeed", url);
                         webSocketHolder.set(w);
                         w.closeHandler(closeHandler);
                         w.textMessageHandler(textMessageHandler);
                     }).onFailure(t -> {
-                        logger.error("error", t);
+                        logger.error("connect url[{}] failed", url, t);
                         connect();
                     });
         }, waitTs, TimeUnit.MILLISECONDS);

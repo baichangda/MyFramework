@@ -17,7 +17,7 @@ public class TestWebSocketClient {
 
     @Test
     public void test1() throws InterruptedException {
-        MyWebSocketClient webSocketClient = new MyWebSocketClient("127.0.0.1:8080", Duration.ofSeconds(3), msg -> {
+        MyWebSocketClient webSocketClient = new MyWebSocketClient("127.0.0.1:8080", Duration.ofSeconds(1), msg -> {
             logger.info("on text message:{}", msg);
         });
         webSocketClient.connect();
@@ -39,6 +39,7 @@ public class TestWebSocketClient {
             }).listen(8080).onSuccess(server -> logger.info("listen on 8080"));
             TimeUnit.SECONDS.sleep(5);
             httpServer.close();
+            TimeUnit.SECONDS.sleep(5);
         }
     }
 }
