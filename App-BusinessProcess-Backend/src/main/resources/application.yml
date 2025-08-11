@@ -9,7 +9,7 @@ server:
       timeout: 1800
 spring:
   application:
-    name: business-process-backend
+    name: businessProcess-backend
   threads:
     virtual:
       enabled: true

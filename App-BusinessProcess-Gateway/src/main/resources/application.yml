@@ -10,7 +10,7 @@ server:
 
 spring:
   application:
-    name: business-process-gateway
+    name: businessProcess-gateway
   threads:
     virtual:
       enabled: true

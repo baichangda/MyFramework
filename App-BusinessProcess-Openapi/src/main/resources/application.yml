@@ -9,7 +9,7 @@ server:
       timeout: 1800
 spring:
   application:
-    name: business-process-openapi
+    name: businessProcess-openapi
   threads:
     virtual:
       enabled: true
