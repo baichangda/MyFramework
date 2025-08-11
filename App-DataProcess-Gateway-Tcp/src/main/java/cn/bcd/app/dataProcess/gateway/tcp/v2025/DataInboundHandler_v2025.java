@@ -11,13 +11,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Date;
 import java.util.List;
 
 public class DataInboundHandler_v2025 extends ChannelInboundHandlerAdapter {
 
-    public List<DataHandler_v2025> handlers;
+    public final List<DataHandler_v2025> handlers;
 
     static Logger logger = LoggerFactory.getLogger(DataInboundHandler_v2025.class);
 
@@ -53,10 +54,11 @@ public class DataInboundHandler_v2025 extends ChannelInboundHandlerAdapter {
             }
             //初始化缓存
             vehicleCacheData = new VehicleCacheData_v2025();
-            vehicleCacheData.ctx=ctx;
+            vehicleCacheData.ctx = ctx;
             vehicleCacheData.vehicleData = vehicleData;
             vehicleCacheData.receiveTime = receiveTime;
-            //初始化
+
+            //初始化handler
             for (DataHandler_v2025 handler : handlers) {
                 handler.init(vin, vehicleCacheData);
             }

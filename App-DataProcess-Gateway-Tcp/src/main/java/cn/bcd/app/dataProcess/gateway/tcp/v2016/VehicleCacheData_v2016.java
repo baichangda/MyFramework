@@ -16,4 +16,6 @@ public class VehicleCacheData_v2016 {
     public Date receiveTime;
     //SessionHandler
     public Session session;
+    //VehicleOnlineHandler
+    public long lastTimeTs;
 }

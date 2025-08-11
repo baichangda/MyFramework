@@ -55,7 +55,7 @@ public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
             vehicleCacheData.ctx=ctx;
             vehicleCacheData.vehicleData = vehicleData;
             vehicleCacheData.receiveTime = receiveTime;
-            //初始化
+            //初始化handler
             for (DataHandler_v2016 handler : handlers) {
                 handler.init(vin, vehicleCacheData);
             }

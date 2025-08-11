@@ -1,0 +1,38 @@
+package cn.bcd.app.dataProcess.gateway.tcp.v2016;
+
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
+
+@Order(10)
+@Component
+public class VehicleOnlineHandler implements DataHandler_v2016 {
+
+    static final Logger logger = LoggerFactory.getLogger(VehicleOnlineHandler.class);
+
+    @Autowired
+    RedisTemplate<String, String> redisTemplate;
+
+    @Override
+    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2016 vehicleCacheData) throws Exception {
+        if (flag != PacketFlag.vehicle_run_data) {
+            return;
+        }
+        long collectTimeTs = PacketUtil.getTime(data).getTime();
+        if (collectTimeTs < vehicleCacheData.lastTimeTs) {
+            return;
+        }
+        vehicleCacheData.lastTimeTs = collectTimeTs;
+        try {
+            redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, vehicleCacheData.lastTimeTs + "");
+        } catch (Exception e) {
+            logger.error("error", e);
+        }
+    }
+}
