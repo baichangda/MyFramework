@@ -19,10 +19,12 @@ public class MyWebSocketClient {
     static Logger logger = LoggerFactory.getLogger(MyWebSocketClient.class);
 
     static final ScheduledExecutorService pool = Executors.newSingleThreadScheduledExecutor();
+    static final Vertx vertx = Vertx.vertx();
 
+    public final String url;
     public final String host;
     public final int port;
-    public final String url;
+    public final String uri;
     public final Duration autoReconnectPeriod;
     private final WebSocketClient webSocketClient;
     private final Handler<Void> closeHandler;
@@ -30,20 +32,28 @@ public class MyWebSocketClient {
     private volatile WebSocket webSocket;
     private long nextConnectTs;
 
-    public MyWebSocketClient(String host, int port, Duration autoReconnectPeriod, Handler<String> textMessageHandler) {
-        this.host = host;
-        this.port = port;
-        this.url = host + ":" + port;
+    public MyWebSocketClient(String url, Duration autoReconnectPeriod, Handler<String> textMessageHandler) {
+        this.url = url;
+        String[] split = url.split(":");
+        this.host = split[0];
+        String s1 = split[1];
+        int index = s1.indexOf("/");
+        if (index == -1) {
+            this.port = Integer.parseInt(s1);
+            this.uri = "";
+        } else {
+            this.port = Integer.parseInt(s1.substring(0, index));
+            this.uri = s1.substring(index);
+        }
         this.textMessageHandler = textMessageHandler;
         closeHandler = v -> {
             pool.execute(() -> {
-                logger.info("on close");
+                logger.info("on close ws[{}]", url);
                 webSocket = null;
                 nextConnectTs = 0;
                 connect();
             });
         };
-        Vertx vertx = Vertx.builder().build();
         webSocketClient = vertx.createWebSocketClient();
         this.autoReconnectPeriod = autoReconnectPeriod;
     }
@@ -68,10 +78,32 @@ public class MyWebSocketClient {
         return webSocket.writeTextMessage(text);
     }
 
+    /**
+     * 异步连接
+     * @return
+     */
     public final CompletableFuture<Void> connect() {
         CompletableFuture<Void> future = new CompletableFuture<>();
         pool.execute(() -> {
             connectInterval(future);
+        });
+        return future;
+    }
+
+    /**
+     * 异步关闭
+     * @return
+     */
+    public final CompletableFuture<Void> close() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        pool.execute(() -> {
+            if (webSocket == null) {
+                return;
+            }
+            webSocket.closeHandler(null);
+            webSocket.textMessageHandler(null);
+            webSocket = null;
+            webSocketClient.close().onSuccess(v -> future.complete(null));
         });
         return future;
     }
@@ -86,17 +118,22 @@ public class MyWebSocketClient {
         long waitTs = nextTs - ts;
         nextConnectTs = nextTs + periodMs;
         pool.schedule(() -> {
-            logger.info("connect ws[{}]", url);
-            webSocketClient.connect(8080, "127.0.0.1", "")
+            logger.info("connecting ws[{}]", url);
+            webSocketClient.connect(port, host, "")
                     .onSuccess(w -> {
-                        logger.error("connect ws[{}] succeed", url);
-                        webSocket = w;
-                        w.closeHandler(closeHandler);
-                        w.textMessageHandler(textMessageHandler);
-                        future.complete(null);
+                        pool.execute(() -> {
+                            logger.error("connect ws[{}] succeed", url);
+                            webSocket = w;
+                            w.closeHandler(closeHandler);
+                            w.textMessageHandler(textMessageHandler);
+                            future.complete(null);
+                        });
+
                     }).onFailure(t -> {
-                        logger.error("connect ws[{}] failed", url, t);
-                        connectInterval(future);
+                        pool.execute(() -> {
+                            logger.error("connect ws[{}] failed", url, t);
+                            connectInterval(future);
+                        });
                     });
         }, waitTs, TimeUnit.MILLISECONDS);
     }
