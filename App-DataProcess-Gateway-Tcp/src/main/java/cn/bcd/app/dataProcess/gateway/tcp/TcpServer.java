@@ -31,24 +31,12 @@ public class TcpServer implements CommandLineRunner {
     final Logger logger = LoggerFactory.getLogger(TcpServer.class);
     @Autowired
     GatewayProp gatewayProp;
-    @Autowired
-    SessionClusterManager sessionClusterManager;
 
     @Autowired
-    KafkaTemplate<String, byte[]> kafkaTemplate;
-
-    @Autowired
-    RedisTemplate<String, String> redisTemplate;
-
-    @Autowired
-    GatewayCommandReceiver gatewayCommandReceiver;
-
-    @Autowired
-    List<Monitor> monitorList;
+    DispatchHandler dispatchHandler;
 
     public void run(String... args) throws Exception {
         Thread.startVirtualThread(() -> {
-            startMonitor();
             final EventLoopGroup boosGroup = new NioEventLoopGroup();
             final EventLoopGroup workerGroup = new NioEventLoopGroup();
             try {
@@ -58,12 +46,7 @@ public class TcpServer implements CommandLineRunner {
                             @Override
                             protected void initChannel(Channel ch) {
                                 ch.pipeline().addLast(new IdleStateHandler(0L, 0L, 30L, TimeUnit.SECONDS));
-                                ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
-                                ch.pipeline().addLast(new VehicleHandler(sessionClusterManager,
-                                        redisTemplate,
-                                        kafkaTemplate,
-                                        gatewayCommandReceiver,
-                                        gatewayProp));
+                                ch.pipeline().addLast(dispatchHandler);
                             }
                         }
                 );
@@ -78,17 +61,4 @@ public class TcpServer implements CommandLineRunner {
             }
         });
     }
-
-    public void startMonitor() {
-        Duration period = Duration.ofSeconds(3);
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-            StringBuilder sb = new StringBuilder();
-            for (Monitor monitor : monitorList) {
-                sb.append("\n");
-                sb.append(monitor.log(period));
-            }
-            logger.info("{}", sb);
-        }, period.toSeconds(), period.toSeconds(), TimeUnit.SECONDS);
-    }
-
 }
