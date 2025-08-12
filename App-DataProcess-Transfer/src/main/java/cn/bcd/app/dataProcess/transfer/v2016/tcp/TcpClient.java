@@ -38,8 +38,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
-public class Client {
-    static Logger logger = LoggerFactory.getLogger(Client.class);
+public class TcpClient {
+    static Logger logger = LoggerFactory.getLogger(TcpClient.class);
 
     static final String REDIS_KEY_PRE_PLATFORM_SN = "platformSn:";
     static final String REDIS_KEY_PRE_PLATFORM_STATUS = "platformStatus:";
@@ -86,21 +86,21 @@ public class Client {
                                                RedisTemplate<String, String> redisTemplate,
                                                PlatformStatusSender platformStatusSender
     ) {
-        synchronized (Client.class) {
-            if (Client.manageExecutor == null) {
-                Client.manageExecutor = Executors.newSingleThreadScheduledExecutor();
+        synchronized (TcpClient.class) {
+            if (TcpClient.manageExecutor == null) {
+                TcpClient.manageExecutor = Executors.newSingleThreadScheduledExecutor();
             }
         }
         return execute(() -> {
             //初始化数据
-            Client.transferConfigData = transferConfigData;
-            Client.dataConsumer = dataConsumer;
-            Client.redisTemplate = redisTemplate;
-            Client.platformStatusSender = platformStatusSender;
-            Client.bootstrap = new Bootstrap();
-            Client.bootstrap.group(new NioEventLoopGroup());
-            Client.bootstrap.channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true);
-            Client.bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+            TcpClient.transferConfigData = transferConfigData;
+            TcpClient.dataConsumer = dataConsumer;
+            TcpClient.redisTemplate = redisTemplate;
+            TcpClient.platformStatusSender = platformStatusSender;
+            TcpClient.bootstrap = new Bootstrap();
+            TcpClient.bootstrap.group(new NioEventLoopGroup());
+            TcpClient.bootstrap.channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true);
+            TcpClient.bootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 protected void initChannel(@NotNull SocketChannel ch) {
                     ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
@@ -165,7 +165,7 @@ public class Client {
             if (future.isSuccess()) {
                 logger.info("connect succeed host[{}] port[{}]", transferConfigData.upAddress, transferConfigData.upPort);
                 //设置channel
-                Client.channel = future.channel();
+                TcpClient.channel = future.channel();
                 //重置重连次数
                 connectRetryCount = 0;
                 //进行平台登陆
@@ -178,10 +178,10 @@ public class Client {
                 connectRetryCount++;
                 if (connectRetryCount < 3) {
                     logger.info("connect failed、connectRetryCount[{}]、retry after 1m", connectRetryCount);
-                    manageExecutor.schedule(Client::connect, 1, TimeUnit.MINUTES);
+                    manageExecutor.schedule(TcpClient::connect, 1, TimeUnit.MINUTES);
                 } else {
                     logger.info("connect failed、connectRetryCount[{}]、retry after 30m", connectRetryCount);
-                    manageExecutor.schedule(Client::connect, 30, TimeUnit.MINUTES);
+                    manageExecutor.schedule(TcpClient::connect, 30, TimeUnit.MINUTES);
                 }
             }
 
@@ -242,10 +242,10 @@ public class Client {
 
     private static void connect() {
         try {
-            String host = Client.transferConfigData.upAddress;
-            int port = Client.transferConfigData.upPort;
+            String host = TcpClient.transferConfigData.upAddress;
+            int port = TcpClient.transferConfigData.upPort;
             //连接tcp server
-            bootstrap.connect(host, port).addListener((ChannelFutureListener) Client::onConnectRes);
+            bootstrap.connect(host, port).addListener((ChannelFutureListener) TcpClient::onConnectRes);
         } catch (Exception ex) {
             logger.error("error", ex);
         }
@@ -298,15 +298,15 @@ public class Client {
                 heartbeatFuture = null;
             }
             //断开连接
-            if (Client.channel != null) {
-                Client.channel.close();
-                Client.channel = null;
+            if (TcpClient.channel != null) {
+                TcpClient.channel.close();
+                TcpClient.channel = null;
             }
         }
     }
 
     private static void setIsLogin(boolean isLogin) {
-        Client.isLogin = isLogin;
+        TcpClient.isLogin = isLogin;
         redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_STATUS + transferConfigData.serverId, String.valueOf(isLogin ? 1 : 0));
     }
 
@@ -372,12 +372,12 @@ public class Client {
     private static boolean platformLoginInternal() {
         try {
             //获取流水号
-            Client.platformLoginSn = incrementAndGetSn(Client.transferConfigData.serverId);
-            Packet packet = PacketUtil.build_packet_command_platformLogin(transferConfigData.uniqueCode, new Date(), Client.platformLoginSn, Client.transferConfigData.enterpriseName, transferConfigData.password);
+            TcpClient.platformLoginSn = incrementAndGetSn(TcpClient.transferConfigData.serverId);
+            Packet packet = PacketUtil.build_packet_command_platformLogin(transferConfigData.uniqueCode, new Date(), TcpClient.platformLoginSn, TcpClient.transferConfigData.enterpriseName, transferConfigData.password);
             ByteBuf byteBuf = packet.toByteBuf_fixCode();
             logger.info("--------------------------send platformLogin:\n{}", ByteBufUtil.hexDump(byteBuf));
             send(byteBuf);
-            Client.platformLoginPacketTime = ((PlatformLoginData) packet.data).collectTime;
+            TcpClient.platformLoginPacketTime = ((PlatformLoginData) packet.data).collectTime;
             return true;
         } catch (Exception ex) {
             logger.error("error", ex);
@@ -387,7 +387,7 @@ public class Client {
 
     private static boolean platformLogoutInternal() {
         try {
-            Packet packet = PacketUtil.build_packet_command_platformLogout(transferConfigData.uniqueCode, new Date(), Client.platformLoginSn);
+            Packet packet = PacketUtil.build_packet_command_platformLogout(transferConfigData.uniqueCode, new Date(), TcpClient.platformLoginSn);
             ByteBuf byteBuf = packet.toByteBuf_fixCode();
             logger.info("--------------------------send platformLogout:\n{}", ByteBufUtil.hexDump(byteBuf));
             send(byteBuf);

@@ -12,12 +12,12 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        Client.onDisconnect();
+        TcpClient.onDisconnect();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        Client.onMessage((ByteBuf) msg);
+        TcpClient.onMessage((ByteBuf) msg);
     }
 
     @Override

@@ -6,7 +6,7 @@ import cn.bcd.lib.data.init.transferConfig.TransferConfigDataInit;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -65,7 +65,7 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
             int[] partitions = Arrays.stream(data.kafkaPartition.split(",")).mapToInt(Integer::parseInt).toArray();
             DataConsumer dataConsumer = new DataConsumer(kafkaProp, "ts-" + data.platCode, partitions, kafkaDataHandlers, tcpDataHandlers);
             //初始化tcp客户端
-            Client.init(data, dataConsumer, redisTemplate, platformStatusSender).join();
+            TcpClient.init(data, dataConsumer, redisTemplate, platformStatusSender).join();
             //初始化消费者
             dataConsumer.init();
             logger.info("init succeed");
@@ -80,13 +80,13 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
             router.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
             router.route("/api/platformLogin").method(HttpMethod.POST).handler(ctx -> {
                 ctx.response().putHeader("content-type", "text/plain");
-                Integer res = Client.platformLogin().join();
+                Integer res = TcpClient.platformLogin().join();
                 logger.info("platformLogin request res[{}]", res);
                 ctx.response().send(res.toString());
             });
             router.route("/api/platformLogout").method(HttpMethod.POST).handler(ctx -> {
                 ctx.response().putHeader("content-type", "text/plain");
-                Integer res = Client.platformLogout().join();
+                Integer res = TcpClient.platformLogout().join();
                 logger.info("platformLogout request res[{}]", res);
                 ctx.response().send(res.toString());
             });

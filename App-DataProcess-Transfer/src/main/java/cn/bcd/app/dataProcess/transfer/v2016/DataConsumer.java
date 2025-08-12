@@ -3,7 +3,7 @@ package cn.bcd.app.dataProcess.transfer.v2016;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
@@ -63,7 +63,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
-        double sendSpeed = FloatUtil.format(Client.sendNum.sumThenReset() / ((double) monitor_period), 2);
+        double sendSpeed = FloatUtil.format(TcpClient.sendNum.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
                         "workHandler[{}] " +
@@ -80,7 +80,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 consumeSpeed,
                 workQueueStatus,
                 workSpeed,
-                Client.sendQueue.size(), Client.SEND_QUEUE_SIZE,
+                TcpClient.sendQueue.size(), TcpClient.SEND_QUEUE_SIZE,
                 sendSpeed
         );
     }

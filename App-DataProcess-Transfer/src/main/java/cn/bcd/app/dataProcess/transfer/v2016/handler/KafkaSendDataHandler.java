@@ -5,7 +5,7 @@ import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
 import cn.bcd.lib.storage.mongo.transfer.TransferData;
-import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.SendData;
 import io.netty.buffer.ByteBufUtil;
 import org.slf4j.Logger;
@@ -31,7 +31,7 @@ public class KafkaSendDataHandler implements KafkaDataHandler {
              * 1、报文时间超过补发阈值
              * 2、报文时间小于上一包报文时间
              */
-            if (DateUtil.CacheMillisecond.current() - ts > Client.transferConfigData.reissueTimeThreshold * 1000 || ts < context.lastRunReportTime) {
+            if (DateUtil.CacheMillisecond.current() - ts > TcpClient.transferConfigData.reissueTimeThreshold * 1000 || ts < context.lastRunReportTime) {
                 bytes[2] = (byte) PacketFlag.vehicle_supplement_data.type;
             }
             //更新最后上报时间
@@ -40,12 +40,12 @@ public class KafkaSendDataHandler implements KafkaDataHandler {
             }
         }
         //发送到队列中
-        Client.sendQueue.put(new SendData(bytes, () -> {
+        TcpClient.sendQueue.put(new SendData(bytes, () -> {
             // 保存转发记录
             TransferData transferData = new TransferData();
             transferData.setVin(vin);
             transferData.setType(PacketUtil.getPacketFlag(bytes).type);
-            transferData.setPlatformCode(Client.transferConfigData.platCode);
+            transferData.setPlatformCode(TcpClient.transferConfigData.platCode);
             transferData.setHex(ByteBufUtil.hexDump(bytes));
             transferData.setCollectTime(PacketUtil.getTime(bytes));
             transferData.setGwInTime(context.gwInTime);
