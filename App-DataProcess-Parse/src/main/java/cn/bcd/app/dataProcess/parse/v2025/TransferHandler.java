@@ -3,8 +3,6 @@ package cn.bcd.app.dataProcess.parse.v2025;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.data.init.transferAccess.TransferAccessDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -22,8 +20,7 @@ public class TransferHandler implements DataHandler_v2025 {
     public void handle(String vin, Packet packet, Context_v2025 context) throws Exception {
         switch (packet.flag) {
             case vehicle_run_data, vehicle_supplement_data, vehicle_login_data, vehicle_logout_data -> {
-                ByteBuf byteBuf = packet.toByteBuf();
-                byte[] bytes = ByteBufUtil.getBytes(byteBuf);
+                byte[] bytes = context.rawData;
                 byte[] res = DateUtil.prependDatesToBytes(bytes,
                         context.gwInTime,
                         context.gwOutTime,

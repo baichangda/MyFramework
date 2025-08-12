@@ -13,5 +13,6 @@ public class Context_v2025 {
     public Date parseInTime;
 
     //SaveRawHandler
+    //TransferHandler
     public byte[] rawData;
 }

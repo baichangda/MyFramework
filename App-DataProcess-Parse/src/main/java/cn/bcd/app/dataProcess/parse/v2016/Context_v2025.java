@@ -14,5 +14,6 @@ public class Context_v2025 {
 
 
     //SaveRawHandler
+    //TransferHandler
     public byte[] rawData;
 }
