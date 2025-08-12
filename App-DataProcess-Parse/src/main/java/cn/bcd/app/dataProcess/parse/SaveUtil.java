@@ -9,12 +9,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 
-public class SaveUtil_gb32960 {
+public class SaveUtil {
     public static ArrayBlockingQueue<RawData> queue;
     static ExecutorService pool = Executors.newSingleThreadExecutor();
     public final static LongAdder saveCount = new LongAdder();
     static {
-        SaveUtil_gb32960.init();
+        SaveUtil.init();
     }
 
     public static void init() {

@@ -236,7 +236,7 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public abstract WorkHandler newHandler(String id);
+    public abstract WorkHandler newHandler(String id,byte[] first);
 
     /**
      * 移除workHandler

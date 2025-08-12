@@ -1,8 +1,8 @@
-package cn.bcd.app.dataProcess.parse;
+package cn.bcd.app.dataProcess.parse.v2025;
 
 import java.util.Date;
 
-public class Context_gb32960 {
+public class Context_v2025 {
     // 网关接收时间
     public Date gwInTime;
 

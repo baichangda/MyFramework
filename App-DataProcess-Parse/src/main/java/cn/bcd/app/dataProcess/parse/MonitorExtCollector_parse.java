@@ -9,9 +9,6 @@ import java.util.Map;
 @Component
 public class MonitorExtCollector_parse implements MonitorExtCollector {
 
-    @Autowired
-    DataConsumer dataConsumer;
-
     public static int blockingNum;
     public static double consumeSpeed;
     public static int workQueueTaskNum;

@@ -1,4 +1,4 @@
-package cn.bcd.app.dataProcess.parse;
+package cn.bcd.app.dataProcess.parse.v2016;
 
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.data.init.transferAccess.TransferAccessDataInit;
@@ -13,13 +13,13 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class TransferHandler_gb32960 implements DataHandler_gb32960 {
+public class TransferHandler implements DataHandler_v2016 {
 
     @Autowired
     private KafkaTemplate<String, byte[]> kafkaTemplate;
 
     @Override
-    public void handle(String vin, Packet packet, Context_gb32960 context) throws Exception {
+    public void handle(String vin, Packet packet, Context_v2016 context) throws Exception {
         switch (packet.flag) {
             case vehicle_run_data, vehicle_supplement_data, vehicle_login_data, vehicle_logout_data -> {
                 ByteBuf byteBuf = packet.toByteBuf();

@@ -1,15 +1,15 @@
 package cn.bcd.app.dataProcess.transfer;
 
+import cn.bcd.app.dataProcess.transfer.handler.KafkaDataHandler;
+import cn.bcd.app.dataProcess.transfer.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.handler.TransferDataHandler;
+import cn.bcd.app.dataProcess.transfer.tcp.Client;
 import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
-import cn.bcd.app.dataProcess.transfer.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.handler.TcpDataHandler;
-import cn.bcd.app.dataProcess.transfer.handler.TransferDataHandler;
-import cn.bcd.app.dataProcess.transfer.tcp.Client;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
@@ -53,7 +53,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
     }
 
     @Override
-    public WorkHandler newHandler(String id) {
+    public WorkHandler newHandler(String id, byte[] first) {
         return new TransferDataHandler(id, kafkaDataHandlers, tcpDataHandlers);
     }
 

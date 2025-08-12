@@ -1,5 +1,9 @@
 package cn.bcd.app.dataProcess.parse;
 
+import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2016;
+import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
+import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
+import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -22,8 +26,33 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     @Autowired
     KafkaProperties kafkaProperties;
 
-    @Autowired
-    List<DataHandler_gb32960> handlers_gb32960;
+    List<DataHandler_v2016> handlers_v2016;
+    List<DataHandler_v2025> handlers_v2025;
+
+    public DataConsumer(ParseProp parseProp, List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
+        super("dataConsumer",
+                Runtime.getRuntime().availableProcessors(),
+                false,
+                null,
+                100000,
+                true,
+                0,
+                WorkHandlerScanner.get(300, 300),
+                5,
+                parseProp.topic,
+                null);
+        logger.info("""
+                ---------DataHandler_v2016---------
+                {}
+                -----------------------------------
+                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+
+        logger.info("""
+                ---------DataHandler_v2025---------
+                {}
+                -----------------------------------
+                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+    }
 
     public DataConsumer(ParseProp parseProp) {
         super("dataConsumer",
@@ -40,8 +69,12 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     }
 
     @Override
-    public WorkHandler newHandler(String id) {
-        return new WorkHandler_gb32960(id, handlers_gb32960);
+    public WorkHandler newHandler(String id, byte[] first) {
+        if (first[16] == 0x23 && first[17] == 0x23) {
+            return new WorkHandler_v2016(id, handlers_v2016);
+        } else {
+            return new WorkHandler_v2025(id, handlers_v2025);
+        }
     }
 
     @Override
@@ -54,8 +87,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         int workQueueTaskNum = 0;
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / period, 2);
-        int saveQueueTaskNum_gb32960 = SaveUtil_gb32960.queue.size();
-        double saveSpeed_gb32960 = FloatUtil.format(SaveUtil_gb32960.saveCount.sumThenReset() / period, 2);
+        int saveQueueTaskNum_gb32960 = SaveUtil.queue.size();
+        double saveSpeed_gb32960 = FloatUtil.format(SaveUtil.saveCount.sumThenReset() / period, 2);
 
         MonitorExtCollector_parse.blockingNum = (int) curBlockingNum;
         MonitorExtCollector_parse.consumeSpeed = consumeSpeed;

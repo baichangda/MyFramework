@@ -1,12 +1,13 @@
-package cn.bcd.app.dataProcess.parse;
+package cn.bcd.app.dataProcess.parse.v2025;
 
+import cn.bcd.app.dataProcess.parse.SaveUtil;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.raw.RawData;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -18,23 +19,23 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 
-public class WorkHandler_gb32960 extends WorkHandler {
+public class WorkHandler_v2025 extends WorkHandler {
 
-    static final Logger logger = LoggerFactory.getLogger(WorkHandler_gb32960.class);
+    static final Logger logger = LoggerFactory.getLogger(WorkHandler_v2025.class);
 
-    public final List<DataHandler_gb32960> handlers;
+    public final List<DataHandler_v2025> handlers;
 
-    public final Context_gb32960 context = new Context_gb32960();
+    public final Context_v2025 context = new Context_v2025();
 
 
-    public WorkHandler_gb32960(String id, List<DataHandler_gb32960> handlers) {
+    public WorkHandler_v2025(String id, List<DataHandler_v2025> handlers) {
         super(id);
         this.handlers = handlers;
     }
 
     @Override
     public void init(ConsumerRecord<String,byte[]> first) throws Exception {
-        for (DataHandler_gb32960 handler : handlers) {
+        for (DataHandler_v2025 handler : handlers) {
             try {
                 handler.init(id, context);
             } catch (Exception ex) {
@@ -45,7 +46,7 @@ public class WorkHandler_gb32960 extends WorkHandler {
 
     @Override
     public void destroy() throws Exception {
-        for (DataHandler_gb32960 handler : handlers) {
+        for (DataHandler_v2025 handler : handlers) {
             try {
                 handler.destroy(id, context);
             } catch (Exception ex) {
@@ -93,14 +94,14 @@ public class WorkHandler_gb32960 extends WorkHandler {
                 rawData.setGwSendTime(context.gwOutTime);
                 rawData.setParseReceiveTime(context.parseInTime);
                 rawData.setHex(hexDump);
-                SaveUtil_gb32960.put(rawData);
+                SaveUtil.put(rawData);
             }
         } catch (Exception e) {
             logger.error("error", e);
             return;
         }
 
-        for (DataHandler_gb32960 handler : handlers) {
+        for (DataHandler_v2025 handler : handlers) {
             try {
                 handler.handle(id, packet, context);
             } catch (Exception ex) {
