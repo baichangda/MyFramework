@@ -18,7 +18,7 @@ public class CommandResponseHandler implements DataHandler_v2016 {
     GatewayCommandReceiver gatewayCommandReceiver;
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2016 vehicleCacheData) {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2016 context) {
         byte[] content = new byte[data.length - 25];
         System.arraycopy(data, 24, content, 0, content.length);
         gatewayCommandReceiver.onResponse(vin, flag.type, content);

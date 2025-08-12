@@ -21,7 +21,7 @@ public class SendKafkaHandler implements DataHandler_v2025 {
     static Logger logger= LoggerFactory.getLogger(SendKafkaHandler.class);
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2025 vehicleCacheData) throws Exception {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
         kafkaTemplate.send(gatewayProp.parseTopic, vin, data);
     }
 }

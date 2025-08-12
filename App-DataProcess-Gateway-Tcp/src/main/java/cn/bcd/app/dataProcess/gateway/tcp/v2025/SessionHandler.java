@@ -16,12 +16,12 @@ public class SessionHandler implements DataHandler_v2025{
     SessionClusterManager sessionClusterManager;
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2025 vehicleCacheData) throws Exception {
-        if (vehicleCacheData.session == null) {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
+        if (context.session == null) {
             //构造会话
-            vehicleCacheData.session = new Session(vin, vehicleCacheData.ctx.channel());
+            context.session = new Session(vin, context.ctx.channel());
             //发送会话通知到其他集群、踢掉无用的session
-            sessionClusterManager.send(vehicleCacheData.session);
+            sessionClusterManager.send(context.session);
         }
     }
 }

@@ -22,7 +22,7 @@ public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
     static Logger logger = LoggerFactory.getLogger(DataInboundHandler_v2016.class);
 
     String vin;
-    VehicleCacheData_v2016 vehicleCacheData;
+    Context_v2016 vehicleCacheData;
 
     public DataInboundHandler_v2016(List<DataHandler_v2016> handlers) {
         this.handlers = handlers;
@@ -51,7 +51,7 @@ public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
                 return;
             }
             //初始化缓存
-            vehicleCacheData = new VehicleCacheData_v2016();
+            vehicleCacheData = new Context_v2016();
             vehicleCacheData.ctx=ctx;
             vehicleCacheData.vehicleData = vehicleData;
             vehicleCacheData.receiveTime = receiveTime;

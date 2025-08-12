@@ -1,6 +1,5 @@
 package cn.bcd.app.dataProcess.gateway.tcp.v2025;
 
-import cn.bcd.app.dataProcess.gateway.tcp.GatewayCommandReceiver;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
@@ -21,17 +20,17 @@ public class VehicleOnlineHandler implements DataHandler_v2025 {
     RedisTemplate<String, String> redisTemplate;
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2025 vehicleCacheData) throws Exception {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
         if (flag != PacketFlag.vehicle_run_data) {
             return;
         }
         long timeTs = PacketUtil.getTime(data).getTime();
-        if (timeTs < vehicleCacheData.lastTimeTs) {
+        if (timeTs < context.lastTimeTs) {
             return;
         }
-        vehicleCacheData.lastTimeTs = timeTs;
+        context.lastTimeTs = timeTs;
         try {
-            redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, vehicleCacheData.lastTimeTs + "");
+            redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, context.lastTimeTs + "");
         } catch (Exception e) {
             logger.error("error", e);
         }

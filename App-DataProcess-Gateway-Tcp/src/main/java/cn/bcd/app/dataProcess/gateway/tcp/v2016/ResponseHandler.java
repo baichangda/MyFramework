@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 public class ResponseHandler implements DataHandler_v2016 {
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, VehicleCacheData_v2016 vehicleCacheData) throws Exception {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2016 context) throws Exception {
         byte[] response = PacketUtil.build_bytes_common_response(data, (byte) 1);
-        vehicleCacheData.ctx.write(response);
+        context.ctx.write(response);
     }
 }
