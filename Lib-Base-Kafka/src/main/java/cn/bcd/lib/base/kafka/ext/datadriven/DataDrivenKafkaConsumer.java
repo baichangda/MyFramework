@@ -236,7 +236,7 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public abstract WorkHandler newHandler(String id,byte[] first);
+    public abstract WorkHandler newHandler(String id, ConsumerRecord<String, byte[]> first);
 
     /**
      * 移除workHandler
@@ -403,7 +403,7 @@ public abstract class DataDrivenKafkaConsumer {
      * 消费
      */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
-        try (consumer){
+        try (consumer) {
             while (running_consume) {
                 try {
                     //检查暂停消费
@@ -453,7 +453,7 @@ public abstract class DataDrivenKafkaConsumer {
                             WorkHandler workHandler = workExecutor.workHandlers.computeIfAbsent(id, k -> {
                                 //初始化workHandler
                                 try {
-                                    WorkHandler temp = newHandler(id);
+                                    WorkHandler temp = newHandler(id, consumerRecord);
                                     temp.afterConstruct(workExecutor, this);
                                     temp.init(consumerRecord);
                                     if (monitor_period > 0) {

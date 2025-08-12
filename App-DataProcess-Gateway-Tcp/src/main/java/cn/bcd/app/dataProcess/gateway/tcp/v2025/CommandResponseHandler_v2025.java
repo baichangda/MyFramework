@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 
 @Order(10)
 @Component
-public class CommandResponseHandler implements DataHandler_v2025 {
+public class CommandResponseHandler_v2025 implements DataHandler_v2025 {
 
-    static Logger logger = LoggerFactory.getLogger(CommandResponseHandler.class);
+    static Logger logger = LoggerFactory.getLogger(CommandResponseHandler_v2025.class);
 
     @Autowired
     GatewayCommandReceiver gatewayCommandReceiver;

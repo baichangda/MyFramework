@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Order(1000)
 @Component
-public class ResponseHandler implements DataHandler_v2025 {
+public class ResponseHandler_v2025 implements DataHandler_v2025 {
 
     @Override
     public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {

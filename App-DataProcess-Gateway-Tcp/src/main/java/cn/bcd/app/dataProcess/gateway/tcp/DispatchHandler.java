@@ -26,6 +26,8 @@ public class DispatchHandler extends ChannelInboundHandlerAdapter {
     List<DataHandler_v2025> handlers_v2025;
 
     public DispatchHandler(List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
+        this.handlers_v2016=handlers_v2016;
+        this.handlers_v2025=handlers_v2025;
         logger.info("""
                 ---------DataHandler_v2016---------
                 {}
@@ -36,7 +38,7 @@ public class DispatchHandler extends ChannelInboundHandlerAdapter {
                 ---------DataHandler_v2025---------
                 {}
                 -----------------------------------
-                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2025.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
     }
 
     @Override

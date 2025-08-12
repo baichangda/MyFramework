@@ -1,6 +1,6 @@
-package cn.bcd.app.dataProcess.gateway.tcp.v2016;
+package cn.bcd.app.dataProcess.gateway.mqtt.v2016;
 
-import cn.bcd.app.dataProcess.gateway.tcp.GatewayCommandReceiver;
+import cn.bcd.app.dataProcess.gateway.mqtt.GatewayCommandReceiver;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 
 @Order(10)
 @Component
-public class CommandResponseHandler implements DataHandler_v2016 {
+public class CommandResponseHandler_v2016 implements DataHandler_v2016 {
 
-    static Logger logger = LoggerFactory.getLogger(CommandResponseHandler.class);
+    static Logger logger = LoggerFactory.getLogger(CommandResponseHandler_v2016.class);
 
     @Autowired
     GatewayCommandReceiver gatewayCommandReceiver;

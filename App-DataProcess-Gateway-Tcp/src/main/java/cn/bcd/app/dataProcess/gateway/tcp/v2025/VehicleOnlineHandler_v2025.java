@@ -1,7 +1,7 @@
-package cn.bcd.app.dataProcess.gateway.tcp.v2016;
+package cn.bcd.app.dataProcess.gateway.tcp.v2025;
 
 import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,15 +12,15 @@ import org.springframework.stereotype.Component;
 
 @Order(10)
 @Component
-public class VehicleOnlineHandler implements DataHandler_v2016 {
+public class VehicleOnlineHandler_v2025 implements DataHandler_v2025 {
 
-    static final Logger logger = LoggerFactory.getLogger(VehicleOnlineHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(VehicleOnlineHandler_v2025.class);
 
     @Autowired
     RedisTemplate<String, String> redisTemplate;
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2016 context) throws Exception {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
         if (flag != PacketFlag.vehicle_run_data) {
             return;
         }

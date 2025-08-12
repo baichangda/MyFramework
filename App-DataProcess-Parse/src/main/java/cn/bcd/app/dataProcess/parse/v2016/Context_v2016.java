@@ -2,7 +2,7 @@ package cn.bcd.app.dataProcess.parse.v2016;
 
 import java.util.Date;
 
-public class Context_v2025 {
+public class Context_v2016 {
     // 网关接收时间
     public Date gwInTime;
 

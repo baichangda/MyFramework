@@ -23,7 +23,12 @@ public enum ResponseStatus {
      * 有相同的指令正在进行中
      * 指令未发送
      */
-    busy(3, "指令正在发送");
+    busy(3, "指令正在发送"),
+
+    /**
+     * 程序出错
+     */
+    program_error(4, "程序出错");
 
     public final int code;
 

@@ -6,6 +6,7 @@ dependencies {
     implementation project(":Lib-Base-Kafka")
     implementation project(":Lib-Vehicle-Command")
     implementation project(":Lib-Monitor-Client")
+    implementation project(":Lib-Data-Init")
 
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
     implementation 'org.springframework.boot:spring-boot-starter'

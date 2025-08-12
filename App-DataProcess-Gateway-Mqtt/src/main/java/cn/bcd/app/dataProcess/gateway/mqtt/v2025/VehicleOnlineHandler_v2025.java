@@ -1,4 +1,5 @@
-package cn.bcd.app.dataProcess.gateway.tcp.v2025;
+package cn.bcd.app.dataProcess.gateway.mqtt.v2025;
+
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
@@ -10,27 +11,40 @@ import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-@Order(10)
+@Order(2)
 @Component
-public class VehicleOnlineHandler implements DataHandler_v2025 {
+public class VehicleOnlineHandler_v2025 implements DataHandler_v2025 {
 
-    static final Logger logger = LoggerFactory.getLogger(VehicleOnlineHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(VehicleOnlineHandler_v2025.class);
 
     @Autowired
     RedisTemplate<String, String> redisTemplate;
 
     @Override
-    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
+    public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) {
         if (flag != PacketFlag.vehicle_run_data) {
             return;
         }
-        long timeTs = PacketUtil.getTime(data).getTime();
-        if (timeTs < context.lastTimeTs) {
+        long collectTimeTs = PacketUtil.getTime(data).getTime();
+        if (collectTimeTs < context.lastTimeTs) {
             return;
         }
-        context.lastTimeTs = timeTs;
+        context.lastTimeTs = collectTimeTs;
         try {
             redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, context.lastTimeTs + "");
+        } catch (Exception e) {
+            logger.error("error", e);
+        }
+    }
+
+
+    @Override
+    public void init(String vin, Context_v2025 context) {
+        try {
+            String s = redisTemplate.opsForValue().get(Const.redis_key_prefix_vehicle_last_packet_time + vin);
+            if (s != null) {
+                context.lastTimeTs = Long.parseLong(s);
+            }
         } catch (Exception e) {
             logger.error("error", e);
         }

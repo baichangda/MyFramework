@@ -1,0 +1,56 @@
+spring:
+  profiles.active: dev
+  freemarker.cache: false
+  #  kafka配置
+  kafka:
+    consumer:
+      bootstrap-servers: 10.0.11.50:19092
+      group-id: tsp-gateway
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      bootstrap-servers: 10.0.11.50:19092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+    #解析数据专用topic
+    parse-topic: parseData
+  data:
+    #redis配置
+    #如果都进行了配置,加载的先后顺序为:
+    #sentinel>cluster>single
+    redis:
+      ssl:
+        enabled: false
+      repositories:
+        enabled: false
+      #公用配置
+      database: 0
+      timeout: 60000
+      password: wq
+      #异步lettuce连接池(默认)
+      lettuce:
+        pool:
+          maxIdle: 8
+          minIdle: 0
+          maxActive: 8
+          maxWait: -1
+        shutdown-timeout: 100ms
+      #单机配置
+      host: 10.0.11.50
+      port: 36379
+
+mqtt:
+  serverHost: tbox.wq.incarcloud.com
+  serverPort: 38800
+  clientId: tsp-gateway
+  topic: vin/+
+  responseTopicPrefix: vin-resp/
+  consumeThreadNum: 4
+
+lib:
+  vehicle:
+    command:
+      requestTopic: commandRequest
+      responseTopic: commandResponse
+      senderGroupId: gw
+      receiverGroupId: gw

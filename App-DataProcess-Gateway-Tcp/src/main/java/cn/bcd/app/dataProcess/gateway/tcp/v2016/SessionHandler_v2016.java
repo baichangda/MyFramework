@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Order(10)
 @Component
-public class SessionHandler implements DataHandler_v2016{
+public class SessionHandler_v2016 implements DataHandler_v2016{
 
     @Autowired
     SessionClusterManager sessionClusterManager;

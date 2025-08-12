@@ -10,6 +10,7 @@ import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
@@ -19,12 +20,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DataConsumer extends DataDrivenKafkaConsumer {
-
     List<KafkaDataHandler> kafkaDataHandlers;
     List<TcpDataHandler> tcpDataHandlers;
-
     KafkaProperties kafkaProp;
-
     public DataConsumer(KafkaProperties kafkaProp, String topic, int[] partitions,
                         List<KafkaDataHandler> kafkaDataHandlers,
                         List<TcpDataHandler> tcpDataHandlers) {
@@ -53,7 +51,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
     }
 
     @Override
-    public WorkHandler newHandler(String id, byte[] first) {
+    public WorkHandler newHandler(String id, ConsumerRecord<String, byte[]> first) {
         return new TransferDataHandler(id, kafkaDataHandlers, tcpDataHandlers);
     }
 

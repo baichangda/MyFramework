@@ -1,9 +1,9 @@
-package cn.bcd.app.dataProcess.parse.v2016;
+package cn.bcd.app.dataProcess.parse.v2025;
 
 import cn.bcd.app.dataProcess.parse.SaveUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
+import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.raw.RawData;
 import io.netty.buffer.ByteBufUtil;
 import org.springframework.core.annotation.Order;
@@ -14,8 +14,7 @@ import java.util.EnumSet;
 
 @Order(1)
 @Component
-public class SaveRawHandler implements DataHandler_v2025 {
-
+public class SaveRawHandler_v2025 implements DataHandler_v2025 {
     static EnumSet<PacketFlag> saveRawDataTypeSet = EnumSet.of(
             PacketFlag.vehicle_login_data,
             PacketFlag.vehicle_run_data,

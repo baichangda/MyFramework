@@ -19,6 +19,7 @@ import java.lang.reflect.Type;
  */
 public class JsonUtil {
     public final static ObjectMapper OBJECT_MAPPER = withConfig(new ObjectMapper());
+    public final static ObjectWriter OBJECT_WRITER_PRETTY = OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
 
     public static JavaType getJavaType(Type type) {
         //1、判断是否带有泛型
@@ -91,6 +92,14 @@ public class JsonUtil {
     public static String toJson(Object object) {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    public static String toJsonPretty(Object object) {
+        try {
+            return OBJECT_WRITER_PRETTY.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw BaseException.get(e);
         }

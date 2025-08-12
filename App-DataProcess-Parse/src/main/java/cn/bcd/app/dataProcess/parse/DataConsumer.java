@@ -1,12 +1,14 @@
 package cn.bcd.app.dataProcess.parse;
 
-import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2025;
+import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
+import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -25,10 +27,10 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     @Autowired
     KafkaProperties kafkaProperties;
 
-    List<DataHandler_v2025> handlers_v2016;
-    List<cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025> handlers_v2025;
+    final List<DataHandler_v2016> handlers_v2016;
+    final List<DataHandler_v2025> handlers_v2025;
 
-    public DataConsumer(ParseProp parseProp, List<DataHandler_v2025> handlers_v2016, List<cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025> handlers_v2025) {
+    public DataConsumer(ParseProp parseProp, List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
@@ -40,6 +42,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 5,
                 parseProp.topic,
                 null);
+        this.handlers_v2016 = handlers_v2016;
+        this.handlers_v2025 = handlers_v2025;
         logger.info("""
                 ---------DataHandler_v2016---------
                 {}
@@ -50,26 +54,13 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 ---------DataHandler_v2025---------
                 {}
                 -----------------------------------
-                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
-    }
-
-    public DataConsumer(ParseProp parseProp) {
-        super("dataConsumer",
-                Runtime.getRuntime().availableProcessors(),
-                false,
-                null,
-                100000,
-                true,
-                0,
-                WorkHandlerScanner.get(300, 300),
-                5,
-                parseProp.topic,
-                null);
+                """, handlers_v2025.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
     }
 
     @Override
-    public WorkHandler newHandler(String id, byte[] first) {
-        if (first[16] == 0x23 && first[17] == 0x23) {
+    public WorkHandler newHandler(String id, ConsumerRecord<String, byte[]> first) {
+        byte[] value = first.value();
+        if (value[16] == 0x23 && value[17] == 0x23) {
             return new WorkHandler_v2016(id, handlers_v2016);
         } else {
             return new WorkHandler_v2025(id, handlers_v2025);

@@ -147,7 +147,7 @@ public abstract class ConsumeExecutorGroup<T> {
             monitor_blockingNum = null;
             monitor_entityNum = null;
             monitor_receiveNum = null;
-            monitor_workNum=null;
+            monitor_workNum = null;
         }
 
     }
@@ -179,7 +179,7 @@ public abstract class ConsumeExecutorGroup<T> {
 
     public abstract String id(T t);
 
-    public abstract ConsumeEntity<T> newEntity(String id);
+    public abstract ConsumeEntity<T> newEntity(String id, T first);
 
     public void onMessage(T t) {
         if (monitor_period > 0) {
@@ -193,7 +193,7 @@ public abstract class ConsumeExecutorGroup<T> {
         executor.execute(() -> {
             ConsumeEntity<T> entity = executor.entityMap.computeIfAbsent(id, k -> {
                 try {
-                    ConsumeEntity<T> e = newEntity(id);
+                    ConsumeEntity<T> e = newEntity(id, t);
                     e.executor = executor;
                     e.init(t);
                     if (monitor_period > 0) {
