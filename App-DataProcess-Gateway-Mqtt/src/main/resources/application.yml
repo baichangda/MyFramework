@@ -42,7 +42,7 @@ spring:
 mqtt:
   serverHost: tbox.wq.incarcloud.com
   serverPort: 38800
-  clientId: tsp-gateway
+  clientId: bcd-gw
   topic: vin/+
   responseTopicPrefix: vin-resp/
   consumeThreadNum: 4
