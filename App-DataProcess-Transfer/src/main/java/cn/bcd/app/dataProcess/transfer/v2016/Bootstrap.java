@@ -1,12 +1,12 @@
-package cn.bcd.app.dataProcess.transfer;
+package cn.bcd.app.dataProcess.transfer.v2016;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.data.init.transferConfig.TransferConfigDataInit;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
-import cn.bcd.app.dataProcess.transfer.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.handler.TcpDataHandler;
-import cn.bcd.app.dataProcess.transfer.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;

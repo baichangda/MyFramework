@@ -1,4 +1,4 @@
-package cn.bcd.app.dataProcess.transfer.handler;
+package cn.bcd.app.dataProcess.transfer.v2016.handler;
 
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkExecutor;
 import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;

@@ -1,12 +1,12 @@
-package cn.bcd.app.dataProcess.transfer.handler;
+package cn.bcd.app.dataProcess.transfer.v2016.handler;
 
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
 import cn.bcd.lib.storage.mongo.transfer.TransferData;
-import cn.bcd.app.dataProcess.transfer.tcp.Client;
-import cn.bcd.app.dataProcess.transfer.tcp.SendData;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.SendData;
 import io.netty.buffer.ByteBufUtil;
 import org.slf4j.Logger;
 import org.springframework.core.annotation.Order;

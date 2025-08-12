@@ -1,9 +1,9 @@
-package cn.bcd.app.dataProcess.transfer;
+package cn.bcd.app.dataProcess.transfer.v2016;
 
-import cn.bcd.app.dataProcess.transfer.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.handler.TcpDataHandler;
-import cn.bcd.app.dataProcess.transfer.handler.TransferDataHandler;
-import cn.bcd.app.dataProcess.transfer.tcp.Client;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.Client;
 import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;

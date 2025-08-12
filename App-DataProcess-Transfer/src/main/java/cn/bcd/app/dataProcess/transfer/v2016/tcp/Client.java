@@ -1,4 +1,4 @@
-package cn.bcd.app.dataProcess.transfer.tcp;
+package cn.bcd.app.dataProcess.transfer.v2016.tcp;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
@@ -13,8 +13,8 @@ import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PlatformLoginData;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
-import cn.bcd.app.dataProcess.transfer.DataConsumer;
-import cn.bcd.app.dataProcess.transfer.handler.TransferDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.DataConsumer;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
