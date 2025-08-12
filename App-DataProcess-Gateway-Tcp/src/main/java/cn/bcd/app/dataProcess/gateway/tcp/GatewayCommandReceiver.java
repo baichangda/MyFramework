@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class GatewayCommandReceiver implements CommandReceiver {
 
-    static final Cache<String, Request<?, ?>> cache = Caffeine.newBuilder().<String, Request<?, ?>>expireAfter(new Expiry<>() {
+    public static final Cache<String, Request<?, ?>> cache = Caffeine.newBuilder().<String, Request<?, ?>>expireAfter(new Expiry<>() {
         @Override
         public long expireAfterCreate(String key, Request<?, ?> value, long currentTime) {
             return TimeUnit.SECONDS.toNanos(value.timeout);
@@ -61,4 +61,5 @@ public class GatewayCommandReceiver implements CommandReceiver {
         //响应
         CommandReceiver.response(request, ResponseStatus.success, bytes);
     }
+
 }

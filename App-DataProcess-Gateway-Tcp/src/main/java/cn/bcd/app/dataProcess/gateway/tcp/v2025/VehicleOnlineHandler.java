@@ -1,5 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.tcp.v2025;
 
+import cn.bcd.app.dataProcess.gateway.tcp.GatewayCommandReceiver;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
@@ -24,11 +25,11 @@ public class VehicleOnlineHandler implements DataHandler_v2025 {
         if (flag != PacketFlag.vehicle_run_data) {
             return;
         }
-        long collectTimeTs = PacketUtil.getTime(data).getTime();
-        if (collectTimeTs < vehicleCacheData.lastTimeTs) {
+        long timeTs = PacketUtil.getTime(data).getTime();
+        if (timeTs < vehicleCacheData.lastTimeTs) {
             return;
         }
-        vehicleCacheData.lastTimeTs = collectTimeTs;
+        vehicleCacheData.lastTimeTs = timeTs;
         try {
             redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, vehicleCacheData.lastTimeTs + "");
         } catch (Exception e) {
