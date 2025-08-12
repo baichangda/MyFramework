@@ -11,4 +11,7 @@ public class Context_v2025 {
 
     // 解析接收时间
     public Date parseInTime;
+
+    //SaveRawHandler
+    public byte[] rawData;
 }

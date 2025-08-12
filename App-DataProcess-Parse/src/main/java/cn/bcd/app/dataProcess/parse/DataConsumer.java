@@ -1,8 +1,7 @@
 package cn.bcd.app.dataProcess.parse;
 
-import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2016;
+import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
-import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
@@ -26,10 +25,10 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     @Autowired
     KafkaProperties kafkaProperties;
 
-    List<DataHandler_v2016> handlers_v2016;
-    List<DataHandler_v2025> handlers_v2025;
+    List<DataHandler_v2025> handlers_v2016;
+    List<cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025> handlers_v2025;
 
-    public DataConsumer(ParseProp parseProp, List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
+    public DataConsumer(ParseProp parseProp, List<DataHandler_v2025> handlers_v2016, List<cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025> handlers_v2025) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
