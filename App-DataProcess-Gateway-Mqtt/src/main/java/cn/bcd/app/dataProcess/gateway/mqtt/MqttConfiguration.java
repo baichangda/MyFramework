@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  **/
 
 @Configuration
-@EnableConfigurationProperties(value = MqttProp.class)
+@EnableConfigurationProperties(value = GatewayProp.class)
 public class MqttConfiguration implements ApplicationListener<ContextRefreshedEvent> {
 
     static Logger logger = LoggerFactory.getLogger(MqttConfiguration.class);
@@ -39,7 +39,7 @@ public class MqttConfiguration implements ApplicationListener<ContextRefreshedEv
     }
 
     @Bean
-    public Mqtt5AsyncClient mqtt5AsyncClient(MqttProp mqttProp) {
+    public Mqtt5AsyncClient mqtt5AsyncClient(GatewayProp mqttProp) {
         logger.info("mqttProp:\n{}", JsonUtil.toJsonPretty(mqttProp));
         client = MqttClient.builder()
                 .useMqttVersion5()

@@ -11,8 +11,7 @@ public class Context_v2016 {
     // 网关接收时间
     public Date receiveTime;
 
-    /****************************************通用缓存*********************************************/
     private VehicleData vehicleData;
-    /**********************************VehicleOnlineHandler**************************************/
+    //VehicleOnlineHandler
     public long lastTimeTs;
 }

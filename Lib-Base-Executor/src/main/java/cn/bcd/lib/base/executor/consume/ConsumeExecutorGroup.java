@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class ConsumeExecutorGroup<T> {
@@ -80,7 +81,7 @@ public abstract class ConsumeExecutorGroup<T> {
                     }
                 }
                 for (String id : ids) {
-                    removeEntity(id, executor);
+                    removeEntity(id, executor, null);
                 }
             });
         }
@@ -126,7 +127,7 @@ public abstract class ConsumeExecutorGroup<T> {
                 try {
                     futureList.add(executor.destroy(() -> {
                         for (String id : executor.entityMap.keySet()) {
-                            removeEntity(id, executor);
+                            removeEntity(id, executor, null);
                         }
                     }));
                 } catch (Exception ex) {
@@ -152,10 +153,13 @@ public abstract class ConsumeExecutorGroup<T> {
 
     }
 
-    public CompletableFuture<Void> removeEntity(String id, ConsumeExecutor<T> executor) {
+    private CompletableFuture<Void> removeEntity(String id, ConsumeExecutor<T> executor, Function<ConsumeEntity<T>, Boolean> func) {
         return executor.submit(() -> {
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
+                if (func == null || !func.apply(remove)) {
+                    return;
+                }
                 try {
                     remove.destroy();
                 } catch (Exception ex) {
@@ -170,7 +174,12 @@ public abstract class ConsumeExecutorGroup<T> {
 
     public CompletableFuture<Void> removeEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
-        return removeEntity(id, executor);
+        return removeEntity(id, executor, null);
+    }
+
+    public CompletableFuture<Void> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
+        ConsumeExecutor<T> executor = getExecutor(id);
+        return removeEntity(id, executor, func);
     }
 
     protected ConsumeExecutor<T> getExecutor(String id) {
@@ -178,6 +187,11 @@ public abstract class ConsumeExecutorGroup<T> {
     }
 
     public abstract String id(T t);
+
+    public CompletableFuture<ConsumeEntity<T>> getEntity(String id) {
+        ConsumeExecutor<T> executor = getExecutor(id);
+        return executor.submit(() -> executor.entityMap.get(id));
+    }
 
     public abstract ConsumeEntity<T> newEntity(String id, T first);
 

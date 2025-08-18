@@ -7,12 +7,10 @@ import java.util.Date;
 
 @Data
 public class Context_v2025 {
-
     // 网关接收时间
     public Date receiveTime;
 
-    /****************************************通用缓存*********************************************/
     private VehicleData vehicleData;
-    /**********************************VehicleOnlineHandler**************************************/
+    //VehicleOnlineHandler
     public long lastTimeTs;
 }

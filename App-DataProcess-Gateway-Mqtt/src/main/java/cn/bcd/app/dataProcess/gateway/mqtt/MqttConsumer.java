@@ -23,7 +23,7 @@ public class MqttConsumer implements Consumer<Mqtt5Publish>, ApplicationListener
 
 
     @Autowired
-    MqttProp mqttProp;
+    GatewayProp gatewayProp;
 
     @Autowired
     Mqtt5AsyncClient client;
@@ -38,12 +38,12 @@ public class MqttConsumer implements Consumer<Mqtt5Publish>, ApplicationListener
 
     private void subscribe() {
         Mqtt5Subscribe subscribe = Mqtt5Subscribe.builder().addSubscription(
-                Mqtt5Subscription.builder().topicFilter(mqttProp.getTopic()).qos(MqttQos.AT_LEAST_ONCE).build()
+                Mqtt5Subscription.builder().topicFilter(gatewayProp.getTopic()).qos(MqttQos.AT_LEAST_ONCE).build()
         ).build();
         AtomicInteger index = new AtomicInteger();
         client.subscribe(subscribe, this,
-                Executors.newFixedThreadPool(mqttProp.getConsumeThreadNum(),
-                        r -> new Thread(r, "mqtt-consumer(" + index.incrementAndGet() + "/" + mqttProp.getConsumeThreadNum() + ")")
+                Executors.newFixedThreadPool(gatewayProp.getConsumeThreadNum(),
+                        r -> new Thread(r, "mqtt-consumer(" + index.incrementAndGet() + "/" + gatewayProp.getConsumeThreadNum() + ")")
                 )
         );
     }

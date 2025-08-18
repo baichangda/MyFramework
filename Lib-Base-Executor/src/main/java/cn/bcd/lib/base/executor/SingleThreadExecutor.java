@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class SingleThreadExecutor implements Executor {
@@ -204,6 +206,17 @@ public class SingleThreadExecutor implements Executor {
         }
     }
 
+    public final <T> void execute(Consumer<T> consumer) {
+        checkRunning();
+        if (inThread()) {
+            consumer.accept((T) this);
+        } else {
+            executor.execute(() -> {
+                consumer.accept((T) this);
+            });
+        }
+    }
+
 
     public final CompletableFuture<Void> submit(Runnable runnable) {
         checkRunning();
@@ -229,6 +242,20 @@ public class SingleThreadExecutor implements Executor {
             }
         } else {
             return CompletableFuture.supplyAsync(supplier, executor);
+        }
+    }
+
+    public final <T extends SingleThreadExecutor, R> CompletableFuture<R> submit(Function<T, R> consumer) {
+        checkRunning();
+        if (inThread()) {
+            try {
+                R apply = consumer.apply((T) this);
+                return CompletableFuture.completedFuture(apply);
+            } catch (Throwable ex) {
+                return CompletableFuture.failedFuture(ex);
+            }
+        } else {
+            return CompletableFuture.supplyAsync(()-> consumer.apply((T) this), executor);
         }
     }
 

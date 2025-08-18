@@ -1,6 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.mqtt.v2025;
 
-import cn.bcd.app.dataProcess.gateway.mqtt.MqttProp;
+import cn.bcd.app.dataProcess.gateway.mqtt.GatewayProp;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
@@ -20,7 +20,7 @@ public class ResponseHandler_v2025 implements DataHandler_v2025 {
 
 
     @Autowired
-    MqttProp mqttProp;
+    GatewayProp gatewayProp;
 
     @Autowired
     public Mqtt5AsyncClient client;
@@ -30,7 +30,7 @@ public class ResponseHandler_v2025 implements DataHandler_v2025 {
         if ((data[3] & 0xFF) == 0xFE) {
             byte[] responseByte = PacketUtil.build_bytes_common_response(data, (byte) 1);
             logger.info("response msg vin[{}] type[{}]:\n{}", vin, flag, ByteBufUtil.hexDump(responseByte));
-            client.publish(Mqtt5Publish.builder().topic(mqttProp.getResponseTopicPrefix() + vin).payload(responseByte).build());
+            client.publish(Mqtt5Publish.builder().topic(gatewayProp.getResponseTopicPrefix() + vin).payload(responseByte).build());
         }
     }
 }
