@@ -30,15 +30,15 @@ public class DispatchHandler extends ChannelInboundHandlerAdapter {
     List<DataHandler_v2025> handlers_v2025;
 
     public DispatchHandler(List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
-        this.handlers_v2016=handlers_v2016;
-        this.handlers_v2025=handlers_v2025;
+        this.handlers_v2016 = handlers_v2016;
+        this.handlers_v2025 = handlers_v2025;
         logger.info("""
                 ---------DataHandler_v2016---------
                 {}
                 -----------------------------------
                 """, handlers_v2016.stream()
                 .map(e -> StringUtil.format("order[{}] class[{}]",
-                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(v -> v.value() + "").orElse(""),
                         e.getClass().getName()))
                 .collect(Collectors.joining("\n")));
 
@@ -48,7 +48,7 @@ public class DispatchHandler extends ChannelInboundHandlerAdapter {
                 -----------------------------------
                 """, handlers_v2025.stream()
                 .map(e -> StringUtil.format("order[{}] class[{}]",
-                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(v -> v.value() + "").orElse(""),
                         e.getClass().getName()))
                 .collect(Collectors.joining("\n")));
     }

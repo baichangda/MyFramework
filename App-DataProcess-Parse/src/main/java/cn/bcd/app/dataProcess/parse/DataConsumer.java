@@ -53,7 +53,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 -----------------------------------
                 """, handlers_v2016.stream()
                 .map(e -> StringUtil.format("order[{}] class[{}]",
-                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(v -> v.value() + "").orElse(""),
                         e.getClass().getName()))
                 .collect(Collectors.joining("\n")));
 
@@ -63,7 +63,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 -----------------------------------
                 """, handlers_v2025.stream()
                 .map(e -> StringUtil.format("order[{}] class[{}]",
-                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(v -> v.value() + "").orElse(""),
                         e.getClass().getName()))
                 .collect(Collectors.joining("\n")));
     }
