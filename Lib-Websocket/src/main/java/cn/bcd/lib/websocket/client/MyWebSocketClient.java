@@ -1,8 +1,8 @@
 package cn.bcd.lib.websocket.client;
 
+import cn.bcd.lib.websocket.Const;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ public class MyWebSocketClient {
     static Logger logger = LoggerFactory.getLogger(MyWebSocketClient.class);
 
     static final ScheduledExecutorService pool = Executors.newSingleThreadScheduledExecutor();
-    static final Vertx vertx = Vertx.vertx();
+
 
     public final String url;
     public final String host;
@@ -54,7 +54,7 @@ public class MyWebSocketClient {
                 connect();
             });
         };
-        webSocketClient = vertx.createWebSocketClient();
+        webSocketClient = Const.vertx.createWebSocketClient();
         this.autoReconnectPeriod = autoReconnectPeriod;
     }
 
@@ -73,13 +73,14 @@ public class MyWebSocketClient {
     public final Future<Void> sendText(String text) {
         WebSocket webSocket = this.webSocket;
         if (webSocket == null) {
-            return null;
+            return Future.failedFuture("ws[" + url + "] has closed");
         }
         return webSocket.writeTextMessage(text);
     }
 
     /**
      * 异步连接
+     *
      * @return
      */
     public final CompletableFuture<Void> connect() {
@@ -92,6 +93,7 @@ public class MyWebSocketClient {
 
     /**
      * 异步关闭
+     *
      * @return
      */
     public final CompletableFuture<Void> close() {
