@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -246,13 +247,16 @@ public abstract class DataDrivenKafkaConsumer {
      */
     public final CompletableFuture<Void> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
-        return removeHandler(id, workExecutor);
+        return removeHandler(id, workExecutor, null);
     }
 
-    public final CompletableFuture<Void> removeHandler(String id, WorkExecutor executor) {
+    private CompletableFuture<Void> removeHandler(String id, WorkExecutor executor, Function<WorkHandler, Boolean> func) {
         return executor.submit(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {
+                if (func == null || !func.apply(workHandler)) {
+                    return;
+                }
                 try {
                     workHandler.destroy();
                 } catch (Exception ex) {
@@ -263,6 +267,11 @@ public abstract class DataDrivenKafkaConsumer {
                 }
             }
         });
+    }
+
+    public CompletableFuture<Void> checkRemoveEntity(String id, Function<WorkHandler, Boolean> func) {
+        WorkExecutor executor = getWorkExecutor(id);
+        return removeHandler(id, executor, func);
     }
 
     /**
@@ -551,7 +560,7 @@ public abstract class DataDrivenKafkaConsumer {
                     }
                 }
                 for (String id : ids) {
-                    removeHandler(id, workExecutor);
+                    removeHandler(id, workExecutor, null);
                 }
             });
         }

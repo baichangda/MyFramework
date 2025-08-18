@@ -14,10 +14,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @EnableConfigurationProperties({ParseProp.class, KafkaProperties.class})
@@ -48,13 +51,21 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 ---------DataHandler_v2016---------
                 {}
                 -----------------------------------
-                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2016.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
 
         logger.info("""
                 ---------DataHandler_v2025---------
                 {}
                 -----------------------------------
-                """, handlers_v2025.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2025.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
     }
 
     @Override

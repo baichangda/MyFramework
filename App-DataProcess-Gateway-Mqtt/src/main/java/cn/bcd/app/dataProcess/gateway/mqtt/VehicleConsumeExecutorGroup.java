@@ -7,12 +7,16 @@ import cn.bcd.app.dataProcess.gateway.mqtt.v2025.VehicleEntity_v2025;
 import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.executor.consume.ConsumeEntity;
 import cn.bcd.lib.base.executor.consume.ConsumeExecutorGroup;
+import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -32,19 +36,27 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
                 BlockingChecker.DEFAULT,
                 EntityScanner.get(300, 60),
                 5);
-        this.handlers_v2016=handlers_v2016;
-        this.handlers_v2025=handlers_v2025;
+        this.handlers_v2016 = handlers_v2016;
+        this.handlers_v2025 = handlers_v2025;
         logger.info("""
                 ---------DataHandler_v2016---------
                 {}
                 -----------------------------------
-                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2016.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
 
         logger.info("""
                 ---------DataHandler_v2025---------
                 {}
                 -----------------------------------
-                """, handlers_v2025.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2025.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
         init();
     }
 
@@ -67,7 +79,7 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
     public ConsumeEntity<byte[]> newEntity(String id, byte[] first) {
         if (first[0] == 0x23 && first[1] == 0x23) {
             return new VehicleEntity_v2016(id, handlers_v2016);
-        }else{
+        } else {
             return new VehicleEntity_v2025(id, handlers_v2025);
         }
     }

@@ -4,6 +4,7 @@ import cn.bcd.app.dataProcess.gateway.tcp.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.tcp.v2016.DataInboundHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataInboundHandler_v2025;
+import cn.bcd.lib.base.util.StringUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,9 +13,12 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -32,13 +36,21 @@ public class DispatchHandler extends ChannelInboundHandlerAdapter {
                 ---------DataHandler_v2016---------
                 {}
                 -----------------------------------
-                """, handlers_v2016.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2016.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
 
         logger.info("""
                 ---------DataHandler_v2025---------
                 {}
                 -----------------------------------
-                """, handlers_v2025.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+                """, handlers_v2025.stream()
+                .map(e -> StringUtil.format("order[{}] class[{}]",
+                        Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(Order::value).orElse(Ordered.LOWEST_PRECEDENCE),
+                        e.getClass().getName()))
+                .collect(Collectors.joining("\n")));
     }
 
     @Override
