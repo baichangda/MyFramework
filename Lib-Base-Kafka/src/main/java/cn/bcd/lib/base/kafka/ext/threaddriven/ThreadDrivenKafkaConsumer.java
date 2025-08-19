@@ -243,10 +243,10 @@ public abstract class ThreadDrivenKafkaConsumer {
         if (running) {
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool, queue, queues);
+            ExecutorUtil.shutdownThenAwait(true, consumeThread, consumeThreads, resetConsumeCountPool, queue, queues);
             //打上退出标记、等待工作线程退出
             running_work = false;
-            ExecutorUtil.shutdownThenAwait(workThreads, monitor_pool);
+            ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
             //标记不可用
             running = false;
             //清空变量

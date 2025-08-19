@@ -162,7 +162,7 @@ public class SingleThreadExecutor implements Executor {
                         if (quitNotifier != null) {
                             quitNotifier.countDown();
                         }
-                        ExecutorUtil.shutdownAllThenAwait(executor, executor_schedule, executor_blockingChecker);
+                        ExecutorUtil.shutdownAllThenAwait(true,executor, executor_schedule, executor_blockingChecker);
                         //清空变量
                         blockingQueue = null;
                         quitNotifier = null;

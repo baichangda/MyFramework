@@ -98,7 +98,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         //停止消费
         super.destroy();
         //停止工作线程池
-        ExecutorUtil.shutdownAllThenAwait(workPool, scheduledPool);
+        ExecutorUtil.shutdownAllThenAwait(true, workPool, scheduledPool);
         workPool = null;
         scheduledPool = null;
     }

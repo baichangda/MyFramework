@@ -141,7 +141,7 @@ public abstract class ConsumeExecutorGroup<T> {
             } catch (Exception ex) {
                 logger.error("error", ex);
             }
-            ExecutorUtil.shutdownThenAwait(scannerPool, monitor_pool);
+            ExecutorUtil.shutdownThenAwait(true, scannerPool, monitor_pool);
             executors = null;
             scannerPool = null;
             monitor_pool = null;

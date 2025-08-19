@@ -60,30 +60,51 @@ public class ExecutorUtil {
      * - 等待线程池执行完毕
      * <p>
      * 支持{@link Thread}、{@link Thread[]}
+     * - mayInterruptIfRunning为true时候、打断线程
      * - 等待线程执行完毕
      * <p>
      * 支持{@link java.util.Queue}、{@link java.util.Queue[]}
      * - 等待队列为空
      *
+     * @param mayInterruptIfRunning 是否打断正在执行中的任务
      * @param args
      */
-    public static void shutdownThenAwait(Object... args) {
+    public static void shutdownThenAwait(boolean mayInterruptIfRunning, Object... args) {
         if (args == null || args.length == 0) {
             return;
         }
         for (Object arg : args) {
             if (arg != null) {
                 if (arg instanceof ExecutorService pool) {
-                    pool.shutdown();
+                    if (mayInterruptIfRunning) {
+                        pool.shutdownNow();
+                    } else {
+                        pool.shutdown();
+                    }
                     await(pool);
                 } else if (arg instanceof ExecutorService[] pools) {
-                    for (ExecutorService pool : pools) {
-                        pool.shutdown();
-                        await(pool);
+                    if (mayInterruptIfRunning) {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdownNow();
+                            await(pool);
+                        }
+                    } else {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdown();
+                            await(pool);
+                        }
                     }
                 } else if (arg instanceof Thread thread) {
+                    if (mayInterruptIfRunning) {
+                        thread.interrupt();
+                    }
                     await(thread);
                 } else if (arg instanceof Thread[] threads) {
+                    if (mayInterruptIfRunning) {
+                        for (Thread thread : threads) {
+                            thread.interrupt();
+                        }
+                    }
                     await((Object) threads);
                 } else if (arg instanceof BlockingQueue<?> queue) {
                     await(queue);
@@ -105,6 +126,7 @@ public class ExecutorUtil {
      * - 等待线程池执行完毕
      * <p>
      * 支持{@link Thread}、{@link Thread[]}
+     * - mayInterruptIfRunning为true时候、打断线程
      * - 等待线程执行完毕
      * <p>
      * 支持{@link java.util.Queue}、{@link java.util.Queue[]}
@@ -112,18 +134,40 @@ public class ExecutorUtil {
      *
      * @param args
      */
-    public static void shutdownAllThenAwait(Object... args) {
+    public static void shutdownAllThenAwait(boolean mayInterruptIfRunning, Object... args) {
         if (args == null || args.length == 0) {
             return;
         }
         for (Object arg : args) {
             if (arg != null) {
                 if (arg instanceof ExecutorService pool) {
-                    pool.shutdown();
-                } else if (arg instanceof ExecutorService[] pools) {
-                    for (ExecutorService pool : pools) {
+                    if (mayInterruptIfRunning) {
+                        pool.shutdownNow();
+                    } else {
                         pool.shutdown();
                     }
+                } else if (arg instanceof ExecutorService[] pools) {
+                    if (mayInterruptIfRunning) {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdownNow();
+                        }
+                    } else {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdown();
+                        }
+                    }
+                } else if (arg instanceof Thread thread) {
+                    if (mayInterruptIfRunning) {
+                        thread.interrupt();
+                    }
+                } else if (arg instanceof Thread[] threads) {
+                    if (mayInterruptIfRunning) {
+                        for (Thread thread : threads) {
+                            thread.interrupt();
+                        }
+                    }
+                } else {
+                    throw BaseException.get("arg type[{}] not support", arg.getClass().getName());
                 }
             }
         }

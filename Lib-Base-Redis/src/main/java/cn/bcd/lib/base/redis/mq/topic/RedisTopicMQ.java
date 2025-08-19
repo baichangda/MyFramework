@@ -158,7 +158,7 @@ public class RedisTopicMQ<V> {
                     } catch (Exception ex) {
                         throw BaseException.get(ex);
                     }
-                    ExecutorUtil.shutdownThenAwait(subscriptionExecutor, taskExecutor);
+                    ExecutorUtil.shutdownThenAwait(true, subscriptionExecutor, taskExecutor);
                     consumerAvailable = false;
                 }
             }

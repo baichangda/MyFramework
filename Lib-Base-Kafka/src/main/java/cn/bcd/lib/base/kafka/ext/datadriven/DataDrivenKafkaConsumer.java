@@ -365,7 +365,7 @@ public abstract class DataDrivenKafkaConsumer {
             running = false;
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(consumeThread, consumeThreads, resetConsumeCountPool);
+            ExecutorUtil.shutdownThenAwait(true, consumeThread, consumeThreads, resetConsumeCountPool);
             consumeThread = null;
             consumeThreads = null;
             resetConsumeCountPool = null;
@@ -390,7 +390,7 @@ public abstract class DataDrivenKafkaConsumer {
                 logger.error("error", ex);
             }
             //取消监控、扫描过期线程
-            ExecutorUtil.shutdownAllThenAwait(monitor_pool, scannerPool);
+            ExecutorUtil.shutdownAllThenAwait(true,monitor_pool, scannerPool);
 
             //清空变量
             consumeThread = null;

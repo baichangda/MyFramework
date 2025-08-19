@@ -122,7 +122,7 @@ public class RedisQueueMQ<V> {
             synchronized (this) {
                 if (consumerAvailable) {
                     this.stop = true;
-                    ExecutorUtil.shutdownThenAwait(consumeExecutor, workExecutor);
+                    ExecutorUtil.shutdownThenAwait(true, consumeExecutor, workExecutor);
                     consumerAvailable = false;
                 }
             }
@@ -150,7 +150,7 @@ public class RedisQueueMQ<V> {
                                 try {
                                     onMessageFromRedis(data);
                                 } catch (Exception e) {
-                                    logger.error("onMessageFromRedis error",e);
+                                    logger.error("onMessageFromRedis error", e);
                                 }
                             });
                         }
