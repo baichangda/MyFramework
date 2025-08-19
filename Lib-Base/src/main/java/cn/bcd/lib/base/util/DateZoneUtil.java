@@ -29,6 +29,8 @@ public class DateZoneUtil {
     public final static DateTimeFormatter FORMATTER_yyyyMMdd = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZONE_OFFSET);
     public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmss = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZONE_OFFSET);
     public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmssSSS = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyy_MM_dd = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyy_MM_dd_HH_mm_ss = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZONE_OFFSET);
 
     /**
      * 根据dateStr长度转换成不同的时间
@@ -83,6 +85,28 @@ public class DateZoneUtil {
     }
 
     /**
+     * @param dateStr
+     * @return
+     */
+    public static Date strToDate_yyyy_MM_dd_HH_mm_ss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(Instant.from(FORMATTER_yyyy_MM_dd_HH_mm_ss.parse(dateStr)));
+    }
+
+    /**
+     * @param dateStr
+     * @return
+     */
+    public static Date strToDate_yyyy_MM_dd(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(LocalDate.from(FORMATTER_yyyy_MM_dd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
+    }
+
+    /**
      * @param date
      * @return
      */
@@ -113,6 +137,29 @@ public class DateZoneUtil {
             return null;
         }
         return FORMATTER_yyyyMMddHHmmssSSS.format(date.toInstant());
+    }
+
+
+    /**
+     * @param date
+     * @return
+     */
+    public static String dateToStr_yyyy_MM_dd(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd.format(date.toInstant());
+    }
+
+    /**
+     * @param date
+     * @return
+     */
+    public static String dateToStr_yyyy_MM_dd_HH_mm_ss(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd_HH_mm_ss.format(date.toInstant());
     }
 
 
