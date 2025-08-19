@@ -16,6 +16,4 @@ public class ConsumeExecutor<T> extends SingleThreadExecutor {
                            BlockingChecker blockingChecker) {
         super(threadName, queueSize, schedule, blockingChecker);
     }
-
-
 }
