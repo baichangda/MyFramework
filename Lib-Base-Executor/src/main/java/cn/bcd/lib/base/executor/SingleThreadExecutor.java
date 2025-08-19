@@ -162,7 +162,11 @@ public class SingleThreadExecutor implements Executor {
                         if (quitNotifier != null) {
                             quitNotifier.countDown();
                         }
-                        ExecutorUtil.shutdownAllThenAwait(true,executor, executor_schedule, executor_blockingChecker);
+
+                        ExecutorUtil.shutdown(true, executor);
+                        ExecutorUtil.shutdown(false, executor_schedule, executor_blockingChecker);
+                        ExecutorUtil.await(executor, executor_schedule, executor_blockingChecker);
+
                         //清空变量
                         blockingQueue = null;
                         quitNotifier = null;
@@ -255,7 +259,7 @@ public class SingleThreadExecutor implements Executor {
                 return CompletableFuture.failedFuture(ex);
             }
         } else {
-            return CompletableFuture.supplyAsync(()-> consumer.apply((T) this), executor);
+            return CompletableFuture.supplyAsync(() -> consumer.apply((T) this), executor);
         }
     }
 

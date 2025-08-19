@@ -52,6 +52,45 @@ public class ExecutorUtil {
         }
     }
 
+    public static void shutdown(boolean mayInterruptIfRunning, Object... args) {
+        if (args == null || args.length == 0) {
+            return;
+        }
+        for (Object arg : args) {
+            if (arg != null) {
+                if (arg instanceof ExecutorService pool) {
+                    if (mayInterruptIfRunning) {
+                        pool.shutdownNow();
+                    } else {
+                        pool.shutdown();
+                    }
+                } else if (arg instanceof ExecutorService[] pools) {
+                    if (mayInterruptIfRunning) {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdownNow();
+                        }
+                    } else {
+                        for (ExecutorService pool : pools) {
+                            pool.shutdown();
+                        }
+                    }
+                } else if (arg instanceof Thread thread) {
+                    if (mayInterruptIfRunning) {
+                        thread.interrupt();
+                    }
+                } else if (arg instanceof Thread[] threads) {
+                    if (mayInterruptIfRunning) {
+                        for (Thread thread : threads) {
+                            thread.interrupt();
+                        }
+                    }
+                } else {
+                    throw BaseException.get("arg type[{}] not support", arg.getClass().getName());
+                }
+            }
+        }
+    }
+
     /**
      * 一个一个关闭等待结束
      * <p>
