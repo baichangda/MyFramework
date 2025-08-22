@@ -1,9 +1,9 @@
 gateway:
   id: tcp-gateway-1
-  tcp-port: 51234
-  heart-beat-period: 3s
-  session-topic: gw-session
-  parse-topic: gw-parse
+  tcpPort: 51234
+  heartBeatPeriod: 3s
+  sessionTopic: gw-session
+  parseTopic: gw-parse
 
 spring:
   data:

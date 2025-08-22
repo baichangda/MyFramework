@@ -43,10 +43,10 @@ public class MqttConfiguration implements ApplicationListener<ContextRefreshedEv
         logger.info("mqttProp:\n{}", JsonUtil.toJsonPretty(mqttProp));
         client = MqttClient.builder()
                 .useMqttVersion5()
-                .identifier(mqttProp.getClientId())
+                .identifier(mqttProp.getMqttClientId())
                 .sslWithDefaultConfig()
-                .serverHost(mqttProp.getServerHost())
-                .serverPort(mqttProp.getServerPort())
+                .serverHost(mqttProp.getMqttServerHost())
+                .serverPort(mqttProp.getMqttServerPort())
                 .automaticReconnectWithDefaultConfig()
                 .addConnectedListener(ctx -> logger.info("mqtt connected successful "))
                 .addDisconnectedListener(ctx -> logger.info("mqtt disconnected, Exception message: {}",ctx.getCause().getMessage()))

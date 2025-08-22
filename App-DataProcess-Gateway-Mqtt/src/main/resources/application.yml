@@ -13,7 +13,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
     #解析数据专用topic
-    parse-topic: parseData
+    parseTopic: parseData
   data:
     #redis配置
     #如果都进行了配置,加载的先后顺序为:
@@ -54,3 +54,15 @@ lib:
       responseTopic: commandResponse
       senderGroupId: gw
       receiverGroupId: gw
+
+gateway:
+  id: gw1
+  sessionTopic: gw-session
+  parseTopic: gw-parse
+  mqttServerHost: 127.0.0.1
+  mqttServerPort: 18883
+  mqttClientId: gw1
+  mqttConsumeTopic: vin/+
+  mqttConsumeThreadNum: 8
+  mqttProduceTopicPrefix: vin-resp/
+

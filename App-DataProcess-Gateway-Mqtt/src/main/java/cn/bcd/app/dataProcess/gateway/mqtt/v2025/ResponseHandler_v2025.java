@@ -30,7 +30,7 @@ public class ResponseHandler_v2025 implements DataHandler_v2025 {
         if ((data[3] & 0xFF) == 0xFE) {
             byte[] responseByte = PacketUtil.build_bytes_common_response(data, (byte) 1);
             logger.info("response msg vin[{}] type[{}]:\n{}", vin, flag, ByteBufUtil.hexDump(responseByte));
-            client.publish(Mqtt5Publish.builder().topic(gatewayProp.getResponseTopicPrefix() + vin).payload(responseByte).build());
+            client.publish(Mqtt5Publish.builder().topic(gatewayProp.getMqttProduceTopicPrefix() + vin).payload(responseByte).build());
         }
     }
 }

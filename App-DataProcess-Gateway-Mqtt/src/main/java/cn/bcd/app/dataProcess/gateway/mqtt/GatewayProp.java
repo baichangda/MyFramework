@@ -8,12 +8,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "gateway")
 public class GatewayProp {
     public String id;
-    public String serverHost;
-    public int serverPort;
-    public String clientId;
-    public String topic;
-    public int consumeThreadNum;
-    public String responseTopicPrefix;
     public String sessionTopic;
     public String parseTopic;
+
+    public String mqttServerHost;
+    public int mqttServerPort;
+    public String mqttClientId;
+    public String mqttConsumeTopic;
+    public int mqttConsumeThreadNum;
+    public String mqttProduceTopicPrefix;
+
 }
