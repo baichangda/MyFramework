@@ -27,7 +27,7 @@ public class MotorData {
     public byte rotateSpeed__v;
 
     //驱动电机转矩
-    @F_num(type = NumType.uint16, valExpr = "(x-20000)/10", checkVal = true)
+    @F_num(type = NumType.uint32, valExpr = "(x-200000)/10", checkVal = true)
     public float rotateRectangle;
     public byte rotateRectangle__v;
 

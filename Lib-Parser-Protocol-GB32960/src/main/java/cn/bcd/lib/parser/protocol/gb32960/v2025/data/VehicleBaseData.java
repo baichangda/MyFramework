@@ -38,7 +38,7 @@ public class VehicleBaseData {
     public byte totalVoltage__v;
 
     //总电流
-    @F_num(type = NumType.uint16, valExpr = "x/10-1000", checkVal = true)
+    @F_num(type = NumType.uint16, valExpr = "(x-30000)/10", checkVal = true)
     public float totalCurrent;
     public byte totalCurrent__v;
 
