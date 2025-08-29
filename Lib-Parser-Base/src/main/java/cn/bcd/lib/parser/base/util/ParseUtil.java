@@ -140,10 +140,6 @@ public class ParseUtil {
      * 如下注解的字段不会记录日志
      * {@link F_bean}
      * {@link F_bean_list}
-     * <p>
-     * 注意bit注解字段会记录日志
-     * {@link F_bit_num}
-     * {@link F_bit_num_array}
      *
      * @param context
      * @return
