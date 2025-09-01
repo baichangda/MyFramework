@@ -22,16 +22,9 @@ public class ConcatConditionConverter implements Converter<ConcatCondition, Crit
         if (criterias.length == 0) {
             return null;
         }
-        switch (concatWay) {
-            case AND: {
-                return new Criteria().andOperator(criterias);
-            }
-            case OR: {
-                return new Criteria().orOperator(criterias);
-            }
-            default: {
-                return null;
-            }
-        }
+        return switch (concatWay) {
+            case AND -> new Criteria().andOperator(criterias);
+            case OR -> new Criteria().orOperator(criterias);
+        };
     }
 }
