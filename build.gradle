@@ -45,6 +45,11 @@ subprojects {
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
         annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
 
+        //统一配置mapstruct
+        var mapstructVersion = '1.6.3.Final'
+        implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+        annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
         //统一配置测试环境
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
         testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
