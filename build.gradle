@@ -144,7 +144,6 @@ subprojects {
 //                    attributes "Manifest-Version": 1.0,
 //                            'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
 //                }
-//                println("jarName:${jarName}")
 //                //指定jar文件的名称
 //                archiveBaseName = "${jarName}"
 //                version = ""
