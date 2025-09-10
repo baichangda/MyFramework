@@ -128,6 +128,26 @@ subprojects {
                     archiveBaseName = "${project.name}"
                     version = ""
                 }
+
+                //分离式打包
+//                bootJar {
+//                    // 排除所有的jar
+//                    excludes = ["*.jar", "**/application-local.yml"]
+//                    // lib目录的清除和复制任务
+//                    def dir = getLayout().getBuildDirectory().get()
+//                    delete "$dir\\libs\\lib"
+//                    from configurations.runtimeClasspath
+//                    into "$dir\\libs\\lib"
+//                    // 指定依赖包的路径
+//                    manifest {
+//                        attributes "Manifest-Version": 1.0,
+//                                'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
+//                    }
+//                    //指定jar文件的名称
+//                    archiveBaseName = "${project.name}"
+//                    version = ""
+//                }
+
                 bootRun {
                     //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
                     //开启缓存行补齐
