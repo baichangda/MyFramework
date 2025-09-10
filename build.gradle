@@ -14,10 +14,13 @@ buildscript {
     }
 }
 
-
 subprojects {
     if (it.name == 'Bom') {
         return
+    }
+
+    ext {
+        jarName = "${project.name}"
     }
 
     group = 'cn.bcd'
@@ -89,67 +92,77 @@ subprojects {
         useJUnitPlatform()
     }
 
-    def isLib = project.name.startsWith("Lib-")
-    if (isLib) {
-        bootJar {
-            enabled = false
-            /**
-             如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
-             apply plugin: "org.springframework.boot"
-             apply plugin: "io.spring.dependency-management"
-             然后在这里开启bootJar 、 同时设置manifest
-             */
+
+    afterEvaluate {
+        def isLib = project.name.startsWith("Lib-")
+        if (isLib) {
+            bootJar {
+                enabled = false
+                /**
+                 如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
+                 apply plugin: "org.springframework.boot"
+                 apply plugin: "io.spring.dependency-management"
+                 然后在这里开启bootJar 、 同时设置manifest
+                 */
 //                    enabled = true
 //                    manifest {
 //                        attributes 'Start-Class': ''
 //                    }
-        }
-        bootRun {
-            enabled = false
-        }
-    } else {
-
-        bootJar {
-            exclude "**/application-local.yml"
-            manifest {
-                attributes 'Start-Class': 'cn.bcd.Application'
             }
-            //指定jar文件的名称
-            archiveBaseName = "${project.name}"
-            version = ""
-        }
+            bootRun {
+                enabled = false
+            }
+        } else {
+            bootJar {
+                exclude "**/application-local.yml"
+                manifest {
+                    attributes 'Start-Class': 'cn.bcd.Application'
+                }
+                //指定jar文件的名称
+                archiveBaseName = "${jarName}"
+                version = ""
+            }
 
-        //分离式打包
-//        bootJar {
-//            // 排除所有的jar
-//            excludes = ["*.jar", "**/application-local.yml"]
-//            // lib目录的清除和复制任务
-//            def dir = getLayout().getBuildDirectory().get()
-//            delete "$dir\\libs\\lib"
-//            from configurations.runtimeClasspath
-//            into "$dir\\libs\\lib"
-//            // 指定依赖包的路径
-//            manifest {
-//                attributes "Manifest-Version": 1.0,
-//                        'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
+//            // 将依赖包复制到lib目录
+//            tasks.register('copyJar', Copy) {
+//                // lib目录的清除和复制任务
+//                def dir = getLayout().getBuildDirectory().get()
+//                delete "$dir\\libs\\lib"
+//                from configurations.runtimeClasspath
+//                into "$dir\\libs\\lib"
 //            }
-//            //指定jar文件的名称
-//            archiveBaseName = "${project.name}"
-//            version = ""
-//        }
+//
+//            //分离式打包
+//            bootJar {
+//                // 排除所有的jar
+//                excludes = ["*.jar", "**/application-local.yml"]
+//                // lib目录的清除和复制任务
+//                dependsOn copyJar
+//                // 指定依赖包的路径
+//                manifest {
+//                    attributes 'Start-Class': 'cn.bcd.Application'
+//                    attributes "Manifest-Version": 1.0,
+//                            'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
+//                }
+//                println("jarName:${jarName}")
+//                //指定jar文件的名称
+//                archiveBaseName = "${jarName}"
+//                version = ""
+//            }
 
 
-        bootRun {
-            //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
-            //开启缓存行补齐
-            jvmArgs([
-                    '-XX:-RestrictContended',
-                    '-Dfile.encoding=UTF-8',
-                    '-Dsun.jnu.encoding=UTF-8',
-                    '--add-opens=java.base/java.nio=ALL-UNNAMED',
-                    '--add-opens=java.base/java.lang=ALL-UNNAMED',
-                    '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
-            ])
+            bootRun {
+                //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
+                //开启缓存行补齐
+                jvmArgs([
+                        '-XX:-RestrictContended',
+                        '-Dfile.encoding=UTF-8',
+                        '-Dsun.jnu.encoding=UTF-8',
+                        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+                        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                        '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+                ])
+            }
         }
     }
 }
