@@ -1,6 +1,5 @@
 package cn.bcd.app.businessProcess.backend.base.support_spring_paramconverter;
 
-import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
@@ -11,7 +10,10 @@ import java.util.Date;
  * 设别如下几种date参数
  * 1、毫秒时间戳、example: source=1611629450000
  * 2、日期类型字符串
- * 此时日期格式有两种{@link DateUtil#DATE_FORMAT_yyyyMMdd}、{@link DateUtil#DATE_FORMAT_yyyyMMddHHmmss}
+ * 此时日期格式有3种
+ * {@link DateZoneUtil#FORMATTER_yyyyMMdd}、
+ * {@link DateZoneUtil#FORMATTER_yyyyMMddHHmmss}
+ * {@link DateZoneUtil#FORMATTER_yyyyMMddHHmmssSSS}
  * 字符串必须以s开头
  * example: s20210126、s20210126111111、s20210126111111111
  */

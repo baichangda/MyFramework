@@ -46,7 +46,7 @@ subprojects {
         annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
 
         //统一配置mapstruct
-        var mapstructVersion = '1.6.3.Final'
+        var mapstructVersion = '1.6.3'
         implementation "org.mapstruct:mapstruct:${mapstructVersion}"
         annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 
