@@ -1,7 +1,3 @@
-apply plugin: "org.springframework.boot"
-apply plugin: "io.spring.dependency-management"
-
-
 dependencies {
     api project(":Lib-Parser-Protocol-GB32960")
     api project(":Lib-Base-Json")

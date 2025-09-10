@@ -1,7 +1,3 @@
-apply plugin: "org.springframework.boot"
-apply plugin: "io.spring.dependency-management"
-
-
 dependencies {
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Storage-Mongo")

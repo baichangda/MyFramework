@@ -26,6 +26,8 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'java'
     apply plugin: 'idea'
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: "org.springframework.boot"
 
     java {
         sourceCompatibility = JavaVersion.VERSION_21
@@ -38,6 +40,18 @@ subprojects {
         mavenCentral()
     }
 
+    //统一配置排除spring logback包、使用log4j2
+    configurations.configureEach {
+        //去除springboot默认的logback
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude module: 'logback-classic'
+        exclude module: 'logback-core'
+        //指定快照jar的更新策略
+        resolutionStrategy {
+            //缓存依赖时间、0代表不缓存
+            cacheChangingModulesFor 0, 'seconds'
+        }
+    }
 
     dependencies {
         //统一配置lombok
@@ -75,100 +89,67 @@ subprojects {
         useJUnitPlatform()
     }
 
-
-    //在项目build.gradle执行完毕后、判断是否是springboot项目、设置bootRun和bootJar
-    //在此回调中无法添加修改依赖、但是排除依赖是有效的
-    //插件无法在回调中添加、修改、删除
-    afterEvaluate {
-        if (it.name == 'Bom') {
-            return
-        }
-        //判断是否包含springboot依赖、有则引入springboot插件
-        def isSpringBootApplication = project.plugins.hasPlugin("org.springframework.boot")
-        def isLib = project.name.startsWith("Lib-")
-        println("---------project[${project.name}] isLib[{${isLib}] isSpringBootApplication[${isSpringBootApplication}]")
-        if (isSpringBootApplication) {
-            //统一配置排除spring logback包、使用log4j2
-            configurations.configureEach {
-                //去除springboot默认的logback
-                exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-                exclude module: 'logback-classic'
-                exclude module: 'logback-core'
-                //指定快照jar的更新策略
-                resolutionStrategy {
-                    //缓存依赖时间、0代表不缓存
-                    cacheChangingModulesFor 0, 'seconds'
-                }
-            }
-            //统一配置springboot应用的bootJar和bootRun
-            if (isLib) {
-                bootJar {
-                    enabled = false
-                    /**
-                     如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
-                     apply plugin: "org.springframework.boot"
-                     apply plugin: "io.spring.dependency-management"
-                     然后在这里开启bootJar 、 同时设置manifest
-                     */
+    def isLib = project.name.startsWith("Lib-")
+    if (isLib) {
+        bootJar {
+            enabled = false
+            /**
+             如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
+             apply plugin: "org.springframework.boot"
+             apply plugin: "io.spring.dependency-management"
+             然后在这里开启bootJar 、 同时设置manifest
+             */
 //                    enabled = true
 //                    manifest {
 //                        attributes 'Start-Class': ''
 //                    }
-                }
-                bootRun {
-                    enabled = false
-                }
-            } else {
-                bootJar {
-                    exclude "**/application-local.yml"
-                    manifest {
-                        attributes 'Start-Class': 'cn.bcd.Application'
-                    }
-                    //指定jar文件的名称
-                    archiveBaseName = "${project.name}"
-                    version = ""
-                }
+        }
+        bootRun {
+            enabled = false
+        }
+    } else {
 
-                //分离式打包
-//                bootJar {
-//                    // 排除所有的jar
-//                    excludes = ["*.jar", "**/application-local.yml"]
-//                    // lib目录的清除和复制任务
-//                    def dir = getLayout().getBuildDirectory().get()
-//                    delete "$dir\\libs\\lib"
-//                    from configurations.runtimeClasspath
-//                    into "$dir\\libs\\lib"
-//                    // 指定依赖包的路径
-//                    manifest {
-//                        attributes "Manifest-Version": 1.0,
-//                                'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
-//                    }
-//                    //指定jar文件的名称
-//                    archiveBaseName = "${project.name}"
-//                    version = ""
-//                }
-
-                bootRun {
-                    //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
-                    //开启缓存行补齐
-                    jvmArgs([
-                            '-XX:-RestrictContended',
-                            '-Dfile.encoding=UTF-8',
-                            '-Dsun.jnu.encoding=UTF-8',
-                            '--add-opens=java.base/java.nio=ALL-UNNAMED',
-                            '--add-opens=java.base/java.lang=ALL-UNNAMED',
-                            '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
-                    ])
-                }
+        bootJar {
+            exclude "**/application-local.yml"
+            manifest {
+                attributes 'Start-Class': 'cn.bcd.Application'
             }
+            //指定jar文件的名称
+            archiveBaseName = "${project.name}"
+            version = ""
+        }
 
+        //分离式打包
+//        bootJar {
+//            // 排除所有的jar
+//            excludes = ["*.jar", "**/application-local.yml"]
+//            // lib目录的清除和复制任务
+//            def dir = getLayout().getBuildDirectory().get()
+//            delete "$dir\\libs\\lib"
+//            from configurations.runtimeClasspath
+//            into "$dir\\libs\\lib"
+//            // 指定依赖包的路径
+//            manifest {
+//                attributes "Manifest-Version": 1.0,
+//                        'Class-Path': configurations.runtimeClasspath.files.collect { "lib/$it.name" }.join(' ')
+//            }
+//            //指定jar文件的名称
+//            archiveBaseName = "${project.name}"
+//            version = ""
+//        }
+
+
+        bootRun {
+            //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
+            //开启缓存行补齐
+            jvmArgs([
+                    '-XX:-RestrictContended',
+                    '-Dfile.encoding=UTF-8',
+                    '-Dsun.jnu.encoding=UTF-8',
+                    '--add-opens=java.base/java.nio=ALL-UNNAMED',
+                    '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                    '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+            ])
         }
     }
 }
-
-
-
-
-
-
-

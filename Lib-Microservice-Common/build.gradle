@@ -1,6 +1,3 @@
-apply plugin: "org.springframework.boot"
-apply plugin: "io.spring.dependency-management"
-
 dependencies {
     api project(":Lib-Base-Json")
     //springboot支持
