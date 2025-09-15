@@ -44,7 +44,7 @@ public class ProducerController {
             return Result.success().message("发送" + messages.length + "条数据到kafka成功");
         } catch (Exception ex) {
             logger.error("error", ex);
-            return Result.fail().message("发送数据到kafka失败、错误原因:[" + ex.getMessage() + "]");
+            return Result.fail_message("发送数据到kafka失败、错误原因:[" + ex.getMessage() + "]");
         }
     }
 }

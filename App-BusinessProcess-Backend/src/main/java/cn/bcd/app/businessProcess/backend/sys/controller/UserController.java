@@ -206,7 +206,7 @@ public class UserController{
         if (flag) {
             return Result.success().message("修改成功");
         } else {
-            return Result.fail().message("密码错误");
+            return Result.fail_message("密码错误");
         }
     }
 

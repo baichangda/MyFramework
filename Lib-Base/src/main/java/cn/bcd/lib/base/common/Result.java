@@ -55,6 +55,10 @@ public class Result<T> implements Serializable {
         return new Result<>(0, data);
     }
 
+    public static <T> Result<T> success_message(String message) {
+        return new Result<>(0, null, message);
+    }
+
     public static Result<?> fail() {
         return new Result<>(1, null);
     }
@@ -75,13 +79,17 @@ public class Result<T> implements Serializable {
         return new Result<>(1, data);
     }
 
+    public static <R> Result<R> fail_message(String message) {
+        return new Result<>(1, null, message);
+    }
+
     public static Result<?> from(Throwable throwable) {
         Objects.requireNonNull(throwable);
         Throwable realException = ExceptionUtil.getRealException(throwable);
         if (realException instanceof BaseException ex) {
             return Result.fail(ex.code).message(ex.getMessage());
         } else {
-            return Result.fail().message(realException.getMessage());
+            return Result.fail_message(realException.getMessage());
         }
     }
 
