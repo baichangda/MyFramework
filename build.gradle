@@ -162,7 +162,7 @@ subprojects {
 //                manifest {
 //                    attributes 'Start-Class': 'cn.bcd.Application'
 //                    attributes "Manifest-Version": 1.0,
-//                            'Class-Path': externalJars.join(' ')
+//                            'Class-Path': externalJars.collect { "lib/$it" }.join(' ')
 //                }
 //                //指定jar文件的名称
 //                archiveBaseName = "${jarName}"
