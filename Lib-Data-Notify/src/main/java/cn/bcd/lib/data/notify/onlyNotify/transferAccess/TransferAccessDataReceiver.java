@@ -15,4 +15,9 @@ public class TransferAccessDataReceiver extends Receiver<TransferAccessData> {
     public TransferAccessDataReceiver(KafkaProperties kafkaProp, NotifyProp notifyProp) {
         super("transferAccess", NotifyConst.topic_transferAccess, notifyProp.transferAccess.groupId, kafkaProp);
     }
+
+    @Override
+    public int order() {
+        return 20;
+    }
 }

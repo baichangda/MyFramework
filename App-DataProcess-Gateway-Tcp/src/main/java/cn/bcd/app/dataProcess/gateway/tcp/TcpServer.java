@@ -1,5 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.tcp;
 
+import cn.bcd.lib.base.common.Initializable;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -35,7 +36,14 @@ public class TcpServer implements CommandLineRunner {
     @Autowired
     DispatchHandler dispatchHandler;
 
+    @Autowired
+    List<Initializable> initList;
+
     public void run(String... args) throws Exception {
+
+        //初始化组件
+        Initializable.initByOrder(initList);
+
         Thread.startVirtualThread(() -> {
             final EventLoopGroup boosGroup = new NioEventLoopGroup();
             final EventLoopGroup workerGroup = new NioEventLoopGroup();

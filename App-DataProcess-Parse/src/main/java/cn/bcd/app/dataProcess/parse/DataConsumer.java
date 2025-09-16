@@ -4,6 +4,7 @@ import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties({ParseProp.class, KafkaProperties.class})
 @Component
 public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLineRunner {
+
+    @Autowired
+    List<Initializable> initList;
 
     @Autowired
     KafkaProperties kafkaProperties;
@@ -122,6 +126,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
 
     @Override
     public void run(String... args) {
+        //初始化组件
+        Initializable.initByOrder(initList);
         init(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 }

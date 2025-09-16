@@ -1,5 +1,6 @@
 package cn.bcd.lib.data.notify.onlyNotify;
 
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -13,7 +14,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class Receiver<T> extends ThreadDrivenKafkaConsumer {
+public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializable {
 
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(Receiver.class);
 
@@ -21,6 +22,8 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer {
     public Consumer<T> consumer;
 
     public final Class<T> clazz;
+
+    final Map<String, Object> properties;
 
     @SuppressWarnings("unchecked")
     public Receiver(String name, String topic, String groupId, KafkaProperties kafkaProp) {
@@ -34,10 +37,14 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer {
                 0,
                 topic, null);
         this.clazz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        Map<String, Object> properties = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
+        properties = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        init(properties);
     }
+
+    public void init() {
+        super.init(properties);
+    }
+
 
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
@@ -46,7 +53,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer {
         T t = JsonUtil.OBJECT_MAPPER.readValue(value, clazz);
         if (consumer == null) {
             logger.warn("receiver[{}] consumer[{}] is null、discard message", name, this.clazz.getName());
-        }else{
+        } else {
             consumer.accept(t);
         }
     }

@@ -1,5 +1,6 @@
 package cn.bcd.lib.data.init.permission;
 
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.InitProp;
@@ -13,8 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -23,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.permission.enable")
 @Component
-public class PermissionDataInit implements ApplicationListener<ContextRefreshedEvent> {
+public class PermissionDataInit implements Initializable {
 
     static Logger logger = LoggerFactory.getLogger(PermissionDataInit.class);
 
@@ -37,7 +36,7 @@ public class PermissionDataInit implements ApplicationListener<ContextRefreshedE
     }
 
     @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
+    public void init() {
         try {
             HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
             if (hostData == null) {

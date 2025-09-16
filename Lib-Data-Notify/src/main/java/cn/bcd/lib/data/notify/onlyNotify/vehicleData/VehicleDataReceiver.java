@@ -15,4 +15,9 @@ public class VehicleDataReceiver extends Receiver<VehicleData> {
     public VehicleDataReceiver(KafkaProperties kafkaProp, NotifyProp notifyProp) {
         super("vehicleData", NotifyConst.topic_vehicleData, notifyProp.vehicleData.groupId, kafkaProp);
     }
+
+    @Override
+    public int order() {
+        return 10;
+    }
 }

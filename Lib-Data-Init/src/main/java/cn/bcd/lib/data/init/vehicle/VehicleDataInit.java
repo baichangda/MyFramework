@@ -1,5 +1,6 @@
 package cn.bcd.lib.data.init.vehicle;
 
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
@@ -14,8 +15,6 @@ import okhttp3.Response;
 import org.slf4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,7 +25,7 @@ import java.util.function.Consumer;
 @EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.vehicle.enable")
 @Component
-public class VehicleDataInit implements Consumer<VehicleData>, ApplicationListener<ContextRefreshedEvent> {
+public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
 
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(VehicleDataInit.class);
 
@@ -38,7 +37,12 @@ public class VehicleDataInit implements Consumer<VehicleData>, ApplicationListen
         VehicleDataInit.initProp = staticDataInitProp;
     }
 
-    public void onApplicationEvent(ContextRefreshedEvent event) {
+    @Override
+    public int order() {
+        return 9;
+    }
+
+    public void init() {
         HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
         if (hostData == null) {
             return;

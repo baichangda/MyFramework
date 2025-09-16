@@ -1,5 +1,6 @@
 package cn.bcd.lib.data.init.transferAccess;
 
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.InitProp;
@@ -14,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.function.Consumer;
 @EnableConfigurationProperties(InitProp.class)
 @ConditionalOnProperty("lib.data.init.transferAccess.enable")
 @Component
-public class TransferAccessDataInit implements ApplicationListener<ContextRefreshedEvent>, Consumer<TransferAccessData> {
+public class TransferAccessDataInit implements Consumer<TransferAccessData>, Initializable {
     static Logger logger = LoggerFactory.getLogger(TransferAccessDataInit.class);
 
     public final static ConcurrentHashMap<String, List<String>> vin_platformCodes = new ConcurrentHashMap<>();
@@ -34,6 +33,11 @@ public class TransferAccessDataInit implements ApplicationListener<ContextRefres
 
     public TransferAccessDataInit(InitProp initProp) {
         TransferAccessDataInit.initProp = initProp;
+    }
+
+    @Override
+    public int order() {
+        return 19;
     }
 
     @Override
@@ -46,7 +50,7 @@ public class TransferAccessDataInit implements ApplicationListener<ContextRefres
     }
 
     @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
+    public void init() {
         HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
         if (hostData == null) {
             return;

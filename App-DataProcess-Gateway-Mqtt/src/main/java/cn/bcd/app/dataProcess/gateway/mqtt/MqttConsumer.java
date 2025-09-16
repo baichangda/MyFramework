@@ -1,5 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.mqtt;
 
+import cn.bcd.lib.base.common.Initializable;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
@@ -12,6 +13,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -31,8 +33,15 @@ public class MqttConsumer implements Consumer<Mqtt5Publish>, ApplicationListener
     @Autowired
     VehicleConsumeExecutorGroup vehicleConsumeExecutorGroup;
 
+    @Autowired
+    List<Initializable> initList;
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+
+        //初始化组件
+        Initializable.initByOrder(initList);
+
         subscribe();
     }
 

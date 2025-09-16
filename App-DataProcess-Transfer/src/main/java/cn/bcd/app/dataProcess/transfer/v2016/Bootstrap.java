@@ -1,12 +1,13 @@
 package cn.bcd.app.dataProcess.transfer.v2016;
 
+import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
+import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.data.init.transferConfig.TransferConfigDataInit;
 import cn.bcd.lib.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
-import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -51,9 +52,15 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
 
     HttpServer httpServer;
 
+    @Autowired
+    List<Initializable> initList;
+
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         try {
+            //初始化组件
+            Initializable.initByOrder(initList);
+
             TransferConfigData data = TransferConfigDataInit.get(serverId);
             if (data == null) {
                 logger.error("serverId[{}] transfer config not exist", serverId);
