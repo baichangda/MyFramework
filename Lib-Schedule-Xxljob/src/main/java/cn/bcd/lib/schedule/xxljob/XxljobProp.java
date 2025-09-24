@@ -7,12 +7,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "lib.schedule.xxljob")
 public class XxljobProp {
     //调度中心部署根地址 [选填]：如调度中心集群部署存在多个地址则用逗号分隔。执行器将会使用该地址进行"执行器心跳注册"和"任务结果回调"；为空则关闭自动注册
+    //例如：http://10.178.75.73:18080/xxl-job-admin
     public String adminAddresses;
     //调度中心通讯TOKEN [选填]：非空时启用
     public String accessToken;
     //调度中心通讯超时时间[选填]，单位秒；默认3s
     public int timeout;
-    //执行器AppName [选填]：执行器心跳注册分组依据；为空则关闭自动注册
+    //执行器AppName [选填]：执行器心跳注册分组依据；为空则关闭自动注册、长度必须>4
     public String appName;
     //执行器注册 [选填]：优先使用该配置作为注册地址，为空时使用内嵌服务 ”IP:PORT“ 作为注册地址。从而更灵活的支持容器类型执行器动态IP和动态映射端口问题
     public String address;
