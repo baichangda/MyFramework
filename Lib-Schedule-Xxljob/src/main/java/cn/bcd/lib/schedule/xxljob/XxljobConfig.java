@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@ConditionalOnProperty(prefix = "lib.schedule.xxljob.adminAddresses")
+@ConditionalOnProperty("lib.schedule.xxljob.adminAddresses")
 @EnableConfigurationProperties(XxljobProp.class)
 @Configuration
 public class XxljobConfig {
