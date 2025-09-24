@@ -1,4 +1,4 @@
-package lib.schedule.xxljob;
+package cn.bcd.lib.schedule.xxljob;
 
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import org.slf4j.Logger;
