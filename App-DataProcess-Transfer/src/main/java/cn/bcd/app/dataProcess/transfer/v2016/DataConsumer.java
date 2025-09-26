@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.transfer.v2016;
 
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.lib.base.executor.BlockingChecker;
@@ -21,11 +21,9 @@ import java.util.stream.Collectors;
 
 public class DataConsumer extends DataDrivenKafkaConsumer {
     List<KafkaDataHandler> kafkaDataHandlers;
-    List<TcpDataHandler> tcpDataHandlers;
     KafkaProperties kafkaProp;
     public DataConsumer(KafkaProperties kafkaProp, String topic, int[] partitions,
-                        List<KafkaDataHandler> kafkaDataHandlers,
-                        List<TcpDataHandler> tcpDataHandlers) {
+                        List<KafkaDataHandler> kafkaDataHandlers) {
         super("DataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
@@ -40,7 +38,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         );
         this.kafkaProp = kafkaProp;
         this.kafkaDataHandlers = kafkaDataHandlers;
-        this.tcpDataHandlers = tcpDataHandlers;
     }
 
     public void init() {
@@ -52,7 +49,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
 
     @Override
     public WorkHandler newHandler(String id, ConsumerRecord<String, byte[]> first) {
-        return new TransferDataHandler(id, kafkaDataHandlers, tcpDataHandlers);
+        return new TransferDataHandler(id, kafkaDataHandlers);
     }
 
     @Override

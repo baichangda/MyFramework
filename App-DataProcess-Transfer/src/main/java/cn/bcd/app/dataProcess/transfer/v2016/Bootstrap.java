@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.transfer.v2016;
 
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.handler.TcpDataHandler;
+import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
@@ -70,9 +70,9 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
             }
 
             int[] partitions = Arrays.stream(data.kafkaPartition.split(",")).mapToInt(Integer::parseInt).toArray();
-            DataConsumer dataConsumer = new DataConsumer(kafkaProp, "ts-" + data.platCode, partitions, kafkaDataHandlers, tcpDataHandlers);
+            DataConsumer dataConsumer = new DataConsumer(kafkaProp, "ts-" + data.platCode, partitions, kafkaDataHandlers);
             //初始化tcp客户端
-            TcpClient.init(data, dataConsumer, redisTemplate, platformStatusSender).join();
+            TcpClient.init(data, dataConsumer, redisTemplate, platformStatusSender,tcpDataHandlers).join();
             //初始化消费者
             dataConsumer.init();
             logger.info("init succeed");

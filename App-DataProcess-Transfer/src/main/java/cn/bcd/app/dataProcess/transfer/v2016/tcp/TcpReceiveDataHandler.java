@@ -1,4 +1,4 @@
-package cn.bcd.app.dataProcess.transfer.v2016.handler;
+package cn.bcd.app.dataProcess.transfer.v2016.tcp;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.util.DateZoneUtil;
@@ -18,7 +18,7 @@ public class TcpReceiveDataHandler implements TcpDataHandler {
     static final Logger logger = org.slf4j.LoggerFactory.getLogger(TcpReceiveDataHandler.class);
 
     @Override
-    public void handle(String vin, byte[] bytes, Context context) throws Exception {
+    public void handle(String vin, byte[] bytes) throws Exception {
         //保存转发记录结果
         if (bytes != null) {
             int type = PacketUtil.getPacketFlag(bytes).type;

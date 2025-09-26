@@ -7,7 +7,6 @@ import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -21,14 +20,12 @@ public class TransferDataHandler extends WorkHandler {
     static final Logger logger = LoggerFactory.getLogger(TransferDataHandler.class);
 
     public final List<KafkaDataHandler> kafkaDataHandlers;
-    public final List<TcpDataHandler> tcpDataHandlers;
 
     public final Context context = new Context();
 
-    public TransferDataHandler(String id, List<KafkaDataHandler> kafkaDataHandlers, List<TcpDataHandler> tcpDataHandlers) {
+    public TransferDataHandler(String id, List<KafkaDataHandler> kafkaDataHandlers) {
         super(id);
         this.kafkaDataHandlers = kafkaDataHandlers;
-        this.tcpDataHandlers = tcpDataHandlers;
     }
 
     @Override
@@ -49,18 +46,6 @@ public class TransferDataHandler extends WorkHandler {
         for (KafkaDataHandler handler : kafkaDataHandlers) {
             try {
                 handler.destroy(id, context);
-            } catch (Exception ex) {
-                logger.error("error", ex);
-            }
-        }
-    }
-
-    public void onTcpMessage(ByteBuf byteBuf) {
-        byte[] bytes = new byte[byteBuf.readableBytes()];
-        byteBuf.readBytes(bytes);
-        for (TcpDataHandler handler : tcpDataHandlers) {
-            try {
-                handler.handle(id, bytes, context);
             } catch (Exception ex) {
                 logger.error("error", ex);
             }
