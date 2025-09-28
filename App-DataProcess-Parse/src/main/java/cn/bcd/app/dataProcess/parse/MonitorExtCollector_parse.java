@@ -11,18 +11,18 @@ public class MonitorExtCollector_parse implements MonitorExtCollector {
 
     public static int blockingNum;
     public static double consumeSpeed;
-    public static int workQueueTaskNum;
+    public static String workQueues;
     public static double workSpeed;
-    public static int saveQueueTaskNum_gb32960;
-    public static double saveSpeed_gb32960;
+    public static int saveQueue;
+    public static double saveSpeed;
 
     @Override
     public Map<String, Object> collect() {
         return Map.of("blockingNum", blockingNum,
                 "consumeSpeed", consumeSpeed,
-                "workQueueTaskNum", workQueueTaskNum,
+                "workQueues", workQueues,
                 "workSpeed", workSpeed,
-                "saveQueueTaskNum_gb32960", saveQueueTaskNum_gb32960,
-                "saveSpeed_gb32960", saveSpeed_gb32960);
+                "saveQueue", saveQueue,
+                "saveSpeed", saveSpeed);
     }
 }
