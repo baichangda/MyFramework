@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 
 public class SaveUtil {
+    public final static int queueSize = 100000;
     public static ArrayBlockingQueue<TransferData> queue_transfer;
     public static ArrayBlockingQueue<TransferResponseData> queue_transferResponse;
     static ExecutorService pool_transfer = Executors.newSingleThreadExecutor();
@@ -23,7 +24,7 @@ public class SaveUtil {
     }
 
     public static void init() {
-        queue_transfer = new ArrayBlockingQueue<>(100000);
+        queue_transfer = new ArrayBlockingQueue<>(queueSize);
         pool_transfer = Executors.newSingleThreadExecutor();
         pool_transfer.execute(() -> {
             ExecutorUtil.loop(queue_transfer, 1000, list -> {
@@ -32,7 +33,7 @@ public class SaveUtil {
             }, null);
         });
 
-        queue_transferResponse = new ArrayBlockingQueue<>(100000);
+        queue_transferResponse = new ArrayBlockingQueue<>(queueSize);
         pool_transferResponse = Executors.newSingleThreadExecutor();
         pool_transferResponse.execute(() -> {
             ExecutorUtil.loop(queue_transferResponse, 1000, list -> {

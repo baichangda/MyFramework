@@ -1,7 +1,6 @@
 package cn.bcd.app.dataProcess.transfer.v2016;
 
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
-import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.lib.base.executor.BlockingChecker;
@@ -22,6 +21,7 @@ import java.util.stream.Collectors;
 public class DataConsumer extends DataDrivenKafkaConsumer {
     List<KafkaDataHandler> kafkaDataHandlers;
     KafkaProperties kafkaProp;
+
     public DataConsumer(KafkaProperties kafkaProp, String topic, int[] partitions,
                         List<KafkaDataHandler> kafkaDataHandlers) {
         super("DataConsumer",
@@ -61,6 +61,8 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         double sendSpeed = FloatUtil.format(TcpClient.sendNum.sumThenReset() / ((double) monitor_period), 2);
+        double saveSpeed_transfer = FloatUtil.format(SaveUtil.saveCount_transfer.sumThenReset() / ((double) monitor_period), 2);
+        double saveSpeed_transferResponse = FloatUtil.format(SaveUtil.saveCount_transferResponse.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
                         "workHandler[{}] " +
@@ -69,7 +71,11 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                         "queues[{}] " +
                         "workSpeed[{}/s] " +
                         "sendQueue[{}/{}] " +
-                        "sendSpeed[{}/s]",
+                        "sendSpeed[{}/s]" +
+                        "saveQueue_transfer[{}/{}] " +
+                        "saveSpeed_transfer[{}/s]" +
+                        "saveQueue_transferResponse[{}/{}] " +
+                        "saveSpeed_transferResponse[{}/s]",
                 name,
                 workExecutorCount,
                 workHandlerCount,
@@ -77,8 +83,12 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 consumeSpeed,
                 workQueueStatus,
                 workSpeed,
-                TcpClient.sendQueue.size(), TcpClient.SEND_QUEUE_SIZE,
-                sendSpeed
+                TcpClient.sendQueue.size(), TcpClient.queueSize,
+                sendSpeed,
+                SaveUtil.queue_transfer.size(), SaveUtil.queueSize,
+                saveSpeed_transfer,
+                SaveUtil.queue_transferResponse.size(), SaveUtil.queueSize,
+                saveSpeed_transferResponse
         );
     }
 }

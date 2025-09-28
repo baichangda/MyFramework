@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 
 public class SaveUtil {
+    public final static int queueSize = 100000;
     public static ArrayBlockingQueue<RawData> queue;
     static ExecutorService pool = Executors.newSingleThreadExecutor();
     public final static LongAdder saveCount = new LongAdder();
@@ -19,7 +20,7 @@ public class SaveUtil {
     }
 
     public static void init() {
-        queue = new ArrayBlockingQueue<>(100000);
+        queue = new ArrayBlockingQueue<>(queueSize);
         pool = Executors.newSingleThreadExecutor();
         pool.execute(() -> {
             ExecutorUtil.loop(queue, 1000, list -> {

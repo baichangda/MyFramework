@@ -55,8 +55,8 @@ public class TcpClient {
     static Channel channel;
     static ScheduledExecutorService manageExecutor;
 
-    public final static int SEND_QUEUE_SIZE = 10000;
-    public final static MpscArrayBlockingQueue<SendData> sendQueue = new MpscArrayBlockingQueue<>(SEND_QUEUE_SIZE, WaitStrategy.PROGRESSIVE_10MS);
+    public final static int queueSize = 100000;
+    public final static MpscArrayBlockingQueue<SendData> sendQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_10MS);
     static ExecutorService sendExecutor;
 
     static int platformLoginSn;

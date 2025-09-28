@@ -15,7 +15,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -107,7 +106,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                         "consumeSpeed[{}/s] " +
                         "workQueues[{}] " +
                         "workSpeed[{}/s] " +
-                        "saveQueue[{}] " +
+                        "saveQueue[{}/{}] " +
                         "saveSpeed[{}/s]",
                 name,
                 workExecutorCount,
@@ -116,7 +115,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 consumeSpeed,
                 workQueues,
                 workSpeed,
-                saveQueue,
+                saveQueue, SaveUtil.queueSize,
                 saveSpeed);
     }
 
