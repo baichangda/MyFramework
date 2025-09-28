@@ -1,5 +1,6 @@
 package cn.bcd.app.dataProcess.transfer.v2016.tcp;
 
+import cn.bcd.app.dataProcess.transfer.v2016.SaveUtil;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.base.util.HexUtil;
@@ -31,7 +32,7 @@ public class TcpReceiveDataHandler implements TcpDataHandler {
             responseData.setType(type);
             responseData.setReplyFlag(replyFlag);
             responseData.setHex(hex);
-            MongoUtil_transferData.save_transferResponseData(List.of(responseData));
+            SaveUtil.put(responseData);
             if (Const.logEnable) {
                 logger.info("transfer response data vin[{}] collectTime[{}] type[{}] replyFlag[{}] hex[{}]",
                         vin,

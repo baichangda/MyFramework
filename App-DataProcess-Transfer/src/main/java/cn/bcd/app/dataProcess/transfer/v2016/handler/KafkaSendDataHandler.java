@@ -1,5 +1,6 @@
 package cn.bcd.app.dataProcess.transfer.v2016.handler;
 
+import cn.bcd.app.dataProcess.transfer.v2016.SaveUtil;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
@@ -54,7 +55,7 @@ public class KafkaSendDataHandler implements KafkaDataHandler {
             transferData.setParseOutTime(context.parseOutTime);
             transferData.setTransferInTime(context.transferInTime);
             transferData.setTransferOutTime(new Date());
-            MongoUtil_transferData.save_transferData(List.of(transferData));
+            SaveUtil.put(transferData);
         }, context.executor));
     }
 }
