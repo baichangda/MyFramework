@@ -10,7 +10,7 @@ buildscript {
 
     dependencies {
         // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-gradle-plugin
-        classpath group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: "3.5.3"
+        classpath group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: "3.5.6"
     }
 }
 
@@ -58,7 +58,7 @@ subprojects {
 
     dependencies {
         //统一配置lombok
-        var lombokVersion = '1.18.38'
+        var lombokVersion = '1.18.42'
         compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
         annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
 
