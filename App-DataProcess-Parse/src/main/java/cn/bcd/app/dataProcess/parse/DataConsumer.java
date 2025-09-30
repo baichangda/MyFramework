@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Component
 public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLineRunner {
 
-    @Autowired
+    @Autowired(required = false)
     List<Initializable> initList;
 
     @Autowired

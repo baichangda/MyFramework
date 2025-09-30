@@ -26,6 +26,9 @@ public interface Initializable {
     }
 
     static void initByOrder(List<Initializable> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
         logger.info("""
                 --------------initAll start--------------
                 {}

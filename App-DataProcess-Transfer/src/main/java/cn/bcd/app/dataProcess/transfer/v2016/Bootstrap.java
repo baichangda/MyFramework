@@ -52,7 +52,7 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
 
     HttpServer httpServer;
 
-    @Autowired
+    @Autowired(required = false)
     List<Initializable> initList;
 
     @Override

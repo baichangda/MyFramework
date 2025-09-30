@@ -17,7 +17,7 @@ public class Application implements ApplicationListener<ContextRefreshedEvent> {
         SpringApplication.run(Application.class, args);
     }
 
-    @Autowired
+    @Autowired(required = false)
     List<Initializable> initList;
 
     @Override

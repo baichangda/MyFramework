@@ -33,7 +33,7 @@ public class MqttConsumer implements Consumer<Mqtt5Publish>, ApplicationListener
     @Autowired
     VehicleConsumeExecutorGroup vehicleConsumeExecutorGroup;
 
-    @Autowired
+    @Autowired(required = false)
     List<Initializable> initList;
 
     @Override

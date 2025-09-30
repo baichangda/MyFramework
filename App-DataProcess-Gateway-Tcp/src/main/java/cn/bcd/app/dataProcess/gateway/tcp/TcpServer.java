@@ -36,7 +36,7 @@ public class TcpServer implements CommandLineRunner {
     @Autowired
     DispatchHandler dispatchHandler;
 
-    @Autowired
+    @Autowired(required = false)
     List<Initializable> initList;
 
     public void run(String... args) throws Exception {

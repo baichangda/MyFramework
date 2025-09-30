@@ -172,15 +172,8 @@ register:
 lib:
   schedule:
     xxljob:
-      adminAddresses: http://127.0.0.1:8080/xxl-job-admin
-      accessToken: default_token
-      timeout: 3
-      appName: xxl-job-executor-sample
-      address:
-      ip:
-      port: 9999
-      logPath: /data/applogs/xxl-job/jobhandler
-      logRetentionDays: 30
+      adminAddresses: http://127.0.0.1:38080/xxl-job-admin
+      appName: app-businessProcess-backend
   monitor:
     client:
       request-topic: monitorRequest
