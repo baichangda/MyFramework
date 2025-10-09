@@ -3,4 +3,5 @@ dependencies {
     //springboot redis支持
     //lettuce异步客户端(默认使用lettuce)
     api("org.springframework.boot:spring-boot-starter-data-redis")
+    api("org.apache.commons:commons-pool2")
 }

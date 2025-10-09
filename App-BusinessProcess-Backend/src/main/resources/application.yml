@@ -71,6 +71,7 @@ spring:
           minIdle: 0
           maxActive: 8
           maxWait: -1
+          enabled: true
         shutdown-timeout: 100ms
       #主从配置
       #     sentinel:
