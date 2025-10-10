@@ -229,9 +229,8 @@ public class TcpClient {
             case platform_logout_data -> execute(() -> onPlatformLogoutResponse(byteBuf));
             default -> {
                 String vin = byteBuf.getCharSequence(4, 17, StandardCharsets.UTF_8).toString();
+                byte[] bytes = ByteBufUtil.getBytes(byteBuf);
                 dataConsumer.getWorkExecutor(vin).execute(() -> {
-                    byte[] bytes = new byte[byteBuf.readableBytes()];
-                    byteBuf.readBytes(bytes);
                     for (TcpDataHandler handler : tcpDataHandlers) {
                         try {
                             handler.handle(vin, bytes);
