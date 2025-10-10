@@ -27,7 +27,12 @@ public class RedisConnectionFactoryUtil {
             standaloneConfiguration.setUsername(redisProperties.getUsername());
             standaloneConfiguration.setPassword(redisProperties.getPassword());
             standaloneConfiguration.setDatabase(redisProperties.getDatabase());
-            LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = new PoolBuilderFactory().createBuilder(pool);
+            LettuceClientConfiguration.LettuceClientConfigurationBuilder builder;
+            if (pool.getEnabled() != null && pool.getEnabled()) {
+                builder = new PoolBuilderFactory().createBuilder(pool);
+            } else {
+                builder = LettucePoolingClientConfiguration.builder();
+            }
             if (ssl.isEnabled()) {
                 connectionFactory = new LettuceConnectionFactory(standaloneConfiguration, builder.useSsl().build());
             } else {
@@ -43,7 +48,12 @@ public class RedisConnectionFactoryUtil {
             clusterConfiguration.setMaxRedirects(cluster.getMaxRedirects());
             clusterConfiguration.setUsername(redisProperties.getUsername());
             clusterConfiguration.setPassword(redisProperties.getPassword());
-            LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = new PoolBuilderFactory().createBuilder(pool);
+            LettuceClientConfiguration.LettuceClientConfigurationBuilder builder;
+            if (pool.getEnabled() != null && pool.getEnabled()) {
+                builder = new PoolBuilderFactory().createBuilder(pool);
+            } else {
+                builder = LettucePoolingClientConfiguration.builder();
+            }
             if (ssl.isEnabled()) {
                 connectionFactory = new LettuceConnectionFactory(clusterConfiguration, builder.useSsl().build());
             } else {
@@ -80,7 +90,7 @@ public class RedisConnectionFactoryUtil {
         redisProperties.setPort(36379);
         redisProperties.setPassword("wq");
         RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
-        pool.setEnabled(true);
+        pool.setEnabled(false);
         pool.setMaxActive(10);
         pool.setMaxIdle(10);
         pool.setMinIdle(10);
