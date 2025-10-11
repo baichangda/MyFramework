@@ -3,7 +3,6 @@ package cn.bcd.app.dataProcess.transfer.v2016;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
-import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.kafka.ext.PartitionMode;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
@@ -27,7 +26,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         super("DataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
-                BlockingChecker.DEFAULT,
+                null,
                 100000,
                 true,
                 0,
