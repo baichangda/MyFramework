@@ -33,6 +33,7 @@ public class KafkaExtUtil {
         return name + "-consumer(" + (threadIndex + 1) + "/" + threadNum + ")-partition(" + partitionDesc + ")";
     }
 
+
     /**
      * 启动消费者
      *
@@ -52,6 +53,9 @@ public class KafkaExtUtil {
                  */
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
+                if (partitionMode.seekToBeginning) {
+                    KafkaUtil.consumerSeekToBeginning(consumer);
+                }
                 //初始化消费线程、提交消费任务
                 String threadName = getConsumerThreadName(name, 0, 1);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
@@ -66,6 +70,9 @@ public class KafkaExtUtil {
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                 List<TopicPartition> topicPartitions = Arrays.stream(partitions).mapToObj(i -> new TopicPartition(topic, i)).toList();
                 consumer.assign(topicPartitions);
+                if (partitionMode.seekToBeginning) {
+                    KafkaUtil.consumerSeekToBeginning(consumer);
+                }
                 String threadName = getConsumerThreadName(name, 0, 1, partitions);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                 consumeThread.start();
@@ -80,6 +87,9 @@ public class KafkaExtUtil {
                 for (int i = 0; i < partitions.length; i++) {
                     final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                     consumer.assign(Collections.singletonList(new TopicPartition(topic, partitions[i])));
+                    if (partitionMode.seekToBeginning) {
+                        KafkaUtil.consumerSeekToBeginning(consumer);
+                    }
                     String threadName = getConsumerThreadName(name, i, partitions.length, partitions[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
@@ -101,6 +111,9 @@ public class KafkaExtUtil {
                         consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                     }
                     consumer.assign(Collections.singletonList(new TopicPartition(topic, ps[i])));
+                    if (partitionMode.seekToBeginning) {
+                        KafkaUtil.consumerSeekToBeginning(consumer);
+                    }
                     String threadName = getConsumerThreadName(name, i, ps.length, ps[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
