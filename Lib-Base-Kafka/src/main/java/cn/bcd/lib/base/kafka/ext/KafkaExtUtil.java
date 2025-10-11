@@ -44,6 +44,9 @@ public class KafkaExtUtil {
                                                      Map<String, Object> consumerProp,
                                                      PartitionMode partitionMode,
                                                      Consumer<KafkaConsumer<String, byte[]>> kafkaConsumerConsumer) {
+        if (partitionMode.seekToBeginning) {
+            consumerProp.put("auto.offset.reset", "earliest");
+        }
         Thread consumeThread = null;
         Thread[] consumeThreads = null;
         switch (partitionMode.mode) {
