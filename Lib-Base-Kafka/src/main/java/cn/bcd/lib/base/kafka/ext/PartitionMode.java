@@ -17,21 +17,17 @@ public class PartitionMode {
     //是否从头开始消费
     public final boolean seekToBeginning;
 
-    private PartitionMode(int mode, int[] partitions) {
-        this.mode = mode;
-        this.partitions = partitions;
-        this.seekToBeginning = false;
-    }
-
-    public PartitionMode(int mode, int[] partitions, boolean seekToBeginning) {
+    private PartitionMode(int mode, int[] partitions, boolean seekToBeginning) {
         this.mode = mode;
         this.partitions = partitions;
         this.seekToBeginning = seekToBeginning;
     }
 
     public static PartitionMode get(int mode, int... partitions) {
-        return new PartitionMode(mode, partitions);
+        return new PartitionMode(mode, partitions, false);
     }
 
-
+    public static PartitionMode get_seekToBeginning(int mode, int... partitions) {
+        return new PartitionMode(mode, partitions, true);
+    }
 }
