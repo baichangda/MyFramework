@@ -5,7 +5,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import java.util.Collection;
 import java.util.regex.Pattern;
 
-public class PartitionMode {
+public class ConsumerParam {
     /**
      * 0、启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区
      * 1、启动单线程、一个消费者、使用{@link KafkaConsumer#assign(Collection)}完成订阅多个分区
@@ -17,17 +17,23 @@ public class PartitionMode {
     //是否从头开始消费
     public final boolean seekToBeginning;
 
-    private PartitionMode(int mode, int[] partitions, boolean seekToBeginning) {
+    private ConsumerParam(int mode, int[] partitions, boolean seekToBeginning) {
         this.mode = mode;
         this.partitions = partitions;
         this.seekToBeginning = seekToBeginning;
     }
 
-    public static PartitionMode get(int mode, int... partitions) {
-        return new PartitionMode(mode, partitions, false);
+    public static ConsumerParam get(int mode, int... partitions) {
+        return new ConsumerParam(mode, partitions, false);
     }
 
-    public static PartitionMode get_seekToBeginning(int mode, int... partitions) {
-        return new PartitionMode(mode, partitions, true);
+    /**
+     * 默认从最新位置开始消费
+     * @param mode
+     * @param partitions
+     * @return
+     */
+    public static ConsumerParam get_seekToBeginning(int mode, int... partitions) {
+        return new ConsumerParam(mode, partitions, true);
     }
 }

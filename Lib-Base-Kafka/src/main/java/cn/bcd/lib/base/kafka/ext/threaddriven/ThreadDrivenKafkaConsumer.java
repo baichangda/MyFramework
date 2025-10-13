@@ -2,7 +2,7 @@ package cn.bcd.lib.base.kafka.ext.threaddriven;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.kafka.ext.KafkaExtUtil;
-import cn.bcd.lib.base.kafka.ext.PartitionMode;
+import cn.bcd.lib.base.kafka.ext.ConsumerParam;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.StringUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -63,7 +63,7 @@ public abstract class ThreadDrivenKafkaConsumer {
     public final int maxConsumeSpeed;
     public final int monitor_period;
     public final String topic;
-    public final PartitionMode partitionMode;
+    public final ConsumerParam consumerParam;
 
     /**
      * 当前阻塞数量
@@ -136,8 +136,8 @@ public abstract class ThreadDrivenKafkaConsumer {
      *                              {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
      * @param monitor_period        监控信息打印周期(秒)、0则代表不打印
      * @param topic                 消费的topic
-     * @param partitionMode         null则代表PartitionMode.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
-     *                              其他情况参考{@link PartitionMode#mode}
+     * @param consumerParam         null则代表PartitionMode.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
+     *                              其他情况参考{@link ConsumerParam#mode}
      */
     public ThreadDrivenKafkaConsumer(String name,
                                      boolean oneWorkThreadOneQueue,
@@ -148,7 +148,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                                      int maxConsumeSpeed,
                                      int monitor_period,
                                      String topic,
-                                     PartitionMode partitionMode) {
+                                     ConsumerParam consumerParam) {
         this.name = name;
         this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;
         this.workThreadNum = workThreadNum;
@@ -158,10 +158,10 @@ public abstract class ThreadDrivenKafkaConsumer {
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.monitor_period = monitor_period;
         this.topic = topic;
-        if (partitionMode == null) {
-            this.partitionMode = PartitionMode.get(0);
+        if (consumerParam == null) {
+            this.consumerParam = ConsumerParam.get(0);
         } else {
-            this.partitionMode = partitionMode;
+            this.consumerParam = consumerParam;
         }
     }
 
@@ -227,7 +227,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                     monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
                 }
                 //启动消费者
-                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, topic, consumerProp, partitionMode, this::consume);
+                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, topic, consumerProp, consumerParam, this::consume);
                 consumeThread = holder.thread();
                 consumeThreads = holder.threads();
             } catch (Exception ex) {

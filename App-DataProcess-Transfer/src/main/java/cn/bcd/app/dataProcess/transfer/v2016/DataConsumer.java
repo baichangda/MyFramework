@@ -3,7 +3,7 @@ package cn.bcd.app.dataProcess.transfer.v2016;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
-import cn.bcd.lib.base.kafka.ext.PartitionMode;
+import cn.bcd.lib.base.kafka.ext.ConsumerParam;
 import cn.bcd.lib.base.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -33,7 +33,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 WorkHandlerScanner.get(300, 60),
                 5,
                 topic,
-                PartitionMode.get(1, partitions)
+                ConsumerParam.get(1, partitions)
         );
         this.kafkaProp = kafkaProp;
         this.kafkaDataHandlers = kafkaDataHandlers;
