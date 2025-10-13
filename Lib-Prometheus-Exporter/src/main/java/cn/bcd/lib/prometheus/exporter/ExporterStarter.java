@@ -24,6 +24,6 @@ class ExporterStarter implements CommandLineRunner {
     public void run(String... args) throws Exception {
         JvmMetrics.builder().register();
         HTTPServer.builder().hostname(exporterProp.host).port(exporterProp.port).buildAndStart();
-        logger.info("prometheus exporter started、listen on http://127.0.0.1:{}/metrics", exporterProp.port);
+        logger.info("prometheus exporter started、listen on http://{}:{}/metrics", exporterProp.host, exporterProp.port);
     }
 }
