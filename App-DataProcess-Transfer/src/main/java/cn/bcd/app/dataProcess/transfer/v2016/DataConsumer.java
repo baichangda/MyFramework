@@ -41,8 +41,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
 
     public void init() {
         Map<String, Object> consumerProp = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
-        //初始暂停消费
-        pauseConsume();
         init(consumerProp);
     }
 
