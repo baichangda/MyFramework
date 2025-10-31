@@ -9,6 +9,7 @@ dependencies {
     implementation project(":Lib-Database-Jdbc")
     implementation project(":Lib-Database-Mongo")
     implementation project(":Lib-Schedule-Xxljob")
+    implementation project(":Lib-Minio")
 
     //springboot cache支持
     implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -50,8 +51,6 @@ dependencies {
     implementation group: 'org.zeromq', name: 'jeromq'
 
     implementation("me.tongfei:progressbar")
-
-    implementation("io.minio:minio")
 
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")

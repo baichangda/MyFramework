@@ -1,0 +1,5 @@
+dependencies {
+    api project(":Lib-Base")
+    api("org.springframework.boot:spring-boot-starter")
+    api("io.minio:minio")
+}

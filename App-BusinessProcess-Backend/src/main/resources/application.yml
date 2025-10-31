@@ -182,9 +182,10 @@ lib:
       response-list: monitorResponse
       server-id: ${spring.application.name}
       server-type: 3
+  minio:
+    endpoint: http://127.0.0.1:19000
+    accessKey: qsOaWQjLYQr09EVkNVik
+    secretKey: 2JH6UcrGXZWCJiewr7Oe6aZuhCJo6g7HVZzMgcKd
+    bucket: test
 
-minio:
-  endpoint: http://127.0.0.1:19000
-  accessKey: qsOaWQjLYQr09EVkNVik
-  secretKey: 2JH6UcrGXZWCJiewr7Oe6aZuhCJo6g7HVZzMgcKd
-  bucket: test
+

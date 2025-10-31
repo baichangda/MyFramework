@@ -1,10 +1,10 @@
-package cn.bcd.app.businessProcess.backend.base.support_minio;
+package cn.bcd.lib.minio;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@ConfigurationProperties(prefix = "minio")
+@ConfigurationProperties(prefix = "lib.minio")
 public class MinioProp {
     public String endpoint;
     public String accessKey;
