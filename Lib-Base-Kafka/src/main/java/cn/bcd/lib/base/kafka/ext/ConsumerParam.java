@@ -14,17 +14,23 @@ public class ConsumerParam {
      */
     public final int mode;
     public final int[] partitions;
-    //是否从头开始消费
-    public final boolean seekToBeginning;
 
-    private ConsumerParam(int mode, int[] partitions, boolean seekToBeginning) {
+    /**
+     * 控制当前消费者的各个分区从某处开始消费
+     * -2: 不从头开始消费、默认消费模式
+     * -1: 从头开始消费
+     * 其他: 从指定的时间戳开始消费
+     */
+    public final long seekTimestamp;
+
+    private ConsumerParam(int mode, int[] partitions, long seekTimestamp) {
         this.mode = mode;
         this.partitions = partitions;
-        this.seekToBeginning = seekToBeginning;
+        this.seekTimestamp = seekTimestamp;
     }
 
     public static ConsumerParam get(int mode, int... partitions) {
-        return new ConsumerParam(mode, partitions, false);
+        return new ConsumerParam(mode, partitions, -2);
     }
 
     /**
@@ -34,6 +40,17 @@ public class ConsumerParam {
      * @return
      */
     public static ConsumerParam get_seekToBeginning(int mode, int... partitions) {
-        return new ConsumerParam(mode, partitions, true);
+        return new ConsumerParam(mode, partitions, -1);
+    }
+
+    /**
+     * 默认从指定时间戳开始消费
+     * @param mode
+     * @param seekTimestamp
+     * @param partitions
+     * @return
+     */
+    public static ConsumerParam get_seekToTimestamp(int mode, long seekTimestamp, int... partitions) {
+        return new ConsumerParam(mode, partitions, seekTimestamp);
     }
 }

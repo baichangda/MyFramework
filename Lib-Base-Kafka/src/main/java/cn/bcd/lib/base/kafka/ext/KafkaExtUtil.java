@@ -44,7 +44,8 @@ public class KafkaExtUtil {
                                                      Map<String, Object> consumerProp,
                                                      ConsumerParam partitionMode,
                                                      Consumer<KafkaConsumer<String, byte[]>> kafkaConsumerConsumer) {
-        if (partitionMode.seekToBeginning) {
+        long seekTimestamp = partitionMode.seekTimestamp;
+        if (seekTimestamp == -1) {
             consumerProp.put("auto.offset.reset", "earliest");
         }
         Thread consumeThread = null;
@@ -56,8 +57,10 @@ public class KafkaExtUtil {
                  */
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
-                if (partitionMode.seekToBeginning) {
+                if (seekTimestamp == -1) {
                     KafkaUtil.consumerSeekToBeginning(consumer);
+                } else if (seekTimestamp >= 0) {
+                    KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                 }
                 //初始化消费线程、提交消费任务
                 String threadName = getConsumerThreadName(name, 0, 1);
@@ -73,8 +76,10 @@ public class KafkaExtUtil {
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                 List<TopicPartition> topicPartitions = Arrays.stream(partitions).mapToObj(i -> new TopicPartition(topic, i)).toList();
                 consumer.assign(topicPartitions);
-                if (partitionMode.seekToBeginning) {
+                if (seekTimestamp == -1) {
                     KafkaUtil.consumerSeekToBeginning(consumer);
+                } else if (seekTimestamp >= 0) {
+                    KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                 }
                 String threadName = getConsumerThreadName(name, 0, 1, partitions);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
@@ -90,8 +95,10 @@ public class KafkaExtUtil {
                 for (int i = 0; i < partitions.length; i++) {
                     final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                     consumer.assign(Collections.singletonList(new TopicPartition(topic, partitions[i])));
-                    if (partitionMode.seekToBeginning) {
+                    if (seekTimestamp == -1) {
                         KafkaUtil.consumerSeekToBeginning(consumer);
+                    } else if (seekTimestamp >= 0) {
+                        KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                     }
                     String threadName = getConsumerThreadName(name, i, partitions.length, partitions[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
@@ -114,8 +121,10 @@ public class KafkaExtUtil {
                         consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
                     }
                     consumer.assign(Collections.singletonList(new TopicPartition(topic, ps[i])));
-                    if (partitionMode.seekToBeginning) {
+                    if (seekTimestamp == -1) {
                         KafkaUtil.consumerSeekToBeginning(consumer);
+                    } else if (seekTimestamp >= 0) {
+                        KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                     }
                     String threadName = getConsumerThreadName(name, i, ps.length, ps[i]);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
