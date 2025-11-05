@@ -44,7 +44,7 @@ public class PacketUtil {
     public static void fix_code(ByteBuf data) {
         byte xor = 0;
         int codeIndex = data.readableBytes() - 1;
-        for (int i = 0; i < codeIndex; i++) {
+        for (int i = 2; i < codeIndex; i++) {
             xor ^= data.getByte(i);
         }
         data.setByte(codeIndex, xor);
@@ -58,7 +58,7 @@ public class PacketUtil {
     public static void fix_code(byte[] data) {
         byte xor = 0;
         int codeIndex = data.length - 1;
-        for (int i = 0; i < codeIndex; i++) {
+        for (int i = 2; i < codeIndex; i++) {
             xor ^= data[i];
         }
         data[codeIndex] = xor;
