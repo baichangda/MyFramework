@@ -1,10 +1,9 @@
 dependencies {
-    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base")
     api project(":Lib-Base-Executor")
     //spring kafka支持
     api group: 'org.springframework.kafka', name: 'spring-kafka'
-    api("org.springframework.boot:spring-boot-starter")
+    api libs.spring.boot.starter
 }
 
 

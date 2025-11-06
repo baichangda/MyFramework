@@ -1,7 +1,6 @@
 dependencies {
-    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base")
-    api("org.springframework.boot:spring-boot-starter")
+    api libs.spring.boot.starter
     // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
     api("com.xuxueli:xxl-job-core")
 }

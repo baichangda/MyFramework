@@ -1,17 +1,14 @@
 dependencies {
-    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base-Json")
     api project(":Lib-Database-Common")
-    //springboot redis支持
-    //lettuce异步客户端(默认使用lettuce)
-    api("org.springframework.boot:spring-boot-starter-data-jdbc")
+    api libs.spring.boot.starter.data.jdbc
     //springboot validation支持
-    api("org.springframework.boot:spring-boot-starter-validation")
+    api libs.spring.boot.starter.validation
     api group: 'com.github.ben-manes.caffeine', name: 'caffeine'
     // https://mvnrepository.com/artifact/org.freemarker/freemarker
     api group: 'org.freemarker', name: 'freemarker'
     // https://mvnrepository.com/artifact/com.alibaba/easyexcel
-    api(group: 'com.alibaba', name: 'easyexcel')
+    api group: 'com.alibaba', name: 'easyexcel'
     api group: 'com.mysql', name: 'mysql-connector-j'
     api group: 'org.postgresql', name: 'postgresql'
 }

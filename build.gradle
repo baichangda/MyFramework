@@ -63,7 +63,7 @@ subprojects {
 
         //统一配置mapstruct
         implementation libs.mapstruct
-        annotationProcessor libs.mapstruct
+        annotationProcessor libs.mapstruct.processor
 
         //统一配置测试环境
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
