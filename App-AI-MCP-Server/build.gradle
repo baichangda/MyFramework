@@ -1,4 +1,5 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
     api project(":Lib-Base")
     api("org.springframework.ai:spring-ai-starter-mcp-server-webmvc")
 

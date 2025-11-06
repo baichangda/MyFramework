@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base-Json")
     api project(":Lib-Data-Notify")
     api("org.springframework.boot:spring-boot-starter")

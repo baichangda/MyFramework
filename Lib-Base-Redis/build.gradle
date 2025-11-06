@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base-Json")
     //springboot redis支持
     //lettuce异步客户端(默认使用lettuce)

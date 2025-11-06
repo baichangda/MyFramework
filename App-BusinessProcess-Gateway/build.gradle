@@ -1,8 +1,9 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
+    implementation platform(libs.spring.cloud.dependencies)
+    implementation platform(libs.spring.cloud.alibaba.dependencies)
     implementation (project(":Lib-Data-Init"))
-    implementation (project(":Lib-Microservice-Common")){
-        exclude group: 'com.github.xiaoymin', module: 'knife4j-openapi3-jakarta-spring-boot-starter'
-    }
+    implementation (project(":Lib-Microservice-Common"))
     // https://mvnrepository.com/artifact/cn.dev33/sa-token-spring-boot-starter
     implementation group: 'cn.dev33', name: 'sa-token-reactor-spring-boot3-starter'
     implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
@@ -13,7 +14,4 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
     implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
-
-    // https://mvnrepository.com/artifact/com.github.xiaoymin/knife4j-gateway-spring-boot-starter
-    implementation group: 'com.github.xiaoymin', name: 'knife4j-gateway-spring-boot-starter'
 }

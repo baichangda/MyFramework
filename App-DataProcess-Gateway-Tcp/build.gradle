@@ -1,18 +1,16 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
     implementation project(":Lib-Vehicle-Command")
     implementation project(":Lib-Monitor-Client")
     implementation project(":Lib-Data-Init")
 
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
-    implementation 'org.springframework.boot:spring-boot-starter'
-
     // https://mvnrepository.com/artifact/io.netty/netty-all
     implementation group: 'io.netty', name: 'netty-all'
 
     //springboot log4j2支持
-    implementation('org.springframework.boot:spring-boot-starter-log4j2')
+    implementation libs.spring.boot.starter.log4j2
 
     // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
     implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'

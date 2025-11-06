@@ -1,14 +1,13 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Storage-Mongo")
     implementation project(":Lib-Base-Redis")
     implementation project(":Lib-Base-Kafka")
     implementation project(":Lib-Data-Init")
     implementation project(":Lib-Data-Notify")
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
-    implementation 'org.springframework.boot:spring-boot-starter'
     //springboot log4j2支持
-    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+    implementation libs.spring.boot.starter.log4j2
     // https://mvnrepository.com/artifact/io.vertx/vertx-web
     implementation group: 'io.vertx', name: 'vertx-web'
 }

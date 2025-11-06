@@ -1,4 +1,5 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Storage-Mongo")
     implementation project(":Lib-Base-Redis")
@@ -6,9 +7,6 @@ dependencies {
     implementation project(":Lib-Data-Init")
     implementation project(":Lib-Monitor-Client")
 
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
-    implementation 'org.springframework.boot:spring-boot-starter'
-
     //springboot log4j2支持
-    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+    implementation libs.spring.boot.starter.log4j2
 }

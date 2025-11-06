@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base")
     api group: 'io.prometheus', name: 'prometheus-metrics-core'
     api group: 'io.prometheus', name: 'prometheus-metrics-instrumentation-jvm'

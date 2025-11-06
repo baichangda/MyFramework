@@ -1,4 +1,8 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
+    api platform(libs.spring.cloud.dependencies)
+    api platform(libs.spring.cloud.alibaba.dependencies)
+
     api project(":Lib-Base-Json")
     //springboot支持
     api("org.springframework.boot:spring-boot-starter")
