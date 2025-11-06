@@ -2,6 +2,8 @@
 spring-boot = "3.5.7"
 spring-cloud = "2025.0.0"
 alibaba-cloud = "2025.0.0.0-preview"
+lombok = "1.18.42"
+mapstruct = "1.6.3"
 
 [libraries]
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
@@ -10,7 +12,9 @@ spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-a
 
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2", version.ref = "spring-boot" }
 
-[bundles]
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 
 
 

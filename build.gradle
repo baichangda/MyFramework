@@ -58,14 +58,12 @@ subprojects {
 
     dependencies {
         //统一配置lombok
-        var lombokVersion = '1.18.42'
-        compileOnly group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
-        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: "${lombokVersion}"
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
 
         //统一配置mapstruct
-        var mapstructVersion = '1.6.3'
-        implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-        annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+        implementation libs.mapstruct
+        annotationProcessor libs.mapstruct
 
         //统一配置测试环境
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'

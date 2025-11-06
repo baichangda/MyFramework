@@ -3,9 +3,6 @@ dependencies {
     implementation project(":Lib-Base-Json")
     implementation project(":Lib-Base-Executor")
 
-    // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all'
-
     implementation 'info.picocli:picocli'
 
     // https://mvnrepository.com/artifact/io.vertx/vertx-web
