@@ -1,0 +1,18 @@
+[versions]
+spring-boot = "3.5.7"
+spring-cloud = "2025.0.0"
+alibaba-cloud = "2025.0.0.0-preview"
+
+[libraries]
+spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
+spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-alibaba-dependencies", version.ref = "alibaba-cloud" }
+
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2", version.ref = "spring-boot" }
+
+[bundles]
+
+
+
+
+
