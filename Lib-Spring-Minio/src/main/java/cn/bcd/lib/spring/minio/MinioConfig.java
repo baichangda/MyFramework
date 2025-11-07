@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(prefix = "lib.spring.minio.endpoint")
+@ConditionalOnProperty(value = "lib.spring.minio.endpoint")
 @EnableConfigurationProperties(MinioProp.class)
 public class MinioConfig {
     @Bean

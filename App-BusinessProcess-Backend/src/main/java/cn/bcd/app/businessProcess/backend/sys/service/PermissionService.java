@@ -1,9 +1,11 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
-import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
+import cn.bcd.app.businessProcess.backend.sys.bean.PermissionBean;
 import cn.bcd.app.businessProcess.backend.sys.define.CommonConst;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
+import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,6 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
-import cn.bcd.app.businessProcess.backend.sys.bean.PermissionBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +36,7 @@ public class PermissionService extends BaseService<PermissionBean> implements Ap
 
     @Transactional
     public void init_SaCheckRequestMappingUrl(ContextRefreshedEvent event) {
+        String uriPrefix = Const.uri_prefix_business_process_backend;
         //1、扫描所有已经使用过的 NotePermission
         Map<String, Object> beanMap = event.getApplicationContext().getBeansWithAnnotation(Controller.class);
         List<PermissionBean> permissionBeanList = new ArrayList<>();
@@ -61,12 +63,12 @@ public class PermissionService extends BaseService<PermissionBean> implements Ap
                     }
                 }
                 permissionBean.name = name;
-                permissionBean.resource = Const.uri_prefix_business_process_backend + controllerUrl + methodUrl;
+                permissionBean.resource = uriPrefix + controllerUrl + methodUrl;
                 permissionBeanList.add(permissionBean);
             });
         });
         //2、清空权限表
-        deleteAll();
+        delete(StringCondition.RIGHT_LIKE("resource", uriPrefix));
         //3、保存
         insertBatch(permissionBeanList);
     }

@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
-@ConditionalOnProperty(prefix = "lib.spring.minio.endpoint")
+@ConditionalOnProperty(value = "lib.spring.minio.endpoint")
 public class MinioUtil {
 
     static final Logger logger = LoggerFactory.getLogger(MinioUtil.class);
