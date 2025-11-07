@@ -1,0 +1,5 @@
+dependencies {
+    api project(":Lib-Spring-Redis")
+    api project(":Lib-Spring-Kafka")
+}
+

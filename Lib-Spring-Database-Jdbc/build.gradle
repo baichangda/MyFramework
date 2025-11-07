@@ -1,0 +1,14 @@
+dependencies {
+    api project(":Lib-Base-Json")
+    api project(":Lib-Spring-Database-Common")
+    api libs.spring.boot.starter.data.jdbc
+    //springboot validation支持
+    api libs.spring.boot.starter.validation
+    api('com.github.ben-manes.caffeine:caffeine')
+    // https://mvnrepository.com/artifact/org.freemarker/freemarker
+    api('org.freemarker:freemarker')
+    // https://mvnrepository.com/artifact/com.alibaba/easyexcel
+    api('com.alibaba:easyexcel')
+    api('com.mysql:mysql-connector-j')
+    api('org.postgresql:postgresql')
+}

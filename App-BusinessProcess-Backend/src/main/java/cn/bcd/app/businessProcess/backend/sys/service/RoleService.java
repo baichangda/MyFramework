@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
-import cn.bcd.lib.database.jdbc.service.BaseService;
+import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.businessProcess.backend.sys.bean.RoleBean;
 import cn.bcd.app.businessProcess.backend.sys.define.CommonConst;
 import org.springframework.beans.factory.annotation.Autowired;

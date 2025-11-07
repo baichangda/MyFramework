@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.parse.v2016;
 
 import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.data.init.transferAccess.TransferAccessDataInit;
+import cn.bcd.lib.spring.data.init.transferAccess.TransferAccessDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;

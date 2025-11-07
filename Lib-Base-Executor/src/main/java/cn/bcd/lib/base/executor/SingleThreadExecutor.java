@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+@SuppressWarnings("unchecked")
 public class SingleThreadExecutor implements Executor {
     public final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String threadName;

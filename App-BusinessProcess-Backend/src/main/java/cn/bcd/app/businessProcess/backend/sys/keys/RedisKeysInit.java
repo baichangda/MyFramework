@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.sys.keys;
 
-import cn.bcd.lib.base.redis.RedisUtil;
+import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.base.util.RSAUtil;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.springframework.context.ApplicationListener;

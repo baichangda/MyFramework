@@ -1,7 +1,7 @@
 dependencies {
     api project(":Lib-Base")
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-core'
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind'
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations'
+    api('com.fasterxml.jackson.core:jackson-core')
+    api('com.fasterxml.jackson.core:jackson-databind')
+    api('com.fasterxml.jackson.core:jackson-annotations')
     api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 }

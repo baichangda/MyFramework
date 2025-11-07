@@ -1,8 +1,8 @@
 package cn.bcd.app.dataProcess.gateway.tcp.v2016;
 
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
-import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
+import cn.bcd.lib.spring.data.init.vehicle.VehicleDataInit;
+import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import io.netty.buffer.ByteBuf;

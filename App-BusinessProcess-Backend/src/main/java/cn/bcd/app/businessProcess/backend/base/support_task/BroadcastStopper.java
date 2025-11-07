@@ -2,8 +2,8 @@ package cn.bcd.app.businessProcess.backend.base.support_task;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.base.redis.mq.ValueSerializerType;
-import cn.bcd.lib.base.redis.mq.topic.RedisTopicMQ;
+import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
+import cn.bcd.lib.spring.redis.mq.topic.RedisTopicMQ;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 

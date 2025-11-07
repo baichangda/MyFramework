@@ -89,9 +89,10 @@ sa-token:
   is-read-cookie: true
 
 lib:
-  data:
-    init:
-      nacosHost: 127.0.0.1
-      nacosPort: 18848
-      permission:
-        enable: true
+  spring:
+    data:
+      init:
+        nacosHost: 127.0.0.1
+        nacosPort: 18848
+        permission:
+          enable: true

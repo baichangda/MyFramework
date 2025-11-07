@@ -8,10 +8,9 @@ import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.executor.consume.ConsumeEntity;
 import cn.bcd.lib.base.executor.consume.ConsumeExecutorGroup;
 import cn.bcd.lib.base.util.StringUtil;
-import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
+import cn.bcd.lib.spring.data.init.vehicle.VehicleDataInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 

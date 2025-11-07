@@ -1,7 +1,7 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
 import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.database.jdbc.service.BaseService;
+import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.app.businessProcess.backend.sys.define.CommonConst;
 import io.swagger.v3.oas.annotations.Operation;

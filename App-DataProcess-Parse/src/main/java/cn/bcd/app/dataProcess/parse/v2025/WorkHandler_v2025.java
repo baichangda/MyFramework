@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.parse.v2025;
 
 import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
+import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;

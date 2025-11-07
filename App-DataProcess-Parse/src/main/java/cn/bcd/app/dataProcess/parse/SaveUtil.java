@@ -1,8 +1,8 @@
 package cn.bcd.app.dataProcess.parse;
 
 import cn.bcd.lib.base.util.ExecutorUtil;
-import cn.bcd.lib.storage.mongo.raw.MongoUtil_gb32960;
-import cn.bcd.lib.storage.mongo.raw.RawData;
+import cn.bcd.lib.spring.storage.mongo.raw.MongoUtil_gb32960;
+import cn.bcd.lib.spring.storage.mongo.raw.RawData;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;

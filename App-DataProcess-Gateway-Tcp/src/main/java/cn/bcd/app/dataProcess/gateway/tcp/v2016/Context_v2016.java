@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.gateway.tcp.v2016;
 
 import cn.bcd.app.dataProcess.gateway.tcp.Session;
-import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
+import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Data;
 

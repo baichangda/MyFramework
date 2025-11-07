@@ -1,7 +1,7 @@
 package cn.bcd.app.dataProcess.transfer.v2016.handler;
 
-import cn.bcd.lib.base.kafka.ext.datadriven.WorkExecutor;
-import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
+import cn.bcd.lib.spring.kafka.ext.datadriven.WorkExecutor;
+import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import lombok.Data;
 
 import java.util.Date;

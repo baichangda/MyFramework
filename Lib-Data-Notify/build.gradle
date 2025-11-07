@@ -1,5 +1,0 @@
-dependencies {
-    api project(":Lib-Base-Redis")
-    api project(":Lib-Base-Kafka")
-}
-

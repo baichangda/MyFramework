@@ -4,8 +4,7 @@ import cn.bcd.app.dataProcess.transfer.v2016.SaveUtil;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
-import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
-import cn.bcd.lib.storage.mongo.transfer.TransferData;
+import cn.bcd.lib.spring.storage.mongo.transfer.TransferData;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.SendData;
 import io.netty.buffer.ByteBufUtil;
@@ -14,7 +13,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.List;
 
 @Order(99)
 @Component

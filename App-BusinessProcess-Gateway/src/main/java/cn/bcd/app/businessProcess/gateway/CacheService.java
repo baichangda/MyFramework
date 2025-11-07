@@ -2,8 +2,8 @@ package cn.bcd.app.businessProcess.gateway;
 
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
-import cn.bcd.lib.microservice.common.fegin.user.UserClient;
+import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
+import cn.bcd.lib.spring.cloud.common.fegin.user.UserClient;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.slf4j.Logger;

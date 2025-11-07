@@ -1,6 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.mqtt.v2016;
 
-import cn.bcd.lib.data.notify.onlyNotify.vehicleData.VehicleData;
+import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import lombok.Data;
 
 import java.util.Date;

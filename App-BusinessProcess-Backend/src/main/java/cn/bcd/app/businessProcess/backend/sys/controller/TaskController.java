@@ -1,10 +1,10 @@
 package cn.bcd.app.businessProcess.backend.sys.controller;
 
 import cn.bcd.lib.base.common.Result;
-import cn.bcd.lib.database.common.condition.Condition;
-import cn.bcd.lib.database.common.condition.impl.DateCondition;
-import cn.bcd.lib.database.common.condition.impl.NumberCondition;
-import cn.bcd.lib.database.common.condition.impl.StringCondition;
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.app.businessProcess.backend.base.support_task.StopResult;
 import cn.bcd.app.businessProcess.backend.sys.bean.TaskBean;
 import cn.bcd.app.businessProcess.backend.sys.service.TaskService;

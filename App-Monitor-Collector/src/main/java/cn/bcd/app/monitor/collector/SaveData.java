@@ -2,7 +2,7 @@ package cn.bcd.app.monitor.collector;
 
 
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.monitor.client.MonitorData;
+import cn.bcd.lib.spring.monitor.client.MonitorData;
 import lombok.Getter;
 import lombok.Setter;
 

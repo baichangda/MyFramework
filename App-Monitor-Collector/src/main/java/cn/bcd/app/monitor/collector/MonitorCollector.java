@@ -1,11 +1,11 @@
 package cn.bcd.app.monitor.collector;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.redis.RedisUtil;
+import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.monitor.client.MonitorData;
-import cn.bcd.lib.monitor.client.MonitorProp;
-import cn.bcd.lib.monitor.client.MonitorRedisTopicMQ;
+import cn.bcd.lib.spring.monitor.client.MonitorData;
+import cn.bcd.lib.spring.monitor.client.MonitorProp;
+import cn.bcd.lib.spring.monitor.client.MonitorRedisTopicMQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

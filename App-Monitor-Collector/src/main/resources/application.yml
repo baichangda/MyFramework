@@ -72,8 +72,9 @@ spring:
   #      port: 6379
 
 lib:
-  monitor:
-    client:
-      requestTopic: monitorRequest
-      responseList: monitorResponse
-      collectCron: 0/15 * * * * *
+  spring:
+    monitor:
+      client:
+        requestTopic: monitorRequest
+        responseList: monitorResponse
+        collectCron: 0/15 * * * * *

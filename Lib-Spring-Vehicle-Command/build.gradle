@@ -1,0 +1,6 @@
+dependencies {
+    api project(":Lib-Parser-Protocol-GB32960")
+    api project(":Lib-Base-Json")
+    api project(":Lib-Spring-Redis")
+    api project(":Lib-Spring-Kafka")
+}

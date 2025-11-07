@@ -5,14 +5,12 @@ import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.base.util.HexUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
-import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
-import cn.bcd.lib.storage.mongo.transfer.TransferResponseData;
+import cn.bcd.lib.spring.storage.mongo.transfer.TransferResponseData;
 import io.netty.buffer.ByteBufUtil;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.List;
 
 @Component
 public class TcpReceiveDataHandler implements TcpDataHandler {

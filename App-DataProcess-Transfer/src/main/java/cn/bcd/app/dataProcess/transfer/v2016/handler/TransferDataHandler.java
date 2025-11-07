@@ -1,10 +1,10 @@
 package cn.bcd.app.dataProcess.transfer.v2016.handler;
 
 import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.base.kafka.ext.datadriven.WorkHandler;
+import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.data.init.vehicle.VehicleDataInit;
+import cn.bcd.lib.spring.data.init.vehicle.VehicleDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import io.netty.buffer.ByteBufUtil;

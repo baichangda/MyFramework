@@ -41,12 +41,13 @@ spring:
 transfer:
   serverId: gb1
 lib:
-  data:
-    notify:
-      vehicleData:
-        groupId: "notify-vehicle"
-      platformStatus:
-        enableSender: true
+  spring:
+    data:
+      notify:
+        vehicleData:
+          groupId: "notify-vehicle"
+        platformStatus:
+          enableSender: true
 
 
 

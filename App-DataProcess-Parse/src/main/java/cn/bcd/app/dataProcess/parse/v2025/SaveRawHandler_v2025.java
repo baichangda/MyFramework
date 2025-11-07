@@ -4,7 +4,7 @@ import cn.bcd.app.dataProcess.parse.SaveUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
-import cn.bcd.lib.storage.mongo.raw.RawData;
+import cn.bcd.lib.spring.storage.mongo.raw.RawData;
 import io.netty.buffer.ByteBufUtil;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;

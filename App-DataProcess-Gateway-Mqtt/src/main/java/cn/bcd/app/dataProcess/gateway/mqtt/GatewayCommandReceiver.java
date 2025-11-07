@@ -2,9 +2,9 @@ package cn.bcd.app.dataProcess.gateway.mqtt;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.HexUtil;
-import cn.bcd.lib.vehicle.command.CommandReceiver;
-import cn.bcd.lib.vehicle.command.Request;
-import cn.bcd.lib.vehicle.command.ResponseStatus;
+import cn.bcd.lib.spring.vehicle.command.CommandReceiver;
+import cn.bcd.lib.spring.vehicle.command.Request;
+import cn.bcd.lib.spring.vehicle.command.ResponseStatus;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
 import io.netty.buffer.ByteBufUtil;

@@ -1,8 +1,8 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
 import cn.bcd.lib.base.util.DateZoneUtil;
-import cn.bcd.lib.database.common.condition.Condition;
-import cn.bcd.lib.database.jdbc.service.BaseService;
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.businessProcess.backend.base.support_task.TaskBuilder;
 import cn.bcd.app.businessProcess.backend.base.support_task.TaskDao;
 import cn.bcd.app.businessProcess.backend.sys.bean.TaskBean;

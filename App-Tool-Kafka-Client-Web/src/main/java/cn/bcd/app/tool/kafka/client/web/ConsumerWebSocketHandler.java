@@ -2,7 +2,7 @@ package cn.bcd.app.tool.kafka.client.web;
 
 import cn.bcd.app.tool.kafka.client.web.base.support_spring_websocket.PathTextWebSocketHandler;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.base.kafka.KafkaUtil;
+import cn.bcd.lib.spring.kafka.KafkaUtil;
 import cn.bcd.lib.base.util.HexUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

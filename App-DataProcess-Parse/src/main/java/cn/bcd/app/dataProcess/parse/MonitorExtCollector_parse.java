@@ -1,7 +1,6 @@
 package cn.bcd.app.dataProcess.parse;
 
-import cn.bcd.lib.monitor.client.MonitorExtCollector;
-import org.springframework.beans.factory.annotation.Autowired;
+import cn.bcd.lib.spring.monitor.client.MonitorExtCollector;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

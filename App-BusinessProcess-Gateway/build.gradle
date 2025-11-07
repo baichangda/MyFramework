@@ -2,8 +2,8 @@ dependencies {
     implementation platform(libs.spring.boot.dependencies)
     implementation platform(libs.spring.cloud.dependencies)
     implementation platform(libs.spring.cloud.alibaba.dependencies)
-    implementation (project(":Lib-Data-Init"))
-    implementation (project(":Lib-Microservice-Common"))
+    implementation (project(":Lib-Spring-Data-Init"))
+    implementation (project(":Lib-Spring-Cloud-Common"))
     // https://mvnrepository.com/artifact/cn.dev33/sa-token-spring-boot-starter
     implementation group: 'cn.dev33', name: 'sa-token-reactor-spring-boot3-starter'
     implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'

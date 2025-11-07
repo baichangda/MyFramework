@@ -1,8 +1,8 @@
 package cn.bcd.app.businessProcess.backend.sys.bean;
 
 import cn.bcd.lib.base.util.ExceptionUtil;
-import cn.bcd.lib.database.jdbc.anno.Table;
-import cn.bcd.lib.database.jdbc.bean.SuperBaseBean;
+import cn.bcd.lib.spring.database.jdbc.anno.Table;
+import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.app.businessProcess.backend.base.support_task.Task;
 import io.swagger.v3.oas.annotations.media.Schema;

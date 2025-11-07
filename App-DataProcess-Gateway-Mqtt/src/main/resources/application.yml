@@ -48,12 +48,13 @@ mqtt:
   consumeThreadNum: 4
 
 lib:
-  vehicle:
-    command:
-      requestTopic: commandRequest
-      responseTopic: commandResponse
-      senderGroupId: gw
-      receiverGroupId: gw
+  spring:
+    vehicle:
+      command:
+        requestTopic: commandRequest
+        responseTopic: commandResponse
+        senderGroupId: gw
+        receiverGroupId: gw
 
 gateway:
   id: gw1

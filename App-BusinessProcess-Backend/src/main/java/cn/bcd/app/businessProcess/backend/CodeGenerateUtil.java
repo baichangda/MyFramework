@@ -1,8 +1,8 @@
 package cn.bcd.app.businessProcess.backend;
 
-import cn.bcd.lib.database.jdbc.code.CodeGenerator;
-import cn.bcd.lib.database.jdbc.code.Config;
-import cn.bcd.lib.database.jdbc.code.TableConfig;
+import cn.bcd.lib.spring.database.jdbc.code.CodeGenerator;
+import cn.bcd.lib.spring.database.jdbc.code.Config;
+import cn.bcd.lib.spring.database.jdbc.code.TableConfig;
 
 public class CodeGenerateUtil {
     public static void main(String[] args) {

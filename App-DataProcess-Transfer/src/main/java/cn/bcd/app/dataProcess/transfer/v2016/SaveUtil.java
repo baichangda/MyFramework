@@ -1,9 +1,9 @@
 package cn.bcd.app.dataProcess.transfer.v2016;
 
 import cn.bcd.lib.base.util.ExecutorUtil;
-import cn.bcd.lib.storage.mongo.transfer.MongoUtil_transferData;
-import cn.bcd.lib.storage.mongo.transfer.TransferData;
-import cn.bcd.lib.storage.mongo.transfer.TransferResponseData;
+import cn.bcd.lib.spring.storage.mongo.transfer.MongoUtil_transferData;
+import cn.bcd.lib.spring.storage.mongo.transfer.TransferData;
+import cn.bcd.lib.spring.storage.mongo.transfer.TransferResponseData;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;

@@ -1,6 +1,0 @@
-dependencies {
-    api project(":Lib-Base-Redis")
-    // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
-    api group: 'com.github.oshi', name: 'oshi-core-java11'
-}
-

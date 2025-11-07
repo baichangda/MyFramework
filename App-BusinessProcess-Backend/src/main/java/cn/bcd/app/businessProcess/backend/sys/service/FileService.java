@@ -1,7 +1,7 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.minio.MinioUtil;
+import cn.bcd.lib.spring.minio.MinioUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

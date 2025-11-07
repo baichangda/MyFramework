@@ -1,10 +1,10 @@
 dependencies {
     implementation platform(libs.spring.boot.dependencies)
-    implementation project(":Lib-Base-Redis")
-    implementation project(":Lib-Base-Kafka")
-    implementation project(":Lib-Vehicle-Command")
-    implementation project(":Lib-Monitor-Client")
-    implementation project(":Lib-Data-Init")
+    implementation project(":Lib-Spring-Redis")
+    implementation project(":Lib-Spring-Kafka")
+    implementation project(":Lib-Spring-Vehicle-Command")
+    implementation project(":Lib-Spring-Monitor-Client")
+    implementation project(":Lib-Spring-Data-Init")
 
     // https://mvnrepository.com/artifact/io.netty/netty-all
     implementation group: 'io.netty', name: 'netty-all'

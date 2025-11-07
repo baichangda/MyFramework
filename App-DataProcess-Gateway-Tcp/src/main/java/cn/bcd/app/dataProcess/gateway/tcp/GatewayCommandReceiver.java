@@ -1,8 +1,8 @@
 package cn.bcd.app.dataProcess.gateway.tcp;
 
-import cn.bcd.lib.vehicle.command.CommandReceiver;
-import cn.bcd.lib.vehicle.command.Request;
-import cn.bcd.lib.vehicle.command.ResponseStatus;
+import cn.bcd.lib.spring.vehicle.command.CommandReceiver;
+import cn.bcd.lib.spring.vehicle.command.Request;
+import cn.bcd.lib.spring.vehicle.command.ResponseStatus;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;

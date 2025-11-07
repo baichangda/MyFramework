@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.sys.service;
 
-import cn.bcd.lib.database.jdbc.bean.UserInterface;
+import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.SaTokenUtil;
 import org.springframework.stereotype.Component;
 

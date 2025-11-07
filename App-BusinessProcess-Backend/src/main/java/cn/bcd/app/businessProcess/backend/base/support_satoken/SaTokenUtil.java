@@ -2,7 +2,7 @@ package cn.bcd.app.businessProcess.backend.base.support_satoken;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.microservice.common.fegin.user.AuthUser;
+import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.app.businessProcess.backend.sys.bean.UserBean;
 import cn.bcd.app.businessProcess.backend.sys.service.CacheService;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
