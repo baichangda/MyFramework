@@ -46,22 +46,26 @@ public class RedisScheduleAopConfig {
      * 定时任务 环绕通知
      */
     @Around("methodSchedule()")
-    public void doAroundSchedule(ProceedingJoinPoint joinPoint) {
+    public Object doAroundSchedule(ProceedingJoinPoint joinPoint) {
         //1、获取aop执行的方法
         Method method = getAopMethod(joinPoint);
         SingleFailedScheduleHandler handler = METHOD_TO_HANDLER.computeIfAbsent(method, k ->
-             new SingleFailedScheduleHandler(method.getAnnotation(SingleFailedSchedule.class), redisConnectionFactory)
+                new SingleFailedScheduleHandler(method.getAnnotation(SingleFailedSchedule.class), redisConnectionFactory)
         );
         boolean flag = handler.doBeforeStart();
         if (flag) {
             Object[] args = joinPoint.getArgs();
             try {
-                joinPoint.proceed(args);
+                Object res = joinPoint.proceed(args);
+                handler.doOnSuccess();
+                return res;
             } catch (Throwable throwable) {
                 handler.doOnFailed();
                 logger.error("schedule error", throwable);
+                return null;
             }
-            handler.doOnSuccess();
+        } else {
+            return null;
         }
     }
 

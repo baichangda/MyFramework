@@ -6,7 +6,6 @@ import cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.Duration;
@@ -28,7 +27,6 @@ public class SingleFailedScheduleHandler {
      * 单位(毫秒)
      */
     private final Duration aliveTime;
-    protected RedisTemplate<String, String> redisTemplate;
     protected ValueOperations<String, String> valueOperations;
     /**
      * 定时任务的锁表示字符串,确保每一个定时任务设置不同的锁id
@@ -37,8 +35,7 @@ public class SingleFailedScheduleHandler {
 
     public SingleFailedScheduleHandler(String lockId, RedisConnectionFactory redisConnectionFactory, Duration aliveTime) {
         this.lockId = lockId;
-        this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
-        this.valueOperations = this.redisTemplate.opsForValue();
+        this.valueOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).opsForValue();
         this.aliveTime = aliveTime;
     }
 
