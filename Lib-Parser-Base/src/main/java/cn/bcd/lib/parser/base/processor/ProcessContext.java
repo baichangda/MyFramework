@@ -23,6 +23,12 @@ public class ProcessContext<T> {
         this.globalVars = parentContext.globalVars;
     }
 
+    /**
+     * 创建一个解析环境
+     * 此解析环境是root环境、没有父环境
+     *
+     * @param byteBuf
+     */
     public ProcessContext(ByteBuf byteBuf) {
         this.instance = null;
         this.parentContext = null;
