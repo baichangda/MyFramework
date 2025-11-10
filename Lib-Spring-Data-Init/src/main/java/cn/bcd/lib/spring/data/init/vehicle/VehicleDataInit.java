@@ -50,7 +50,6 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
         String url = "http://" + hostData.ip + ":" + hostData.port + "/api/vehicle/list";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
-            assert response.body() != null;
             byte[] bytes = response.body().bytes();
             Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
             });
