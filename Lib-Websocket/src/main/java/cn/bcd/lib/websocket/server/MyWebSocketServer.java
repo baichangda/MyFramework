@@ -19,10 +19,10 @@ public class MyWebSocketServer {
     public HttpServer httpServer;
 
     /**
-     * @param host
-     * @param port
+     * @param host             websocket服务地址
+     * @param port             websocket服务端口
      * @param uri              可以为null
-     * @param webSocketHandler
+     * @param webSocketHandler websocket连接处理函数
      */
     public MyWebSocketServer(String host, int port, String uri, Handler<ServerWebSocket> webSocketHandler) {
         this.host = host;

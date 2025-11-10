@@ -32,7 +32,15 @@ public class MyWebSocketClient {
     private volatile WebSocket webSocket;
     private long nextConnectTs;
 
-    public MyWebSocketClient(String url, Duration autoReconnectPeriod, Handler<String> textMessageHandler) {
+    /**
+     * 创建一个websocket客户端
+     * @param url websocket服务地址、例如：127.0.0.1:8080/ws
+     * @param autoReconnectPeriod 自动重连间隔、不能为空
+     * @param textMessageHandler 文本消息处理函数
+     */
+    public MyWebSocketClient(String url,
+                             Duration autoReconnectPeriod,
+                             Handler<String> textMessageHandler) {
         this.url = url;
         String[] split = url.split(":");
         this.host = split[0];
