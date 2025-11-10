@@ -12,12 +12,12 @@ public enum StringAppendMode {
     noAppend,
     /**
      * 低内存地址补0
-     * 例如byte[4]、0是低内存地址、4是高内存地址
+     * 例如byte[4]、0是低内存地址、3是高内存地址
      */
     lowAddressAppend,
     /**
      * 高内存地址补0
-     * 例如byte[4]、0是低内存地址、4是高内存地址
+     * 例如byte[4]、0是低内存地址、3是高内存地址
      */
     highAddressAppend
 }
