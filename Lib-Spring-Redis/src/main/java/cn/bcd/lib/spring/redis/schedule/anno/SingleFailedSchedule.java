@@ -1,6 +1,6 @@
-package cn.bcd.app.businessProcess.backend.base.support_redis.schedule.anno;
+package cn.bcd.lib.spring.redis.schedule.anno;
 
-import cn.bcd.app.businessProcess.backend.base.support_redis.schedule.handler.SingleFailedScheduleHandler;
+import cn.bcd.lib.spring.redis.schedule.handler.SingleFailedScheduleHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

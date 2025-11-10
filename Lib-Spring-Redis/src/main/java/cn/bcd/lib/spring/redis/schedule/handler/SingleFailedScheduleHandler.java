@@ -1,8 +1,8 @@
-package cn.bcd.app.businessProcess.backend.base.support_redis.schedule.handler;
+package cn.bcd.lib.spring.redis.schedule.handler;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.app.businessProcess.backend.base.support_redis.schedule.anno.SingleFailedSchedule;
+import cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;

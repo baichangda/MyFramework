@@ -1,8 +1,8 @@
-package cn.bcd.app.businessProcess.backend.base.support_redis.schedule.aop;
+package cn.bcd.lib.spring.redis.schedule.aop;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.app.businessProcess.backend.base.support_redis.schedule.anno.SingleFailedSchedule;
-import cn.bcd.app.businessProcess.backend.base.support_redis.schedule.handler.SingleFailedScheduleHandler;
+import cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule;
+import cn.bcd.lib.spring.redis.schedule.handler.SingleFailedScheduleHandler;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
