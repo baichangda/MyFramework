@@ -5,36 +5,29 @@ javaPlatform {
 }
 
 dependencies {
-    api platform("com.squareup.okhttp3:okhttp-bom:5.1.0")
-    api platform("org.junit:junit-bom:5.13.4")
+    api platform("com.squareup.okhttp3:okhttp-bom:5.3.0")
+    api platform("org.junit:junit-bom:6.0.1")
     api platform("com.fasterxml.jackson:jackson-bom:2.20.1")
-    api platform("tools.jackson:jackson-bom:3.0.1")
+    api platform("tools.jackson:jackson-bom:3.0.2")
     api platform("cn.dev33:sa-token-bom:1.44.0")
-    api platform("io.netty:netty-bom:4.2.6.Final")
-    api platform("org.springdoc:springdoc-openapi-bom:2.8.13")
-    api platform("io.prometheus:prometheus-metrics-bom:1.4.1")
+    api platform("io.netty:netty-bom:4.2.7.Final")
+    api platform("org.springdoc:springdoc-openapi-bom:2.8.14")
+    api platform("io.prometheus:prometheus-metrics-bom:1.4.2")
     api platform("org.springframework.ai:spring-ai-bom:1.0.2")
 
     constraints {
-        // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-        api group: 'org.slf4j', name: 'slf4j-api', version: "2.0.17"
-        // https://mvnrepository.com/artifact/com.google.guava/guava
-        api group: 'com.google.guava', name: 'guava', version: "33.5.0-jre"
+        api("org.slf4j:slf4j-api':2.0.17")
 
-        api group: 'org.springframework.kafka', name: 'spring-kafka', version: "3.3.10"
+        api("com.google.guava:guava:33.5.0-jre")
 
-        // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
-        api group: 'com.github.oshi', name: 'oshi-core-java11', version: "6.9.1"
+        api("org.springframework.kafka:spring-kafka:3.3.10")
 
-        // https://mvnrepository.com/artifact/org.javassist/javassist
-        api group: 'org.javassist', name: 'javassist', version: "3.30.2-GA"
+        api("com.github.oshi:oshi-core-java11:6.9.1")
 
-        // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
-        api group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl', version: "2.25.2"
+        api ("org.javassist:javassist:3.30.2-GA")
 
-        api group: 'com.lmax', name: 'disruptor', version: "4.0.0"
+        api ("org.apache.logging.log4j:log4j-slf4j2-impl:2.25.2")
 
-        // https://mvnrepository.com/artifact/com.alibaba/easyexcel
         api(group: 'com.alibaba', name: 'easyexcel', version: "4.0.3")
 
         api group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: "3.2.3"
@@ -52,32 +45,25 @@ dependencies {
         api 'info.picocli:picocli:4.7.7'
 
         var vertxVersion = "5.0.5"
-        // https://mvnrepository.com/artifact/io.vertx/vertx-web
-        api group: 'io.vertx', name: 'vertx-web', version: "${vertxVersion}"
-        api group: 'io.vertx', name: 'vertx-tcp-eventbus-bridge', version: "${vertxVersion}"
+        api("io.vertx:vertx-web:${vertxVersion}")
+        api("io.vertx:vertx-tcp-eventbus-bridge:${vertxVersion}")
 
-        api group: 'org.jctools', name: 'jctools-core', version: '4.0.5'
+        api("org.jctools:jctools-core:4.0.5")
 
-        // https://mvnrepository.com/artifact/org.zeromq/jeromq
-        api group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
+        api("org.zeromq:jeromq:0.6.0")
 
         api("io.minio:minio:8.6.0")
 
-        // https://mvnrepository.com/artifact/org.apache.cassandra/java-driver-core
         var cassandraVersion = "4.19.1"
         api("org.apache.cassandra:java-driver-core:${cassandraVersion}")
         api("org.apache.cassandra:java-driver-query-builder:${cassandraVersion}")
 
-        // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
         api("com.xuxueli:xxl-job-core:3.2.0")
 
-        // https://mvnrepository.com/artifact/com.jakewharton.fliptables/fliptables
         api("com.jakewharton.fliptables:fliptables:1.1.1")
 
-        // https://mvnrepository.com/artifact/me.tongfei/progressbar
         api("me.tongfei:progressbar:0.10.1")
 
-        // https://mvnrepository.com/artifact/org.apache.commons/commons-pool2
         api("org.apache.commons:commons-pool2:2.12.1")
     }
 }

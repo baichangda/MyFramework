@@ -1,7 +1,7 @@
 [versions]
 spring-boot = "3.5.7"
 spring-cloud = "2025.0.0"
-alibaba-cloud = "2025.0.0.0-preview"
+alibaba-cloud = "2025.0.0.0"
 lombok = "1.18.42"
 mapstruct = "1.6.3"
 
