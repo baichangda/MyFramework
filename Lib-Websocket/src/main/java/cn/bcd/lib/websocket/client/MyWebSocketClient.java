@@ -121,12 +121,12 @@ public class MyWebSocketClient {
     private void connectInterval(CompletableFuture<Void> future) {
         long ts = System.currentTimeMillis();
         long nextTs = nextConnectTs;
-        long periodMs = autoReconnectPeriod.toMillis();
+        long periodMillis = autoReconnectPeriod.toMillis();
         if (nextTs == 0) {
             nextTs = ts;
         }
         long waitTs = nextTs - ts;
-        nextConnectTs = nextTs + periodMs;
+        nextConnectTs = nextTs + periodMillis;
         pool.schedule(() -> {
             logger.info("connecting ws[{}]", url);
             webSocketClient.connect(port, host, "")

@@ -112,15 +112,15 @@ public abstract class PressTest<T> implements Runnable {
                 add = true;
                 long sendTs = DateUtil.CacheMillisecond.current();
                 while (running.get()) {
-                    long waitMills = sendTs - DateUtil.CacheMillisecond.current();
-                    if (waitMills > 0) {
-                        TimeUnit.MILLISECONDS.sleep(waitMills);
+                    long waitMillis = sendTs - DateUtil.CacheMillisecond.current();
+                    if (waitMillis > 0) {
+                        TimeUnit.MILLISECONDS.sleep(waitMillis);
                     }
                     if (!running.get()) {
                         return;
                     }
                     ByteBuf buffer = toByteBuf(sample, sendTs);
-                    logger.info("client[{}] vin[{}] waitMills[{}]", clientNum.get(), vin, waitMills);
+                    logger.info("client[{}] vin[{}] waitMillis[{}]", clientNum.get(), vin, waitMillis);
                     channel.writeAndFlush(buffer);
                     sendNum.incrementAndGet();
                     sendTs += period * 1000L;

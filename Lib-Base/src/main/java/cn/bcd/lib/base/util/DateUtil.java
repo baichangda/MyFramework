@@ -27,7 +27,7 @@ public class DateUtil {
     private final static Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
 
-    public static Date clearMills(Date date) {
+    public static Date clearMillis(Date date) {
         long time = date.getTime();
         return new Date((time / 1000) * 1000);
     }

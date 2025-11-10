@@ -1,8 +1,8 @@
 package cn.bcd.lib.spring.redis.rateControl;
 
-import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.spring.redis.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -37,7 +37,7 @@ public class RedisRateControlUnit {
     private final String redisKeyReset;
     private final int timeInSecond;
     private final int maxAccessCount;
-    private final int waitMills;
+    private final int waitTimeWhenExceedInMillis;
     private final RedisTemplate<String, String> redisTemplate;
     private final ScheduledExecutorService resetExecutor;
     private volatile boolean reset;
@@ -45,17 +45,26 @@ public class RedisRateControlUnit {
     private ScheduledFuture<?> managerFuture;
     private ScheduledFuture<?> resetFuture;
 
+    /**
+     * 创建一个流量控制单元
+     *
+     * @param name                   名称、主要用于标识redis key和线程名
+     * @param timeInSecond           限定时间
+     * @param maxAccessCount         限定时间访问次数
+     * @param waitTimeWhenExceedInMillis 当发生超过访问次数的访问时候、线程等待的时间
+     * @param redisConnectionFactory
+     */
     public RedisRateControlUnit(String name,
                                 int timeInSecond,
                                 int maxAccessCount,
-                                int waitMills,
+                                int waitTimeWhenExceedInMillis,
                                 RedisConnectionFactory redisConnectionFactory) {
         this.name = name;
         this.redisKeyCount = REDIS_KEY_PRE_COUNT + name;
         this.redisKeyReset = REDIS_KEY_PRE_RESET + name;
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
-        this.waitMills = waitMills;
+        this.waitTimeWhenExceedInMillis = waitTimeWhenExceedInMillis;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
         this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
     }
@@ -126,7 +135,7 @@ public class RedisRateControlUnit {
         long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
         if (c >= maxAccessCount) {
             do {
-                TimeUnit.MILLISECONDS.sleep(waitMills);
+                TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
             } while (Optional.ofNullable(redisTemplate.opsForValue().get(redisKeyCount)).map(Integer::parseInt).orElse(0) >= maxAccessCount);
         }
     }

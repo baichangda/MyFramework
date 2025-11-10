@@ -15,7 +15,7 @@ public class LocalRateControlUnit {
     public final String name;
     public final int timeInSecond;
     public final int maxAccessCount;
-    public final int waitMills;
+    public final int waitTimeWhenExceedInMillis;
     public final ScheduledExecutorService resetExecutor;
     ScheduledFuture<?> scheduledFuture;
 
@@ -31,14 +31,22 @@ public class LocalRateControlUnit {
 
     public final AtomicInteger count = new AtomicInteger();
 
+    /**
+     * 创建一个流量控制单元
+     *
+     * @param name                       名称、用于线程名
+     * @param timeInSecond               限定时间
+     * @param maxAccessCount             限定时间访问次数
+     * @param waitTimeWhenExceedInMillis 当发生超过访问次数的访问时候、线程等待的时间
+     */
     public LocalRateControlUnit(String name,
                                 int timeInSecond,
                                 int maxAccessCount,
-                                int waitMills) {
+                                int waitTimeWhenExceedInMillis) {
         this.name = name;
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
-        this.waitMills = waitMills;
+        this.waitTimeWhenExceedInMillis = waitTimeWhenExceedInMillis;
         this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
     }
 
@@ -57,7 +65,7 @@ public class LocalRateControlUnit {
         final int c = count.addAndGet(i);
         if (c >= maxAccessCount) {
             do {
-                TimeUnit.MILLISECONDS.sleep(waitMills);
+                TimeUnit.MILLISECONDS.sleep(waitMillis);
             } while (count.get() >= maxAccessCount);
         }
     }
