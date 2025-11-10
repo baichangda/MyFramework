@@ -1,7 +1,5 @@
 dependencies {
     api project(":Lib-Base")
-    // https://mvnrepository.com/artifact/io.netty/netty-all
-    api group: 'io.netty', name: 'netty-buffer'
-    // https://mvnrepository.com/artifact/org.javassist/javassist
-    api group: 'org.javassist', name: 'javassist'
+    api("io.netty:netty-buffer")
+    api("org.javassist:javassist")
 }

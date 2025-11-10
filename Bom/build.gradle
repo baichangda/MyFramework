@@ -16,7 +16,7 @@ dependencies {
     api platform("org.springframework.ai:spring-ai-bom:1.0.2")
 
     constraints {
-        api("org.slf4j:slf4j-api':2.0.17")
+        api("org.slf4j:slf4j-api:2.0.17")
 
         api("com.google.guava:guava:33.5.0-jre")
 

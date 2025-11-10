@@ -2,12 +2,7 @@ dependencies {
 
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Base-Json")
-
-    // https://mvnrepository.com/artifact/io.netty/netty-all
-    implementation group: 'io.netty', name: 'netty-all'
-
-    implementation 'info.picocli:picocli'
-
-    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl'
+    implementation("io.netty:netty-all")
+    implementation("info.picocli:picocli")
+    implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
 }

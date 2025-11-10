@@ -2,12 +2,7 @@ dependencies {
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Base-Json")
     implementation project(":Lib-Base-Executor")
-
-    implementation 'info.picocli:picocli'
-
-    // https://mvnrepository.com/artifact/io.vertx/vertx-web
-    implementation group: 'io.vertx', name: 'vertx-web'
-
-    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j2-impl
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl'
+    implementation("info.picocli:picocli")
+    implementation("io.vertx:vertx-web")
+    implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
 }

@@ -5,13 +5,7 @@ dependencies {
     implementation project(":Lib-Spring-Vehicle-Command")
     implementation project(":Lib-Spring-Monitor-Client")
     implementation project(":Lib-Spring-Data-Init")
-
-    // https://mvnrepository.com/artifact/io.netty/netty-all
     implementation group: 'io.netty', name: 'netty-all'
-
-    //springboot log4j2支持
     implementation libs.spring.boot.starter.log4j2
-
-    // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
-    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
+    implementation("com.github.ben-manes.caffeine:caffeine")
 }
