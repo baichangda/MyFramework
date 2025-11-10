@@ -19,6 +19,7 @@ public class MyWebSocketServer {
     public HttpServer httpServer;
 
     /**
+     * 创建一个websocket服务
      * @param host             websocket服务地址
      * @param port             websocket服务端口
      * @param uri              可以为null
