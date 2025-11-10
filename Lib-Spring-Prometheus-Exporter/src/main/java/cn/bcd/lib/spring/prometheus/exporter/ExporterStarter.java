@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@ConditionalOnProperty("lib.spring.prometheus.exporter.port")
+@ConditionalOnProperty("lib.spring.prometheus.exporter.host")
 @EnableConfigurationProperties(ExporterProp.class)
 @Component
 class ExporterStarter implements CommandLineRunner {

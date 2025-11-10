@@ -6,6 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "lib.spring.prometheus.exporter")
 class ExporterProp {
-    public String host = "127.0.0.1";
+    public String host;
     public int port;
 }
