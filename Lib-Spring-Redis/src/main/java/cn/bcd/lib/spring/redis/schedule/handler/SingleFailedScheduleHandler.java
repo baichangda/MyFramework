@@ -23,8 +23,6 @@ public class SingleFailedScheduleHandler {
 
     static Logger logger = LoggerFactory.getLogger(SingleFailedScheduleHandler.class);
 
-    public final static long DEFAULT_ALIVE_TIME = 3000L;
-
     /**
      * 锁获取后存活时间
      * 单位(毫秒)

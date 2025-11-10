@@ -22,5 +22,5 @@ public @interface SingleFailedSchedule {
      *
      * @return
      */
-    long aliveTime() default SingleFailedScheduleHandler.DEFAULT_ALIVE_TIME;
+    long aliveTime() default 3000;
 }
