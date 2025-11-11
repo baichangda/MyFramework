@@ -27,7 +27,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
     final Processor<DataEncryptKeyExchange> processor_dataEncryptKeyExchange = Parser.getProcessor(DataEncryptKeyExchange.class);
 
     @Override
-    public PacketData process(ByteBuf data, ProcessContext<?> processContext) {
+    public PacketData process(ByteBuf data, ProcessContext processContext) {
         Packet packet = (Packet) processContext.instance;
         boolean cmd = packet.replyFlag == 0xfe;
         PacketFlag flag = packet.flag;
@@ -112,7 +112,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
     }
 
     @Override
-    public void deProcess(ByteBuf data, ProcessContext<?> processContext, PacketData instance) {
+    public void deProcess(ByteBuf data, ProcessContext processContext, PacketData instance) {
         Packet packet = (Packet) processContext.instance;
         PacketFlag flag = packet.flag;
         boolean cmd = packet.replyFlag == 0xfe;

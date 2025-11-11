@@ -6,15 +6,15 @@ import cn.bcd.lib.parser.base.util.BitBuf_writer;
 import cn.bcd.lib.parser.base.util.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
 
-public class ProcessContext<T> {
-    public final T instance;
-    public final ProcessContext<?> parentContext;
+public class ProcessContext {
+    public final Object instance;
+    public final ProcessContext parentContext;
     public final ByteBuf byteBuf;
     public BitBuf_reader bitBuf_reader;
     public BitBuf_writer bitBuf_writer;
     public int[] globalVars;
 
-    public ProcessContext(T instance, ProcessContext<?> parentContext) {
+    public ProcessContext(Object instance, ProcessContext parentContext) {
         this.instance = instance;
         this.parentContext = parentContext;
         this.byteBuf = parentContext.byteBuf;

@@ -41,7 +41,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
 
 
     @Override
-    public PacketBody process(ByteBuf data, ProcessContext<?> processContext) {
+    public PacketBody process(ByteBuf data, ProcessContext processContext) {
         Packet packet = (Packet) processContext.instance;
         PacketBody packetBody;
         switch (packet.header.msgId) {
@@ -220,7 +220,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
     }
 
     @Override
-    public void deProcess(ByteBuf data, ProcessContext<?> processContext, PacketBody instance) {
+    public void deProcess(ByteBuf data, ProcessContext processContext, PacketBody instance) {
         Packet packet = (Packet) processContext.instance;
         switch (packet.header.msgId) {
             case terminal_common_response, platform_common_response -> {

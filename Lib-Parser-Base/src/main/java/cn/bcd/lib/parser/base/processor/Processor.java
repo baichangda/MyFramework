@@ -17,7 +17,7 @@ public interface Processor<T> {
      * @return
      */
     default T process(final ByteBuf data) {
-        return process(data, new ProcessContext<>(data));
+        return process(data, new ProcessContext(data));
     }
 
     /**
@@ -29,7 +29,7 @@ public interface Processor<T> {
      * @return
      */
     default void deProcess(final ByteBuf data, T instance) {
-        deProcess(data, new ProcessContext<>(data), instance);
+        deProcess(data, new ProcessContext(data), instance);
     }
 
     /**
@@ -60,12 +60,12 @@ public interface Processor<T> {
      *
      * @return
      */
-    T process(final ByteBuf data, final ProcessContext<?> processContext);
+    T process(final ByteBuf data, final ProcessContext processContext);
 
     /**
      * @param data
      * @param processContext 和{{@link #process(ByteBuf)}}原理一致
      * @param instance
      */
-    void deProcess(final ByteBuf data, final ProcessContext<?> processContext, T instance);
+    void deProcess(final ByteBuf data, final ProcessContext processContext, T instance);
 }

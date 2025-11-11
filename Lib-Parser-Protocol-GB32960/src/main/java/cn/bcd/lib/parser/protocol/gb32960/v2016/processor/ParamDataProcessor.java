@@ -18,7 +18,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
     public final NumValGetter numValGetter = DefaultNumValGetter.instance;
 
     @Override
-    public ParamData process(ByteBuf data, ProcessContext<?> processContext) {
+    public ParamData process(ByteBuf data, ProcessContext processContext) {
         Object obj = processContext.instance;
         int num;
         if (obj instanceof ParamQueryResponse paramQueryResponse) {
@@ -137,7 +137,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
     }
 
     @Override
-    public void deProcess(ByteBuf data, ProcessContext<?> processContext, ParamData instance) {
+    public void deProcess(ByteBuf data, ProcessContext processContext, ParamData instance) {
         if (instance.localStorageTimeCycle != null) {
             data.writeByte(0x01);
             if (instance.localStorageTimeCycle__v == 0) {

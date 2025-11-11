@@ -14,7 +14,7 @@ public class VehicleLoginPackCodeProcessor implements Processor<String> {
     static Logger logger = LoggerFactory.getLogger(VehicleLoginPackCodeProcessor.class);
 
     @Override
-    public String process(ByteBuf data, ProcessContext<?> processContext) {
+    public String process(ByteBuf data, ProcessContext processContext) {
         VehicleLoginData vehicleLoginData = (VehicleLoginData) processContext.instance;
         byte[] packNums = vehicleLoginData.packNums;
         int sum = 0;
@@ -25,7 +25,7 @@ public class VehicleLoginPackCodeProcessor implements Processor<String> {
     }
 
     @Override
-    public void deProcess(ByteBuf data, ProcessContext<?> processContext, String instance) {
+    public void deProcess(ByteBuf data, ProcessContext processContext, String instance) {
         data.writeCharSequence(instance, StandardCharsets.UTF_8);
     }
 }
