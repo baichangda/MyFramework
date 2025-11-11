@@ -33,8 +33,8 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public VehicleRunData process(ByteBuf data, ProcessContext<?> processContext) {
-        ProcessContext<?> parentContext = new ProcessContext<>(data, processContext);
         VehicleRunData instance = new VehicleRunData();
+        ProcessContext<?> parentContext = new ProcessContext<>(instance, processContext);
         instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
         final Packet packet = (Packet) processContext.instance;
         int allLen = packet.contentLength - 6;
@@ -108,7 +108,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext<?> processContext, VehicleRunData instance) {
-        ProcessContext<?> parentContext = new ProcessContext<>(data, processContext);
+        ProcessContext<?> parentContext = new ProcessContext<>(instance, processContext);
         FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
         if (instance.vehicleBaseData != null) {
             data.writeByte(1);
