@@ -37,6 +37,12 @@ public class CompileUtil {
         // 设置编译输出目录
         fileManager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outputDirPath.toFile()));
 
+        //添加classpath，包含当前线程的类路径（解决依赖问题）
+        List<String> options = List.of(
+                "-classpath",
+                System.getProperty("java.class.path") + File.pathSeparator + outputDirPath.toAbsolutePath()
+        );
+
         //创建编译任务
         JavaFileObject sourceFile = new StringJavaFileObject(className, sourceCode); // 字符串源码对象
         Iterable<? extends JavaFileObject> compilationUnits = List.of(sourceFile);
@@ -44,7 +50,7 @@ public class CompileUtil {
                 null,               // 输出流（null表示默认）
                 fileManager,        // 文件管理器
                 diagnostics,        // 诊断收集器
-                null,               // 编译选项（例如 -classpath）
+                options,               // 编译选项
                 null,               // 要处理的注解类
                 compilationUnits    // 待编译的源码
         );
@@ -53,12 +59,26 @@ public class CompileUtil {
         boolean success = task.call();
         fileManager.close();
 
-        //检查编译是否成功（失败则打印错误）
         if (!success) {
-            StringBuilder errorMsg = new StringBuilder("compile failed：");
+            StringBuilder errorMsg = new StringBuilder("compile failed（类名：" + className + "）：\n");
             for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
-                errorMsg.append("\n").append(diagnostic.getMessage(null));
+                // 错误类型（ERROR/WARNING/NOTE）
+                String kind = diagnostic.getKind().name();
+                // 行号（-1 表示无行号信息）
+                long line = diagnostic.getLineNumber();
+                // 列号（-1 表示无列号信息）
+                long column = diagnostic.getColumnNumber();
+                // 错误描述
+                String msg = diagnostic.getMessage(null);
+
+                // 拼接格式化的错误信息
+                errorMsg.append("[").append(kind).append("]")
+                        .append(line != -1 ? " 行：" + line : "")
+                        .append(column != -1 ? " 列：" + column : "")
+                        .append("：").append(msg)
+                        .append("\n");
             }
+            // 抛出包含详细信息的异常
             throw BaseException.get(errorMsg.toString());
         }
 
@@ -75,33 +95,20 @@ public class CompileUtil {
             this.classDir = classDir;
         }
 
-        //重写findClass方法，加载指定类
         @Override
         protected Class<?> findClass(String className) throws ClassNotFoundException {
             try {
-                //拼接class文件路径（例如 ./classes/DynamicClass.class）
-                String classFilePath = classDir + File.separator + className.replace('.', File.separatorChar) + ".class";
-                File classFile = new File(classFilePath);
-                if (!classFile.exists()) {
+                // 拼接路径为Path（更现代的API）
+                Path classFilePath = Paths.get(classDir)
+                        .resolve(className.replace('.', File.separatorChar) + ".class");
+                if (!Files.exists(classFilePath)) {
                     throw new ClassNotFoundException("class文件不存在：" + classFilePath);
                 }
-
-                //读取class文件字节流
-                FileInputStream fis = new FileInputStream(classFile);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = fis.read(buffer)) != -1) {
-                    bos.write(buffer, 0, len);
-                }
-                byte[] classBytes = bos.toByteArray();
-                fis.close();
-                bos.close();
-
-                //定义类（将字节流转换为Class对象）
+                // 直接读取字节数组
+                byte[] classBytes = Files.readAllBytes(classFilePath);
                 return defineClass(className, classBytes, 0, classBytes.length);
             } catch (IOException e) {
-                throw new ClassNotFoundException("加载class文件失败", e);
+                throw new ClassNotFoundException("加载class文件失败：" + e.getMessage(), e);
             }
         }
     }
