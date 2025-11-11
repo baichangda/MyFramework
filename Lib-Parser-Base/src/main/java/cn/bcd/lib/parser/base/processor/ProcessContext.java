@@ -5,13 +5,26 @@ import cn.bcd.lib.parser.base.util.BitBuf_reader_log;
 import cn.bcd.lib.parser.base.util.BitBuf_writer;
 import cn.bcd.lib.parser.base.util.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
+import cn.bcd.lib.parser.base.anno.F_bit_num;
+import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 public class ProcessContext {
     public final Object instance;
     public final ProcessContext parentContext;
     public final ByteBuf byteBuf;
+
+    /**
+     * 在解析过程中如果用到如下注解
+     * {@link F_bit_num}
+     * {@link F_bit_num_array}
+     * 则会在解析过程中赋值、参考{@link #getBitBuf_reader()}、{@link #getBitBuf_writer()}
+     */
     public BitBuf_reader bitBuf_reader;
     public BitBuf_writer bitBuf_writer;
+
+    /**
+     * 全局变量定义
+     */
     public int[] globalVars;
 
     public ProcessContext(Object instance, ProcessContext parentContext) {
