@@ -32,6 +32,7 @@ public @interface F_customize {
      * 处理类参数
      * 在new {@link #processorClass()}时候、会传入指定参数、以,分割
      * 空字符串、则不传入参数
+     * 如果传入参数、要求指定处理类必须有此构造方法
      * 参数类型支持java类型有、int、long、float、double、String
      * 例如有5个参数
      * int、long、float、double、String
