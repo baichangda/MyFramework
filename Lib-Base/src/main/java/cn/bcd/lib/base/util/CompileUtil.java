@@ -3,9 +3,7 @@ package cn.bcd.lib.base.util;
 import cn.bcd.lib.base.exception.BaseException;
 
 import javax.tools.*;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -31,34 +29,32 @@ public class CompileUtil {
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 
         //创建文件管理器（指定编译输出目录）
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
-        //输出目录（例如当前目录下的classes文件夹）
-        Files.createDirectories(outputDirPath);
-        // 设置编译输出目录
-        fileManager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outputDirPath.toFile()));
+        boolean success;
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {
+            //输出目录（例如当前目录下的classes文件夹）
+            Files.createDirectories(outputDirPath);
+            // 设置编译输出目录
+            fileManager.setLocation(StandardLocation.CLASS_OUTPUT, List.of(outputDirPath.toFile()));
+            //添加classpath，包含当前线程的类路径（解决依赖问题）
+            List<String> options = List.of(
+                    "-classpath",
+                    System.getProperty("java.class.path") + File.pathSeparator + outputDirPath.toAbsolutePath()
+            );
 
-        //添加classpath，包含当前线程的类路径（解决依赖问题）
-        List<String> options = List.of(
-                "-classpath",
-                System.getProperty("java.class.path") + File.pathSeparator + outputDirPath.toAbsolutePath()
-        );
-
-        //创建编译任务
-        JavaFileObject sourceFile = new StringJavaFileObject(className, sourceCode); // 字符串源码对象
-        Iterable<? extends JavaFileObject> compilationUnits = List.of(sourceFile);
-        JavaCompiler.CompilationTask task = compiler.getTask(
-                null,               // 输出流（null表示默认）
-                fileManager,        // 文件管理器
-                diagnostics,        // 诊断收集器
-                options,               // 编译选项
-                null,               // 要处理的注解类
-                compilationUnits    // 待编译的源码
-        );
-
-        //执行编译任务
-        boolean success = task.call();
-        fileManager.close();
-
+            //创建编译任务
+            JavaFileObject sourceFile = new StringJavaFileObject(className, sourceCode); // 字符串源码对象
+            Iterable<? extends JavaFileObject> compilationUnits = List.of(sourceFile);
+            JavaCompiler.CompilationTask task = compiler.getTask(
+                    null,           // 输出流（null表示默认）
+                    fileManager,        // 文件管理器
+                    diagnostics,        // 诊断收集器
+                    options,            // 编译选项
+                    null,               // 要处理的注解类
+                    compilationUnits    // 待编译的源码
+            );
+            //执行编译任务
+            success = task.call();
+        }
         if (!success) {
             StringBuilder errorMsg = new StringBuilder("compile failed（类名：" + className + "）：\n");
             for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
@@ -70,7 +66,6 @@ public class CompileUtil {
                 long column = diagnostic.getColumnNumber();
                 // 错误描述
                 String msg = diagnostic.getMessage(null);
-
                 // 拼接格式化的错误信息
                 errorMsg.append("[").append(kind).append("]")
                         .append(line != -1 ? " 行：" + line : "")
@@ -84,7 +79,6 @@ public class CompileUtil {
 
         //加载类
         CustomClassLoader classLoader = new CustomClassLoader(outputDirPath.toAbsolutePath().toString());
-
         return classLoader.loadClass(className);
     }
 
@@ -97,18 +91,17 @@ public class CompileUtil {
 
         @Override
         protected Class<?> findClass(String className) throws ClassNotFoundException {
+            Path classFilePath = Paths.get(classDir)
+                    .resolve(className.replace('.', File.separatorChar) + ".class");
             try {
-                // 拼接路径为Path（更现代的API）
-                Path classFilePath = Paths.get(classDir)
-                        .resolve(className.replace('.', File.separatorChar) + ".class");
                 if (!Files.exists(classFilePath)) {
-                    throw new ClassNotFoundException("class文件不存在：" + classFilePath);
+                    throw new ClassNotFoundException("classFile[" + classFilePath + "] not exist");
                 }
                 // 直接读取字节数组
                 byte[] classBytes = Files.readAllBytes(classFilePath);
                 return defineClass(className, classBytes, 0, classBytes.length);
             } catch (IOException e) {
-                throw new ClassNotFoundException("加载class文件失败：" + e.getMessage(), e);
+                throw BaseException.get("load classFile[{}] error", classFilePath, e);
             }
         }
     }
@@ -132,24 +125,41 @@ public class CompileUtil {
 
     public static void main(String[] args) {
         try {
-            // 编译源码，获取class文件目录
-            Class<?> clazz1 = compile("DynamicClass", """
-                    public class DynamicClass {
+            String sourceCode1 = """
+                    package cn.bcd;
+                    public class Test1 {
                         private String message;
-                        public DynamicClass(String msg) {
+                        public Test1(String msg) {
                             this.message = msg;
                         }
-                        public void print() {
-                            System.out.println("动态类输出：" + message);
+                        public void test() {
+                            System.out.println(message);
                         }
                     }
-                    """, Paths.get("classes"));
+                    """;
+            // 编译源码，获取class文件目录
+            Class<?> clazz1 = compile("cn.bcd.Test1", sourceCode1, Paths.get("classes"));
             // 反射实例化并调用方法
-            Object instance = clazz1.getConstructor(String.class).newInstance("Hello, Dynamic!");
-            clazz1.getMethod("print").invoke(instance); // 输出：动态类输出：Hello, Dynamic!
-            Class<?> clazz2 = compile("cn.bcd.lib.base.util.DateUtilTest", Paths.get("d:/test.txt"), Paths.get("classes"));
-            Date res2 = (Date) clazz2.getMethod("clearMillis", Date.class).invoke(null, new Date());
-            System.out.println(res2.getTime());
+            Object instance1 = clazz1.getConstructor(String.class).newInstance("Hello,Test1");
+            clazz1.getMethod("test").invoke(instance1);
+
+
+            String sourceCode2 = """
+                            package cn.bcd.test;
+                            public class Test2 {
+                                private String message;
+                                public Test2(String msg) {
+                                    this.message = msg;
+                                }
+                                public void test() {
+                                    System.out.println(message);
+                                }
+                            }
+                    """;
+            Files.write(Paths.get("tempSourceCode.txt"), sourceCode2.getBytes());
+            Class<?> clazz2 = compile("cn.bcd.test.Test2", Paths.get("tempSourceCode.txt"), Paths.get("classes"));
+            Object instance2 = clazz2.getConstructor(String.class).newInstance("Hello,Test2");
+            clazz2.getMethod("test").invoke(instance2);
         } catch (Exception e) {
             e.printStackTrace();
         }
