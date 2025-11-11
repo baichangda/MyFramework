@@ -146,20 +146,19 @@ public class CompileUtil {
 
             String sourceCode2 = """
                             package cn.bcd.test;
+                            import java.util.Date;
                             public class Test2 {
-                                private String message;
-                                public Test2(String msg) {
-                                    this.message = msg;
+                                public Test2() {
                                 }
-                                public void test() {
-                                    System.out.println(message);
+                                public Date now() {
+                                    return new Date();
                                 }
                             }
                     """;
-            Files.write(Paths.get("tempSourceCode.txt"), sourceCode2.getBytes());
-            Class<?> clazz2 = compile("cn.bcd.test.Test2", Paths.get("tempSourceCode.txt"), Paths.get("classes"));
-            Object instance2 = clazz2.getConstructor(String.class).newInstance("Hello,Test2");
-            clazz2.getMethod("test").invoke(instance2);
+            Class<?> clazz2 = compile("cn.bcd.test.Test2", sourceCode2, Paths.get("classes"));
+            Object instance2 = clazz2.getConstructor().newInstance();
+            Date now = (Date)clazz2.getMethod("now").invoke(instance2);
+            System.out.println(now);
         } catch (Exception e) {
             e.printStackTrace();
         }
