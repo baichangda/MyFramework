@@ -517,6 +517,13 @@ public class ParseUtil {
         return map;
     }
 
+    /**
+     * 获取当前类及其所有字段解析所占用字节长度
+     * 如果无法确定、则返回-1
+     * 无法确定的情况一般是长度用到了lenExpr表达式
+     * @param clazz
+     * @return
+     */
     public static int getClassByteLenIfPossible(Class<?> clazz) {
 
         int all = 0;
