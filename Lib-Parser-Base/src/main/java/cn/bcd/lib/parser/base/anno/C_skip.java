@@ -6,19 +6,19 @@ import io.netty.buffer.ByteBuf;
 import java.lang.annotation.*;
 
 /**
- * 适用于任何类、会被子类继承
- * 用于标定类中所有解析字段应该占用的字节
- * 如果解析未达到指定长度、则skip
- * 反解析未达到指定长度、则write byte 0
- * <p>
- * 其实现有两种情况、取决于是否能统计出类的所有字段总字节长度、即{@link ParseUtil#getClassByteLenIfPossible(Class)}
- * 1、可以统计出来具体的字节长度
- * 2、如果统计不出来字节长度
- *   对于解析、则在类开始和结尾加入代码记录{@link ByteBuf#readerIndex()}、求差
- *   对于反解析、则是记录{@link ByteBuf#writerIndex()}
- *
- * 注意:
- * 如果类最后一个字段是{@link F_bit_num}、{@link F_bit_num_array}、需要保证skip之前的bit解析不存在多余的bit
+ * 适用于任何类、会被子类继承<br>
+ * 用于标定类中所有解析字段应该占用的字节<br>
+ * 如果解析未达到指定长度、则skip<br>
+ * 反解析未达到指定长度、则write byte 0<br>
+ * <br>
+ * 其实现有两种情况、取决于是否能统计出类的所有字段总字节长度、即{@link ParseUtil#getClassByteLenIfPossible(Class)}<br>
+ * 1、可以统计出来具体的字节长度<br>
+ * 2、如果统计不出来字节长度<br>
+ *   对于解析、则在类开始和结尾加入代码记录{@link ByteBuf#readerIndex()}、求差<br>
+ *   对于反解析、则是记录{@link ByteBuf#writerIndex()}<br>
+ * <br>
+ * 注意:<br>
+ * 如果类最后一个字段是{@link F_bit_num}、{@link F_bit_num_array}、需要保证skip之前的bit解析不存在多余的bit<br>
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
