@@ -68,7 +68,7 @@ public class MonitorCollector {
         Map<String, MonitorData> serverId_monitorData = list.stream().collect(Collectors.toMap(e -> e.serverId, e -> e));
         for (ServerData serverData : serverDataList) {
             SaveData saveData = new SaveData(serverData, batch, serverId_monitorData.get(serverData.serverId));
-            logger.info("receive batch[{}] serverId[{}] status[{}]", saveData.batch, saveData.serverId, saveData.status);
+            logger.info("batch[{}] serverId[{}] status[{}]", saveData.batch, saveData.serverId, saveData.status);
             saveDataList.add(saveData);
         }
         insert(saveDataList);
