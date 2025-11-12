@@ -44,7 +44,7 @@ public class MqttConfiguration implements ApplicationListener<ContextRefreshedEv
         client = MqttClient.builder()
                 .useMqttVersion5()
                 .identifier(mqttProp.getMqttClientId())
-                .sslWithDefaultConfig()
+//                .sslWithDefaultConfig()
                 .serverHost(mqttProp.getMqttServerHost())
                 .serverPort(mqttProp.getMqttServerPort())
                 .automaticReconnectWithDefaultConfig()

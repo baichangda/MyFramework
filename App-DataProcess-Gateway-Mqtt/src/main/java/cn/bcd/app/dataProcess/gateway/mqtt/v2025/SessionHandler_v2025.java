@@ -27,10 +27,14 @@ public class SessionHandler_v2025 implements DataHandler_v2025 {
     GatewayProp gatewayProp;
 
     @Autowired
-    KafkaTemplate<byte[], byte[]> kafkaTemplate;
+    KafkaTemplate<String, byte[]> kafkaTemplate;
 
-    @Autowired
     VehicleConsumeExecutorGroup vehicleConsumeExecutorGroup;
+
+    @Override
+    public void setConsumeExecutorGroup(VehicleConsumeExecutorGroup vehicleConsumeExecutorGroup) {
+        this.vehicleConsumeExecutorGroup = vehicleConsumeExecutorGroup;
+    }
 
     @Override
     public void init(String vin, Context_v2025 context) throws Exception {

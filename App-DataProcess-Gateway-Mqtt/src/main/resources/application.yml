@@ -4,12 +4,12 @@ spring:
   #  kafka配置
   kafka:
     consumer:
-      bootstrap-servers: 10.0.11.50:19092
+      bootstrap-servers: 127.0.0.1:19092
       group-id: tsp-gateway
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:
-      bootstrap-servers: 10.0.11.50:19092
+      bootstrap-servers: 127.0.0.1:19092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
     #解析数据专用topic
@@ -39,14 +39,6 @@ spring:
       host: 10.0.11.50
       port: 36379
 
-mqtt:
-  serverHost: tbox.wq.incarcloud.com
-  serverPort: 38800
-  clientId: bcd-gw
-  topic: vin/+
-  responseTopicPrefix: vin-resp/
-  consumeThreadNum: 4
-
 lib:
   spring:
     vehicle:
@@ -61,7 +53,7 @@ gateway:
   sessionTopic: gw-session
   parseTopic: gw-parse
   mqttServerHost: 127.0.0.1
-  mqttServerPort: 18883
+  mqttServerPort: 38800
   mqttClientId: gw1
   mqttConsumeTopic: vin/+
   mqttConsumeThreadNum: 8

@@ -1,9 +1,13 @@
 package cn.bcd.app.dataProcess.gateway.mqtt.v2025;
 
 
+import cn.bcd.app.dataProcess.gateway.mqtt.VehicleConsumeExecutorGroup;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 
 public interface DataHandler_v2025 {
+
+    default void setConsumeExecutorGroup(VehicleConsumeExecutorGroup vehicleConsumeExecutorGroup){};
+
     default void init(String vin, Context_v2025 context) throws Exception{}
 
     default void destroy(String vin, Context_v2025 context) throws Exception{};

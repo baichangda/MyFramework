@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,12 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 @ConditionalOnProperty(value = "lib.spring.storage.mongo.dbs")
+@Component
 public class MongoUtil {
 
     public static int dbNum;
     public static MongoTemplate[] mongoTemplates;
 
-    public MongoUtil(@Value("${lib.storage.mongo.dbs}") String[] mongodbs) {
+    public MongoUtil(@Value("${lib.spring.storage.mongo.dbs}") String[] mongodbs) {
         dbNum = mongodbs.length;
         mongoTemplates = new MongoTemplate[dbNum];
         for (int i = 0; i < dbNum; i++) {

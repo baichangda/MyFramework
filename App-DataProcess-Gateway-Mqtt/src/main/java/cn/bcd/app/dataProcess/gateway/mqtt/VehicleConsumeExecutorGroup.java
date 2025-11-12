@@ -56,6 +56,13 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
                         Optional.ofNullable(e.getClass().getAnnotation(Order.class)).map(v -> v.value() + "").orElse(""),
                         e.getClass().getName()))
                 .collect(Collectors.joining("\n")));
+
+        for (DataHandler_v2016 handler : handlers_v2016) {
+            handler.setConsumeExecutorGroup(this);
+        }
+        for (DataHandler_v2025 handler : handlers_v2025) {
+            handler.setConsumeExecutorGroup(this);
+        }
         init();
     }
 

@@ -97,7 +97,7 @@ spring:
     consumer:
       #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
       #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
-      bootstrap-servers: 172.31.96.1:19092
+      bootstrap-servers: 127.0.0.1:19092
       group-id: ${spring.application.name}
       key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -109,7 +109,7 @@ spring:
     producer:
       #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
       #      bootstrap-servers: kafka-dev-1:9092,kafka-dev-2:9093,kafka-dev-3:9094
-      bootstrap-servers: 172.31.96.1:19092
+      bootstrap-servers: 127.0.0.1:19092
       key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
     listener:

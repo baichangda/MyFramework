@@ -11,7 +11,7 @@ spring:
       #公用配置
       database: 0
       timeout: 60000
-      password: incar@2023
+      password: bcd
       #异步lettuce连接池(默认)
       lettuce:
         pool:
@@ -36,17 +36,17 @@ spring:
       #         - 114.115.141.139:7006
       #单机配置
       host: ${server_host:127.0.0.1}
-      port: 6379
+      port: 16379
       ssl:
         enabled: false
   kafka:
     consumer:
-      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      bootstrap-servers: ${kafka_bootstrap:127.0.0.1:19092}
       group-id: ${parse.id}
       key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:
-      bootstrap-servers: ${kafka_bootstrap:192.168.23.129:9092}
+      bootstrap-servers: ${kafka_bootstrap:127.0.0.1:19092}
       key-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
 
@@ -54,7 +54,7 @@ lib:
   spring:
     storage:
       mongo:
-        dbs: mongodb://bcd:bcd@192.168.23.129:27017/gw1,mongodb://bcd:bcd@192.168.23.129:27017/gw2,mongodb://bcd:bcd@192.168.23.129:27017/gw3
+        dbs: mongodb://root:root@127.0.0.1:27017/db1,mongodb://root:root@127.0.0.1:27017/db2,mongodb://root:root@127.0.0.1:27017/db3
     monitor:
       client:
         requestTopic: monitorRequest
