@@ -5,7 +5,7 @@ dependencies {
     implementation project(":Lib-Spring-Vehicle-Command")
     implementation project(":Lib-Spring-Monitor-Client")
     implementation project(":Lib-Spring-Data-Init")
-    implementation group: 'io.netty', name: 'netty-all'
+    implementation("io.netty:netty-all")
     implementation libs.spring.boot.starter.log4j2
     implementation("com.github.ben-manes.caffeine:caffeine")
 }

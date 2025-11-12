@@ -39,7 +39,7 @@ spring:
       #         - 114.115.141.139:7006
       #单机配置
       host: ${server_host:127.0.0.1}
-      port: 6379
+      port: 16379
       ssl:
         enabled: false
   kafka:

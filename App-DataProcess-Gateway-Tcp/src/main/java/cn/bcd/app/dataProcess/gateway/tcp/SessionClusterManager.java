@@ -22,7 +22,7 @@ public class SessionClusterManager {
     GatewayProp gatewayProp;
 
     @Autowired
-    KafkaTemplate<byte[], byte[]> kafkaTemplate;
+    KafkaTemplate<String, byte[]> kafkaTemplate;
 
     @KafkaListener(topics = "${gateway.sessionTopic}")
     public void listen(ConsumerRecord<byte[], byte[]> consumerRecord) {
