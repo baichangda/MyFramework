@@ -19,7 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Date;
@@ -103,7 +104,7 @@ public class TcpClient {
             TcpClient.platformStatusSender = platformStatusSender;
             TcpClient.tcpDataHandlers = tcpDataHandlers;
             TcpClient.bootstrap = new Bootstrap();
-            TcpClient.bootstrap.group(new NioEventLoopGroup());
+            TcpClient.bootstrap.group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory(SelectorProvider.provider())));
             TcpClient.bootstrap.channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true);
             TcpClient.bootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override

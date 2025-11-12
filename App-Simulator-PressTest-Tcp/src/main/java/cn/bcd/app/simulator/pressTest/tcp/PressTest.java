@@ -8,7 +8,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -98,7 +99,7 @@ public abstract class PressTest<T> implements Runnable {
             boolean add = false;
             try {
                 Bootstrap bootstrap = new Bootstrap();
-                bootstrap.group(new NioEventLoopGroup());
+                bootstrap.group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()));
                 bootstrap.channel(NioSocketChannel.class);
                 bootstrap.option(ChannelOption.TCP_NODELAY, true);
                 bootstrap.handler(new ChannelInitializer<SocketChannel>() {

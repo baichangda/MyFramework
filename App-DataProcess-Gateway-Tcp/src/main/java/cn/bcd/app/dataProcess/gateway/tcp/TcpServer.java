@@ -2,27 +2,19 @@ package cn.bcd.app.dataProcess.gateway.tcp;
 
 import cn.bcd.lib.base.common.Initializable;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @EnableConfigurationProperties(GatewayProp.class)
@@ -45,8 +37,8 @@ public class TcpServer implements CommandLineRunner {
         Initializable.initByOrder(initList);
 
         Thread.startVirtualThread(() -> {
-            final EventLoopGroup boosGroup = new NioEventLoopGroup();
-            final EventLoopGroup workerGroup = new NioEventLoopGroup();
+            final EventLoopGroup boosGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+            final EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
             try {
                 final ServerBootstrap serverBootstrap = new ServerBootstrap();
                 serverBootstrap.group(boosGroup, workerGroup).channel(NioServerSocketChannel.class).childHandler(
