@@ -253,6 +253,16 @@ public class PacketUtil {
         return response;
     }
 
+    public static byte[] build_bytes_common_response(ByteBuf data, byte replyFlag) {
+        byte[] response = new byte[31];
+        data.getBytes(0, response, 0, 30);
+        response[3] = replyFlag;
+        response[22] = 0;
+        response[23] = 6;
+        fix_code(response);
+        return response;
+    }
+
     /**
      * 构造平台登录报文
      *

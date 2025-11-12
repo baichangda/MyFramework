@@ -38,3 +38,5 @@ include 'App-Tool-Kafka-Client-Web'
 include 'App-Tool-Stock'
 include 'App-AI-MCP-Server'
 include 'App-DataProcess-Gateway-Mqtt'
+
+include 'App-Transponder-GB32960'

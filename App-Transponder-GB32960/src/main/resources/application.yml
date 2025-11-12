@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: transponder-gb32960
+  threads:
+    virtual:
+      enabled: true
+  # 允许循环依赖
+  main:
+    allow-circular-references: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+  web:
+    resources:
+      chain:
+        cache: false
+  profiles:
+    active: dev
+  freemarker:
+    checkTemplateLocation: false
