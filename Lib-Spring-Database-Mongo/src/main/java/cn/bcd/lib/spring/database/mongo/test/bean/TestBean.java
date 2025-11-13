@@ -23,7 +23,6 @@ public class TestBean extends SuperBaseBean {
         CollectionConfig config = new CollectionConfig("Test", "测试", TestBean.class);
         config.needCreateControllerFile = true;
         config.needCreateServiceFile = true;
-        config.needValidateSaveParam = true;
         CodeGenerator.generate(config);
     }
 }

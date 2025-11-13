@@ -117,7 +117,6 @@ public class CodeGenerator {
         data.moduleName = config.moduleName;
         data.packagePre = initPackagePre(config);
         data.fieldList = initBeanField(config);
-        data.validateSaveParam = config.needValidateSaveParam;
         data.requestMappingPre = initRequestMappingPre(data.packagePre);
         return data;
     }

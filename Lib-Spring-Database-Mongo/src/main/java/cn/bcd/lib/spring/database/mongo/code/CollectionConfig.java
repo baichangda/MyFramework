@@ -21,8 +21,6 @@ public class CollectionConfig {
     public boolean needCreateServiceFile = true;
     //是否创建controller文件(默认是)
     public boolean needCreateControllerFile = true;
-    //是否需要加上controller save方法的验证注解
-    public boolean needValidateSaveParam = false;
 
     public CollectionConfig(String moduleName, String moduleNameCN, Class<?> clazz) {
         this.moduleName = moduleName;
