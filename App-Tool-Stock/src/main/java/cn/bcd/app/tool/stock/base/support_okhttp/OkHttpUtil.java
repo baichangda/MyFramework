@@ -12,7 +12,7 @@ public class OkHttpUtil {
     static Logger logger = LoggerFactory.getLogger(OkHttpUtil.class);
 
     public final static OkHttpClient client = new OkHttpClient.Builder()
-            .addInterceptor(newHttpLoggingInterceptor())
+//            .addInterceptor(newHttpLoggingInterceptor())
             .connectTimeout(Duration.ofSeconds(10))
             .readTimeout(Duration.ofSeconds(30))
             .writeTimeout(Duration.ofSeconds(30))

@@ -1,21 +1,19 @@
 package cn.bcd.app.tool.stock.business.bean;
 
+import cn.bcd.app.tool.stock.base.support_eastmoney.CashFlowData;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
-import cn.bcd.lib.spring.database.jdbc.anno.Unique;
-import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Date;
-import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
-import java.math.BigDecimal;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.io.Serial;
 
 /**
- *  资金流向
+ * 资金流向
  */
 @Getter
 @Setter
@@ -29,6 +27,11 @@ public class CashFlowBean extends SuperBaseBean {
     @NotBlank(message = "[股票号码]不能为空")
     @Size(max = 20, message = "[股票号码]长度不能超过20")
     public String code;
+
+    @Schema(description = "天", requiredMode = Schema.RequiredMode.REQUIRED, maxLength = 10)
+    @NotBlank(message = "[天]不能为空")
+    @Size(max = 10, message = "[天]长度不能超过10")
+    public String day;
 
     @Schema(description = "分钟时间", requiredMode = Schema.RequiredMode.REQUIRED, maxLength = 20)
     @NotBlank(message = "[分钟时间]不能为空")
@@ -54,5 +57,18 @@ public class CashFlowBean extends SuperBaseBean {
     @Schema(description = "小单净流入", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "[小单净流入]不能为空")
     public Double d5;
+
+    public static CashFlowBean from(String code, CashFlowData data) {
+        CashFlowBean bean = new CashFlowBean();
+        bean.code = code;
+        bean.minute = data.minute;
+        bean.day = data.minute.substring(0, 10);
+        bean.d1 = data.d1;
+        bean.d2 = data.d2;
+        bean.d3 = data.d3;
+        bean.d4 = data.d4;
+        bean.d5 = data.d5;
+        return bean;
+    }
 
 }
