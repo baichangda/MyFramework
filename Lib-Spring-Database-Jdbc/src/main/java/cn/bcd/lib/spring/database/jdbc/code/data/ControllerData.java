@@ -29,8 +29,4 @@ public class ControllerData {
      */
     public List<BeanField> fieldList;
 
-    /**
-     * 是否需要保存方法验证
-     */
-    public boolean validateSaveParam = true;
 }

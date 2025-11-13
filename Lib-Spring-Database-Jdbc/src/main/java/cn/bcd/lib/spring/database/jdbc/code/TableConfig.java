@@ -19,10 +19,6 @@ public class TableConfig {
     public boolean needCreateServiceFile = true;
     //是否创建controller文件(默认是)
     public boolean needCreateControllerFile = true;
-    //是否需要创建bean时候加入字段验证注解
-    public boolean needValidateBeanField = true;
-    //是否需要加上controller save方法的验证注解
-    public boolean needValidateSaveParam = true;
 
     public static Helper newHelper() {
         return new Helper();
@@ -36,10 +32,6 @@ public class TableConfig {
         public boolean needCreateServiceFile = true;
         //是否创建controller文件(默认是)
         public boolean needCreateControllerFile = true;
-        //是否需要创建bean时候加入字段验证注解
-        public boolean needValidateBeanField = true;
-        //是否需要加上controller save方法的验证注解
-        public boolean needValidateSaveParam = true;
 
         //模块名(英文)
         public List<String> moduleName = new ArrayList<>();
@@ -69,8 +61,6 @@ public class TableConfig {
                 tableConfig.needCreateBeanFile = this.needCreateBeanFile;
                 tableConfig.needCreateServiceFile = this.needCreateServiceFile;
                 tableConfig.needCreateControllerFile = this.needCreateControllerFile;
-                tableConfig.needValidateBeanField = this.needValidateBeanField;
-                tableConfig.needValidateSaveParam = this.needValidateSaveParam;
                 res.add(tableConfig);
             }
             return res;

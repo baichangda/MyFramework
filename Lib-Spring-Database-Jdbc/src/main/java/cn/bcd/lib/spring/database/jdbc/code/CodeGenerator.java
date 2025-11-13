@@ -162,7 +162,6 @@ public class CodeGenerator {
         data.moduleName = tableConfig.moduleName;
         data.packagePre = context.getPackagePre();
         data.fieldList = context.getAllBeanFields();
-        data.validateSaveParam = tableConfig.needValidateSaveParam;
         data.requestMappingPre = context.getRequestMappingPre();
         return data;
     }

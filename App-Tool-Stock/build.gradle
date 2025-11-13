@@ -1,12 +1,9 @@
 dependencies {
     implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Base-Json")
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
-    implementation('org.springframework.boot:spring-boot-starter')
+    implementation project(":Lib-Spring-Database-Jdbc")
     implementation('org.springframework.boot:spring-boot-starter-web')
-    //springboot log4j2支持
     implementation('org.springframework.boot:spring-boot-starter-log4j2')
-    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
     // define any required OkHttp artifacts without version
     implementation("com.squareup.okhttp3:okhttp")
