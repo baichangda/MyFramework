@@ -47,7 +47,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 0,
                 WorkHandlerScanner.get(300, 300),
                 5,
-                ConsumerParam.get_singleConsumer_subscribeTopics(parseProp.topic));
+                ConsumerParam.get_singleConsumer(parseProp.topic));
         this.handlers_v2016 = handlers_v2016;
         this.handlers_v2025 = handlers_v2025;
         logger.info("""

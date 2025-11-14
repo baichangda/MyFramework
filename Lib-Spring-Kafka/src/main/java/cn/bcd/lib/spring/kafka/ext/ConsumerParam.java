@@ -3,6 +3,7 @@ package cn.bcd.lib.spring.kafka.ext;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 public class ConsumerParam {
@@ -30,18 +31,59 @@ public class ConsumerParam {
         this.topicPartitions = topicPartitions;
     }
 
+    /**
+     * 启动单线程、一个消费者、消费topic的指定分区
+     * 如果分区参数为空、则消费topic的所有分区
+     * @param topic
+     * @param partitions
+     * @return
+     */
+    public static ConsumerParam get_singleConsumer(String topic, int... partitions) {
+        if (partitions.length == 0) {
+            return get_singleConsumer_subscribeTopics(topic);
+        } else {
+            TopicPartition[] arr = Arrays.stream(partitions).mapToObj(e -> new TopicPartition(topic, e)).toArray(TopicPartition[]::new);
+            return get_singleConsumer_assignTopicPartitions(arr);
+        }
+    }
+
+    /**
+     * 启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Collection)}消费{@link #topics}
+     *
+     * @param topics
+     * @return
+     */
     public static ConsumerParam get_singleConsumer_subscribeTopics(String... topics) {
         return new ConsumerParam(1, topics, null);
     }
 
+    /**
+     * 启动多线程、多个消费者、使用{@link KafkaConsumer#subscribe(Collection)}消费{@link #topics}
+     *
+     * @param topics
+     * @return
+     */
     public static ConsumerParam get_multipleConsumer_subscribeTopics(String... topics) {
         return new ConsumerParam(2, topics, null);
     }
 
+
+    /**
+     * 启动单线程、一个消费者、使用{@link KafkaConsumer#assign(Collection)}订阅{@link #topicPartitions}
+     *
+     * @param topicPartitions
+     * @return
+     */
     public static ConsumerParam get_singleConsumer_assignTopicPartitions(TopicPartition... topicPartitions) {
         return new ConsumerParam(3, null, topicPartitions);
     }
 
+    /**
+     * 启动多线程、多个消费者、使用{@link KafkaConsumer#assign(Collection)}订阅{@link #topicPartitions}
+     *
+     * @param topicPartitions
+     * @return
+     */
     public static ConsumerParam get_multipleConsumer_assignTopicPartitions(TopicPartition... topicPartitions) {
         return new ConsumerParam(4, null, topicPartitions);
     }

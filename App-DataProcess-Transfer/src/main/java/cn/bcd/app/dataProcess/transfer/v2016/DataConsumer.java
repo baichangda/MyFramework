@@ -32,7 +32,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 0,
                 WorkHandlerScanner.get(300, 60),
                 5,
-                ConsumerParam.get_singleConsumer_subscribeTopics(topic)
+                ConsumerParam.get_singleConsumer(topic)
         );
         this.kafkaProp = kafkaProp;
         this.kafkaDataHandlers = kafkaDataHandlers;
