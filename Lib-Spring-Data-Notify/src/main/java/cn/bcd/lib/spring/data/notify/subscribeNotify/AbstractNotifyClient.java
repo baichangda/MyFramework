@@ -1,9 +1,10 @@
 package cn.bcd.lib.spring.data.notify.subscribeNotify;
 
+import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.base.util.ExecutorUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -54,7 +55,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 true,
                 0,
                 0,
-                "_notify_" + type, null);
+                ConsumerParam.get_singleConsumer("_notify_" + type));
         this.type = type;
         this.consumerProp = new KafkaProperties.Consumer();
         this.consumerProp.setBootstrapServers(kafkaBootstrapServers);

@@ -145,7 +145,6 @@ public abstract class ThreadDrivenKafkaConsumer {
                                      boolean autoReleaseBlocking,
                                      int maxConsumeSpeed,
                                      int monitor_period,
-                                     String topic,
                                      ConsumerParam consumerParam) {
         this.name = name;
         this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;

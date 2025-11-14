@@ -2,6 +2,7 @@ package cn.bcd.lib.spring.vehicle.command;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -38,7 +39,7 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
                 true,
                 0,
                 0,
-                commandProp.requestTopic,null);
+                ConsumerParam.get_singleConsumer(commandProp.requestTopic));
         CommandRequestConsumer.commandProp = commandProp;
         CommandRequestConsumer.kafkaProducer = KafkaUtil.newKafkaProducer_string_bytes(kafkaProp.getProducer().buildProperties(new DefaultSslBundleRegistry()));
     }

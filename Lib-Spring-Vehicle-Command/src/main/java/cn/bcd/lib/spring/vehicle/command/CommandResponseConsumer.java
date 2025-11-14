@@ -1,6 +1,7 @@
 package cn.bcd.lib.spring.vehicle.command;
 
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
                 true,
                 0,
                 0,
-                commandProp.responseTopic, null);
+                ConsumerParam.get_singleConsumer(commandProp.responseTopic));
     }
 
     @Override

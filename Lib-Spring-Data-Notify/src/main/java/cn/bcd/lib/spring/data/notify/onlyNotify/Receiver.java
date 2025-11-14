@@ -2,6 +2,7 @@ package cn.bcd.lib.spring.data.notify.onlyNotify;
 
 import cn.bcd.lib.base.common.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,7 +36,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
                 true,
                 0,
                 0,
-                topic, null);
+                ConsumerParam.get_singleConsumer(topic));
         this.clazz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
         properties = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
