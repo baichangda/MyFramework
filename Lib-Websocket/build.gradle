@@ -1,5 +1,4 @@
 dependencies {
     api project(":Lib-Base")
-    // https://mvnrepository.com/artifact/io.vertx/vertx-web
-    api ('io.vertx:vertx-web')
+    api libs.vertx.web
 }

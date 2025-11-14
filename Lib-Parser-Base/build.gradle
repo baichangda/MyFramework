@@ -1,5 +1,5 @@
 dependencies {
     api project(":Lib-Base")
-    api("io.netty:netty-buffer")
-    api("org.javassist:javassist")
+    api libs.netty.buffer
+    api libs.javassist
 }

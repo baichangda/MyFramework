@@ -1,7 +1,7 @@
 dependencies {
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Base-Json")
-    implementation("io.netty:netty-all")
-    implementation("info.picocli:picocli")
-    implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
+    implementation libs.netty.all
+    implementation libs.picocli
+    implementation libs.log4j.slf4j2.impl
 }

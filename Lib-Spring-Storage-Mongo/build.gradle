@@ -1,6 +1,5 @@
 dependencies {
     api project(":Lib-Base-Json")
-    //springboot mongodb支持
     api libs.spring.boot.starter.data.mongodb
 }
 

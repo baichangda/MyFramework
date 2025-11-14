@@ -1,4 +1,4 @@
 dependencies {
     api project(":Lib-Base")
-    api ('io.netty:netty-common')
+    api libs.netty.common
 }

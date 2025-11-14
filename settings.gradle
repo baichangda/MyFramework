@@ -1,6 +1,4 @@
 rootProject.name = 'MyFramework'
-include 'Bom'
-
 include 'Lib-Base'
 include 'Lib-Base-Json'
 include 'Lib-Base-Executor'

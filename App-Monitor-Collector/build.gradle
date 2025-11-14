@@ -1,9 +1,7 @@
 dependencies {
-    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Spring-Redis")
     implementation project(":Lib-Spring-Monitor-Client")
-    implementation 'org.springframework.boot:spring-boot-starter'
-    implementation("org.springframework.boot:spring-boot-starter-log4j2")
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    runtimeOnly("com.mysql:mysql-connector-j")
+    implementation libs.spring.boot.starter.log4j2
+    implementation libs.spring.boot.starter.data.jdbc
+    runtimeOnly libs.mysql
 }

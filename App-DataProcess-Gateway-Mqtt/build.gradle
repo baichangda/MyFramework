@@ -6,6 +6,6 @@ dependencies {
     implementation project(":Lib-Spring-Data-Init")
 
     implementation libs.spring.boot.starter.log4j2
-    implementation("com.github.ben-manes.caffeine:caffeine")
-    implementation("com.hivemq:hivemq-mqtt-client")
+    implementation libs.caffeine
+    implementation libs.hivemq.mqtt.client
 }

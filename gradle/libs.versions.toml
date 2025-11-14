@@ -1,16 +1,100 @@
 [versions]
 spring-boot = "3.5.7"
 spring-cloud = "2025.0.0"
-alibaba-cloud = "2025.0.0.0"
+alibaba-cloud = "2025.0.0.0-preview"
+netty = "4.2.7.Final"
+jackson = "2.20.1"
+jackson-annotations = "2.20"
+okhttp = "5.1.0"
+junit = "6.0.1"
 lombok = "1.18.42"
 mapstruct = "1.6.3"
+guava = "33.5.0-jre"
+slf4j-api = "2.0.17"
+log4j-slf4j2-impl = "2.25.2"
+spring-kafka = "3.3.10"
+commons-pool2 = "2.12.1"
+caffeine = "3.2.2"
+freemarker = "2.3.34"
+easyexcel = "4.0.3"
+mysql = "9.5.0"
+postgresql = "42.7.8"
+minio = "8.6.0"
+oshi = "6.9.0"
+javassist = "3.30.2-GA"
+prometheus = "1.4.1"
+xxl-job = "3.2.0"
+cassandra = "4.19.0"
+vertx = "5.0.5"
+spring-ai = "1.0.2"
+sa-token = "1.44.0"
+sqlite = "3.50.3.0"
+springdoc = "2.8.13"
+hivemq = "1.3.10"
+picocli = "4.7.7"
+
 
 [libraries]
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+commons-pool2 = { module = "org.apache.commons:commons-pool2", version.ref = "commons-pool2" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
+easyexcel = { module = "com.alibaba:easyexcel", version.ref = "easyexcel" }
+mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
+minio = { module = "io.minio:minio", version.ref = "minio" }
+oshi = { module = "com.github.oshi:oshi-core-java11", version.ref = "oshi" }
+javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+
+netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
+netty-common = { module = "io.netty:netty-common", version.ref = "netty" }
+netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
+netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
+
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
+
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+
+log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j-slf4j2-impl" }
+
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+
+spring-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+
+okhttp-bom= { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+
+prometheus-bom= { module = "io.prometheus:prometheus-metrics-bom", version.ref = "prometheus" }
+prometheus-metrics-core = { module = "io.prometheus:prometheus-metrics-core", version.ref = "prometheus" }
+prometheus-metrics-instrumentation-jvm = { module = "io.prometheus:prometheus-metrics-instrumentation-jvm", version.ref = "prometheus" }
+prometheus-metrics-exporter-httpserver = { module = "io.prometheus:prometheus-metrics-exporter-httpserver", version.ref = "prometheus" }
+
+xxl-job-core = { module = "com.xuxueli:xxl-job-core", version.ref = "xxl-job" }
+
+cassandra-java-driver-core = { module = "org.apache.cassandra:java-driver-core", version.ref = "cassandra" }
+cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driver-query-builder", version.ref = "cassandra" }
+
+vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
+
+hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq" }
+
+sa-token-spring-boot3-starter = { module = "cn.dev33:sa-token-spring-boot3-starter", version.ref = "sa-token" }
+sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson", version.ref = "sa-token" }
+
 spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
-spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
-spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-alibaba-dependencies", version.ref = "alibaba-cloud" }
-
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring-boot" }
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2", version.ref = "spring-boot" }
 spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
@@ -18,12 +102,14 @@ spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot
 spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
 spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "spring-boot" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
 
-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
-mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
-mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
 
+spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-alibaba-dependencies", version.ref = "alibaba-cloud" }
 
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-starter-common", version.ref = "springdoc" }
 
-
-
+spring-ai-starter-mcp-server-webmvc = { module = "org.springframework.ai:spring-ai-starter-mcp-server-webmvc", version.ref = "spring-ai" }

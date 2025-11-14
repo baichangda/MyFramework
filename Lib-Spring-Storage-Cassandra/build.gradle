@@ -1,8 +1,6 @@
 dependencies {
     api project(":Lib-Base-Json")
     api libs.spring.boot.starter
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
-
-    api("org.apache.cassandra:java-driver-core")
-    api("org.apache.cassandra:java-driver-query-builder")
+    api libs.cassandra.java.driver.core
+    api libs.cassandra.java.driver.query.builder
 }

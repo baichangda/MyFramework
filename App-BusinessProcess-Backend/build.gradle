@@ -29,34 +29,20 @@ dependencies {
     //springboot validation支持
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    // https://mvnrepository.com/artifact/com.alibaba/easyexcel
-    implementation(group: 'com.alibaba', name: 'easyexcel')
-
-    // https://mvnrepository.com/artifact/com.github.ben-manes.caffeine/caffeine
-    implementation group: 'com.github.ben-manes.caffeine', name: 'caffeine'
-
-    // https://mvnrepository.com/artifact/org.freemarker/freemarker
-    implementation group: 'org.freemarker', name: 'freemarker'
-
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
-    // https://mvnrepository.com/artifact/cn.dev33/sa-token-spring-boot-starter
-    implementation group: 'cn.dev33', name: 'sa-token-spring-boot3-starter'
-    implementation group: 'cn.dev33', name: 'sa-token-redis-jackson'
+    implementation libs.sa.token.spring.boot3.starter
+    implementation libs.sa.token.redis.jackson
 
     // define any required OkHttp artifacts without version
-    implementation("com.squareup.okhttp3:okhttp")
-    implementation("com.squareup.okhttp3:logging-interceptor")
+    implementation libs.okhttp
+    implementation libs.okhttp.logging.interceptor
 
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    implementation group: 'org.xerial', name: 'sqlite-jdbc'
-
-    implementation group: 'org.zeromq', name: 'jeromq'
-
-    implementation("me.tongfei:progressbar")
+    implementation libs.sqlite
 
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
+    implementation libs.springdoc.openapi.starter.webmvc.ui
 }
 
 

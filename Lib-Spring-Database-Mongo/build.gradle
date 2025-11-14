@@ -2,11 +2,8 @@ dependencies {
     api project(":Lib-Base-Json")
     api project(":Lib-Spring-Database-Common")
     api libs.spring.boot.starter.data.mongodb
-    //springboot validation支持
     api libs.spring.boot.starter.validation
-    api group: 'com.github.ben-manes.caffeine', name: 'caffeine'
-    // https://mvnrepository.com/artifact/org.freemarker/freemarker
-    api group: 'org.freemarker', name: 'freemarker'
-    // https://mvnrepository.com/artifact/com.alibaba/easyexcel
-    api group: 'com.alibaba', name: 'easyexcel'
+    api libs.caffeine
+    api libs.freemarker
+    api libs.easyexcel
 }

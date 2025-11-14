@@ -1,6 +1,5 @@
 dependencies {
     api project(":Lib-Spring-Redis")
-    // https://mvnrepository.com/artifact/com.github.oshi/oshi-core
-    api ('com.github.oshi:oshi-core-java11')
+    api libs.oshi
 }
 

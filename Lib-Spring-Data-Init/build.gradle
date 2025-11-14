@@ -2,7 +2,6 @@ dependencies {
     api project(":Lib-Base-Json")
     api project(":Lib-Spring-Data-Notify")
     api libs.spring.boot.starter
-    // define any required OkHttp artifacts without version
-    api("com.squareup.okhttp3:okhttp")
-    api("com.squareup.okhttp3:logging-interceptor")
+    api libs.okhttp
+    api libs.okhttp.logging.interceptor
 }

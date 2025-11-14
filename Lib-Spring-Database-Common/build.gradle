@@ -1,5 +1,5 @@
 dependencies {
     api project(":Lib-Base-Json")
-    api('com.fasterxml.jackson.dataformat:jackson-dataformat-yaml')
-    api("org.springdoc:springdoc-openapi-starter-common")
+    api libs.jackson.dataformat.yaml
+    api libs.springdoc.openapi.starter.common
 }

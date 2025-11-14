@@ -1,5 +1,5 @@
 dependencies {
     api project(":Lib-Base")
     api libs.spring.boot.starter
-    api("io.minio:minio")
+    api libs.minio
 }

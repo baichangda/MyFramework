@@ -15,10 +15,6 @@ buildscript {
 }
 
 subprojects {
-    if (it.name == 'Bom') {
-        return
-    }
-
     ext {
         jarName = "${project.name}"
     }
@@ -66,9 +62,9 @@ subprojects {
         annotationProcessor libs.mapstruct.processor
 
         //统一配置测试环境
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
-        testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher'
-        testImplementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j2-impl'
+        testImplementation libs.junit.jupiter.engine
+        testRuntimeOnly libs.junit.platform.launcher
+        testImplementation libs.log4j.slf4j2.impl
     }
 
     //下载源码和文档

@@ -2,7 +2,7 @@ dependencies {
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Base-Json")
     implementation project(":Lib-Base-Executor")
-    implementation("info.picocli:picocli")
-    implementation("io.vertx:vertx-web")
-    implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
+    implementation libs.vertx.web
+    implementation libs.picocli
+    implementation libs.log4j.slf4j2.impl
 }

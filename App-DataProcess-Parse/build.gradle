@@ -1,12 +1,9 @@
 dependencies {
-    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Spring-Storage-Mongo")
     implementation project(":Lib-Spring-Redis")
     implementation project(":Lib-Spring-Kafka")
     implementation project(":Lib-Spring-Data-Init")
     implementation project(":Lib-Spring-Monitor-Client")
-
-    //springboot log4j2支持
     implementation libs.spring.boot.starter.log4j2
 }

@@ -1,5 +1,4 @@
 dependencies {
-    api platform(project(":Bom"))
-    api("org.slf4j:slf4j-api")
-    api("com.google.guava:guava")
+    api libs.slf4j.api
+    api libs.guava
 }
