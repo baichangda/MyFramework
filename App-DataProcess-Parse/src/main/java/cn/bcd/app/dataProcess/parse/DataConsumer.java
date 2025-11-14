@@ -5,10 +5,11 @@ import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
 import cn.bcd.lib.base.common.Initializable;
-import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
-import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
+import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
+import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -46,8 +47,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                 0,
                 WorkHandlerScanner.get(300, 300),
                 5,
-                parseProp.topic,
-                null);
+                ConsumerParam.get_singleConsumer_subscribeTopics(parseProp.topic));
         this.handlers_v2016 = handlers_v2016;
         this.handlers_v2025 = handlers_v2025;
         logger.info("""

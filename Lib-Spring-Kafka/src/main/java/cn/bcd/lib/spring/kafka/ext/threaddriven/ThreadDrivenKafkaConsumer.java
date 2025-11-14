@@ -1,10 +1,10 @@
 package cn.bcd.lib.spring.kafka.ext.threaddriven;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.kafka.ext.KafkaExtUtil;
-import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
+import cn.bcd.lib.spring.kafka.ext.KafkaExtUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -62,7 +62,6 @@ public abstract class ThreadDrivenKafkaConsumer {
     public final boolean autoReleaseBlocking;
     public final int maxConsumeSpeed;
     public final int monitor_period;
-    public final String topic;
     public final ConsumerParam consumerParam;
 
     /**
@@ -135,8 +134,7 @@ public abstract class ThreadDrivenKafkaConsumer {
      *                              {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
      *                              {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
      * @param monitor_period        监控信息打印周期(秒)、0则代表不打印
-     * @param topic                 消费的topic
-     * @param consumerParam         null则代表PartitionMode.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
+     * @param consumerParam         null则代表ConsumerParam.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
      *                              其他情况参考{@link ConsumerParam#mode}
      */
     public ThreadDrivenKafkaConsumer(String name,
@@ -157,12 +155,7 @@ public abstract class ThreadDrivenKafkaConsumer {
         this.autoReleaseBlocking = autoReleaseBlocking;
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.monitor_period = monitor_period;
-        this.topic = topic;
-        if (consumerParam == null) {
-            this.consumerParam = ConsumerParam.get(0);
-        } else {
-            this.consumerParam = consumerParam;
-        }
+        this.consumerParam = consumerParam;
     }
 
     /**
@@ -227,7 +220,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                     monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
                 }
                 //启动消费者
-                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, topic, consumerProp, consumerParam, this::consume);
+                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
                 consumeThread = holder.thread();
                 consumeThreads = holder.threads();
             } catch (Exception ex) {
@@ -321,7 +314,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                             queues[index(consumerRecord)].put(consumerRecord);
                         }
                     } catch (Exception ex) {
-                        logger.error("kafka consumer topic[{}] cycle error,try again after 3s", topic, ex);
+                        logger.error("kafka consumer cycle error,try again after 3s", ex);
                         try {
                             TimeUnit.SECONDS.sleep(3);
                         } catch (InterruptedException e) {
@@ -367,7 +360,7 @@ public abstract class ThreadDrivenKafkaConsumer {
                             queue.put(consumerRecord);
                         }
                     } catch (Exception ex) {
-                        logger.error("kafka consumer topic[{}] cycle error,try again after 3s", topic, ex);
+                        logger.error("kafka consumer cycle error,try again after 3s", ex);
                         try {
                             TimeUnit.SECONDS.sleep(3);
                         } catch (InterruptedException e) {

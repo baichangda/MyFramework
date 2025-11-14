@@ -3,11 +3,11 @@ package cn.bcd.app.dataProcess.transfer.v2016;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.TransferDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
+import cn.bcd.lib.base.util.FloatUtil;
+import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
-import cn.bcd.lib.base.util.FloatUtil;
-import cn.bcd.lib.base.util.StringUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
@@ -32,8 +32,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                 0,
                 WorkHandlerScanner.get(300, 60),
                 5,
-                topic,
-                ConsumerParam.get(1, partitions)
+                ConsumerParam.get_singleConsumer_subscribeTopics(topic)
         );
         this.kafkaProp = kafkaProp;
         this.kafkaDataHandlers = kafkaDataHandlers;

@@ -8,10 +8,11 @@ import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class KafkaExtUtil {
 
@@ -23,14 +24,8 @@ public class KafkaExtUtil {
     }
 
 
-    private static String getConsumerThreadName(String name, int threadIndex, int threadNum, int... partitions) {
-        String partitionDesc;
-        if (partitions.length == 0) {
-            partitionDesc = "all";
-        } else {
-            partitionDesc = Arrays.stream(partitions).mapToObj(e -> e + "").collect(Collectors.joining(","));
-        }
-        return name + "-consumer(" + (threadIndex + 1) + "/" + threadNum + ")-partition(" + partitionDesc + ")";
+    private static String getConsumerThreadName(String name, int threadIndex, int threadNum) {
+        return name + "-consumer(" + (threadIndex + 1) + "/" + threadNum + ")";
     }
 
 
@@ -40,23 +35,21 @@ public class KafkaExtUtil {
      * @param consumerProp
      */
     public static ConsumerThreadHolder startConsumer(String name,
-                                                     String topic,
                                                      Map<String, Object> consumerProp,
-                                                     ConsumerParam partitionMode,
+                                                     ConsumerParam consumerParam,
                                                      Consumer<KafkaConsumer<String, byte[]>> kafkaConsumerConsumer) {
-        long seekTimestamp = partitionMode.seekTimestamp;
+        long seekTimestamp = consumerParam.seekTimestamp;
         if (seekTimestamp == -1) {
             consumerProp.put("auto.offset.reset", "earliest");
         }
         Thread consumeThread = null;
         Thread[] consumeThreads = null;
-        switch (partitionMode.mode) {
-            case 0 -> {
-                /**
-                 * 启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区
-                 */
+        String[] topics = consumerParam.topics;
+        TopicPartition[] topicPartitions = consumerParam.topicPartitions;
+        switch (consumerParam.mode) {
+            case 1 -> {
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
+                consumer.subscribe(Arrays.asList(topics), new ConsumerRebalanceLogger(consumer));
                 if (seekTimestamp == -1) {
                     KafkaUtil.consumerSeekToBeginning(consumer);
                 } else if (seekTimestamp >= 0) {
@@ -66,74 +59,59 @@ public class KafkaExtUtil {
                 String threadName = getConsumerThreadName(name, 0, 1);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                 consumeThread.start();
-                logger.info("start consumer[{}] for topic[{}]", threadName, topic);
+                logger.info("start consumer[{}] for topics{}", threadName, Arrays.toString(topics));
             }
-            case 1 -> {
-                /**
-                 * 启动单线程、一个消费者、使用{@link KafkaConsumer#assign(Collection)}完成订阅多个分区
-                 */
-                final int[] partitions = partitionMode.partitions;
+            case 2 -> {
+                consumeThreads = new Thread[topics.length];
+                for (int i = 0; i < topics.length; i++) {
+                    String topic = topics[i];
+                    final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
+                    consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
+                    if (seekTimestamp == -1) {
+                        KafkaUtil.consumerSeekToBeginning(consumer);
+                    } else if (seekTimestamp >= 0) {
+                        KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
+                    }
+                    //初始化消费线程、提交消费任务
+                    String threadName = getConsumerThreadName(name, i, topics.length);
+                    consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
+                    consumeThreads[i].start();
+                    logger.info("start consumer[{}] for topic[{}]", threadName, topic);
+                }
+            }
+            case 3 -> {
                 final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                List<TopicPartition> topicPartitions = Arrays.stream(partitions).mapToObj(i -> new TopicPartition(topic, i)).toList();
-                consumer.assign(topicPartitions);
+                consumer.assign(Arrays.asList(topicPartitions));
                 if (seekTimestamp == -1) {
                     KafkaUtil.consumerSeekToBeginning(consumer);
                 } else if (seekTimestamp >= 0) {
                     KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                 }
-                String threadName = getConsumerThreadName(name, 0, 1, partitions);
+                //初始化消费线程、提交消费任务
+                String threadName = getConsumerThreadName(name, 0, 1);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                 consumeThread.start();
-                logger.info("start consumer threadName[{}] for topic[{}] assign partitions[{}]", threadName, topic, Arrays.stream(partitions).mapToObj(e -> topic + ":" + e).collect(Collectors.joining(",")));
+                logger.info("start consumer[{}] for topicPartitions{}", threadName, Arrays.toString(topicPartitions));
             }
-            case 2 -> {
-                /**
-                 * 根据指定分区个数启动对应个数的线程、每个线程一个消费者、每个消费者使用{@link KafkaConsumer#assign(Collection)}订阅一个分区
-                 */
-                final int[] partitions = partitionMode.partitions;
-                consumeThreads = new Thread[partitions.length];
-                for (int i = 0; i < partitions.length; i++) {
+            case 4 -> {
+                consumeThreads = new Thread[topicPartitions.length];
+                for (int i = 0; i < topicPartitions.length; i++) {
+                    TopicPartition topicPartition = topicPartitions[i];
                     final KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                    consumer.assign(Collections.singletonList(new TopicPartition(topic, partitions[i])));
+                    consumer.assign(Collections.singletonList(topicPartition));
                     if (seekTimestamp == -1) {
                         KafkaUtil.consumerSeekToBeginning(consumer);
                     } else if (seekTimestamp >= 0) {
                         KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
                     }
-                    String threadName = getConsumerThreadName(name, i, partitions.length, partitions[i]);
+                    String threadName = getConsumerThreadName(name, i, topicPartitions.length);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
                     consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName, topic, partitions[i]);
-                }
-            }
-            case 3 -> {
-                /**
-                 * 首先通过{@link KafkaConsumer#partitionsFor(String)}获取分区个数、然后启动对应的消费线程、每一个线程一个消费者使用{@link KafkaConsumer#assign(Collection)}订阅一个分区
-                 */
-                final KafkaConsumer<String, byte[]> first = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                int[] ps = first.partitionsFor(topic).stream().mapToInt(PartitionInfo::partition).toArray();
-                consumeThreads = new Thread[ps.length];
-                for (int i = 0; i < ps.length; i++) {
-                    final KafkaConsumer<String, byte[]> consumer;
-                    if (i == 0) {
-                        consumer = first;
-                    } else {
-                        consumer = KafkaUtil.newKafkaConsumer_string_bytes(consumerProp);
-                    }
-                    consumer.assign(Collections.singletonList(new TopicPartition(topic, ps[i])));
-                    if (seekTimestamp == -1) {
-                        KafkaUtil.consumerSeekToBeginning(consumer);
-                    } else if (seekTimestamp >= 0) {
-                        KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);
-                    }
-                    String threadName = getConsumerThreadName(name, i, ps.length, ps[i]);
-                    consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
-                    consumeThreads[i].start();
-                    logger.info("start consumer threadName[{}] for topic [{}] assign partitions[{}]", threadName, topic, ps[i]);
+                    logger.info("start consumer threadName[{}] for topicPartition[{}]", threadName, topicPartition);
                 }
             }
             default ->
-                    throw BaseException.get("DataDrivenKafkaConsumer[{}] partitionMode[{}] not support", name, partitionMode.mode);
+                    throw BaseException.get("ConsumerParam mode not support", name, consumerParam.mode);
         }
         return new ConsumerThreadHolder(consumeThread, consumeThreads);
     }
