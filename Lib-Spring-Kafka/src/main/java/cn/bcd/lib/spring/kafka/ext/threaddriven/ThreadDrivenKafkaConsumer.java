@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -134,8 +133,9 @@ public abstract class ThreadDrivenKafkaConsumer {
      *                              {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
      *                              {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
      * @param monitor_period        监控信息打印周期(秒)、0则代表不打印
-     * @param consumerParam         null则代表ConsumerParam.get(0)、即启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Pattern)}完成订阅这个topic的所有分区\
-     *                              其他情况参考{@link ConsumerParam#mode}
+     * @param consumerParam         消费者的参数、不能为null
+     *                              主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
+     *                              具体参考{@link ConsumerParam}中静态方法
      */
     public ThreadDrivenKafkaConsumer(String name,
                                      boolean oneWorkThreadOneQueue,

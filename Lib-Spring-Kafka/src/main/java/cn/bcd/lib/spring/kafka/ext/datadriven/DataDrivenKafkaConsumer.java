@@ -175,8 +175,9 @@ public abstract class DataDrivenKafkaConsumer {
      * @param workHandlerScanner          定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
      *                                    null则代表不启动扫描
      * @param monitor_period              监控信息打印周期(秒)、0则代表不打印
-     * @param consumerParam               不能为null
-     *                                    其他情况参考{@link ConsumerParam#mode}
+     * @param consumerParam               消费者的参数、不能为null
+     *                                    主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
+     *                                    具体参考{@link ConsumerParam}中静态方法
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
