@@ -100,6 +100,10 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
         return ZonedDateTime.of(data.readByte() + baseYear, data.readByte(), data.readByte(), data.readByte(), data.readByte(), data.readByte(), 0, zoneId).toEpochSecond() * 1000;
     }
 
+    public static long read(final ByteBuf data, final ZoneOffset zoneOffset, final int baseYear) {
+        return LocalDateTime.of(data.readByte() + baseYear, data.readByte(), data.readByte(), data.readByte(), data.readByte(), data.readByte()).toEpochSecond(zoneOffset) * 1000;
+    }
+
     public static void write(final ByteBuf data, final long ts, final ZoneId zoneId, final int baseYear) {
         ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId);
         data.writeBytes(new byte[]{
@@ -109,6 +113,18 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
                 (byte) zdt.getHour(),
                 (byte) zdt.getMinute(),
                 (byte) zdt.getSecond(),
+        });
+    }
+
+    public static void write(final ByteBuf data, final long ts, final ZoneOffset zoneOffset, final int baseYear) {
+        LocalDateTime ldt = LocalDateTime.ofEpochSecond(ts / 1000, (int) (ts % 1000) * 1000000, zoneOffset);
+        data.writeBytes(new byte[]{
+                (byte) (ldt.getYear() - baseYear),
+                (byte) ldt.getMonthValue(),
+                (byte) ldt.getDayOfMonth(),
+                (byte) ldt.getHour(),
+                (byte) ldt.getMinute(),
+                (byte) ldt.getSecond(),
         });
     }
 
