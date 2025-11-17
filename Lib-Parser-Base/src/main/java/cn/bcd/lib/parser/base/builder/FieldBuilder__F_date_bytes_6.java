@@ -117,7 +117,9 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
     }
 
     public static void write(final ByteBuf data, final long ts, final ZoneOffset zoneOffset, final int baseYear) {
-        LocalDateTime ldt = LocalDateTime.ofEpochSecond(ts / 1000, (int) (ts % 1000) * 1000000, zoneOffset);
+        long secs = Math.floorDiv(ts, 1000);
+        int mos = Math.floorMod(ts, 1000);
+        LocalDateTime ldt = LocalDateTime.ofEpochSecond(secs, mos * 1000_000, zoneOffset);
         data.writeBytes(new byte[]{
                 (byte) (ldt.getYear() - baseYear),
                 (byte) ldt.getMonthValue(),
