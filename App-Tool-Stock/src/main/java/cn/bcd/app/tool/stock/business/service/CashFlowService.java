@@ -7,14 +7,21 @@ import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 @Service
 public class CashFlowService extends BaseService<CashFlowBean> {
+
+    static Logger logger = LoggerFactory.getLogger(CashFlowService.class);
+
     @Scheduled(cron = "0 5 15 * * ?")
     public void collectCashFlowToday() {
         String[] codes = {"002050"};
@@ -22,6 +29,7 @@ public class CashFlowService extends BaseService<CashFlowBean> {
     }
 
     public void collectCashFlowToday(String... codes) {
+        logger.info("collectCashFlowToday codes{}", Arrays.toString(codes));
         String day = DateZoneUtil.dateToStr_yyyy_MM_dd(new Date());
         for (String code : codes) {
             List<CashFlowData> list = EastMoneyUtil.fetchCashFlowToday(code);
