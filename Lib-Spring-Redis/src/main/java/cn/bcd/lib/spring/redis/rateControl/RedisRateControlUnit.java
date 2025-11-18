@@ -42,6 +42,8 @@ public class RedisRateControlUnit {
     private final ScheduledExecutorService resetExecutor;
     private volatile boolean reset;
 
+    private volatile boolean blocking = false;
+
     private ScheduledFuture<?> managerFuture;
     private ScheduledFuture<?> resetFuture;
 
@@ -113,6 +115,8 @@ public class RedisRateControlUnit {
         if (resetFuture == null) {
             resetFuture = resetExecutor.scheduleAtFixedRate(() -> {
                 redisTemplate.delete(redisKeyCount);
+                //释放阻塞
+                blocking = false;
             }, timeInSecond * 1000L + DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
         }
     }
@@ -132,11 +136,30 @@ public class RedisRateControlUnit {
     }
 
     public void add(int i) throws InterruptedException {
-        long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
-        if (c > maxAccessCount) {
-            do {
+        while (true) {
+            //检查当前进程是否阻塞状态
+            while (blocking) {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-            } while (Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount)).orElse(0L) > maxAccessCount);
+            }
+            //尝试获取计数
+            long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
+            //累加之前的计数
+            long prevC = c - i;
+            //如果累加后的计数超过限定次数
+            if (c > maxAccessCount) {
+                //检查累加之前的计数是否小于限定次数
+                if (prevC < maxAccessCount) {
+                    //说明是此次累加导致阻塞、打上阻塞标记
+                    blocking = true;
+                }
+            } else if (c == maxAccessCount) {
+                //如果累加后的计数等于限定次数、则说明此次累加是最后一次合法计数、打上阻塞标记
+                blocking = true;
+                break;
+            } else {
+                //说明成功获取计数
+                break;
+            }
         }
     }
 }
