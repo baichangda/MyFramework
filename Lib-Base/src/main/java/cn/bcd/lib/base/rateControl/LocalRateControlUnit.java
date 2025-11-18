@@ -66,7 +66,7 @@ public class LocalRateControlUnit {
         if (c > maxAccessCount) {
             do {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-            } while (count.get() >= maxAccessCount);
+            } while (count.addAndGet(i) > maxAccessCount);
         }
     }
 }

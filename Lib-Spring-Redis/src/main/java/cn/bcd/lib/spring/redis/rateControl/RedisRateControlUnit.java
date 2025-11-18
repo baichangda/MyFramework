@@ -136,7 +136,7 @@ public class RedisRateControlUnit {
         if (c > maxAccessCount) {
             do {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-            } while (Optional.ofNullable(redisTemplate.opsForValue().get(redisKeyCount)).map(Integer::parseInt).orElse(0) >= maxAccessCount);
+            } while (Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount)).orElse(0L) > maxAccessCount);
         }
     }
 }
