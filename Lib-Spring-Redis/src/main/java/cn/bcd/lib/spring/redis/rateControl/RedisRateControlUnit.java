@@ -48,9 +48,9 @@ public class RedisRateControlUnit {
     /**
      * 创建一个流量控制单元
      *
-     * @param name                   名称、主要用于标识redis key和线程名
-     * @param timeInSecond           限定时间
-     * @param maxAccessCount         限定时间访问次数
+     * @param name                       名称、主要用于标识redis key和线程名
+     * @param timeInSecond               限定时间
+     * @param maxAccessCount             限定时间访问次数
      * @param waitTimeWhenExceedInMillis 当发生超过访问次数的访问时候、线程等待的时间
      * @param redisConnectionFactory
      */
@@ -133,7 +133,7 @@ public class RedisRateControlUnit {
 
     public void add(int i) throws InterruptedException {
         long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
-        if (c >= maxAccessCount) {
+        if (c > maxAccessCount) {
             do {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
             } while (Optional.ofNullable(redisTemplate.opsForValue().get(redisKeyCount)).map(Integer::parseInt).orElse(0) >= maxAccessCount);

@@ -63,7 +63,7 @@ public class LocalRateControlUnit {
 
     public void add(int i) throws InterruptedException {
         final int c = count.addAndGet(i);
-        if (c >= maxAccessCount) {
+        if (c > maxAccessCount) {
             do {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
             } while (count.get() >= maxAccessCount);
