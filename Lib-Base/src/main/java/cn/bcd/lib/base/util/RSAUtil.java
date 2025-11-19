@@ -21,17 +21,28 @@ public class RSAUtil {
      */
     public final static String PADDING_TYPE = "RSA/ECB/PKCS1Padding";
 
+
+    public record RsaKeyPair(PublicKey publicKey, PrivateKey privateKey) {
+        public byte[] getPublicKeyBytes() {
+            return RSAUtil.publicKeyToBytes(publicKey);
+        }
+
+        public byte[] getPrivateKeyBytes() {
+            return RSAUtil.privateKeyToBytes(privateKey);
+        }
+    }
+
     /**
      * 生成密钥对。注意这里是生成密钥对KeyPair，再由密钥对获取公私钥
      *
      * @return 数组, 第一个元素为公钥, 第二个元素为私钥
      */
-    public static Object[] generateKey(int size) {
+    public static RsaKeyPair generateKey(int size) {
         Singleton.INSTANCE.keyPairGenerator.initialize(size);
         KeyPair keyPair = Singleton.INSTANCE.keyPairGenerator.generateKeyPair();
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        return new Object[]{publicKey, privateKey};
+        return new RsaKeyPair(publicKey, privateKey);
     }
 
     /**
@@ -40,7 +51,7 @@ public class RSAUtil {
      * @param keyBytes
      * @return
      */
-    public static PublicKey restorePublicKey(byte[] keyBytes) {
+    public static PublicKey publicKeyFromBytes(byte[] keyBytes) {
         X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(keyBytes);
         try {
             return Singleton.INSTANCE.keyFactory.generatePublic(x509EncodedKeySpec);
@@ -55,7 +66,7 @@ public class RSAUtil {
      * @param keyBytes
      * @return
      */
-    public static PrivateKey restorePrivateKey(byte[] keyBytes) {
+    public static PrivateKey privateKeyFromBytes(byte[] keyBytes) {
         PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(
                 keyBytes);
         try {
@@ -64,6 +75,14 @@ public class RSAUtil {
         } catch (InvalidKeySpecException e) {
             throw BaseException.get(e);
         }
+    }
+
+    public static byte[] publicKeyToBytes(PublicKey publicKey) {
+        return publicKey.getEncoded();
+    }
+
+    public static byte[] privateKeyToBytes(PrivateKey privateKey) {
+        return privateKey.getEncoded();
     }
 
     /**
@@ -79,8 +98,8 @@ public class RSAUtil {
             cipher.init(Cipher.ENCRYPT_MODE, key);
             return cipher.doFinal(plainText);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException
-                | InvalidKeyException | IllegalBlockSizeException
-                | BadPaddingException e) {
+                 | InvalidKeyException | IllegalBlockSizeException
+                 | BadPaddingException e) {
             throw BaseException.get(e);
         }
 
@@ -99,21 +118,21 @@ public class RSAUtil {
             cipher.init(Cipher.DECRYPT_MODE, key);
             return new String(cipher.doFinal(encodedText));
         } catch (NoSuchAlgorithmException | NoSuchPaddingException
-                | InvalidKeyException | IllegalBlockSizeException
-                | BadPaddingException e) {
+                 | InvalidKeyException | IllegalBlockSizeException
+                 | BadPaddingException e) {
             throw BaseException.get(e);
         }
     }
 
     public static void main(String[] args) {
-        Object[] res1 = generateKey(1024);
-        PublicKey publicKey1 = (PublicKey) res1[0];
-        PrivateKey privateKey1 = (PrivateKey) res1[1];
+        RsaKeyPair rsaKeyPair1 = generateKey(1024);
+        PublicKey publicKey1 = rsaKeyPair1.publicKey;
+        PrivateKey privateKey1 = rsaKeyPair1.privateKey;
         System.out.println(Base64.getEncoder().encodeToString(publicKey1.getEncoded()));
         System.out.println(Base64.getEncoder().encodeToString(privateKey1.getEncoded()));
-        Object[] res2 = generateKey(1024);
-        PublicKey publicKey2 = (PublicKey) res2[0];
-        PrivateKey privateKey2 = (PrivateKey) res2[1];
+        RsaKeyPair rsaKeyPair2 = generateKey(1024);
+        PublicKey publicKey2 = rsaKeyPair2.publicKey;
+        PrivateKey privateKey2 = rsaKeyPair2.privateKey;
         System.out.println(Base64.getEncoder().encodeToString(publicKey2.getEncoded()));
         System.out.println(Base64.getEncoder().encodeToString(privateKey2.getEncoded()));
 

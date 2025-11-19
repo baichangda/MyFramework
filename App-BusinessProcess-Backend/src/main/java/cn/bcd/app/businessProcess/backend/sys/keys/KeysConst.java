@@ -63,14 +63,14 @@ public class KeysConst {
     static {
         if (!IS_CLUSTER) {
             if (IS_GENERATE_KEY_ON_STARTUP) {
-                Object[] keys = RSAUtil.generateKey(1024);
-                KeysConst.PUBLIC_KEY = (RSAPublicKey) keys[0];
-                KeysConst.PRIVATE_KEY = (RSAPrivateKey) keys[1];
-                KeysConst.PUBLIC_KEY_BASE64 = Base64.getEncoder().encodeToString(KeysConst.PUBLIC_KEY.getEncoded());
-                KeysConst.PRIVATE_KEY_BASE64 = Base64.getEncoder().encodeToString(KeysConst.PRIVATE_KEY.getEncoded());
+                RSAUtil.RsaKeyPair rsaKeyPair = RSAUtil.generateKey(1024);
+                KeysConst.PUBLIC_KEY = rsaKeyPair.publicKey();
+                KeysConst.PRIVATE_KEY = rsaKeyPair.privateKey();
+                KeysConst.PUBLIC_KEY_BASE64 = Base64.getEncoder().encodeToString(RSAUtil.publicKeyToBytes(KeysConst.PUBLIC_KEY));
+                KeysConst.PRIVATE_KEY_BASE64 = Base64.getEncoder().encodeToString(RSAUtil.privateKeyToBytes(KeysConst.PRIVATE_KEY));
             } else {
-                KeysConst.PUBLIC_KEY = RSAUtil.restorePublicKey(Base64.getDecoder().decode(KeysConst.PUBLIC_KEY_BASE64));
-                KeysConst.PRIVATE_KEY = RSAUtil.restorePrivateKey(Base64.getDecoder().decode(KeysConst.PRIVATE_KEY_BASE64));
+                KeysConst.PUBLIC_KEY = RSAUtil.publicKeyFromBytes(Base64.getDecoder().decode(KeysConst.PUBLIC_KEY_BASE64));
+                KeysConst.PRIVATE_KEY = RSAUtil.privateKeyFromBytes(Base64.getDecoder().decode(KeysConst.PRIVATE_KEY_BASE64));
             }
         }
     }

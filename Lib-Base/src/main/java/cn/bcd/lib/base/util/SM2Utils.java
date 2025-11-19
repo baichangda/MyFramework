@@ -13,18 +13,60 @@ import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.util.HashMap;
-import java.util.Map;
 
 public class SM2Utils {
+
+
+    static final String SM2_CURVE_NAME = "sm2p256v1";
+
     // 注册BouncyCastleProvider
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    public record KeyPair(byte[] publicKey, byte[] privateKey) {
+
+    public static ECPublicKeyParameters publicKeyFromBytes(byte[] bytes) {
+        // 解析公钥
+        X9ECParameters sm2ECParameters = GMNamedCurves.getByName(SM2_CURVE_NAME);
+        ECDomainParameters domainParameters = new ECDomainParameters(
+                sm2ECParameters.getCurve(),
+                sm2ECParameters.getG(),
+                sm2ECParameters.getN()
+        );
+        ECPoint publicKeyPoint = sm2ECParameters.getCurve().decodePoint(bytes);
+        return new ECPublicKeyParameters(publicKeyPoint, domainParameters);
+    }
+
+    public static ECPrivateKeyParameters privateKeyFromBytes(byte[] bytes) {
+        // 解析私钥
+        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
+        ECDomainParameters domainParameters = new ECDomainParameters(
+                sm2ECParameters.getCurve(),
+                sm2ECParameters.getG(),
+                sm2ECParameters.getN()
+        );
+        return new ECPrivateKeyParameters(new BigInteger(1, bytes), domainParameters);
+    }
+
+    public static byte[] publicKeyToBytes(ECPublicKeyParameters publicKey) {
+        return publicKey.getQ().getEncoded(false);
+    }
+
+    public static byte[] privateKeyToBytes(ECPrivateKeyParameters privateKey) {
+        return privateKey.getD().toByteArray();
+    }
+
+    public record Sm2KeyPair(ECPublicKeyParameters publicKey, ECPrivateKeyParameters privateKey) {
+        public byte[] getPublicKeyBytes() {
+            return publicKeyToBytes(publicKey);
+        }
+        public byte[] getPrivateKeyBytes() {
+            return privateKeyToBytes(privateKey);
+        }
+
     }
 
     /**
@@ -32,9 +74,9 @@ public class SM2Utils {
      *
      * @return 包含公钥（publicKey）和私钥（privateKey）的Map（均为byte[]）
      */
-    public static KeyPair generateKeyPair() {
+    public static Sm2KeyPair generateKeyPair() {
         // 获取SM2曲线参数
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
+        X9ECParameters sm2ECParameters = GMNamedCurves.getByName(SM2_CURVE_NAME);
         ECDomainParameters domainParameters = new ECDomainParameters(
                 sm2ECParameters.getCurve(),
                 sm2ECParameters.getG(),
@@ -49,33 +91,20 @@ public class SM2Utils {
         // 提取公钥和私钥（字节数组形式）
         ECPrivateKeyParameters privateKey = (ECPrivateKeyParameters) keyPair.getPrivate();
         ECPublicKeyParameters publicKey = (ECPublicKeyParameters) keyPair.getPublic();
-
-        byte[] privateKeyBytes = privateKey.getD().toByteArray();
-        byte[] publicKeyBytes = publicKey.getQ().getEncoded(false);
-        return new KeyPair(publicKeyBytes, privateKeyBytes);
+        return new Sm2KeyPair(publicKey, privateKey);
     }
 
     /**
      * SM2加密（字节数组输入输出）
      *
-     * @param publicKey 公钥（byte[]）
+     * @param publicKey 公钥
      * @param plainText 明文（byte[]）
      * @return 密文（byte[]）
      */
-    public static byte[] encrypt(byte[] publicKey, byte[] plainText) throws InvalidCipherTextException {
-        // 解析公钥
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
-        ECDomainParameters domainParameters = new ECDomainParameters(
-                sm2ECParameters.getCurve(),
-                sm2ECParameters.getG(),
-                sm2ECParameters.getN()
-        );
-        ECPoint publicKeyPoint = sm2ECParameters.getCurve().decodePoint(publicKey);
-        ECPublicKeyParameters publicKeyParameters = new ECPublicKeyParameters(publicKeyPoint, domainParameters);
-
+    public static byte[] encrypt(ECPublicKeyParameters publicKey, byte[] plainText) throws InvalidCipherTextException {
         // 初始化加密引擎
         SM2Engine engine = new SM2Engine();
-        engine.init(true, new ParametersWithRandom(publicKeyParameters, new SecureRandom()));
+        engine.init(true, new ParametersWithRandom(publicKey, new SecureRandom()));
 
         // 加密并返回密文字节数组
         return engine.processBlock(plainText, 0, plainText.length);
@@ -84,27 +113,14 @@ public class SM2Utils {
     /**
      * SM2解密（字节数组输入输出）
      *
-     * @param privateKey 私钥（byte[]）
+     * @param privateKey 私钥
      * @param cipherText 密文（byte[]）
      * @return 明文（byte[]）
      */
-    public static byte[] decrypt(byte[] privateKey, byte[] cipherText) throws InvalidCipherTextException {
-        // 解析私钥
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
-        ECDomainParameters domainParameters = new ECDomainParameters(
-                sm2ECParameters.getCurve(),
-                sm2ECParameters.getG(),
-                sm2ECParameters.getN()
-        );
-        ECPrivateKeyParameters privateKeyParameters = new ECPrivateKeyParameters(
-                new java.math.BigInteger(1, privateKey), // 私钥字节数组转BigInteger
-                domainParameters
-        );
-
+    public static byte[] decrypt(ECPrivateKeyParameters privateKey, byte[] cipherText) throws InvalidCipherTextException {
         // 初始化解密引擎
         SM2Engine engine = new SM2Engine();
-        engine.init(false, privateKeyParameters);
-
+        engine.init(false, privateKey);
         // 解密并返回明文字节数组
         return engine.processBlock(cipherText, 0, cipherText.length);
     }
@@ -112,26 +128,14 @@ public class SM2Utils {
     /**
      * SM2签名（字节数组输入输出）
      *
-     * @param privateKey 私钥（byte[]）
+     * @param privateKey 私钥
      * @param content    待签名内容（byte[]）
      * @return 签名结果（byte[]）
      */
-    public static byte[] sign(byte[] privateKey, byte[] content) {
-        // 解析私钥
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
-        ECDomainParameters domainParameters = new ECDomainParameters(
-                sm2ECParameters.getCurve(),
-                sm2ECParameters.getG(),
-                sm2ECParameters.getN()
-        );
-        ECPrivateKeyParameters privateKeyParameters = new ECPrivateKeyParameters(
-                new java.math.BigInteger(1, privateKey),
-                domainParameters
-        );
-
+    public static byte[] sign(ECPrivateKeyParameters privateKey, byte[] content) {
         // 初始化签名器
         SM2Signer signer = new SM2Signer();
-        signer.init(true, new ParametersWithRandom(privateKeyParameters, new SecureRandom()));
+        signer.init(true, new ParametersWithRandom(privateKey, new SecureRandom()));
 
         // 生成签名并返回字节数组
         signer.update(content, 0, content.length);
@@ -145,25 +149,15 @@ public class SM2Utils {
     /**
      * SM2验签（字节数组输入）
      *
-     * @param publicKey 公钥（byte[]）
+     * @param publicKey 公钥
      * @param content   待验签内容（byte[]）
      * @param signature 签名结果（byte[]）
      * @return 验签是否通过
      */
-    public static boolean verify(byte[] publicKey, byte[] content, byte[] signature) {
-        // 解析公钥
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
-        ECDomainParameters domainParameters = new ECDomainParameters(
-                sm2ECParameters.getCurve(),
-                sm2ECParameters.getG(),
-                sm2ECParameters.getN()
-        );
-        ECPoint publicKeyPoint = sm2ECParameters.getCurve().decodePoint(publicKey);
-        ECPublicKeyParameters publicKeyParameters = new ECPublicKeyParameters(publicKeyPoint, domainParameters);
-
+    public static boolean verify(ECPublicKeyParameters publicKey, byte[] content, byte[] signature) {
         // 初始化验签器
         SM2Signer signer = new SM2Signer();
-        signer.init(false, publicKeyParameters);
+        signer.init(false, publicKey);
 
         // 验签
         signer.update(content, 0, content.length);
@@ -173,11 +167,9 @@ public class SM2Utils {
     // 测试方法
     public static void main(String[] args) throws Exception {
         // 生成密钥对（字节数组形式）
-        KeyPair keyPair = generateKeyPair();
-        byte[] privateKey = keyPair.privateKey;
-        byte[] publicKey = keyPair.publicKey;
-        System.out.println("私钥长度：" + privateKey.length + " bytes");
-        System.out.println("公钥长度：" + publicKey.length + " bytes");
+        Sm2KeyPair keyPair = generateKeyPair();
+        ECPrivateKeyParameters privateKey = keyPair.privateKey;
+        ECPublicKeyParameters publicKey = keyPair.publicKey;
 
         // 测试加密解密
         byte[] plainText = "Hello SM2! 测试字节数组加解密".getBytes();
