@@ -23,7 +23,7 @@ public class Starter_v2025 extends TcpServer {
     SslContext sslContext;
 
     public Starter_v2025() {
-        initSslContext();
+//        initSslContext();
     }
 
     private void initSslContext() {
@@ -49,6 +49,7 @@ public class Starter_v2025 extends TcpServer {
 
     @Override
     protected void init(Channel ch) {
+        ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
         ch.pipeline().addLast(new DataInboundHandler_v2025());
     }
 }
