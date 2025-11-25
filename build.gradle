@@ -16,7 +16,8 @@ buildscript {
 
 subprojects {
     ext {
-        jarName = "${project.name}"
+        _jarName = "${project.name}"
+        _mainClass = 'cn.bcd.Application'
     }
 
     group = 'cn.bcd'
@@ -86,6 +87,9 @@ subprojects {
         useJUnitPlatform()
     }
 
+    springBoot {
+        mainClass = "${_mainClass}"
+    }
 
     afterEvaluate {
         def isLib = project.name.startsWith("Lib-")
@@ -95,7 +99,7 @@ subprojects {
                  * 默认lib打包采用此方式
                  * 设置如下属性保证打包出来的jar文件名、去掉名称中的后缀、例如-1.0-plain
                  */
-                archiveBaseName = "${jarName}"
+                archiveBaseName = "${_jarName}"
                 archiveClassifier = ""
             }
             bootJar {
@@ -121,7 +125,7 @@ subprojects {
                     attributes 'Start-Class': 'cn.bcd.Application'
                 }
                 //指定jar文件的名称
-                archiveBaseName = "${jarName}"
+                archiveBaseName = "${_jarName}"
             }
 
 //            // 将依赖包复制到lib目录
@@ -131,6 +135,7 @@ subprojects {
 //                delete "$dir\\libs\\lib"
 //                from configurations.runtimeClasspath
 //                into "$dir\\libs\\lib"
+//                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 //            }
 //
 //            //分离式打包
@@ -152,12 +157,12 @@ subprojects {
 //                dependsOn copyJar
 //                // 指定依赖包的路径
 //                manifest {
-//                    attributes 'Start-Class': 'cn.bcd.Application'
+//                    attributes 'Start-Class': "${_mainClass}".toString()
 //                    attributes "Manifest-Version": 1.0,
 //                            'Class-Path': externalJars.collect { "lib/$it" }.join(' ')
 //                }
 //                //指定jar文件的名称
-//                archiveBaseName = "${jarName}"
+//                archiveBaseName = "${_jarName}"
 //            }
 
 
