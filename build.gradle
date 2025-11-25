@@ -115,50 +115,50 @@ subprojects {
                 enabled = false
             }
         } else {
-            bootJar {
-                exclude "**/application-local.yml"
-                manifest {
-                    attributes 'Start-Class': 'cn.bcd.Application'
-                }
-                //指定jar文件的名称
-                archiveBaseName = "${jarName}"
-            }
-
-//            // 将依赖包复制到lib目录
-//            tasks.register('copyJar', Copy) {
-//                // lib目录的清除和复制任务
-//                def dir = getLayout().getBuildDirectory().get()
-//                delete "$dir\\libs\\lib"
-//                from configurations.runtimeClasspath
-//                into "$dir\\libs\\lib"
-//            }
-//
-//            //分离式打包
 //            bootJar {
-//                var moduleJars = []
-//                var externalJars = []
-//                for (final def e in configurations.runtimeClasspath.files) {
-//                    if (e.name.startsWith("Lib-")) {
-//                        moduleJars.add(e.name)
-//                    } else {
-//                        externalJars.add(e.name)
-//                    }
-//                }
-//                // 排除所有的jar
-//                excludes = ["**/application-local.yml"]
-//                excludes.addAll(externalJars)
-//                // lib目录的清除和复制任务、排除复制的jar
-//                copyJar.exclude(moduleJars)
-//                dependsOn copyJar
-//                // 指定依赖包的路径
+//                exclude "**/application-local.yml"
 //                manifest {
 //                    attributes 'Start-Class': 'cn.bcd.Application'
-//                    attributes "Manifest-Version": 1.0,
-//                            'Class-Path': externalJars.collect { "lib/$it" }.join(' ')
 //                }
 //                //指定jar文件的名称
 //                archiveBaseName = "${jarName}"
 //            }
+
+            // 将依赖包复制到lib目录
+            tasks.register('copyJar', Copy) {
+                // lib目录的清除和复制任务
+                def dir = getLayout().getBuildDirectory().get()
+                delete "$dir\\libs\\lib"
+                from configurations.runtimeClasspath
+                into "$dir\\libs\\lib"
+            }
+
+            //分离式打包
+            bootJar {
+                var moduleJars = []
+                var externalJars = []
+                for (final def e in configurations.runtimeClasspath.files) {
+                    if (e.name.startsWith("Lib-")) {
+                        moduleJars.add(e.name)
+                    } else {
+                        externalJars.add(e.name)
+                    }
+                }
+                // 排除所有的jar
+                excludes = ["**/application-local.yml"]
+                excludes.addAll(externalJars)
+                // lib目录的清除和复制任务、排除复制的jar
+                copyJar.exclude(moduleJars)
+                dependsOn copyJar
+                // 指定依赖包的路径
+                manifest {
+                    attributes 'Start-Class': 'cn.bcd.Application'
+                    attributes "Manifest-Version": 1.0,
+                            'Class-Path': externalJars.collect { "lib/$it" }.join(' ')
+                }
+                //指定jar文件的名称
+                archiveBaseName = "${jarName}"
+            }
 
 
             bootRun {
