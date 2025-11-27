@@ -3,6 +3,10 @@ package cn.bcd.lib.spring.database.jdbc.conn;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import org.jooq.Parser;
+import org.jooq.Query;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -78,7 +82,7 @@ public class Conn {
         });
     }
 
-    private final Connection connection;
+    public final Connection connection;
 
     public Conn(String url) {
         try {
@@ -146,8 +150,7 @@ public class Conn {
     }
 
     public synchronized boolean execute(String sql, Object... args) {
-        try {
-            PreparedStatement ps = connection.prepareStatement(sql);
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 ps.setObject(i + 1, args[i]);
             }
@@ -210,11 +213,12 @@ public class Conn {
                     args.add(field.get(ts[i]));
                 }
             }
-            PreparedStatement ps = connection.prepareStatement(sql.toString());
-            for (int i = 0; i < args.size(); i++) {
-                ps.setObject(i + 1, args.get(i));
+            try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+                for (int i = 0; i < args.size(); i++) {
+                    ps.setObject(i + 1, args.get(i));
+                }
+                return ps.executeUpdate();
             }
-            return ps.executeUpdate();
         }
     }
 
@@ -272,11 +276,12 @@ public class Conn {
                     args.add(field.get(t));
                 }
             }
-            PreparedStatement ps = connection.prepareStatement(sb.toString());
-            for (int i = 0; i < args.size(); i++) {
-                ps.setObject(i + 1, args.get(i));
+            try (PreparedStatement ps = connection.prepareStatement(sb.toString())) {
+                for (int i = 0; i < args.size(); i++) {
+                    ps.setObject(i + 1, args.get(i));
+                }
+                return ps.executeUpdate();
             }
-            return ps.executeUpdate();
         }
     }
 
