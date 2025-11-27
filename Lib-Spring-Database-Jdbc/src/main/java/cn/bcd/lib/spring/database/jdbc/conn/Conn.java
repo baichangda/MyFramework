@@ -26,7 +26,7 @@ public class Conn {
 
     }
 
-    private record FieldInfo(Field field, String columnName, int index) {
+    private record FieldInfo(Field field, String fieldName, String columnName, int index) {
 
     }
 
@@ -37,7 +37,7 @@ public class Conn {
             try {
                 if (clazz.isRecord()) {
                     List<Class<?>> fieldTypeList = new ArrayList<>();
-                    LinkedHashMap<String, FieldInfo> map = new LinkedHashMap<>();
+                    LinkedHashMap<String, FieldInfo> columnName_field = new LinkedHashMap<>();
                     do {
                         Field[] fields = c.getDeclaredFields();
                         int index = 0;
@@ -47,13 +47,16 @@ public class Conn {
                                 continue;
                             }
                             field.setAccessible(true);
-                            String columnName = StringUtil.camelCaseToSplitChar(field.getName(), '_');
-                            map.put(columnName, new FieldInfo(field, columnName, index++));
+                            String fieldName = field.getName();
+                            String columnName = StringUtil.camelCaseToSplitChar(fieldName, '_');
+                            FieldInfo fieldInfo = new FieldInfo(field, fieldName, columnName, index++);
+                            columnName_field.put(columnName, fieldInfo);
+                            columnName_field.put(fieldName, fieldInfo);
                             fieldTypeList.add(field.getType());
                         }
                         c = c.getSuperclass();
                     } while (c != null);
-                    return new ClassInfo<>(true, clazz.getConstructor(fieldTypeList.toArray(new Class[0])), map);
+                    return new ClassInfo<>(true, clazz.getConstructor(fieldTypeList.toArray(new Class[0])), columnName_field);
                 } else {
                     LinkedHashMap<String, FieldInfo> map = new LinkedHashMap<>();
                     do {
@@ -65,8 +68,11 @@ public class Conn {
                                 continue;
                             }
                             field.setAccessible(true);
-                            String columnName = StringUtil.camelCaseToSplitChar(field.getName(), '_');
-                            map.put(columnName, new FieldInfo(field, columnName, index++));
+                            String fieldName = field.getName();
+                            String columnName = StringUtil.camelCaseToSplitChar(fieldName, '_');
+                            FieldInfo fieldInfo = new FieldInfo(field, fieldName, columnName, index++);
+                            map.put(columnName, fieldInfo);
+                            map.put(fieldName, fieldInfo);
                         }
                         c = c.getSuperclass();
                     } while (c != null);
@@ -88,58 +94,74 @@ public class Conn {
         }
     }
 
-
-    public synchronized <T> List<T> list(String sql, Class<T> clazz, Object... args) {
-        try {
-            PreparedStatement ps = connection.prepareStatement(sql);
+    public synchronized List<Map<String, Object>> listMap(String sql, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
                 ps.setObject(i + 1, args[i]);
             }
             ResultSet rs = ps.executeQuery();
             ResultSetMetaData metaData = rs.getMetaData();
-            if (clazz == Map.class) {
-                List<Map<String, Object>> list = new ArrayList<>();
+            List<Map<String, Object>> list = new ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> map = new LinkedHashMap<>();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    String columnName = metaData.getColumnName(i);
+                    map.put(columnName, rs.getObject(i));
+                }
+                list.add(map);
+            }
+            return list;
+        } catch (SQLException e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    /**
+     *
+     * @param sql
+     * @param clazz
+     * @param args
+     * @param <T>
+     * @return
+     */
+    public synchronized <T> List<T> list(String sql, Class<T> clazz, Object... args) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            for (int i = 0; i < args.length; i++) {
+                ps.setObject(i + 1, args[i]);
+            }
+            ResultSet rs = ps.executeQuery();
+            ResultSetMetaData metaData = rs.getMetaData();
+
+            List<T> list = new ArrayList<>();
+            ClassInfo<T> classInfo = getClassInfo(clazz);
+            LinkedHashMap<String, FieldInfo> columnName_field = classInfo.columnName_field;
+            if (classInfo.isRecord) {
                 while (rs.next()) {
-                    Map<String, Object> map = new LinkedHashMap<>();
+                    Object[] arr = new Object[columnName_field.size()];
                     for (int i = 1; i <= metaData.getColumnCount(); i++) {
                         String columnName = metaData.getColumnName(i);
-                        map.put(columnName, rs.getObject(i));
+                        FieldInfo fieldInfo = columnName_field.get(columnName);
+                        if (fieldInfo != null) {
+                            arr[fieldInfo.index] = rs.getObject(i);
+                        }
                     }
-                    list.add(map);
+                    T t = classInfo.constructor.newInstance(arr);
+                    list.add(t);
                 }
-                return (List<T>) list;
             } else {
-                List<T> list = new ArrayList<>();
-                ClassInfo<T> classInfo = getClassInfo(clazz);
-                LinkedHashMap<String, FieldInfo> columnName_field = classInfo.columnName_field;
-                if (classInfo.isRecord) {
-                    while (rs.next()) {
-                        Object[] arr = new Object[columnName_field.size()];
-                        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                            String columnName = metaData.getColumnName(i);
-                            FieldInfo fieldInfo = columnName_field.get(columnName);
-                            if (fieldInfo != null) {
-                                arr[fieldInfo.index] = rs.getObject(i);
-                            }
+                while (rs.next()) {
+                    T t = classInfo.constructor.newInstance();
+                    for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                        String columnName = metaData.getColumnName(i);
+                        FieldInfo fieldInfo = columnName_field.get(columnName);
+                        if (fieldInfo != null) {
+                            fieldInfo.field.set(t, rs.getObject(i));
                         }
-                        T t = classInfo.constructor.newInstance(arr);
-                        list.add(t);
                     }
-                } else {
-                    while (rs.next()) {
-                        T t = classInfo.constructor.newInstance();
-                        for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                            String columnName = metaData.getColumnName(i);
-                            FieldInfo fieldInfo = columnName_field.get(columnName);
-                            if (fieldInfo != null) {
-                                fieldInfo.field.set(t, rs.getObject(i));
-                            }
-                        }
-                        list.add(t);
-                    }
+                    list.add(t);
                 }
-                return list;
             }
+            return list;
         } catch (Exception e) {
             throw BaseException.get(e);
         }
@@ -223,13 +245,16 @@ public class Conn {
      * 会获取父类的字段
      * insert字段会去除掉静态字段
      *
-     * @param clazz       实体类class
-     * @param table       表名
-     * @param fieldFilter 字段名过滤器、false则排除掉、会应用于insert字段
+     * @param clazz                     实体类class
+     * @param table                     表名
+     * @param fieldCamelCaseToSplitChar 字段名映射为驼峰格式列名
+     * @param fieldFilter               字段名过滤器、false则排除掉、会应用于insert字段
      * @param <T>
      * @return
      */
-    public static <T> InsertSqlResult<T> toInsertSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter) {
+    public static <T> InsertSqlResult<T> toInsertSqlResult(Class<T> clazz, String table,
+                                                           boolean fieldCamelCaseToSplitChar,
+                                                           Function<Field, Boolean> fieldFilter) {
         final Collection<FieldInfo> allFields = getClassInfo(clazz).columnName_field.values();
         final List<FieldInfo> insertFieldList = new ArrayList<>();
         for (FieldInfo fieldInfo : allFields) {
@@ -240,7 +265,11 @@ public class Conn {
         final StringJoiner sj1 = new StringJoiner(",");
         final StringJoiner sj2 = new StringJoiner(",");
         for (FieldInfo fieldInfo : insertFieldList) {
-            sj1.add(fieldInfo.columnName);
+            if (fieldCamelCaseToSplitChar) {
+                sj1.add(fieldInfo.columnName);
+            } else {
+                sj1.add(fieldInfo.fieldName);
+            }
             sj2.add("?");
         }
         final StringBuilder sb = new StringBuilder();
@@ -287,14 +316,15 @@ public class Conn {
      * 会获取父类的所有字段
      * update字段会去除掉静态字段
      *
-     * @param clazz           实体类
-     * @param table           表名
-     * @param fieldFilter     字段名过滤器、false则排除掉、会应用于update字段
-     * @param whereFieldNames where字段名
+     * @param clazz                     实体类
+     * @param table                     表名
+     * @param fieldCamelCaseToSplitChar 字段名映射为驼峰格式列名
+     * @param fieldFilter               字段名过滤器、false则排除掉、会应用于update字段
+     * @param whereFieldNames           where字段名
      * @param <T>
      * @return
      */
-    public static <T> UpdateSqlResult<T> toUpdateSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter, String... whereFieldNames) {
+    public static <T> UpdateSqlResult<T> toUpdateSqlResult(Class<T> clazz, String table, boolean fieldCamelCaseToSplitChar, Function<Field, Boolean> fieldFilter, String... whereFieldNames) {
         final Collection<FieldInfo> allFields = getClassInfo(clazz).columnName_field.values();
         final List<FieldInfo> updateFieldList = new ArrayList<>();
         final Map<String, FieldInfo> whereMap = new HashMap<>();
@@ -329,7 +359,11 @@ public class Conn {
             if (i > 0) {
                 sb.append(",");
             }
-            sb.append(fieldInfo.columnName);
+            if (fieldCamelCaseToSplitChar) {
+                sb.append(fieldInfo.columnName);
+            } else {
+                sb.append(fieldInfo.fieldName);
+            }
             sb.append("=?");
         }
         sb.append(" where ");
@@ -338,7 +372,11 @@ public class Conn {
                 sb.append(" and ");
             }
             final FieldInfo fieldInfo = whereFieldList.get(i);
-            sb.append(fieldInfo.columnName);
+            if (fieldCamelCaseToSplitChar) {
+                sb.append(fieldInfo.columnName);
+            } else {
+                sb.append(fieldInfo.fieldName);
+            }
             sb.append("=?");
         }
         return new UpdateSqlResult<>(sb.toString(), updateFieldList.stream().map(e -> e.field).toArray(Field[]::new), whereFieldList.stream().map(e -> e.field).toArray(Field[]::new));
@@ -366,8 +404,8 @@ public class Conn {
     public static void main(String[] args) {
         Conn conn = new Conn("jdbc:sqlite::memory:");
 //        Conn conn = new Conn("jdbc:sqlite:test.db");
-        InsertSqlResult<Test> insertSqlResult = Conn.toInsertSqlResult(Test.class, "t_test", f -> !f.getName().equals("id"));
-        UpdateSqlResult<Test> updateSqlResult = Conn.toUpdateSqlResult(Test.class, "t_test", f -> !f.getName().equals("id"), "id");
+        InsertSqlResult<Test> insertSqlResult = Conn.toInsertSqlResult(Test.class, "t_test", true, f -> !f.getName().equals("id"));
+        UpdateSqlResult<Test> updateSqlResult = Conn.toUpdateSqlResult(Test.class, "t_test", true, f -> !f.getName().equals("id"), "id");
         conn.execute("""
                 create table t_test(
                 id integer primary key autoincrement,
@@ -377,7 +415,7 @@ public class Conn {
                 """);
         conn.insert(insertSqlResult, new Test(1, "张三", "我是张三"));
         conn.update(updateSqlResult, new Test(1, "张三2", "我是李四"));
-        List<Test> list = conn.list("select * from t_test", Test.class);
+        List<Test> list = conn.list("select * from t_test", Test.class, true);
         System.out.println(JsonUtil.toJson(list));
     }
 }
