@@ -3,10 +3,6 @@ package cn.bcd.lib.spring.database.jdbc.conn;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.StringUtil;
-import org.jooq.Parser;
-import org.jooq.Query;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
