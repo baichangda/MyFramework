@@ -1,0 +1,6 @@
+dependencies {
+    api project(":Lib-Base")
+    api libs.jooq
+    api libs.jooq.codegen
+    api libs.mysql
+}

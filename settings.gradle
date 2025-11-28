@@ -38,3 +38,4 @@ include 'App-AI-MCP-Server'
 include 'App-DataProcess-Gateway-Mqtt'
 
 include 'App-Transponder-GB32960'
+include 'Lib-Jooq'

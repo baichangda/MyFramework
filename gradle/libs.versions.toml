@@ -35,6 +35,7 @@ picocli = "4.7.7"
 bcprov-jdk18on = "1.82"
 geo = "0.8.1"
 hbase-client = "2.6.4"
+jooq = "3.20.9"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -55,6 +56,9 @@ bcprov-jdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bc
 geo = { module = "com.github.davidmoten:geo", version.ref = "geo" }
 
 hbase-client = { module = "org.apache.hbase:hbase-client", version.ref = "hbase-client" }
+
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 netty-common = { module = "io.netty:netty-common", version.ref = "netty" }
