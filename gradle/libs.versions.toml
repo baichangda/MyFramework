@@ -60,8 +60,6 @@ hbase-client = { module = "org.apache.hbase:hbase-client", version.ref = "hbase-
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 
-
-
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 netty-common = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
