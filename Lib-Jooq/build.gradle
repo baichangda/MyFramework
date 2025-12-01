@@ -1,6 +1,38 @@
+plugins {
+    alias(libs.plugins.jooq.codegen.gradle)
+}
+
 dependencies {
     api project(":Lib-Base")
     api libs.jooq
-    api libs.jooq.codegen
     api libs.mysql
+    jooqCodegen(libs.mysql)
+}
+
+jooq {
+    configuration {
+        jdbc {
+            url = "jdbc:mysql://127.0.0.1:13306/bcd"
+            user = "root"
+            password = "root"
+        }
+        generator {
+            name = "org.jooq.codegen.DefaultGenerator"
+            database {
+                name = "org.jooq.meta.mysql.MySQLDatabase"
+                inputSchema = "bcd"
+                includes = ".*"
+                excludes = "xxl_.*"
+            }
+            generate {
+                defaultCatalog = false
+                defaultSchema = false
+            }
+            target {
+                clean = true
+                packageName = "cn.bcd.lib.jooq.generate"
+                directory = "D:\\work\\bcd\\MyFramework\\Lib-Jooq\\src\\main\\java"
+            }
+        }
+    }
 }
