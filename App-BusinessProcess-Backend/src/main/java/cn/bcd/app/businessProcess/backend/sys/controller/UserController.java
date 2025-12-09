@@ -1,15 +1,15 @@
 package cn.bcd.app.businessProcess.backend.sys.controller;
 
-import cn.bcd.lib.base.common.Result;
-import cn.bcd.lib.spring.database.common.condition.Condition;
-import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
-import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
-import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
-import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.app.businessProcess.backend.sys.bean.UserBean;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
+import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.dev33.satoken.stp.StpUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/sys/user")
 @Tag(name = "用户-UserController")
-public class UserController{
+public class UserController {
 
     @Autowired
     private UserService userService;
@@ -115,7 +116,7 @@ public class UserController{
      * @param user
      * @return
      */
-    @RequestMapping(value = "/save", method = RequestMethod.POST)
+    @RequestMapping(value = "/save", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "保存用户")
     @ApiResponse(responseCode = "200", description = "保存结果")
     public Result<?> save(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户实体") @Validated @RequestBody UserBean user) {
@@ -144,7 +145,7 @@ public class UserController{
      * @param password
      * @return
      */
-    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    @RequestMapping(value = "/login", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @Operation(summary = "用户登录")
     @ApiResponse(responseCode = "200", description = "登录的用户信息")
     public Result<UserBean> login(
@@ -161,7 +162,7 @@ public class UserController{
      *
      * @return
      */
-    @RequestMapping(value = "/logout", method = RequestMethod.POST)
+    @RequestMapping(value = "/logout", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @Operation(summary = "用户注销")
     @ApiResponse(responseCode = "200", description = "注销结果")
     public Result<?> logout() {
@@ -177,7 +178,7 @@ public class UserController{
      * @param userId
      * @return
      */
-    @RequestMapping(value = "/resetPassword", method = RequestMethod.POST)
+    @RequestMapping(value = "/resetPassword", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @Operation(summary = "重置密码")
     @ApiResponse(responseCode = "200", description = "重制密码结果")
     public Result<?> resetPassword(@Parameter(description = "用户主键") @RequestParam Long userId) {
@@ -193,7 +194,7 @@ public class UserController{
      * @param oldPassword
      * @return
      */
-    @RequestMapping(value = "/updatePassword", method = RequestMethod.POST)
+    @RequestMapping(value = "/updatePassword", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @Operation(summary = "修改密码")
     @ApiResponse(responseCode = "200", description = "修改密码结果")
     public Result<?> updatePassword(
@@ -256,7 +257,7 @@ public class UserController{
         if (userBean == null) {
             return Result.success(null);
         }
-        AuthUser authUser = new AuthUser(userBean.id, username,userBean.status);
+        AuthUser authUser = new AuthUser(userBean.id, username, userBean.status);
         return Result.success(authUser);
     }
 
