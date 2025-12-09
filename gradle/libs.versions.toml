@@ -36,6 +36,7 @@ bcprov-jdk18on = "1.82"
 geo = "0.8.1"
 hbase-client = "2.6.4"
 jooq = "3.20.9"
+awssdk = "2.40.2"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -99,6 +100,9 @@ cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driv
 vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
 
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq" }
+
+awssdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "awssdk" }
+awssdk-s3 = { module = "software.amazon.awssdk:s3", version.ref = "awssdk" }
 
 sa-token-spring-boot3-starter = { module = "cn.dev33:sa-token-spring-boot3-starter", version.ref = "sa-token" }
 sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson", version.ref = "sa-token" }

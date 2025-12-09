@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -99,7 +100,7 @@ public class ${moduleName?cap_first}Controller{
      * @param ${moduleName?uncap_first}
      * @return
      */
-    @RequestMapping(value = "/save",method = RequestMethod.POST)
+    @RequestMapping(value = "/save",method = RequestMethod.POST,consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "保存${moduleNameCN}")
     @ApiResponse(responseCode = "200",description = "保存结果")
     public Result<?> save(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "${moduleNameCN}实体") @Validated @RequestBody ${moduleName?cap_first}Bean ${moduleName?uncap_first}){
