@@ -15,7 +15,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class RedisRateControlUnit {
+public class RedisRateControlUnit implements AutoCloseable {
     static Logger logger = LoggerFactory.getLogger(RedisRateControlUnit.class);
 
     static final String REDIS_KEY_PRE_COUNT = "rc:count";
@@ -41,11 +41,12 @@ public class RedisRateControlUnit {
     private final RedisTemplate<String, String> redisTemplate;
     private final ScheduledExecutorService resetExecutor;
     private volatile boolean reset;
-
     private volatile boolean blocking = false;
 
     private ScheduledFuture<?> managerFuture;
     private ScheduledFuture<?> resetFuture;
+
+    private boolean available = false;
 
     /**
      * 创建一个流量控制单元
@@ -69,10 +70,15 @@ public class RedisRateControlUnit {
         this.waitTimeWhenExceedInMillis = waitTimeWhenExceedInMillis;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
         this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
+        this.init();
     }
 
 
-    public synchronized void init() {
+    private synchronized void init() {
+        if (available) {
+            return;
+        }
+        available = true;
         int period = (REDIS_KEY_TIMEOUT_SECOND_RESET / 2) + 1;
         //尝试抢占reset
         reset = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
@@ -128,9 +134,15 @@ public class RedisRateControlUnit {
         }
     }
 
-    public synchronized void destroy() {
+    @Override
+    public synchronized void close() throws Exception {
+        if (!available) {
+            return;
+        }
+        available = false;
         if (managerFuture != null) {
             managerFuture.cancel(false);
+            managerFuture = null;
         }
         stopResetTask();
     }
