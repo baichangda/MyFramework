@@ -30,9 +30,9 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public final ConsumeExecutor<T>[] executors;
 
     /**
-     * 是否运行中
+     * 是否关闭
      */
-    boolean running = true;
+    boolean closed;
 
     final ScheduledExecutorService scannerPool;
 
@@ -116,18 +116,17 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (running) {
-            running = false;
+        if (!closed) {
+            closed = true;
+            //销毁entity、停止线程池
             for (ConsumeExecutor<T> executor : executors) {
-                //销毁entity
                 for (String id : executor.entityMap.keySet()) {
                     removeEntity(id, executor, null);
                 }
-                //停止线程池
                 executor.shutdown();
             }
+            //等待线程池停止
             for (ConsumeExecutor<T> executor : executors) {
-                //等待线程池停止
                 ExecutorUtil.await(executor);
             }
             ExecutorUtil.shutdownThenAwait(true, scannerPool, monitor_pool);
