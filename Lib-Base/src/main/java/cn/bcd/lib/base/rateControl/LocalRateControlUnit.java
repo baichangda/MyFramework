@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 流量控制单元
  */
-public class LocalRateControlUnit {
+public class LocalRateControlUnit implements AutoCloseable{
     public final String name;
     public final int timeInSecond;
     public final int maxAccessCount;
@@ -19,7 +19,7 @@ public class LocalRateControlUnit {
     public final ScheduledExecutorService resetExecutor;
     ScheduledFuture<?> scheduledFuture;
 
-    static final int RESET_EXECUTOR_NUM = Runtime.getRuntime().availableProcessors();
+    static final int RESET_EXECUTOR_NUM = 1;
     static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
 
     static {
@@ -48,13 +48,11 @@ public class LocalRateControlUnit {
         this.maxAccessCount = maxAccessCount;
         this.waitTimeWhenExceedInMillis = waitTimeWhenExceedInMillis;
         this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
-    }
-
-    public synchronized void init() {
         this.scheduledFuture = this.resetExecutor.scheduleAtFixedRate(() -> count.set(0), timeInSecond * 1000L + DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
     }
 
-    public synchronized void destroy() {
+    @Override
+    public void close() {
         if (this.scheduledFuture != null) {
             this.scheduledFuture.cancel(true);
             this.scheduledFuture = null;
@@ -69,4 +67,6 @@ public class LocalRateControlUnit {
             } while (count.addAndGet(i) > maxAccessCount);
         }
     }
+
+
 }
