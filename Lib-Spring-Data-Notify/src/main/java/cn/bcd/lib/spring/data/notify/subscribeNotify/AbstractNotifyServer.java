@@ -90,14 +90,14 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         //初始化redis订阅数据到缓存
         checkAndUpdateCache().join();
         //开始消费
-        super.init(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
+        super.startConsume(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
         //启动线程定时更新缓存
         startUpdateCacheFromRedis();
     }
 
     public void destroy() {
         //停止消费
-        super.destroy();
+        super.close();
         //停止工作线程池
         ExecutorUtil.shutdownAllThenAwait(true, workPool, scheduledPool);
         workPool = null;

@@ -37,11 +37,11 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     final List<DataHandler_v2016> handlers_v2016;
     final List<DataHandler_v2025> handlers_v2025;
 
-    public DataConsumer(ParseProp parseProp, List<DataHandler_v2016> handlers_v2016, List<DataHandler_v2025> handlers_v2025) {
+    public DataConsumer(ParseProp parseProp, List<DataHandler_v2016> handlers_v2016,
+                        List<DataHandler_v2025> handlers_v2025) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
-                null,
                 100000,
                 true,
                 0,
@@ -123,6 +123,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     public void run(String... args) {
         //初始化组件
         Initializable.initByOrder(initList);
-        init(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 }

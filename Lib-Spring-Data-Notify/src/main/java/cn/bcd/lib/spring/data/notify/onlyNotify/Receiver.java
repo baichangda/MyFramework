@@ -43,7 +43,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
     }
 
     public void init() {
-        super.init(properties);
+        super.startConsume(properties);
     }
 
 

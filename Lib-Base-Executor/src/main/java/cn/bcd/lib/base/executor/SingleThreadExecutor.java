@@ -4,257 +4,237 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.WaitStrategy;
-import cn.bcd.lib.base.util.ExecutorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-@SuppressWarnings("unchecked")
-public class SingleThreadExecutor implements Executor {
+/**
+ * 单线程执行器、整合普通任务和延迟/定时任务、所有任务最终由单线程串行执行
+ * 核心逻辑:
+ * 1、ThreadPoolExecutor是单线程池、执行所有普通任务和转发过来的延迟/定时任务
+ * 2、ScheduledThreadPoolExecutor仅接收延迟/定时任务、不执行、仅转发给 ThreadPoolExecutor
+ * 3、保证所有任务串行执行、线程安全
+ */
+public class SingleThreadExecutor extends AbstractExecutorService implements ScheduledExecutorService {
+
     public final Logger logger = LoggerFactory.getLogger(this.getClass());
-    public final String threadName;
+
     public final int queueSize;
     public final boolean schedule;
-
     public BlockingQueue<Runnable> blockingQueue;
-    //用于通知其他线程退出
-    public CountDownLatch quitNotifier;
 
-    /**
-     * 任务执行器
-     */
-    public ThreadPoolExecutor executor;
-    /**
-     * 计划任务执行器
-     */
-    public ScheduledThreadPoolExecutor executor_schedule;
-
-    /**
-     * 当前执行器绑定的线程
-     */
+    //当前执行器绑定的线程
     public Thread thread;
 
-    volatile boolean running;
+    // 核心执行器：单线程，执行所有实际任务（普通/延迟/定时）
+    final ThreadPoolExecutor executor;
 
-    volatile CompletableFuture<?> destroyFuture;
+    // 调度执行器：单线程，仅接收延迟/定时任务，转发给 workerExecutor
+    final ScheduledThreadPoolExecutor executor_schedule;
 
-    /**
-     * @param threadName      线程名称
-     *                        最多存在3个线程、名称分别如下
-     *                        threadName 工作线程
-     *                        threadName-schedule 计划任务线程
-     * @param queueSize       队列长度
-     *                        0则表示无边界
-     * @param schedule        是否开启计划任务功能
-     */
-    public SingleThreadExecutor(String threadName,
-                                int queueSize,
-                                boolean schedule) {
-        this.threadName = threadName;
+    public SingleThreadExecutor(String threadName, int queueSize, boolean schedule) {
         this.queueSize = queueSize;
         this.schedule = schedule;
-
-    }
-
-    public synchronized void init() {
-        if (!running) {
-            running = true;
-            try {
-                destroyFuture = null;
-                if (queueSize == 0) {
-                    this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE_100MS);
-                } else {
-                    this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_100MS);
-                }
-                executor = new ThreadPoolExecutor(
-                        1,
-                        1,
-                        0,
-                        TimeUnit.SECONDS,
-                        this.blockingQueue,
-                        r -> new Thread(r, threadName),
-                        (r, executor) -> {
-                            if (!executor.isShutdown()) {
-                                try {
-//                    logger.warn("workThread[{}] RejectedExecutionHandler",threadName);
-                                    executor.getQueue().put(r);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                }
-                            }
-                        });
-
-                //获取当前线程
-                thread = executor.submit(Thread::currentThread).get();
-
-                if (schedule) {
-                    executor_schedule = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-schedule"));
-                }
-            } catch (Exception ex) {
-                destroy();
-                throw BaseException.get(ex);
-            }
-        }
-    }
-
-    public synchronized CompletableFuture<?> destroy() {
-        return destroy(null);
-    }
-
-    public synchronized CompletableFuture<?> destroy(Runnable doBeforeExit) {
-        if (running) {
-            running = false;
-            //开启新的线程执行销毁
-            try (ExecutorService executorService = Executors.newSingleThreadExecutor(r -> new Thread(r, threadName + "-destroy"))) {
-                destroyFuture = CompletableFuture.runAsync(() -> {
-                    try {
-                        //静默100ms处理并发提交任务没有监测到running变化情况
-                        TimeUnit.MILLISECONDS.sleep(100);
-                        //执行销毁前操作
-                        if (doBeforeExit != null) {
-                            executor.submit(doBeforeExit).get();
-                        }
-                        //通知退出
-                        if (quitNotifier != null) {
-                            quitNotifier.countDown();
-                        }
-
-                        ExecutorUtil.shutdown(true, executor);
-                        ExecutorUtil.shutdown(false, executor_schedule);
-                        ExecutorUtil.await(executor, executor_schedule);
-
-                        //清空变量
-                        blockingQueue = null;
-                        quitNotifier = null;
-                        executor = null;
-                        executor_schedule = null;
-                        thread = null;
-                    } catch (Exception ex) {
-                        logger.error("error", ex);
-                    }
-                }, executorService);
-                return destroyFuture;
-            }
+        if (queueSize == 0) {
+            this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE_100MS);
         } else {
-            return destroyFuture;
+            this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_100MS);
+        }
+        this.executor = new ThreadPoolExecutor(
+                1,
+                1,
+                0,
+                TimeUnit.SECONDS,
+                this.blockingQueue,
+                r -> new Thread(r, threadName),
+                (r, executor) -> {
+                    if (!executor.isShutdown()) {
+                        try {
+//                    logger.warn("workThread[{}] RejectedExecutionHandler",threadName);
+                            executor.getQueue().put(r);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                });
+
+        if (schedule) {
+            executor_schedule = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-schedule"));
+        } else {
+            executor_schedule = null;
+        }
+
+        //获取当前线程
+        try {
+            thread = executor.submit(Thread::currentThread).get();
+        } catch (Exception ex) {
+            throw BaseException.get(ex);
         }
     }
 
-    public boolean inThread() {
+    @Override
+    public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
+        return executor_schedule.schedule(() -> {
+            try {
+                return submit(callable).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+                return null;
+            }
+        }, delay, unit);
+    }
+
+    @Override
+    public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+        return executor_schedule.schedule(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, delay, unit);
+
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return executor_schedule.scheduleAtFixedRate(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, initialDelay, period, unit);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        return executor_schedule.scheduleWithFixedDelay(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, initialDelay, delay, unit);
+    }
+
+    private boolean inThread() {
         return Thread.currentThread() == thread;
     }
 
-    private void checkRunning() {
-        if (!running) {
-            throw BaseException.get("executor[{}] not running", threadName);
-        }
+    private Runnable safeWrap(Runnable command) {
+        return () -> {
+            try {
+                command.run();
+            } catch (Exception e) {
+                logger.error("command error", e);
+            }
+        };
     }
 
-    private void checkSchedule() {
-        if (!schedule) {
-            throw BaseException.get("executor[{}] not support schedule", threadName);
-        }
+    private <T> Callable<T> safeWrap(Callable<T> task) {
+        return () -> {
+            try {
+                return task.call();
+            } catch (Exception e) {
+                logger.error("task error", e);
+                return null;
+            }
+        };
     }
 
-    public final void execute(Runnable runnable) {
-        checkRunning();
+    @Override
+    public void execute(Runnable command) {
         if (inThread()) {
-            runnable.run();
+            command.run();
         } else {
-            executor.execute(runnable);
+            executor.execute(safeWrap(command));
         }
     }
 
-    public final <T> void execute(Consumer<T> consumer) {
-        checkRunning();
-        if (inThread()) {
-            consumer.accept((T) this);
-        } else {
-            executor.execute(() -> {
-                consumer.accept((T) this);
-            });
-        }
-    }
-
-
-    public final CompletableFuture<Void> submit(Runnable runnable) {
-        checkRunning();
+    @Override
+    public <T> Future<T> submit(Callable<T> task) {
         if (inThread()) {
             try {
-                runnable.run();
-                return CompletableFuture.completedFuture(null);
-            } catch (Throwable ex) {
-                return CompletableFuture.failedFuture(ex);
+                return CompletableFuture.completedFuture(task.call());
+            } catch (Exception e) {
+                throw BaseException.get(e);
             }
         } else {
-            return CompletableFuture.runAsync(runnable, executor);
+            return executor.submit(safeWrap(task));
         }
     }
 
-    public final <T> CompletableFuture<T> submit(Supplier<T> supplier) {
-        checkRunning();
-        if (inThread()) {
-            try {
-                return CompletableFuture.completedFuture(supplier.get());
-            } catch (Throwable ex) {
-                return CompletableFuture.failedFuture(ex);
-            }
-        } else {
-            return CompletableFuture.supplyAsync(supplier, executor);
+    @Override
+    public <T> Future<T> submit(Runnable task, T result) {
+        return executor.submit(safeWrap(task), result);
+    }
+
+    @Override
+    public Future<?> submit(Runnable task) {
+        return executor.submit(safeWrap(task));
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
+        //不用包装、本质上调用的execute方法
+        return executor.invokeAll(tasks);
+    }
+
+    @Override
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+        //不用包装、本质上调用的execute方法
+        return executor.invokeAll(tasks, timeout, unit);
+    }
+
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
+        //不用包装、本质上调用的execute方法
+        return executor.invokeAny(tasks);
+    }
+
+    @Override
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        //不用包装、本质上调用的execute方法
+        return executor.invokeAny(tasks, timeout, unit);
+    }
+
+    @Override
+    public void shutdown() {
+        executor_schedule.shutdown();
+        executor.shutdown();
+    }
+
+    @Override
+    public List<Runnable> shutdownNow() {
+        List<Runnable> schedulerTasks = executor_schedule.shutdownNow();
+        List<Runnable> workerTasks = executor.shutdownNow();
+        schedulerTasks.addAll(workerTasks);
+        return schedulerTasks;
+    }
+
+    @Override
+    public boolean isShutdown() {
+        return executor_schedule.isShutdown() && executor.isShutdown();
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return executor_schedule.isTerminated() && executor.isTerminated();
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        long startNanos = System.nanoTime();
+        boolean schedulerTerminated = executor_schedule.awaitTermination(timeout, unit);
+        if (!schedulerTerminated) {
+            return false;
         }
-    }
-
-    public final <T extends SingleThreadExecutor, R> CompletableFuture<R> submit(Function<T, R> consumer) {
-        checkRunning();
-        if (inThread()) {
-            try {
-                R apply = consumer.apply((T) this);
-                return CompletableFuture.completedFuture(apply);
-            } catch (Throwable ex) {
-                return CompletableFuture.failedFuture(ex);
-            }
-        } else {
-            return CompletableFuture.supplyAsync(() -> consumer.apply((T) this), executor);
+        long elapsedNanos = System.nanoTime() - startNanos;
+        long remainingNanos = unit.toNanos(timeout) - elapsedNanos;
+        if (remainingNanos <= 0) {
+            return false;
         }
-    }
-
-    public final ScheduledFuture<Void> schedule(Runnable runnable, long delay, TimeUnit unit) {
-        checkRunning();
-        checkSchedule();
-        return executor_schedule.schedule(() -> submit(runnable).join(), delay, unit);
-    }
-
-    public final <T> ScheduledFuture<T> schedule(Supplier<T> supplier, long delay, TimeUnit unit) {
-        checkRunning();
-        checkSchedule();
-        return executor_schedule.schedule(() -> submit(supplier).join(), delay, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        checkRunning();
-        checkSchedule();
-        return executor_schedule.scheduleAtFixedRate(() -> submit(command).join(), initialDelay, period, unit);
-    }
-
-    public final ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        checkRunning();
-        checkSchedule();
-        return executor_schedule.scheduleWithFixedDelay(() -> submit(command).join(), initialDelay, period, unit);
-    }
-
-    public static void main(String[] args) {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        CompletableFuture.runAsync(() -> {
-                    throw BaseException.get("123");
-                }, executorService)
-                .whenComplete((e1, e2) -> {
-                    if (e2 != null) {
-                        e2.printStackTrace();
-                    }
-                });
+        //等待核心执行器终止
+        return executor.awaitTermination(remainingNanos, TimeUnit.NANOSECONDS);
     }
 }

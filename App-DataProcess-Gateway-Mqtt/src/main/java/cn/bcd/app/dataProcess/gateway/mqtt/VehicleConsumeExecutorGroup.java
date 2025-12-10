@@ -61,7 +61,6 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
         for (DataHandler_v2025 handler : handlers_v2025) {
             handler.setConsumeExecutorGroup(this);
         }
-        init();
     }
 
     @Override

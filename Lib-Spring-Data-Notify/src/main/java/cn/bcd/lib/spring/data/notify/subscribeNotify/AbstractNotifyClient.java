@@ -71,7 +71,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
 
     public void init() {
         //开始消费
-        super.init(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
+        super.startConsume(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
         workPool = Executors.newSingleThreadScheduledExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();
@@ -91,7 +91,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
 
     public void destroy() {
         //停止消费
-        super.destroy();
+        super.close();
         //停止工作线程池
         ExecutorUtil.shutdownThenAwait(true, workPool);
         workPool = null;

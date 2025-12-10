@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
  * 例如test-scanner
  * <p>
  */
-public abstract class DataDrivenKafkaConsumer {
+public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
@@ -82,45 +82,44 @@ public abstract class DataDrivenKafkaConsumer {
     /**
      * 消费线程
      */
-    public Thread consumeThread;
-    public Thread[] consumeThreads;
+    public KafkaExtUtil.ConsumerThreadHolder consumerThreadHolder;
 
 
     /**
      * 工作执行器数组
      */
-    public WorkExecutor[] workExecutors;
+    public final WorkExecutor[] workExecutors;
 
 
     /**
      * 重置消费计数
      */
-    public AtomicInteger consumeCount;
-    public ScheduledExecutorService resetConsumeCountPool;
+    public final AtomicInteger consumeCount;
+    public final ScheduledExecutorService resetConsumeCountPool;
 
     /**
      * 扫描过期线程池
      */
-    public ScheduledExecutorService scannerPool;
+    public final ScheduledExecutorService scannerPool;
 
     /**
      * 监控信息
      */
-    public LongAdder monitor_workHandlerCount;
-    public LongAdder monitor_consumeCount;
+    public final LongAdder monitor_workHandlerCount;
+    public final LongAdder monitor_consumeCount;
     //处理数据数量(无论是否发生异常)
-    public LongAdder monitor_workCount;
-    public ScheduledExecutorService monitor_pool;
+    public final LongAdder monitor_workCount;
+    public final ScheduledExecutorService monitor_pool;
 
     /**
-     * 是否运行中
+     * 是否关闭
      */
-    volatile boolean running;
+    boolean closed;
 
     /**
      * 控制退出线程标志
      */
-    volatile boolean running_consume = true;
+    volatile boolean running_consume;
 
     /**
      * 是否暂停消费
@@ -148,23 +147,23 @@ public abstract class DataDrivenKafkaConsumer {
     }
 
     /**
-     * @param name                        当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum             工作任务执行器个数
-     * @param workExecutorSchedule        工作任务执是否开启计划任务
-     *                                    开启后会启动一个计划线程池用于接收计划任务
-     * @param maxBlockingNum              最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
-     *                                    当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
-     * @param autoReleaseBlocking         是否自动释放阻塞、适用于工作内容为同步处理的逻辑
-     * @param maxConsumeSpeed             最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
-     *                                    每消费一次的数据量大小取决于如下消费者参数
-     *                                    {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
-     *                                    {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
-     * @param workHandlerScanner          定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
-     *                                    null则代表不启动扫描
-     * @param monitor_period              监控信息打印周期(秒)、0则代表不打印
-     * @param consumerParam               消费者的参数、不能为null
-     *                                    主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
-     *                                    具体参考{@link ConsumerParam}中静态方法
+     * @param name                 当前消费者的名称(用于标定线程名称)
+     * @param workExecutorNum      工作任务执行器个数
+     * @param workExecutorSchedule 工作任务执是否开启计划任务
+     *                             开启后会启动一个计划线程池用于接收计划任务
+     * @param maxBlockingNum       最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
+     *                             当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
+     * @param autoReleaseBlocking  是否自动释放阻塞、适用于工作内容为同步处理的逻辑
+     * @param maxConsumeSpeed      最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
+     *                             每消费一次的数据量大小取决于如下消费者参数
+     *                             {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
+     *                             {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
+     * @param workHandlerScanner   定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
+     *                             null则代表不启动扫描
+     * @param monitor_period       监控信息打印周期(秒)、0则代表不打印
+     * @param consumerParam        消费者的参数、不能为null
+     *                             主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
+     *                             具体参考{@link ConsumerParam}中静态方法
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
@@ -184,6 +183,62 @@ public abstract class DataDrivenKafkaConsumer {
         this.workHandlerScanner = workHandlerScanner;
         this.monitor_period = monitor_period;
         this.consumerParam = consumerParam;
+
+        try {
+            //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
+            if (maxConsumeSpeed == 0) {
+                consumeCount = null;
+                resetConsumeCountPool = null;
+            } else {
+                consumeCount = new AtomicInteger();
+                resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
+                resetConsumeCountPool.scheduleAtFixedRate(() -> {
+                    consumeCount.set(0);
+                }, 1, 1, TimeUnit.SECONDS);
+            }
+            //启动监控
+            if (monitor_period == 0) {
+                monitor_workHandlerCount = null;
+                monitor_consumeCount = null;
+                monitor_workCount = null;
+                monitor_pool = null;
+            } else {
+                monitor_workHandlerCount = new LongAdder();
+                monitor_consumeCount = new LongAdder();
+                monitor_workCount = new LongAdder();
+                monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
+                monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
+            }
+
+            //启动扫描过期数据
+            if (workHandlerScanner == null) {
+                scannerPool = null;
+            } else {
+                scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-scanner"));
+                scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
+            }
+
+            //启动任务执行器
+            this.workExecutors = new WorkExecutor[workExecutorNum];
+            for (int i = 0; i < workExecutorNum; i++) {
+                this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule);
+            }
+
+        } catch (Exception ex) {
+            close();
+            throw BaseException.get(ex);
+        }
+    }
+
+    /**
+     * 开始消费
+     */
+    public final synchronized void startConsume(Map<String, Object> consumerProp) {
+        if (!running_consume) {
+            running_consume = true;
+            consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
+            consumerThreadHolder.start();
+        }
     }
 
     /**
@@ -222,12 +277,12 @@ public abstract class DataDrivenKafkaConsumer {
      * @param id
      * @return
      */
-    public final CompletableFuture<Void> removeHandler(String id) {
+    public final Future<?> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
         return removeHandler(id, workExecutor, null);
     }
 
-    private CompletableFuture<Void> removeHandler(String id, WorkExecutor executor, Function<WorkHandler, Boolean> func) {
+    private Future<?> removeHandler(String id, WorkExecutor executor, Function<WorkHandler, Boolean> func) {
         return executor.submit(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {
@@ -246,7 +301,7 @@ public abstract class DataDrivenKafkaConsumer {
         });
     }
 
-    public CompletableFuture<Void> checkRemoveEntity(String id, Function<WorkHandler, Boolean> func) {
+    public Future<?> checkRemoveEntity(String id, Function<WorkHandler, Boolean> func) {
         WorkExecutor executor = getWorkExecutor(id);
         return removeHandler(id, executor, func);
     }
@@ -282,105 +337,30 @@ public abstract class DataDrivenKafkaConsumer {
     }
 
 
-    /**
-     * 初始化
-     * 构造线程池
-     * 启动线程
-     * 注册销毁狗子
-     *
-     * @param consumerProp
-     */
-    public synchronized void init(Map<String, Object> consumerProp) {
-        if (!running) {
-            try {
-                //标记可用
-                running = true;
-                running_consume = true;
-                //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
-                if (maxConsumeSpeed > 0) {
-                    consumeCount = new AtomicInteger();
-                    resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
-                    resetConsumeCountPool.scheduleAtFixedRate(() -> {
-                        consumeCount.set(0);
-                    }, 1, 1, TimeUnit.SECONDS);
-                }
-                //启动监控
-                if (monitor_period != 0) {
-                    monitor_workHandlerCount = new LongAdder();
-                    monitor_consumeCount = new LongAdder();
-                    monitor_workCount = new LongAdder();
-                    monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
-                    monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
-                }
-                //启动扫描过期数据
-                if (workHandlerScanner != null) {
-                    scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-scanner"));
-                    scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
-                }
-                //启动任务执行器
-                this.workExecutors = new WorkExecutor[workExecutorNum];
-                for (int i = 0; i < workExecutorNum; i++) {
-                    this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule);
-                    this.workExecutors[i].init();
-                }
-                //启动消费者
-                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
-                consumeThread = holder.thread();
-                consumeThreads = holder.threads();
-            } catch (Exception ex) {
-                destroy();
-                throw BaseException.get(ex);
-            }
-        }
-    }
-
-    /**
-     * 销毁资源
-     */
-    public synchronized void destroy() {
-        if (running) {
-            running = false;
+    @Override
+    public synchronized void close() {
+        if (!closed) {
+            closed = true;
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(true, consumeThread, consumeThreads, resetConsumeCountPool);
-            consumeThread = null;
-            consumeThreads = null;
-            resetConsumeCountPool = null;
+            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads(), resetConsumeCountPool);
             //等待工作执行器退出
-            List<CompletableFuture<?>> futureList = new ArrayList<>();
             for (WorkExecutor workExecutor : workExecutors) {
-                try {
-                    futureList.add(workExecutor.destroy(() -> {
-                        for (String id : workExecutor.workHandlers.keySet()) {
-                            removeHandler(id);
-                        }
-                    }));
-                } catch (Exception ex) {
-                    throw BaseException.get(ex);
-                }
+                //添加删除任务
+                workExecutor.execute(() -> {
+                    for (String id : workExecutor.workHandlers.keySet()) {
+                        removeHandler(id);
+                    }
+                });
+                //关闭线程池
+                workExecutor.shutdown();
             }
-            try {
-                for (CompletableFuture<?> future : futureList) {
-                    future.join();
-                }
-            } catch (Exception ex) {
-                logger.error("error", ex);
+            for (WorkExecutor workExecutor : workExecutors) {
+                //等待工作执行器退出
+                ExecutorUtil.await(workExecutor);
             }
             //取消监控、扫描过期线程
-            ExecutorUtil.shutdownAllThenAwait(true, monitor_pool, scannerPool);
-
-            //清空变量
-            consumeThread = null;
-            consumeThreads = null;
-            workExecutors = null;
-            consumeCount = null;
-            resetConsumeCountPool = null;
-            scannerPool = null;
-            monitor_workHandlerCount = null;
-            monitor_consumeCount = null;
-            monitor_workCount = null;
-            monitor_pool = null;
-            pause_consume = false;
+            ExecutorUtil.shutdownAllThenAwait(false, monitor_pool, scannerPool);
         }
     }
 

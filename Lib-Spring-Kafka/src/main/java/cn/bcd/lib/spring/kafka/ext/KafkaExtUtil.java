@@ -3,13 +3,11 @@ package cn.bcd.lib.spring.kafka.ext;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -20,7 +18,16 @@ public class KafkaExtUtil {
 
 
     public record ConsumerThreadHolder(Thread thread, Thread[] threads) {
-
+        public void start() {
+            if (thread != null) {
+                thread.start();
+            }
+            if (threads != null) {
+                for (Thread thread : threads) {
+                    thread.start();
+                }
+            }
+        }
     }
 
 
@@ -58,7 +65,6 @@ public class KafkaExtUtil {
                 //初始化消费线程、提交消费任务
                 String threadName = getConsumerThreadName(name, 0, 1);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
-                consumeThread.start();
                 logger.info("start consumer[{}] for topics{}", threadName, Arrays.toString(topics));
             }
             case 2 -> {
@@ -75,7 +81,6 @@ public class KafkaExtUtil {
                     //初始化消费线程、提交消费任务
                     String threadName = getConsumerThreadName(name, i, topics.length);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
-                    consumeThreads[i].start();
                     logger.info("start consumer[{}] for topic[{}]", threadName, topic);
                 }
             }
@@ -90,7 +95,6 @@ public class KafkaExtUtil {
                 //初始化消费线程、提交消费任务
                 String threadName = getConsumerThreadName(name, 0, 1);
                 consumeThread = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
-                consumeThread.start();
                 logger.info("start consumer[{}] for topicPartitions{}", threadName, Arrays.toString(topicPartitions));
             }
             case 4 -> {
@@ -106,12 +110,10 @@ public class KafkaExtUtil {
                     }
                     String threadName = getConsumerThreadName(name, i, topicPartitions.length);
                     consumeThreads[i] = new Thread(() -> kafkaConsumerConsumer.accept(consumer), threadName);
-                    consumeThreads[i].start();
                     logger.info("start consumer threadName[{}] for topicPartition[{}]", threadName, topicPartition);
                 }
             }
-            default ->
-                    throw BaseException.get("ConsumerParam mode not support", name, consumerParam.mode);
+            default -> throw BaseException.get("ConsumerParam mode not support", name, consumerParam.mode);
         }
         return new ConsumerThreadHolder(consumeThread, consumeThreads);
     }

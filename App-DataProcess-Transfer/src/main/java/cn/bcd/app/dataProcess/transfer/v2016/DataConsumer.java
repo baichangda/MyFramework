@@ -14,7 +14,6 @@ import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DataConsumer extends DataDrivenKafkaConsumer {
@@ -26,23 +25,22 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         super("DataConsumer",
                 Runtime.getRuntime().availableProcessors(),
                 false,
-                null,
                 100000,
                 true,
                 0,
                 WorkHandlerScanner.get(300, 60),
                 5,
-                ConsumerParam.get_singleConsumer(topic)
+                ConsumerParam.get_singleConsumer(topic, partitions)
         );
         this.kafkaProp = kafkaProp;
         this.kafkaDataHandlers = kafkaDataHandlers;
     }
 
     public void init() {
-        Map<String, Object> consumerProp = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
         //暂停消费、等待连接
         pauseConsume();
-        init(consumerProp);
+        //启动消费
+        startConsume(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 
     @Override

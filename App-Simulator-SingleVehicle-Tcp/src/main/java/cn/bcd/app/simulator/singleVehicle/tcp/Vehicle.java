@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -50,14 +51,14 @@ public class Vehicle {
         this.executor = executor;
     }
 
-    public CompletableFuture<Void> init() {
+    public Future<?> init() {
         return executor.submit(() -> {
             this.vehicleData = vehicleDataFunction.apply(vin);
             vehicleData.init();
         });
     }
 
-    public CompletableFuture<Void> destroy() {
+    public Future<?> destroy() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -70,7 +71,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<Void> connect(String host, int port,
+    public Future<?> connect(String host, int port,
                                            Runnable onConnected,
                                            Runnable onDisconnected,
                                            Consumer<byte[]> onSend,
@@ -102,7 +103,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<Void> disconnect() {
+    public Future<?> disconnect() {
         return executor.submit(() -> {
             if (channel != null) {
                 channel.close();
@@ -116,7 +117,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<Void> startSendRunData() {
+    public Future<?> startSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture == null) {
                 scheduledFuture = executor.scheduleAtFixedRate(this::send_vehicleRunData, 1, sendPeriod, TimeUnit.SECONDS);
@@ -124,7 +125,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<Void> stopSendRunData() {
+    public Future<?> stopSendRunData() {
         return executor.submit(() -> {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
@@ -133,7 +134,7 @@ public class Vehicle {
         });
     }
 
-    public CompletableFuture<Void> send(byte[] data) {
+    public Future<?> send(byte[] data) {
         return executor.submit(() -> {
             if (channel != null) {
                 logger.info("send message vin[{}] type[{}]:\n{}", PacketUtil.getVin(data), PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));

@@ -1,6 +1,5 @@
 package cn.bcd.lib.base.executor.consume;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -11,15 +10,15 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class ConsumeExecutorGroup<T> {
+public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;
@@ -28,23 +27,23 @@ public abstract class ConsumeExecutorGroup<T> {
     public final EntityScanner entityScanner;
     public final int monitor_period;
 
-    public ConsumeExecutor<T>[] executors;
+    public final ConsumeExecutor<T>[] executors;
 
     /**
      * 是否运行中
      */
-    volatile boolean running;
+    boolean running = true;
 
-    ScheduledExecutorService scannerPool;
+    final ScheduledExecutorService scannerPool;
 
     /**
      * 监控信息
      */
-    ScheduledExecutorService monitor_pool;
-    LongAdder monitor_blockingNum;
-    LongAdder monitor_entityNum;
-    LongAdder monitor_receiveNum;
-    LongAdder monitor_workNum;
+    final ScheduledExecutorService monitor_pool;
+    final LongAdder monitor_blockingNum;
+    final LongAdder monitor_entityNum;
+    final LongAdder monitor_receiveNum;
+    final LongAdder monitor_workNum;
 
     public ConsumeExecutorGroup(String groupName,
                                 int executorNum,
@@ -58,6 +57,37 @@ public abstract class ConsumeExecutorGroup<T> {
         this.executorSchedule = executorSchedule;
         this.entityScanner = entityScanner;
         this.monitor_period = monitor_period;
+
+        //创建线程池
+        executors = new ConsumeExecutor[executorNum];
+        for (int i = 0; i < executorNum; i++) {
+            executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + executorNum + ")",
+                    executorQueueSize,
+                    executorSchedule);
+        }
+        //启动扫描过期数据
+        if (entityScanner == null) {
+            scannerPool = null;
+        } else {
+            scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-entityScanner"));
+            scannerPool.scheduleAtFixedRate(() -> scanAndDestroyEntity(entityScanner.expiredInSecond), entityScanner.periodInSecond, entityScanner.periodInSecond, TimeUnit.SECONDS);
+        }
+        if (monitor_period > 0) {
+            monitor_blockingNum = new LongAdder();
+            monitor_entityNum = new LongAdder();
+            monitor_receiveNum = new LongAdder();
+            monitor_workNum = new LongAdder();
+            monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
+            monitor_pool.scheduleAtFixedRate(() -> {
+                logger.info(monitor_log());
+            }, monitor_period, monitor_period, TimeUnit.SECONDS);
+        } else {
+            monitor_blockingNum = null;
+            monitor_entityNum = null;
+            monitor_receiveNum = null;
+            monitor_workNum = null;
+            monitor_pool = null;
+        }
     }
 
 
@@ -83,72 +113,28 @@ public abstract class ConsumeExecutorGroup<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public synchronized void init() {
-        if (!running) {
-            running = true;
-            executors = new ConsumeExecutor[executorNum];
-            for (int i = 0; i < executorNum; i++) {
-                executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + executorNum + ")",
-                        executorQueueSize,
-                        executorSchedule);
-                executors[i].init();
-            }
 
-            //启动扫描过期数据
-            if (entityScanner != null) {
-                scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-entityScanner"));
-                scannerPool.scheduleAtFixedRate(() -> scanAndDestroyEntity(entityScanner.expiredInSecond), entityScanner.periodInSecond, entityScanner.periodInSecond, TimeUnit.SECONDS);
-            }
-
-            if (monitor_period > 0) {
-                monitor_blockingNum = new LongAdder();
-                monitor_entityNum = new LongAdder();
-                monitor_receiveNum = new LongAdder();
-                monitor_workNum = new LongAdder();
-                monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
-                monitor_pool.scheduleAtFixedRate(() -> {
-                    logger.info(monitor_log());
-                }, monitor_period, monitor_period, TimeUnit.SECONDS);
-            }
-        }
-    }
-
-    public synchronized void destroy() {
+    @Override
+    public void close() throws Exception {
         if (running) {
             running = false;
-            List<CompletableFuture<?>> futureList = new ArrayList<>();
             for (ConsumeExecutor<T> executor : executors) {
-                try {
-                    futureList.add(executor.destroy(() -> {
-                        for (String id : executor.entityMap.keySet()) {
-                            removeEntity(id, executor, null);
-                        }
-                    }));
-                } catch (Exception ex) {
-                    throw BaseException.get(ex);
+                //销毁entity
+                for (String id : executor.entityMap.keySet()) {
+                    removeEntity(id, executor, null);
                 }
+                //停止线程池
+                executor.shutdown();
             }
-            try {
-                for (CompletableFuture<?> future : futureList) {
-                    future.join();
-                }
-            } catch (Exception ex) {
-                logger.error("error", ex);
+            for (ConsumeExecutor<T> executor : executors) {
+                //等待线程池停止
+                ExecutorUtil.await(executor);
             }
             ExecutorUtil.shutdownThenAwait(true, scannerPool, monitor_pool);
-            executors = null;
-            scannerPool = null;
-            monitor_pool = null;
-            monitor_blockingNum = null;
-            monitor_entityNum = null;
-            monitor_receiveNum = null;
-            monitor_workNum = null;
         }
-
     }
 
-    private CompletableFuture<Void> removeEntity(String id, ConsumeExecutor<T> executor, Function<ConsumeEntity<T>, Boolean> func) {
+    private Future<?> removeEntity(String id, ConsumeExecutor<T> executor, Function<ConsumeEntity<T>, Boolean> func) {
         return executor.submit(() -> {
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
@@ -167,12 +153,12 @@ public abstract class ConsumeExecutorGroup<T> {
         });
     }
 
-    public CompletableFuture<Void> removeEntity(String id) {
+    public Future<?> removeEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
         return removeEntity(id, executor, null);
     }
 
-    public CompletableFuture<Void> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
+    public Future<?> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
         ConsumeExecutor<T> executor = getExecutor(id);
         return removeEntity(id, executor, func);
     }
@@ -183,7 +169,7 @@ public abstract class ConsumeExecutorGroup<T> {
 
     public abstract String id(T t);
 
-    public CompletableFuture<ConsumeEntity<T>> getEntity(String id) {
+    public Future<ConsumeEntity<T>> getEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> executor.entityMap.get(id));
     }

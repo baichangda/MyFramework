@@ -1,67 +1,37 @@
 package cn.bcd.lib.base.executor;
 
-import cn.bcd.lib.base.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
-
-public class SingleThreadExecutorGroup{
+public class SingleThreadExecutorGroup implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;
     public final int executorQueueSize;
     public final boolean executorSchedule;
+    public final SingleThreadExecutor[] executors;
 
-    public SingleThreadExecutor[] executors;
-
-    volatile boolean running;
+    boolean closed;
 
     public SingleThreadExecutorGroup(String groupName, int executorNum, int executorQueueSize, boolean executorSchedule) {
         this.groupName = groupName;
         this.executorNum = executorNum;
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
-    }
-
-    public synchronized void init() {
-        if (!running) {
-            running = true;
-            executors = new SingleThreadExecutor[executorNum];
-            for (int i = 0; i < executorNum; i++) {
-                executors[i] = newExecutor(i);
-                executors[i].init();
-            }
+        this.executors = new SingleThreadExecutor[executorNum];
+        for (int i = 0; i < executorNum; i++) {
+            executors[i] = newExecutor(i);
         }
     }
 
-    public synchronized void destroy() {
-        if (running) {
-            running = false;
-            //静默1s用于任务提交
-            try {
-                TimeUnit.MILLISECONDS.sleep(100);
-            } catch (InterruptedException e) {
-                logger.error("error", e);
-            }
-            List<CompletableFuture<?>> futureList = new ArrayList<>();
+
+    @Override
+    public synchronized void close() throws Exception {
+        if (!closed) {
+            closed = true;
             for (SingleThreadExecutor executor : executors) {
-                futureList.add(executor.destroy());
+                executor.close();
             }
-            for (CompletableFuture<?> future : futureList) {
-                future.join();
-            }
-            executors = null;
-        }
-    }
-
-    private void checkRunning() {
-        if (!running) {
-            throw BaseException.get("executorGroup[{}] not running", groupName);
         }
     }
 
@@ -75,7 +45,6 @@ public class SingleThreadExecutorGroup{
 
     @SuppressWarnings("unchecked")
     public SingleThreadExecutor getExecutor(String id) {
-        checkRunning();
         return executors[Math.floorMod(id.hashCode(), executorNum)];
     }
 }

@@ -35,7 +35,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        init(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
     }
 
     @Override

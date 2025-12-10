@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  * 例如test-reset
  * <p>
  */
-public abstract class ThreadDrivenKafkaConsumer {
+public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
@@ -71,47 +71,52 @@ public abstract class ThreadDrivenKafkaConsumer {
     /**
      * 消费线程
      */
-    public Thread consumeThread;
-    public Thread[] consumeThreads;
+    public KafkaExtUtil.ConsumerThreadHolder consumerThreadHolder;
 
 
     /**
      * 工作线程队列
      */
-    public BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-    public BlockingQueue<ConsumerRecord<String, byte[]>>[] queues;
+    public final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
+    public final BlockingQueue<ConsumerRecord<String, byte[]>>[] queues;
 
 
     /**
      * 工作线程数组
      */
-    public Thread[] workThreads;
+    public final Thread[] workThreads;
 
 
     /**
      * 重置消费计数
      */
-    public AtomicInteger consumeCount;
-    public ScheduledExecutorService resetConsumeCountPool;
+    public final AtomicInteger consumeCount;
+    public final ScheduledExecutorService resetConsumeCountPool;
 
     /**
      * 监控信息
      */
-    public LongAdder monitor_consumeCount;
-    public LongAdder monitor_workCount;
-    public ScheduledExecutorService monitor_pool;
+    public final LongAdder monitor_consumeCount;
+    public final LongAdder monitor_workCount;
+    public final ScheduledExecutorService monitor_pool;
 
 
     /**
-     * 当前消费者是否运行中
+     * 是否关闭
      */
-    volatile boolean running;
+    boolean closed;
 
     /**
      * 控制退出线程标志
      */
     volatile boolean running_consume;
     volatile boolean running_work;
+
+    /**
+     * 是否暂停消费
+     */
+    volatile boolean pause_consume = false;
+
 
 
     /**
@@ -155,104 +160,109 @@ public abstract class ThreadDrivenKafkaConsumer {
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.monitor_period = monitor_period;
         this.consumerParam = consumerParam;
-    }
+        try {
+            running_work = true;
 
-    /**
-     * 初始化
-     *
-     * @param consumerProp
-     */
-    @SuppressWarnings("unchecked")
-    public synchronized void init(Map<String, Object> consumerProp) {
-        if (!running) {
-            try {
-                //标记可用
-                running = true;
-                running_consume = true;
-                running_work = true;
+            //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
+            if (maxConsumeSpeed == 0) {
+                consumeCount = null;
+                resetConsumeCountPool = null;
+            } else {
+                consumeCount = new AtomicInteger();
+                resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
+                resetConsumeCountPool.scheduleAtFixedRate(() -> {
+                    consumeCount.set(0);
+                }, 1, 1, TimeUnit.SECONDS);
+            }
 
-                //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
-                if (maxConsumeSpeed > 0) {
-                    consumeCount = new AtomicInteger();
-                    resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
-                    resetConsumeCountPool.scheduleAtFixedRate(() -> {
-                        consumeCount.set(0);
-                    }, 1, 1, TimeUnit.SECONDS);
-                }
-
-                //初始化工作队列、工作线程池
-                workThreads = new Thread[workThreadNum];
-                if (oneWorkThreadOneQueue) {
-                    this.queue = null;
-                    this.queues = new BlockingQueue[workThreadNum];
-                    for (int i = 0; i < workThreadNum; i++) {
-                        final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-                        if (workThreadQueueSize <= 0) {
-                            queue = new LinkedBlockingQueue<>();
-                        } else {
-                            queue = new ArrayBlockingQueue<>(workThreadQueueSize);
-                        }
-                        this.queues[i] = queue;
-                        workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
-                        workThreads[i].start();
-                    }
-                } else {
-                    this.queues = null;
+            //初始化工作队列、工作线程池
+            workThreads = new Thread[workThreadNum];
+            if (oneWorkThreadOneQueue) {
+                this.queue = null;
+                this.queues = new BlockingQueue[workThreadNum];
+                for (int i = 0; i < workThreadNum; i++) {
                     final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
                     if (workThreadQueueSize <= 0) {
                         queue = new LinkedBlockingQueue<>();
                     } else {
                         queue = new ArrayBlockingQueue<>(workThreadQueueSize);
                     }
-                    this.queue = queue;
-                    for (int i = 0; i < workThreadNum; i++) {
-                        workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
-                        workThreads[i].start();
-                    }
+                    this.queues[i] = queue;
+                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                    workThreads[i].start();
                 }
-
-                //启动监控
-                if (monitor_period != 0) {
-                    monitor_consumeCount = new LongAdder();
-                    monitor_workCount = new LongAdder();
-                    monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
-                    monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
+            } else {
+                this.queues = null;
+                final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
+                if (workThreadQueueSize <= 0) {
+                    queue = new LinkedBlockingQueue<>();
+                } else {
+                    queue = new ArrayBlockingQueue<>(workThreadQueueSize);
                 }
-                //启动消费者
-                KafkaExtUtil.ConsumerThreadHolder holder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
-                consumeThread = holder.thread();
-                consumeThreads = holder.threads();
-            } catch (Exception ex) {
-                //初始化异常、则销毁资源
-                destroy();
-                throw BaseException.get(ex);
+                this.queue = queue;
+                for (int i = 0; i < workThreadNum; i++) {
+                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                    workThreads[i].start();
+                }
             }
+
+            //启动监控
+            if (monitor_period == 0) {
+                monitor_consumeCount = null;
+                monitor_workCount = null;
+                monitor_pool = null;
+            } else {
+                monitor_consumeCount = new LongAdder();
+                monitor_workCount = new LongAdder();
+                monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
+                monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
+            }
+
+        } catch (Exception ex) {
+            //初始化异常、则销毁资源
+            close();
+            throw BaseException.get(ex);
         }
     }
 
+    /**
+     * 开始消费
+     */
+    @SuppressWarnings("unchecked")
+    public synchronized void startConsume(Map<String, Object> consumerProp) {
+        if (!running_consume) {
+            running_consume = true;
+            //启动消费者
+            consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
+            consumerThreadHolder.start();
+        }
+    }
 
-    public synchronized void destroy() {
-        if (running) {
+    /**
+     * 暂停消费
+     */
+    public final void pauseConsume() {
+        pause_consume = true;
+    }
+
+    /**
+     * 恢复消费
+     */
+    public final void resumeConsume() {
+        pause_consume = false;
+    }
+
+
+    @Override
+    public synchronized void close() {
+        if (!closed) {
+            closed = true;
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(true, consumeThread, consumeThreads, resetConsumeCountPool, queue, queues);
+            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads(), resetConsumeCountPool, queue, queues);
             //打上退出标记、等待工作线程退出
             running_work = false;
             ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
-            //标记不可用
-            running = false;
-            //清空变量
-            blockingNum.reset();
-            consumeThread = null;
-            consumeThreads = null;
-            queue = null;
-            queues = null;
-            workThreads = null;
-            consumeCount = null;
-            resetConsumeCountPool = null;
-            monitor_consumeCount = null;
-            monitor_workCount = null;
-            monitor_pool = null;
         }
     }
 
@@ -279,6 +289,13 @@ public abstract class ThreadDrivenKafkaConsumer {
             if (oneWorkThreadOneQueue) {
                 while (running_consume) {
                     try {
+                        //检查暂停消费
+                        if (pause_consume) {
+                            do {
+                                TimeUnit.MILLISECONDS.sleep(100);
+                            } while (pause_consume);
+                        }
+
                         //检查阻塞
                         if (blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);
