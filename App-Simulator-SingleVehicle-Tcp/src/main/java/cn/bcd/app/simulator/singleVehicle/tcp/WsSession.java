@@ -28,14 +28,6 @@ public class WsSession {
 
     final static SingleThreadExecutorGroup executorGroup = new SingleThreadExecutorGroup("vehicleWorker", Runtime.getRuntime().availableProcessors(), 0, true);
 
-    static {
-        try {
-            executorGroup.init();
-        } catch (Exception ex) {
-            logger.error("error", ex);
-        }
-    }
-
     public WsSession(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, ServerWebSocket channel) {
         this.vin = vin;
         this.executor = executorGroup.getExecutor(vin);
@@ -71,19 +63,20 @@ public class WsSession {
             switch (inMsg.flag()) {
                 case 1 -> {
                     String[] split = inMsg.data().split(":");
-                    vehicle.connect(split[0],
+                    executor.execute(() -> {
+                        try {
+                            vehicle.connect(split[0],
                                     Integer.parseInt(split[1]),
                                     this::tcp_onConnected,
                                     this::tcp_onDisConnected,
                                     this::tcp_onSend,
                                     this::tcp_onReceive,
-                                    this::vehicle_onDataUpdate)
-                            .whenCompleteAsync((r, ex) -> {
-                                if (ex != null) {
-                                    logger.error("connect tcp address[{}] error", inMsg.data(), ex);
-                                    ws_send(new WsOutMsg(1, null, false));
-                                }
-                            }, executor);
+                                    this::vehicle_onDataUpdate);
+                        } catch (Exception ex) {
+                            logger.error("connect tcp address[{}] error", inMsg.data(), ex);
+                            ws_send(new WsOutMsg(1, null, false));
+                        }
+                    });
                 }
                 case 2 -> {
                     try {
