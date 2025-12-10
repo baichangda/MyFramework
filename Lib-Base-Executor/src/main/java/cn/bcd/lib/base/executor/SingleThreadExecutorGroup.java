@@ -16,18 +16,16 @@ public class SingleThreadExecutorGroup{
     public final int executorNum;
     public final int executorQueueSize;
     public final boolean executorSchedule;
-    public final BlockingChecker executorBlockingChecker;
 
     public SingleThreadExecutor[] executors;
 
     volatile boolean running;
 
-    public SingleThreadExecutorGroup(String groupName, int executorNum, int executorQueueSize, boolean executorSchedule, BlockingChecker executorBlockingChecker) {
+    public SingleThreadExecutorGroup(String groupName, int executorNum, int executorQueueSize, boolean executorSchedule) {
         this.groupName = groupName;
         this.executorNum = executorNum;
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
-        this.executorBlockingChecker = executorBlockingChecker;
     }
 
     public synchronized void init() {
@@ -71,8 +69,7 @@ public class SingleThreadExecutorGroup{
         return new SingleThreadExecutor(
                 groupName + "-executor(" + (index + 1) + "/" + executorNum + ")",
                 executorQueueSize,
-                executorSchedule,
-                executorBlockingChecker);
+                executorSchedule);
     }
 
 

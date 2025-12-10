@@ -1,7 +1,6 @@
 package cn.bcd.lib.spring.kafka.ext.datadriven;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -54,11 +53,6 @@ import java.util.stream.Collectors;
  * 例如test-worker(1/3)-schedule
  * 其中test-worker(1/3)即工作线程名称、接后缀 -schedule
  * <p>
- * 工作任务执行器中的阻塞检查线程可能有多个、和工作任务执行器数量有关、开头为 {name}-worker、以 -blockingChecker 结尾
- * 需要开启{@link #workExecutorBlockingChecker}才会有
- * 例如test-worker(1/3)-blockingChecker
- * 其中test-worker(1/3)即工作线程名称、接后缀 -blockingChecker
- * <p>
  * 限速重置消费计数线程只有一个、开头为 {name}-reset
  * 需要开启{@link #maxConsumeSpeed}才会有
  * 例如test-reset
@@ -74,7 +68,6 @@ public abstract class DataDrivenKafkaConsumer {
     public final String name;
     public final int workExecutorNum;
     public final boolean workExecutorSchedule;
-    public final BlockingChecker workExecutorBlockingChecker;
     public final int maxBlockingNum;
     public final boolean autoReleaseBlocking;
     public final int maxConsumeSpeed;
@@ -159,12 +152,6 @@ public abstract class DataDrivenKafkaConsumer {
      * @param workExecutorNum             工作任务执行器个数
      * @param workExecutorSchedule        工作任务执是否开启计划任务
      *                                    开启后会启动一个计划线程池用于接收计划任务
-     * @param workExecutorBlockingChecker 工作任务执行器阻塞检查参数
-     *                                    null代表不启动阻塞检查
-     *                                    否则会启动阻塞检查、每一个执行器会启动一个周期任务线程池、周期进行检查操作
-     *                                    检查逻辑为
-     *                                    向执行器中写入一个空任务、然后等待{@link BlockingChecker#maxBlockingTimeInSecond}后、检查任务是否完成
-     *                                    如果未完成、则告警并每{@link BlockingChecker#periodWhenBlockingInSecond}秒执行一次检查、直到完成
      * @param maxBlockingNum              最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
      *                                    当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
      * @param autoReleaseBlocking         是否自动释放阻塞、适用于工作内容为同步处理的逻辑
@@ -182,7 +169,6 @@ public abstract class DataDrivenKafkaConsumer {
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
                                    boolean workExecutorSchedule,
-                                   BlockingChecker workExecutorBlockingChecker,
                                    int maxBlockingNum,
                                    boolean autoReleaseBlocking,
                                    int maxConsumeSpeed,
@@ -192,7 +178,6 @@ public abstract class DataDrivenKafkaConsumer {
         this.name = name;
         this.workExecutorNum = workExecutorNum;
         this.workExecutorSchedule = workExecutorSchedule;
-        this.workExecutorBlockingChecker = workExecutorBlockingChecker;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
         this.maxConsumeSpeed = maxConsumeSpeed;
@@ -335,7 +320,7 @@ public abstract class DataDrivenKafkaConsumer {
                 //启动任务执行器
                 this.workExecutors = new WorkExecutor[workExecutorNum];
                 for (int i = 0; i < workExecutorNum; i++) {
-                    this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule, workExecutorBlockingChecker);
+                    this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule);
                     this.workExecutors[i].init();
                 }
                 //启动消费者
@@ -518,7 +503,13 @@ public abstract class DataDrivenKafkaConsumer {
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> {
+            if (e.queueSize == 0) {
+                return e.blockingQueue.size() + "";
+            } else {
+                return e.blockingQueue.size() + "/" + e.queueSize;
+            }
+        }).collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +

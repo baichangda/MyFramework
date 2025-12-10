@@ -4,7 +4,6 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
 import cn.bcd.lib.base.executor.queue.WaitStrategy;
-import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ public class SingleThreadExecutor implements Executor {
     public final String threadName;
     public final int queueSize;
     public final boolean schedule;
-    public final BlockingChecker blockingChecker;
 
     public BlockingQueue<Runnable> blockingQueue;
     //用于通知其他线程退出
@@ -34,10 +32,6 @@ public class SingleThreadExecutor implements Executor {
      * 计划任务执行器
      */
     public ScheduledThreadPoolExecutor executor_schedule;
-    /**
-     * 阻塞检查器
-     */
-    public ScheduledThreadPoolExecutor executor_blockingChecker;
 
     /**
      * 当前执行器绑定的线程
@@ -53,20 +47,16 @@ public class SingleThreadExecutor implements Executor {
      *                        最多存在3个线程、名称分别如下
      *                        threadName 工作线程
      *                        threadName-schedule 计划任务线程
-     *                        threadName-blockingChecker 阻塞检查线程
      * @param queueSize       队列长度
      *                        0则表示无边界
      * @param schedule        是否开启计划任务功能
-     * @param blockingChecker 是否开启阻塞检查
      */
     public SingleThreadExecutor(String threadName,
                                 int queueSize,
-                                boolean schedule,
-                                BlockingChecker blockingChecker) {
+                                boolean schedule) {
         this.threadName = threadName;
         this.queueSize = queueSize;
         this.schedule = schedule;
-        this.blockingChecker = blockingChecker;
 
     }
 
@@ -104,37 +94,6 @@ public class SingleThreadExecutor implements Executor {
                 if (schedule) {
                     executor_schedule = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-schedule"));
                 }
-
-                if (blockingChecker != null) {
-                    quitNotifier = new CountDownLatch(1);
-                    //开启阻塞监控
-                    int maxBlockingTimeInSecond = blockingChecker.maxBlockingTimeInSecond;
-                    int periodInSecond = blockingChecker.periodInSecond;
-                    this.executor_blockingChecker = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, threadName + "-blockingChecker"));
-                    this.executor_blockingChecker.scheduleWithFixedDelay(() -> {
-                        long start = DateUtil.CacheSecond.current();
-                        CompletableFuture<Void> future = submit(() -> {
-                        });
-                        try {
-                            boolean quit = quitNotifier.await(maxBlockingTimeInSecond, TimeUnit.SECONDS);
-                            if (quit) {
-                                return;
-                            }
-                            while (!future.isDone()) {
-                                long blockingSecond = DateUtil.CacheSecond.current() - start;
-                                if (blockingSecond >= maxBlockingTimeInSecond) {
-                                    logger.warn("WorkExecutor blocking threadName[{}] blockingTime[{}s>={}s] queueSize[{}]", threadName, blockingSecond, maxBlockingTimeInSecond, executor.getQueue().size());
-                                }
-                                quit = quitNotifier.await(blockingChecker.periodWhenBlockingInSecond, TimeUnit.SECONDS);
-                                if (quit) {
-                                    return;
-                                }
-                            }
-                        } catch (InterruptedException ex) {
-                            throw BaseException.get(ex);
-                        }
-                    }, periodInSecond, periodInSecond, TimeUnit.SECONDS);
-                }
             } catch (Exception ex) {
                 destroy();
                 throw BaseException.get(ex);
@@ -165,15 +124,14 @@ public class SingleThreadExecutor implements Executor {
                         }
 
                         ExecutorUtil.shutdown(true, executor);
-                        ExecutorUtil.shutdown(false, executor_schedule, executor_blockingChecker);
-                        ExecutorUtil.await(executor, executor_schedule, executor_blockingChecker);
+                        ExecutorUtil.shutdown(false, executor_schedule);
+                        ExecutorUtil.await(executor, executor_schedule);
 
                         //清空变量
                         blockingQueue = null;
                         quitNotifier = null;
                         executor = null;
                         executor_schedule = null;
-                        executor_blockingChecker = null;
                         thread = null;
                     } catch (Exception ex) {
                         logger.error("error", ex);

@@ -4,7 +4,6 @@ import cn.bcd.app.dataProcess.gateway.mqtt.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.mqtt.v2016.VehicleEntity_v2016;
 import cn.bcd.app.dataProcess.gateway.mqtt.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.gateway.mqtt.v2025.VehicleEntity_v2025;
-import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.executor.consume.ConsumeEntity;
 import cn.bcd.lib.base.executor.consume.ConsumeExecutorGroup;
 import cn.bcd.lib.base.util.StringUtil;
@@ -32,7 +31,6 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
                 Runtime.getRuntime().availableProcessors(),
                 0,
                 false,
-                BlockingChecker.DEFAULT,
                 EntityScanner.get(300, 60),
                 5);
         this.handlers_v2016 = handlers_v2016;

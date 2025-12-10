@@ -26,7 +26,7 @@ public class WsSession {
 
     public final static ConcurrentHashMap<String, WsSession> sessionMap = new ConcurrentHashMap<>();
 
-    final static SingleThreadExecutorGroup executorGroup = new SingleThreadExecutorGroup("vehicleWorker", Runtime.getRuntime().availableProcessors(), 0, true, null);
+    final static SingleThreadExecutorGroup executorGroup = new SingleThreadExecutorGroup("vehicleWorker", Runtime.getRuntime().availableProcessors(), 0, true);
 
     static {
         try {

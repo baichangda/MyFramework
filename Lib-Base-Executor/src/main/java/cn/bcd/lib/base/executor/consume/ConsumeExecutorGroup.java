@@ -1,7 +1,6 @@
 package cn.bcd.lib.base.executor.consume;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.BlockingChecker;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -26,7 +25,6 @@ public abstract class ConsumeExecutorGroup<T> {
     public final int executorNum;
     public final int executorQueueSize;
     public final boolean executorSchedule;
-    public final BlockingChecker executorBlockingChecker;
     public final EntityScanner entityScanner;
     public final int monitor_period;
 
@@ -52,14 +50,12 @@ public abstract class ConsumeExecutorGroup<T> {
                                 int executorNum,
                                 int executorQueueSize,
                                 boolean executorSchedule,
-                                BlockingChecker executorBlockingChecker,
                                 EntityScanner entityScanner,
                                 int monitor_period) {
         this.groupName = groupName;
         this.executorNum = executorNum;
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
-        this.executorBlockingChecker = executorBlockingChecker;
         this.entityScanner = entityScanner;
         this.monitor_period = monitor_period;
     }
@@ -95,8 +91,7 @@ public abstract class ConsumeExecutorGroup<T> {
             for (int i = 0; i < executorNum; i++) {
                 executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + executorNum + ")",
                         executorQueueSize,
-                        executorSchedule,
-                        executorBlockingChecker);
+                        executorSchedule);
                 executors[i].init();
             }
 
