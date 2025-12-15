@@ -18,14 +18,15 @@ import java.util.List;
  */
 public class DateZoneUtil {
 
+
+    public final static ZoneId ZONE_ID = ZoneId.of("Asia/Shanghai");
+    public final static ZoneOffset ZONE_OFFSET = ZoneOffset.of("+8");
+
     /**
      * 注意
      * {@link DateTimeFormatter#withZone(ZoneId)}如果不设置时区
      * 则不能格式化和解析不带时区的日期类、例如{@link Instant}
      */
-    public final static ZoneId ZONE_ID = ZoneId.of("Asia/Shanghai");
-    public final static ZoneOffset ZONE_OFFSET = ZoneOffset.of("+8");
-
     public final static DateTimeFormatter FORMATTER_yyyyMMdd = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZONE_OFFSET);
     public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmss = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZONE_OFFSET);
     public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmssSSS = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").withZone(ZONE_OFFSET);
