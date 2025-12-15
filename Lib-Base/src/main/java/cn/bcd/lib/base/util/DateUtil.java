@@ -26,8 +26,7 @@ public class DateUtil {
 
     private final static Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
-
-    public static Date clearMillis(Date date) {
+    public static Date clearMills(Date date) {
         long time = date.getTime();
         return new Date((time / 1000) * 1000);
     }
@@ -121,17 +120,13 @@ public class DateUtil {
         return Date.from(ldt.toInstant(zoneOffset));
     }
 
-
     /**
      * 获取开始时间结束时间按照 日期单位 形成多个日期区间
      * 第一个区间开始时间为传入开始时间
      * 最后一个区间结束时间为传入结束时间
-     * <p>
-     * 注意:
-     * 返回的结果包含开头时间、不包含结尾时间
      *
-     * @param startDate  包含
-     * @param endDate    不包含
+     * @param startDate  开始时间、包含
+     * @param endDate    结束时间、不包含
      * @param amount     时间区间跨度
      * @param unit       支持
      *                   {@link ChronoUnit#MINUTES}
@@ -158,8 +153,8 @@ public class DateUtil {
                     }
                     start = end;
                 }
-                returnList.get(0)[0] = Date.from(ldt1.toInstant(zoneOffset));
-                returnList.get(returnList.size() - 1)[1] = Date.from(ldt2.toInstant(zoneOffset));
+                returnList.getFirst()[0] = Date.from(ldt1.toInstant(zoneOffset));
+                returnList.getLast()[1] = Date.from(ldt2.toInstant(zoneOffset));
                 break;
             }
             case HOURS: {
@@ -173,8 +168,8 @@ public class DateUtil {
                     }
                     start = end;
                 }
-                returnList.get(0)[0] = Date.from(ldt1.toInstant(zoneOffset));
-                returnList.get(returnList.size() - 1)[1] = Date.from(ldt2.toInstant(zoneOffset));
+                returnList.getFirst()[0] = Date.from(ldt1.toInstant(zoneOffset));
+                returnList.getLast()[1] = Date.from(ldt2.toInstant(zoneOffset));
                 break;
             }
             case DAYS: {
@@ -188,8 +183,8 @@ public class DateUtil {
                     }
                     start = end;
                 }
-                returnList.get(0)[0] = Date.from(ldt1.toInstant(zoneOffset));
-                returnList.get(returnList.size() - 1)[1] = Date.from(ldt2.toInstant(zoneOffset));
+                returnList.getFirst()[0] = Date.from(ldt1.toInstant(zoneOffset));
+                returnList.getLast()[1] = Date.from(ldt2.toInstant(zoneOffset));
                 break;
             }
             case WEEKS: {
@@ -204,8 +199,8 @@ public class DateUtil {
                     }
                     start = end;
                 }
-                returnList.get(0)[0] = Date.from(ldt1.toInstant(zoneOffset));
-                returnList.get(returnList.size() - 1)[1] = Date.from(ldt2.toInstant(zoneOffset));
+                returnList.getFirst()[0] = Date.from(ldt1.toInstant(zoneOffset));
+                returnList.getLast()[1] = Date.from(ldt2.toInstant(zoneOffset));
                 break;
             }
             case MONTHS: {
@@ -219,12 +214,12 @@ public class DateUtil {
                     }
                     start = end;
                 }
-                returnList.get(0)[0] = Date.from(ldt1.toInstant(zoneOffset));
-                returnList.get(returnList.size() - 1)[1] = Date.from(ldt2.toInstant(zoneOffset));
+                returnList.getFirst()[0] = Date.from(ldt1.toInstant(zoneOffset));
+                returnList.getLast()[1] = Date.from(ldt2.toInstant(zoneOffset));
                 break;
             }
             default: {
-                throw BaseException.get("[DateUtil.range],unit[{}}] Not Support!", unit.toString());
+                throw BaseException.get("unit[{}] Not Support!", unit.toString());
             }
         }
         return returnList;
@@ -292,30 +287,8 @@ public class DateUtil {
         } else {
             return 0;
         }
-
-
     }
 
-
-    /**
-     * 会改变参数值
-     * 格式化日期参数开始日期和结束日期
-     * 格式规则为:
-     * 开始日期去掉时分秒
-     * 结束日期+1天且去掉时分秒
-     *
-     * @param startDate  包括
-     * @param endDate    不包括
-     * @param zoneOffset 时区偏移量
-     */
-    public static void formatDateParam(Date startDate, Date endDate, ZoneOffset zoneOffset) {
-        if (startDate != null) {
-            startDate.setTime(getFloorDate(startDate, ChronoUnit.DAYS, zoneOffset).getTime());
-        }
-        if (endDate != null) {
-            endDate.setTime(getCeilDate(endDate, ChronoUnit.DAYS, zoneOffset).getTime());
-        }
-    }
 
     /**
      * date转换为时间戳字节数组
@@ -393,7 +366,6 @@ public class DateUtil {
         private volatile long l;
 
         CacheMillisecond() {
-            l = System.currentTimeMillis();
             System.out.println("CacheMillisecond init");
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheMillisecond");
@@ -418,7 +390,6 @@ public class DateUtil {
         private volatile long l;
 
         CacheSecond() {
-            l = System.currentTimeMillis() / 1000L;
             System.out.println("CacheSecond init");
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheSecond");

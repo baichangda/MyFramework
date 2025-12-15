@@ -51,10 +51,13 @@ public class DateZoneUtil {
         };
     }
 
-    /**
-     * @param dateStr
-     * @return
-     */
+    public static LocalDateTime strToLdt_yyyyMMdd(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDate.from(FORMATTER_yyyyMMdd.parse(dateStr)).atStartOfDay();
+    }
+
     public static Date strToDate_yyyyMMdd(String dateStr) {
         if (dateStr == null) {
             return null;
@@ -62,10 +65,13 @@ public class DateZoneUtil {
         return Date.from(LocalDate.from(FORMATTER_yyyyMMdd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
     }
 
-    /**
-     * @param dateStr
-     * @return
-     */
+    public static LocalDateTime strToLdt_yyyyMMddHHmmss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyyMMddHHmmss.parse(dateStr));
+    }
+
     public static Date strToDate_yyyyMMddHHmmss(String dateStr) {
         if (dateStr == null) {
             return null;
@@ -73,10 +79,14 @@ public class DateZoneUtil {
         return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmss.parse(dateStr)));
     }
 
-    /**
-     * @param dateStr
-     * @return
-     */
+
+    public static LocalDateTime strToLdt_yyyyMMddHHmmssSSS(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyyMMddHHmmssSSS.parse(dateStr));
+    }
+
     public static Date strToDate_yyyyMMddHHmmssSSS(String dateStr) {
         if (dateStr == null) {
             return null;
@@ -84,10 +94,13 @@ public class DateZoneUtil {
         return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmssSSS.parse(dateStr)));
     }
 
-    /**
-     * @param dateStr
-     * @return
-     */
+    public static LocalDateTime strToLdt_yyyy_MM_dd_HH_mm_ss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyy_MM_dd_HH_mm_ss.parse(dateStr));
+    }
+
     public static Date strToDate_yyyy_MM_dd_HH_mm_ss(String dateStr) {
         if (dateStr == null) {
             return null;
@@ -95,10 +108,6 @@ public class DateZoneUtil {
         return Date.from(Instant.from(FORMATTER_yyyy_MM_dd_HH_mm_ss.parse(dateStr)));
     }
 
-    /**
-     * @param dateStr
-     * @return
-     */
     public static Date strToDate_yyyy_MM_dd(String dateStr) {
         if (dateStr == null) {
             return null;
@@ -106,10 +115,13 @@ public class DateZoneUtil {
         return Date.from(LocalDate.from(FORMATTER_yyyy_MM_dd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
     }
 
-    /**
-     * @param date
-     * @return
-     */
+    public static String ldtToStr_yyyyMMdd(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMdd.format(ldt);
+    }
+
     public static String dateToStr_yyyyMMdd(Date date) {
         if (date == null) {
             return null;
@@ -117,10 +129,13 @@ public class DateZoneUtil {
         return FORMATTER_yyyyMMdd.format(date.toInstant());
     }
 
-    /**
-     * @param date
-     * @return
-     */
+    public static String ldtToStr_yyyyMMddHHmmss(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmss.format(ldt);
+    }
+
     public static String dateToStr_yyyyMMddHHmmss(Date date) {
         if (date == null) {
             return null;
@@ -128,10 +143,13 @@ public class DateZoneUtil {
         return FORMATTER_yyyyMMddHHmmss.format(date.toInstant());
     }
 
-    /**
-     * @param date
-     * @return
-     */
+    public static String ldtToStr_yyyyMMddHHmmssSSS(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmssSSS.format(ldt);
+    }
+
     public static String dateToStr_yyyyMMddHHmmssSSS(Date date) {
         if (date == null) {
             return null;
@@ -139,11 +157,14 @@ public class DateZoneUtil {
         return FORMATTER_yyyyMMddHHmmssSSS.format(date.toInstant());
     }
 
+    public static String ldtToStr_yyyy_MM_dd(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd.format(ldt);
+    }
 
-    /**
-     * @param date
-     * @return
-     */
+
     public static String dateToStr_yyyy_MM_dd(Date date) {
         if (date == null) {
             return null;
@@ -151,10 +172,13 @@ public class DateZoneUtil {
         return FORMATTER_yyyy_MM_dd.format(date.toInstant());
     }
 
-    /**
-     * @param date
-     * @return
-     */
+    public static String ldtToStr_yyyy_MM_dd_HH_mm_ss(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd_HH_mm_ss.format(ldt);
+    }
+
     public static String dateToStr_yyyy_MM_dd_HH_mm_ss(Date date) {
         if (date == null) {
             return null;
@@ -195,14 +219,6 @@ public class DateZoneUtil {
         return DateUtil.range(startDate, endDate, skip, unit, ZONE_OFFSET);
     }
 
-    /**
-     * @param startDate
-     * @param endDate
-     * @see DateUtil#formatDateParam(Date, Date, ZoneOffset)
-     */
-    public static void formatDateParam(Date startDate, Date endDate) {
-        DateUtil.formatDateParam(startDate, endDate, ZONE_OFFSET);
-    }
 
     public static void main(String[] args) {
         Date time = strToDate_yyyyMMdd("20111111");
