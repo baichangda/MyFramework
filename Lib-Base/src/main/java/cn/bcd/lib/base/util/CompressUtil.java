@@ -1,12 +1,19 @@
 package cn.bcd.lib.base.util;
 
 import cn.bcd.lib.base.exception.BaseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class CompressUtil {
+
+    static Logger logger = LoggerFactory.getLogger(CompressUtil.class);
+
     /**
      * gzip压缩
      *
@@ -21,6 +28,164 @@ public class CompressUtil {
              GZIPOutputStream gos = new GZIPOutputStream(os)) {
             gos.write(data);
             gos.finish();
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    /**
+     * gzip压缩
+     *
+     * @param data
+     * @return
+     */
+    public static byte[] gzip(byte[] data, int off, int len) {
+        if (data == null || data.length == 0) {
+            return new byte[0];
+        }
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+             GZIPOutputStream gos = new GZIPOutputStream(os)) {
+            gos.write(data, off, len);
+            gos.finish();
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    /**
+     * gzip压缩分割器
+     * 根据{@link #maxGzipSize}限制、在压缩的过程中、压缩数据大小一旦大于{@link #maxGzipSize}时，生成一个压缩数据块，并返回
+     * 确保每个压缩后的文件接近{@link #maxGzipSize}
+     */
+    public static class GzipSplitter implements AutoCloseable{
+        public final int maxGzipSize;
+
+        public ByteArrayOutputStream baos;
+        public GZIPOutputStream gos;
+
+        public GzipSplitter(int maxGzipSize) {
+            this.maxGzipSize = maxGzipSize;
+        }
+
+        private void checkAndNewOs() throws IOException {
+            if (baos == null) {
+                baos = new ByteArrayOutputStream();
+                gos = new GZIPOutputStream(baos);
+            }
+        }
+
+        private void checkAndCloseOs() {
+            if (gos != null) {
+                try {
+                    gos.finish();
+                    gos.close();
+                    gos = null;
+                } catch (IOException e) {
+                    logger.error("close error", e);
+                }
+            }
+            if (baos != null) {
+                try {
+                    baos.close();
+                    baos = null;
+                } catch (IOException e) {
+                    logger.error("close error", e);
+                }
+            }
+        }
+
+        private byte[] checkRes() throws IOException {
+            if (baos.size() >= maxGzipSize) {
+                gos.finish();
+                byte[] res = baos.toByteArray();
+                checkAndCloseOs();
+                return res;
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * 写入数据
+         *
+         * @param bytes
+         * @return 压缩数据块、可能为null、null时候代表仅仅写入数据、非null时候表示压缩数据块达到阈值、返回压缩数据块
+         */
+        public byte[] write(byte[] bytes) {
+            try {
+                checkAndNewOs();
+                gos.write(bytes);
+                return checkRes();
+            } catch (IOException e) {
+                checkAndCloseOs();
+                throw BaseException.get(e);
+            }
+        }
+
+        /**
+         * 写入数据
+         *
+         * @param bytes
+         * @param off
+         * @param len
+         * @return 压缩数据块、可能为null、null时候代表仅仅写入数据、非null时候表示压缩数据块达到阈值、返回压缩数据块
+         */
+        public byte[] write(byte[] bytes, int off, int len) {
+            try {
+                checkAndNewOs();
+                gos.write(bytes, off, len);
+                return checkRes();
+            } catch (IOException e) {
+                checkAndCloseOs();
+                throw BaseException.get(e);
+            }
+        }
+
+        /**
+         * 在结束时候调用此方法、获取最后的压缩数据块
+         *
+         * @return 最后的压缩数据块、可能为null(当上一次write返回非null)
+         */
+        public byte[] finish() {
+            if (baos == null) {
+                return null;
+            } else {
+                try {
+                    gos.finish();
+                    return baos.toByteArray();
+                } catch (IOException e) {
+                    throw BaseException.get(e);
+                } finally {
+                    checkAndCloseOs();
+                }
+            }
+        }
+
+        @Override
+        public void close() throws Exception {
+            checkAndCloseOs();
+        }
+    }
+
+    /**
+     * gzip压缩
+     *
+     * @param data
+     * @return
+     */
+    public static byte[] gzip(byte[] data, int off, int len, int maxSize) {
+        if (data == null || data.length == 0) {
+            return new byte[0];
+        }
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+             GZIPOutputStream gos = new GZIPOutputStream(os)) {
+            gos.write(data, off, len);
+            gos.finish();
+            if (os.size() >= maxSize) {
+
+            }
             return os.toByteArray();
         } catch (IOException e) {
             throw BaseException.get(e);
@@ -62,5 +227,31 @@ public class CompressUtil {
         } catch (IOException e) {
             throw BaseException.get(e);
         }
+    }
+
+    public static void main(String[] args) throws IOException {
+        GzipSplitter gzipSplitter = new GzipSplitter(300 * 1024);
+        byte[] bytes = Files.readAllBytes(Paths.get("D:\\testBackup.txt"));
+        String s = new String(bytes);
+        String[] split = s.split("\n");
+        int index = 0;
+        for (String string : split) {
+            byte[] arr = new byte[string.length() + 1];
+            arr[arr.length - 1] = '\n';
+            System.arraycopy(string.getBytes(), 0, arr, 0, string.length());
+            byte[] bs = gzipSplitter.write(arr);
+            if (bs != null) {
+                Files.write(Paths.get("test-" + index + ".txt"), bs);
+                index++;
+            }
+        }
+        byte[] finish = gzipSplitter.finish();
+        if (finish != null) {
+            Files.write(Paths.get("test-" + index + ".txt"), finish);
+        }
+
+        byte[] bs = Files.readAllBytes(Paths.get("test-3.txt"));
+        byte[] unGzip = CompressUtil.unGzip(bs, 1000);
+        Files.write(Paths.get("test-3-json.txt"), unGzip);
     }
 }
