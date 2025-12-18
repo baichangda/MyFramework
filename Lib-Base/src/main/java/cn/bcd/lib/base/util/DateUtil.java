@@ -367,6 +367,7 @@ public class DateUtil {
 
         CacheMillisecond() {
             System.out.println("CacheMillisecond init");
+            l = System.currentTimeMillis();
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheMillisecond");
                 thread.setDaemon(true);
@@ -391,6 +392,7 @@ public class DateUtil {
 
         CacheSecond() {
             System.out.println("CacheSecond init");
+            l = System.currentTimeMillis() / 1000L;
             new ScheduledThreadPoolExecutor(1, r -> {
                 Thread thread = new Thread(r, "CacheSecond");
                 thread.setDaemon(true);
