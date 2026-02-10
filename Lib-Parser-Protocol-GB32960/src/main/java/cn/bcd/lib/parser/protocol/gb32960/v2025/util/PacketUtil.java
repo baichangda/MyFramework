@@ -192,7 +192,7 @@ public class PacketUtil {
     }
 
     public static ByteBuf build_byteBuf_timeData(String vin, PacketFlag flag, int replyFlag, Date time) {
-        return Unpooled.wrappedBuffer(build_bytes_timeData(vin, flag, replyFlag, DateUtil.clearMillis(time)));
+        return Unpooled.wrappedBuffer(build_bytes_timeData(vin, flag, replyFlag, DateUtil.clearMills(time)));
     }
 
     /**
@@ -284,7 +284,7 @@ public class PacketUtil {
             throw BaseException.get("password length must be 20,now is {}", password.length());
         }
         PlatformLoginData platformLoginData = new PlatformLoginData();
-        platformLoginData.collectTime = DateUtil.clearMillis(time);
+        platformLoginData.collectTime = DateUtil.clearMills(time);
         platformLoginData.sn = sn;
         platformLoginData.username = username;
         platformLoginData.password = password;
@@ -313,7 +313,7 @@ public class PacketUtil {
             throw BaseException.get("sn must be between 1 and 65531,now is {}", sn);
         }
         PlatformLogoutData platformLogoutData = new PlatformLogoutData();
-        platformLogoutData.collectTime = DateUtil.clearMillis(time);
+        platformLogoutData.collectTime = DateUtil.clearMills(time);
         platformLogoutData.sn = sn;
         Packet packet = new Packet();
         packet.header = new byte[]{0x24, 0x24};
