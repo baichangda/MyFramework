@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Spring-Redis")
     api project(":Lib-Spring-Kafka")
 }

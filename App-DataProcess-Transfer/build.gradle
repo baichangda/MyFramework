@@ -1,4 +1,5 @@
 dependencies {
+    implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Spring-Storage-Mongo")
     implementation project(":Lib-Spring-Redis")

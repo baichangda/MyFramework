@@ -5,7 +5,6 @@ dependencies {
 
     api project(":Lib-Base-Json")
     api("org.springframework.boot:spring-boot-configuration-processor")
-    api("org.springframework.boot:spring-boot-starter-aop")
     api("org.springframework.cloud:spring-cloud-loadbalancer")
     api("com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery")
     api("org.springframework.cloud:spring-cloud-starter-openfeign")

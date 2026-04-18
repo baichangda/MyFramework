@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.spring.boot.dependencies)
     api project(":Lib-Base")
     api project(":Lib-Base-Executor")
     //spring kafka支持

@@ -3,8 +3,7 @@ spring-boot = "4.0.5"
 spring-cloud = "2025.0.0"
 alibaba-cloud = "2025.1.0.0"
 netty = "4.2.12.Final"
-jackson = "2.20.1"
-jackson-annotations = "2.21"
+jackson = "3.1.2"
 okhttp = "5.1.0"
 junit = "6.0.3"
 lombok = "1.18.44"
@@ -24,7 +23,7 @@ oshi = "6.11.1"
 javassist = "3.30.2-GA"
 prometheus = "1.5.1"
 xxl-job = "3.4.0"
-cassandra = "5.0.8"
+cassandra = "4.19.2"
 vertx = "5.0.10"
 spring-ai = "1.1.4"
 sa-token = "1.45.0"
@@ -67,11 +66,10 @@ netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-all = { module = "io.netty:netty-all", version.ref = "netty" }
 
 jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson" }
-jackson-core = { module = "tools.jackson.core:jackson-core", version.ref = "jackson" }
-jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-datatype-jsr310 = { module = "tools.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
-jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
+jackson-core = { module = "tools.jackson.core:jackson-core"}
+jackson-databind = { module = "tools.jackson.core:jackson-databind"}
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml"}
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations"}
 
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
@@ -109,15 +107,15 @@ sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson", version.r
 
 spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring-boot" }
-spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2", version.ref = "spring-boot" }
-spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis", version.ref = "spring-boot" }
-spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc", version.ref = "spring-boot" }
-spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb", version.ref = "spring-boot" }
-spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
-spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "spring-boot" }
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
-spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot" }
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2"}
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
+spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
 
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
 

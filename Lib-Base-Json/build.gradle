@@ -1,7 +1,7 @@
 dependencies {
+    api platform(libs.jackson.bom)
     api project(":Lib-Base")
     api libs.jackson.core
     api libs.jackson.databind
     api libs.jackson.annotations
-    api libs.jackson.datatype.jsr310
 }
