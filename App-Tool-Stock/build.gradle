@@ -1,4 +1,5 @@
 dependencies {
+    implementation platform(libs.okhttp.bom)
     implementation project(":Lib-Base-Json")
     implementation project(":Lib-Spring-Database-Jdbc")
     implementation libs.spring.boot.starter.web
