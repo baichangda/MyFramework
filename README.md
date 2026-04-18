@@ -1,7 +1,6 @@
 # 分模块规则
 - ***App-*** 开头的模块为可以单独部署启动的服务
 - ***Lib-*** 开头的模块为依赖包、无法启动
-- ***Bom模块*** 为所有依赖的版本统一管理、不包括插件、还有部分的版本定义在项目根目录的 ***gradle.build*** 中
 
 # 服务列表
 - ***App-AI-MCP-Server*** ai-mcp协议服务
@@ -18,3 +17,6 @@
 - ***App-Tool-Minio-Client-Web*** minio客户端工具服务
 - ***App-Tool-Kafka-Client-Web*** kafka客户端工具服务
 - ***App-Tool-Stock*** 股票分析工具
+
+# 依赖版本管理
+- 所有的依赖保本定义都在gradle/libs.versions.toml中
