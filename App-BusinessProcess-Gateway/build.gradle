@@ -5,7 +5,7 @@ dependencies {
     implementation(project(":Lib-Spring-Data-Init"))
     implementation(project(":Lib-Spring-Cloud-Common"))
     implementation libs.sa.token.redis.jackson
-    implementation libs.sa.token.spring.boot3.starter
+    implementation libs.sa.token.reactor.spring.boot.starter
     implementation libs.caffeine
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
