@@ -3,7 +3,6 @@
 - ***Lib-*** 开头的模块为依赖包、无法启动
 
 # 服务列表
-- ***App-AI-MCP-Server*** ai-mcp协议服务
 - ***App-BusinessProcess-Backend*** 微服务业务后台
 - ***App-BusinessProcess-Gateway*** 微服务网关
 - ***App-BusinessProcess-Openapi*** 微服务开放式接口服务
