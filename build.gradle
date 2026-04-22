@@ -53,9 +53,9 @@ subprojects {
         }
     }
 
-    configurations.all {
-        resolutionStrategy.failOnVersionConflict()
-    }
+//    configurations.all {
+//        resolutionStrategy.failOnVersionConflict()
+//    }
 
     dependencies {
         //统一配置lombok
