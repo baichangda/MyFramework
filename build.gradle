@@ -53,6 +53,10 @@ subprojects {
         }
     }
 
+//    configurations.all {
+//        resolutionStrategy.failOnVersionConflict()
+//    }
+
     dependencies {
         //统一配置lombok
         compileOnly libs.lombok
