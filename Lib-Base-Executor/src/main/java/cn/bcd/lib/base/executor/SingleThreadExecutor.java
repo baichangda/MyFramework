@@ -76,61 +76,53 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         }
     }
 
+    private void checkScheduleEnabled() {
+        if (!schedule) throw BaseException.get("scheduling not supported");
+    }
+
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        if (schedule) {
-            return executor_schedule.schedule(() -> {
-                try {
-                    return submit(callable).get(); // 等待核心执行器执行完成并返回结果
-                } catch (InterruptedException | ExecutionException ignore) {
-                    return null;
-                }
-            }, delay, unit);
-        } else {
-            throw BaseException.get("not support");
-        }
+        checkScheduleEnabled();
+        return executor_schedule.schedule(() -> {
+            try {
+                return submit(callable).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+                return null;
+            }
+        }, delay, unit);
     }
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        if (schedule) {
-            return executor_schedule.schedule(() -> {
-                try {
-                    submit(command).get(); // 等待核心执行器执行完成并返回结果
-                } catch (InterruptedException | ExecutionException ignore) {
-                }
-            }, delay, unit);
-        } else {
-            throw BaseException.get("not support");
-        }
+        checkScheduleEnabled();
+        return executor_schedule.schedule(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, delay, unit);
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        if (schedule) {
-            return executor_schedule.scheduleAtFixedRate(() -> {
-                try {
-                    submit(command).get(); // 等待核心执行器执行完成并返回结果
-                } catch (InterruptedException | ExecutionException ignore) {
-                }
-            }, initialDelay, period, unit);
-        } else {
-            throw BaseException.get("not support");
-        }
+        checkScheduleEnabled();
+        return executor_schedule.scheduleAtFixedRate(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, initialDelay, period, unit);
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        if (schedule) {
-            return executor_schedule.scheduleWithFixedDelay(() -> {
-                try {
-                    submit(command).get(); // 等待核心执行器执行完成并返回结果
-                } catch (InterruptedException | ExecutionException ignore) {
-                }
-            }, initialDelay, delay, unit);
-        } else {
-            throw BaseException.get("not support");
-        }
+        checkScheduleEnabled();
+        return executor_schedule.scheduleWithFixedDelay(() -> {
+            try {
+                submit(command).get(); // 等待核心执行器执行完成并返回结果
+            } catch (InterruptedException | ExecutionException ignore) {
+            }
+        }, initialDelay, delay, unit);
     }
 
     private boolean inThread() {
@@ -151,7 +143,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         return () -> {
             try {
                 return task.call();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error("task error", e);
                 return null;
             }
