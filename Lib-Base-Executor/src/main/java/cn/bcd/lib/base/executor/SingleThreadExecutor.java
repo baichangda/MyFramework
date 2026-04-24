@@ -141,7 +141,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         return () -> {
             try {
                 command.run();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.error("command error", e);
             }
         };
