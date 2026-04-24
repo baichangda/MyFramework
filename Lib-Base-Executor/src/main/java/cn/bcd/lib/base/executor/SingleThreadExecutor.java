@@ -7,6 +7,7 @@ import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
@@ -27,7 +28,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     public BlockingQueue<Runnable> blockingQueue;
 
     //当前执行器绑定的线程
-    public Thread thread;
+    public final Thread thread;
 
     // 核心执行器：单线程，执行所有实际任务（普通/延迟/定时）
     final ThreadPoolExecutor executor;
@@ -215,37 +216,54 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
 
     @Override
     public void shutdown() {
-        executor_schedule.shutdown();
+        if (schedule) {
+            executor_schedule.shutdown();
+        }
         executor.shutdown();
     }
 
     @Override
     public List<Runnable> shutdownNow() {
-        List<Runnable> schedulerTasks = executor_schedule.shutdownNow();
-        List<Runnable> workerTasks = executor.shutdownNow();
-        schedulerTasks.addAll(workerTasks);
-        return schedulerTasks;
+        List<Runnable> tasks = new ArrayList<>();
+        if (schedule) {
+            tasks.addAll(executor_schedule.shutdownNow());
+        }
+        tasks.addAll(executor.shutdownNow());
+        return tasks;
     }
 
     @Override
     public boolean isShutdown() {
-        return executor_schedule.isShutdown() && executor.isShutdown();
+        if (schedule) {
+            return executor_schedule.isShutdown() && executor.isShutdown();
+        } else {
+            return executor.isShutdown();
+        }
     }
 
     @Override
     public boolean isTerminated() {
-        return executor_schedule.isTerminated() && executor.isTerminated();
+        if (schedule) {
+            return executor_schedule.isTerminated() && executor.isTerminated();
+        } else {
+            return executor.isTerminated();
+        }
     }
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        long startNanos = System.nanoTime();
-        boolean schedulerTerminated = executor_schedule.awaitTermination(timeout, unit);
-        if (!schedulerTerminated) {
-            return false;
+        long remainingNanos;
+        if (schedule) {
+            long startNanos = System.nanoTime();
+            boolean schedulerTerminated = executor_schedule.awaitTermination(timeout, unit);
+            if (!schedulerTerminated) {
+                return false;
+            }
+            long elapsedNanos = System.nanoTime() - startNanos;
+            remainingNanos = unit.toNanos(timeout) - elapsedNanos;
+        } else {
+            remainingNanos = unit.toNanos(timeout);
         }
-        long elapsedNanos = System.nanoTime() - startNanos;
-        long remainingNanos = unit.toNanos(timeout) - elapsedNanos;
         if (remainingNanos <= 0) {
             return false;
         }
