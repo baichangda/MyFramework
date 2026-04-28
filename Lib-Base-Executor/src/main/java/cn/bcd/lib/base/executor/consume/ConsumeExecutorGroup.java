@@ -52,7 +52,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                                 EntityScanner entityScanner,
                                 int monitor_period) {
         this.groupName = groupName;
-        this.executorNum = executorNum;
+        this.executorNum = tableSizeFor(executorNum);
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
         this.entityScanner = entityScanner;
@@ -88,6 +88,11 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             monitor_workNum = null;
             monitor_pool = null;
         }
+    }
+
+    private static int tableSizeFor(int cap) {
+        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+        return (n < 0) ? 1 : n + 1;
     }
 
 
@@ -163,7 +168,9 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     protected ConsumeExecutor<T> getExecutor(String id) {
-        return executors[Math.floorMod(id.hashCode(), executors.length)];
+        int h = id.hashCode();
+        h = h ^ (h >>> 16);
+        return executors[h & (executorNum - 1)];
     }
 
     public abstract String id(T t);
