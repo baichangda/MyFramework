@@ -9,12 +9,14 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -118,7 +120,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     volatile boolean pause_consume = false;
 
 
-
     /**
      * @param name                  当前消费者的名称(用于标定线程名称、消费组id)
      * @param oneWorkThreadOneQueue 一个工作线程一个队列
@@ -127,7 +128,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      *                              消费时候会根据 {@link #index(ConsumerRecord)} 将消息定位到指定线程、然后提交到对应线程的队列中
      *                              实现记录关联work线程、这在某些场景可以避免线程竞争
      *                              false时候 共享一个队列
-     * @param workThreadNum         工作线程个数
+     * @param workThreadNum         工作线程个数、最好是2的倍数、如果不是向上取整到2的倍数
      * @param workThreadQueueSize   工作线程队列大小
      *                              <=0代表不限制、此时使用{@link LinkedBlockingQueue}
      *                              其他情况、则使用{@link ArrayBlockingQueue}
@@ -153,7 +154,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                                      ConsumerParam consumerParam) {
         this.name = name;
         this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;
-        this.workThreadNum = workThreadNum;
+        this.workThreadNum = tableSizeFor(workThreadNum);
         this.workThreadQueueSize = workThreadQueueSize;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
@@ -225,6 +226,11 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         }
     }
 
+    private static int tableSizeFor(int cap) {
+        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+        return (n < 0) ? 1 : n + 1;
+    }
+
     /**
      * 开始消费
      */
@@ -277,7 +283,9 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         if (workThreadNum == 1) {
             return 0;
         } else {
-            return Math.floorMod(consumerRecord.key().hashCode(), workThreadNum);
+            int h = consumerRecord.key().hashCode();
+            h = h ^ (h >>> 16);
+            return h & (workThreadNum - 1);
         }
     }
 
@@ -286,25 +294,60 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      */
     private void consume(KafkaConsumer<String, byte[]> consumer) {
         try {
+            boolean paused = false;
+            int blockCount = 0;
             if (oneWorkThreadOneQueue) {
                 while (running_consume) {
+                    /**
+                     * 连续阻塞时间过长消费者掉线保护机制
+                     * 一次阻塞100ms、如果阻塞超过1min、则暂停消费
+                     * 防止超过{@link ConsumerConfig#MAX_POLL_INTERVAL_MS_CONFIG}
+                     * 而导致消费者被移除、进而导致rebalance
+                     */
+                    if (blockCount > 600) {
+                        consumer.pause(consumer.assignment());
+                        paused = true;
+                    }
                     try {
                         //检查暂停消费
                         if (pause_consume) {
-                            do {
-                                TimeUnit.MILLISECONDS.sleep(100);
-                            } while (pause_consume);
+                            TimeUnit.MILLISECONDS.sleep(100);
+                            blockCount++;
+                            continue;
                         }
 
                         //检查阻塞
                         if (blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);
+                            blockCount++;
                             continue;
                         }
+
+                        //检查速度、如果速度太快则阻塞
+                        if (maxConsumeSpeed > 0) {
+                            //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
+                            final int curConsumeCount = consumeCount.get();
+                            if (curConsumeCount >= maxConsumeSpeed) {
+                                TimeUnit.MILLISECONDS.sleep(100);
+                                blockCount++;
+                                continue;
+                            }
+                        }
+
+                        if (paused) {
+                            consumer.resume(consumer.assignment());
+                            paused = false;
+                        }
+                        blockCount = 0;
+
                         //消费一批数据
                         final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
                         if (consumerRecords == null || consumerRecords.isEmpty()) {
                             continue;
+                        }
+
+                        if (maxConsumeSpeed > 0) {
+                            consumeCount.addAndGet(consumerRecords.count());
                         }
 
                         //统计
@@ -314,16 +357,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                             monitor_consumeCount.add(count);
                         }
 
-                        //检查速度、如果速度太快则阻塞
-                        if (maxConsumeSpeed > 0) {
-                            //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
-                            final int curConsumeCount = consumeCount.addAndGet(count);
-                            if (curConsumeCount >= maxConsumeSpeed) {
-                                do {
-                                    TimeUnit.MILLISECONDS.sleep(50);
-                                } while (consumeCount.get() >= maxConsumeSpeed);
-                            }
-                        }
+
                         //发布消息
                         for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
                             //放入队列
@@ -341,6 +375,18 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
             } else {
                 while (running_consume) {
                     try {
+                        //检查暂停消费
+                        if (pause_consume) {
+                            //阻塞消费者
+                            Set<TopicPartition> assignment = consumer.assignment();
+                            consumer.pause(assignment);
+                            do {
+                                TimeUnit.MILLISECONDS.sleep(100);
+                            } while (pause_consume);
+                            //恢复消费者
+                            consumer.resume(assignment);
+                        }
+
                         //检查阻塞
                         if (blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);

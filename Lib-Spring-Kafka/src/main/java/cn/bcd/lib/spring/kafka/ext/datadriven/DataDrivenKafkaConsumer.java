@@ -11,14 +11,12 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -148,7 +146,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
     /**
      * @param name                 当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum      工作任务执行器个数
+     * @param workExecutorNum      工作任务执行器个数、最好是2的倍数、如果不是向上取整到2的倍数
      * @param workExecutorSchedule 工作任务执是否开启计划任务
      *                             开启后会启动一个计划线程池用于接收计划任务
      * @param maxBlockingNum       最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
@@ -175,7 +173,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                                    int monitor_period,
                                    ConsumerParam consumerParam) {
         this.name = name;
-        this.workExecutorNum = workExecutorNum;
+        this.workExecutorNum = tableSizeFor(workExecutorNum);
         this.workExecutorSchedule = workExecutorSchedule;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
@@ -230,6 +228,11 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         }
     }
 
+    private static int tableSizeFor(int cap) {
+        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+        return (n < 0) ? 1 : n + 1;
+    }
+
     /**
      * 开始消费
      */
@@ -259,8 +262,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * @return
      */
     public WorkExecutor getWorkExecutor(String id) {
-        int index = Math.floorMod(id.hashCode(), workExecutorNum);
-        return workExecutors[index];
+        int h = id.hashCode();
+        h = h ^ (h >>> 16);
+        return workExecutors[h & (workExecutorNum - 1)];
     }
 
     /**
@@ -370,27 +374,63 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
         try (consumer) {
+            boolean paused = false;
+            int blockCount = 0;
             while (running_consume) {
+                /**
+                 * 连续阻塞时间过长消费者掉线保护机制
+                 * 一次阻塞100ms、如果阻塞超过1min、则暂停消费
+                 * 防止超过{@link ConsumerConfig#MAX_POLL_INTERVAL_MS_CONFIG}
+                 * 而导致消费者被移除、进而导致rebalance
+                 */
+                if (blockCount > 600) {
+                    consumer.pause(consumer.assignment());
+                    paused = true;
+                }
                 try {
                     //检查暂停消费
                     if (pause_consume) {
-                        do {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                        } while (pause_consume);
+                        TimeUnit.MILLISECONDS.sleep(100);
+                        blockCount++;
+                        continue;
                     }
 
                     //检查阻塞
                     if (maxBlockingNum > 0) {
                         if (blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);
+                            blockCount++;
                             continue;
                         }
                     }
+
+                    //检查速度、如果速度太快则阻塞
+                    if (maxConsumeSpeed > 0) {
+                        //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
+                        final int curConsumeCount = consumeCount.get();
+                        if (curConsumeCount >= maxConsumeSpeed) {
+                            TimeUnit.MILLISECONDS.sleep(100);
+                            blockCount++;
+                            continue;
+                        }
+                    }
+
+                    if (paused) {
+                        consumer.resume(consumer.assignment());
+                        paused = false;
+                    }
+                    blockCount = 0;
+
                     //消费一批数据
                     final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
                     if (consumerRecords == null || consumerRecords.isEmpty()) {
                         continue;
                     }
+
+                    if (maxConsumeSpeed > 0) {
+                        consumeCount.addAndGet(consumerRecords.count());
+                    }
+
 
                     //统计
                     final int count = consumerRecords.count();
@@ -399,16 +439,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                         monitor_consumeCount.add(count);
                     }
 
-                    //检查速度、如果速度太快则阻塞
-                    if (maxConsumeSpeed > 0) {
-                        //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
-                        final int curConsumeCount = consumeCount.addAndGet(count);
-                        if (curConsumeCount >= maxConsumeSpeed) {
-                            do {
-                                TimeUnit.MILLISECONDS.sleep(50);
-                            } while (consumeCount.get() >= maxConsumeSpeed);
-                        }
-                    }
+
                     //发布消息
                     for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
                         final String id = id(consumerRecord);
