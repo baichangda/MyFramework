@@ -3,8 +3,6 @@ package cn.bcd.app.dataProcess.transfer.v2016.tcp;
 import cn.bcd.app.dataProcess.transfer.v2016.DataConsumer;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
-import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.spring.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.spring.data.notify.onlyNotify.platformStatus.PlatformStatusData;
@@ -57,7 +55,7 @@ public class TcpClient {
     static ScheduledExecutorService manageExecutor;
 
     public final static int queueSize = 100000;
-    public final static MpscArrayBlockingQueue<SendData> sendQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_10MS);
+    public final static ArrayBlockingQueue<SendData> sendQueue = new ArrayBlockingQueue<>(queueSize);
     static ExecutorService sendExecutor;
 
     static int platformLoginSn;

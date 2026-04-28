@@ -1,9 +1,6 @@
 package cn.bcd.lib.base.executor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.queue.MpscArrayBlockingQueue;
-import cn.bcd.lib.base.executor.queue.MpscUnboundArrayBlockingQueue;
-import cn.bcd.lib.base.executor.queue.WaitStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +37,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         this.queueSize = queueSize;
         this.schedule = schedule;
         if (queueSize == 0) {
-            this.blockingQueue = new MpscUnboundArrayBlockingQueue<>(1024, WaitStrategy.PROGRESSIVE_100MS);
+            this.blockingQueue = new LinkedBlockingQueue<>();
         } else {
-            this.blockingQueue = new MpscArrayBlockingQueue<>(queueSize, WaitStrategy.PROGRESSIVE_100MS);
+            this.blockingQueue = new ArrayBlockingQueue<>(queueSize);
         }
         this.executor = new ThreadPoolExecutor(
                 1,
