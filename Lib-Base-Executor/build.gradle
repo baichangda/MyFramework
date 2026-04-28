@@ -1,4 +1,3 @@
 dependencies {
     api project(":Lib-Base")
-    api libs.jctools
 }
