@@ -36,6 +36,7 @@ geo = "0.8.1"
 hbase-client = "2.6.4"
 jooq = "3.20.9"
 awssdk = "2.40.2"
+jctools="4.0.6"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -54,6 +55,7 @@ javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 bcprov-jdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bcprov-jdk18on" }
 geo = { module = "com.github.davidmoten:geo", version.ref = "geo" }
+jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 
 hbase-client = { module = "org.apache.hbase:hbase-client", version.ref = "hbase-client" }
 

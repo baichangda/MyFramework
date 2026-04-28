@@ -1,6 +1,7 @@
 package cn.bcd.lib.base.executor.queue;
 
-import io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueue;
+
+import org.jctools.queues.MpscArrayQueue;
 
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;

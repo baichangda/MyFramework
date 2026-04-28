@@ -1,5 +1,4 @@
 dependencies {
-    api platform(libs.netty.bom)
     api project(":Lib-Base")
-    api libs.netty.common
+    api libs.jctools
 }
