@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SingleThreadExecutorGroup implements AutoCloseable {
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String groupName;
     public final int executorNum;
     public final int executorQueueSize;
@@ -13,15 +13,32 @@ public class SingleThreadExecutorGroup implements AutoCloseable {
 
     boolean closed;
 
+    /**
+     *
+     * @param groupName
+     * @param executorNum 最好是2的倍数、如果不是则向上取整2的倍数
+     * @param executorQueueSize
+     * @param executorSchedule
+     */
     public SingleThreadExecutorGroup(String groupName, int executorNum, int executorQueueSize, boolean executorSchedule) {
         this.groupName = groupName;
-        this.executorNum = executorNum;
+        this.executorNum = tableSizeFor(executorNum);
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
         this.executors = new SingleThreadExecutor[executorNum];
         for (int i = 0; i < executorNum; i++) {
             executors[i] = newExecutor(i);
         }
+    }
+
+    private static int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : n + 1;
     }
 
 
@@ -45,6 +62,8 @@ public class SingleThreadExecutorGroup implements AutoCloseable {
 
     @SuppressWarnings("unchecked")
     public SingleThreadExecutor getExecutor(String id) {
-        return executors[Math.floorMod(id.hashCode(), executorNum)];
+        int h = id.hashCode();
+        h = h ^ (h >>> 16);
+        return executors[h & (executorNum - 1)];
     }
 }

@@ -107,10 +107,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         checkScheduleEnabled();
         return executor_schedule.scheduleAtFixedRate(() -> {
-            try {
-                submit(command).get(); // 等待核心执行器执行完成并返回结果
-            } catch (InterruptedException | ExecutionException ignore) {
-            }
+            submit(command); // 这里只提交任务到工作线程
         }, initialDelay, period, unit);
     }
 
