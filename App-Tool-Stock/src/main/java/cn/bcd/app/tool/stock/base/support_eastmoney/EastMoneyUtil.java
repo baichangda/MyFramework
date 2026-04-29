@@ -7,13 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
 public class EastMoneyUtil {
 
     public static List<CashFlowData> fetchCashFlowToday(String code) {

@@ -1,10 +1,8 @@
 dependencies {
     implementation platform(libs.okhttp.bom)
     implementation project(":Lib-Base-Json")
-    implementation project(":Lib-Spring-Database-Jdbc")
-    implementation libs.spring.boot.starter.web
-    implementation libs.spring.boot.starter.log4j2
-    implementation libs.springdoc.openapi.starter.webmvc.ui
     implementation libs.okhttp
     implementation libs.okhttp.logging.interceptor
+    implementation libs.log4j.slf4j2.impl
+    implementation libs.vertx.web
 }
