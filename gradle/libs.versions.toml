@@ -27,7 +27,7 @@ cassandra = "4.19.0"
 vertx = "5.0.11"
 spring-ai = "1.0.2"
 sa-token = "1.44.0"
-sqlite = "3.50.3.0"
+sqlite = "3.53.0.0"
 springdoc = "2.8.13"
 hivemq = "1.3.10"
 picocli = "4.7.7"
@@ -98,7 +98,9 @@ xxl-job-core = { module = "com.xuxueli:xxl-job-core", version.ref = "xxl-job" }
 cassandra-java-driver-core = { module = "org.apache.cassandra:java-driver-core", version.ref = "cassandra" }
 cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driver-query-builder", version.ref = "cassandra" }
 
-vertx-web = { module = "io.vertx:vertx-web", version.ref = "vertx" }
+vertx-dependencies = { module = "io.vertx:vertx-dependencies", version.ref = "vertx" }
+vertx-web = { module = "io.vertx:vertx-web"}
+vertx-web-client = { module = "io.vertx:vertx-web-client"}
 
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq" }
 

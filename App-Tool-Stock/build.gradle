@@ -1,8 +1,7 @@
 dependencies {
-    implementation platform(libs.okhttp.bom)
-    implementation project(":Lib-Base-Json")
-    implementation libs.okhttp
-    implementation libs.okhttp.logging.interceptor
+    implementation platform(libs.vertx.dependencies)
     implementation libs.log4j.slf4j2.impl
     implementation libs.vertx.web
+    implementation libs.vertx.web.client
+    implementation libs.sqlite
 }
