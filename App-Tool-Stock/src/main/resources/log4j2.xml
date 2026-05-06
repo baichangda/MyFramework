@@ -38,14 +38,10 @@
     <!--Logger节点用来单独指定日志的形式，比如要为指定包下的class指定不同的日志级别等。-->
     <!--然后定义loggers，只有定义了logger并引入的appender，appender才会生效-->
     <Loggers>
-
-        <Logger name="io.netty.handler.logging.LoggingHandler" additivity="true" level="DEBUG"/>
-
         <!-- 日志输出级别 -->
         <Root level="INFO">
             <Appender-ref ref="Console"/>
             <Appender-ref ref="RollingFile"/>
         </Root>
     </Loggers>
-
 </Configuration>
