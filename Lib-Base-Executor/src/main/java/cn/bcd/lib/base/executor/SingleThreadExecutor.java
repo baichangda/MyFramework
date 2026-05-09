@@ -4,9 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -18,7 +16,7 @@ import java.util.concurrent.*;
  */
 public class SingleThreadExecutor extends AbstractExecutorService implements ScheduledExecutorService {
 
-    public final Logger logger = LoggerFactory.getLogger(this.getClass());
+    public final Logger logger = LoggerFactory.getLogger(SingleThreadExecutor.class);
 
     public final int queueSize;
     public final boolean schedule;
@@ -33,6 +31,11 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     // 调度执行器：单线程，仅接收延迟/定时任务，转发给 workerExecutor
     final ScheduledThreadPoolExecutor executor_schedule;
 
+    /**
+     * @param threadName 线程名称
+     * @param queueSize  队列容量；传 0 表示无界(LinkedBlockingQueue，注意 OOM 风险)；> 0 使用 ArrayBlockingQueue
+     * @param schedule   是否支持延迟/定时任务
+     */
     public SingleThreadExecutor(String threadName, int queueSize, boolean schedule) {
         this.queueSize = queueSize;
         this.schedule = schedule;
@@ -48,14 +51,17 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
                 TimeUnit.SECONDS,
                 this.blockingQueue,
                 r -> new Thread(r, threadName),
-                (r, executor) -> {
-                    if (!executor.isShutdown()) {
-                        try {
-//                    logger.warn("workThread[{}] RejectedExecutionHandler",threadName);
-                            executor.getQueue().put(r);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
+                (r, exec) -> {
+                    if (exec.isShutdown()) {
+                        //shutdown 后直接抛出，避免任务被静默丢弃导致 FutureTask 永远 pending、scheduler 线程被卡住
+                        throw new RejectedExecutionException("executor [" + threadName + "] is shutdown, task rejected");
+                    }
+                    try {
+                        //队列满则阻塞入队，反压到提交方
+                        exec.getQueue().put(r);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RejectedExecutionException("interrupted while waiting to enqueue task", e);
                     }
                 });
 
@@ -126,17 +132,17 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         return Thread.currentThread() == thread;
     }
 
-    private Runnable safeWrap(Runnable command) {
+    private Runnable safeWrap(Runnable task) {
         return () -> {
             try {
-                command.run();
+                task.run();
             } catch (Throwable e) {
-                logger.error("command error", e);
+                logger.error("task error", e);
             }
         };
     }
 
-    private <T> Callable<T> safeWrap(Callable<T> task) {
+    private <V> Callable<V> safeWrap(Callable<V> task) {
         return () -> {
             try {
                 return task.call();
@@ -147,17 +153,17 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         };
     }
 
-    private void safeRun(Runnable runnable) {
+    private void safeRun(Runnable task) {
         try {
-            runnable.run();
+            task.run();
         } catch (Throwable e) {
             logger.error("task error", e);
         }
     }
 
-    private <V> V safeRun(Callable<V> callable) {
+    private <V> V safeRun(Callable<V> task) {
         try {
-            return callable.call();
+            return task.call();
         } catch (Throwable e) {
             logger.error("task error", e);
             return null;
@@ -165,11 +171,13 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     }
 
     @Override
-    public void execute(Runnable command) {
+    public void execute(Runnable task) {
         if (inThread()) {
-            safeRun(command);
+            safeRun(task);
         } else {
-            executor.execute(safeWrap(command));
+            //避免任务执行异常导致线程池的线程退出、特意safeWrap
+            Objects.requireNonNull(task, "task");
+            executor.execute(safeWrap(task));
         }
     }
 
@@ -178,6 +186,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         if (inThread()) {
             return CompletableFuture.completedFuture(safeRun(task));
         } else {
+            //避免任务执行异常导致线程池的线程退出、特意safeWrap
+            Objects.requireNonNull(task, "task");
             return executor.submit(safeWrap(task));
         }
     }
@@ -188,6 +198,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
             safeRun(task);
             return CompletableFuture.completedFuture(result);
         } else {
+            //避免任务执行异常导致线程池的线程退出、特意safeWrap
+            Objects.requireNonNull(task, "task");
             return executor.submit(safeWrap(task), result);
         }
     }
@@ -198,23 +210,16 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
             safeRun(task);
             return CompletableFuture.completedFuture(null);
         } else {
+            //避免任务执行异常导致线程池的线程退出、特意safeWrap
+            Objects.requireNonNull(task, "task");
             return executor.submit(safeWrap(task));
         }
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        if (inThread()) {
-            List<Future<T>> futures = new ArrayList<>(tasks.size());
-            for (Callable<T> task : tasks) {
-                T t = safeRun(task);
-                futures.add(CompletableFuture.completedFuture(t));
-            }
-            return futures;
-        } else {
-            List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
-            return executor.invokeAll(list);
-        }
+        List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+        return executor.invokeAll(list);
     }
 
     @Override

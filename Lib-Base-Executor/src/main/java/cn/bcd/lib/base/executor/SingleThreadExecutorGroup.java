@@ -16,7 +16,7 @@ public class SingleThreadExecutorGroup implements AutoCloseable {
     /**
      *
      * @param groupName
-     * @param executorNum       最好是2的倍数、如果不是则向上取整2的倍数
+     * @param executorNum       最好是 2 的幂、否则向上取整为最近的 2 的幂
      * @param executorQueueSize
      * @param executorSchedule
      */
