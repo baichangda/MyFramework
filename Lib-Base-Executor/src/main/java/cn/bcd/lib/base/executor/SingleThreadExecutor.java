@@ -22,7 +22,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
 
     public final int queueSize;
     public final boolean schedule;
-    public BlockingQueue<Runnable> blockingQueue;
+    public final BlockingQueue<Runnable> blockingQueue;
 
     //当前执行器绑定的线程
     public final Thread thread;
@@ -147,10 +147,27 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
         };
     }
 
+    private void safeRun(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Throwable e) {
+            logger.error("task error", e);
+        }
+    }
+
+    private <V> V safeRun(Callable<V> callable) {
+        try {
+            return callable.call();
+        } catch (Throwable e) {
+            logger.error("task error", e);
+            return null;
+        }
+    }
+
     @Override
     public void execute(Runnable command) {
         if (inThread()) {
-            command.run();
+            safeRun(command);
         } else {
             executor.execute(safeWrap(command));
         }
@@ -159,11 +176,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     @Override
     public <T> Future<T> submit(Callable<T> task) {
         if (inThread()) {
-            try {
-                return CompletableFuture.completedFuture(task.call());
-            } catch (Exception e) {
-                throw BaseException.get(e);
-            }
+            return CompletableFuture.completedFuture(safeRun(task));
         } else {
             return executor.submit(safeWrap(task));
         }
@@ -171,36 +184,55 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        return executor.submit(safeWrap(task), result);
+        if (inThread()) {
+            safeRun(task);
+            return CompletableFuture.completedFuture(result);
+        } else {
+            return executor.submit(safeWrap(task), result);
+        }
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        return executor.submit(safeWrap(task));
+        if (inThread()) {
+            safeRun(task);
+            return CompletableFuture.completedFuture(null);
+        } else {
+            return executor.submit(safeWrap(task));
+        }
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        //不用包装、本质上调用的execute方法
-        return executor.invokeAll(tasks);
+        if (inThread()) {
+            List<Future<T>> futures = new ArrayList<>(tasks.size());
+            for (Callable<T> task : tasks) {
+                T t = safeRun(task);
+                futures.add(CompletableFuture.completedFuture(t));
+            }
+            return futures;
+        } else {
+            List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+            return executor.invokeAll(list);
+        }
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        //不用包装、本质上调用的execute方法
-        return executor.invokeAll(tasks, timeout, unit);
+        List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+        return executor.invokeAll(list, timeout, unit);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        //不用包装、本质上调用的execute方法
-        return executor.invokeAny(tasks);
+        List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+        return executor.invokeAny(list);
     }
 
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        //不用包装、本质上调用的execute方法
-        return executor.invokeAny(tasks, timeout, unit);
+        List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+        return executor.invokeAny(list, timeout, unit);
     }
 
     @Override

@@ -217,9 +217,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             }
 
             //启动任务执行器
-            this.workExecutors = new WorkExecutor[workExecutorNum];
-            for (int i = 0; i < workExecutorNum; i++) {
-                this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + workExecutorNum + ")", workExecutorSchedule);
+            this.workExecutors = new WorkExecutor[this.workExecutorNum];
+            for (int i = 0; i < this.workExecutorNum; i++) {
+                this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")", workExecutorSchedule);
             }
 
         } catch (Exception ex) {

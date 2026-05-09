@@ -25,8 +25,8 @@ public class SingleThreadExecutorGroup implements AutoCloseable {
         this.executorNum = tableSizeFor(executorNum);
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
-        this.executors = new SingleThreadExecutor[executorNum];
-        for (int i = 0; i < executorNum; i++) {
+        this.executors = new SingleThreadExecutor[this.executorNum];
+        for (int i = 0; i < this.executorNum; i++) {
             executors[i] = newExecutor(i);
         }
     }

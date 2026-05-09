@@ -177,11 +177,11 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
             }
 
             //初始化工作队列、工作线程池
-            workThreads = new Thread[workThreadNum];
+            workThreads = new Thread[this.workThreadNum];
             if (oneWorkThreadOneQueue) {
                 this.queue = null;
-                this.queues = new BlockingQueue[workThreadNum];
-                for (int i = 0; i < workThreadNum; i++) {
+                this.queues = new BlockingQueue[this.workThreadNum];
+                for (int i = 0; i < this.workThreadNum; i++) {
                     final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
                     if (workThreadQueueSize <= 0) {
                         queue = new LinkedBlockingQueue<>();
@@ -189,7 +189,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                         queue = new ArrayBlockingQueue<>(workThreadQueueSize);
                     }
                     this.queues[i] = queue;
-                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + this.workThreadNum + ")");
                     workThreads[i].start();
                 }
             } else {
@@ -201,8 +201,8 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                     queue = new ArrayBlockingQueue<>(workThreadQueueSize);
                 }
                 this.queue = queue;
-                for (int i = 0; i < workThreadNum; i++) {
-                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + workThreadNum + ")");
+                for (int i = 0; i < this.workThreadNum; i++) {
+                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + this.workThreadNum + ")");
                     workThreads[i].start();
                 }
             }
