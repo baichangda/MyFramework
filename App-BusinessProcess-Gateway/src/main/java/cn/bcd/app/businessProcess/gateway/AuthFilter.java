@@ -1,8 +1,8 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.common.Result;
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.spring.cloud.common.Const;
 import cn.bcd.lib.spring.data.init.permission.PermissionDataInit;
 import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;

@@ -3,7 +3,7 @@ package cn.bcd.app.businessProcess.backend.sys.service;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.app.businessProcess.backend.sys.bean.PermissionBean;
 import cn.bcd.app.businessProcess.backend.sys.define.CommonConst;
-import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.spring.cloud.common.Const;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import io.swagger.v3.oas.annotations.Operation;

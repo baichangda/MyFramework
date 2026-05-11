@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.spring.cloud.common.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.spring.cloud.common.Const;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.GatewayFilterSpec;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
