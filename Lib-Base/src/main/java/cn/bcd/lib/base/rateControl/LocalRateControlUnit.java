@@ -73,12 +73,18 @@ public class LocalRateControlUnit implements AutoCloseable {
         }
     }
 
-    public void add(int i) throws InterruptedException {
+    public boolean tryAdd(int i) {
         final int c = count.addAndGet(i);
-        if (c > maxAccessCount) {
+        return c <= maxAccessCount;
+    }
+
+    public void add(int i) throws InterruptedException {
+        boolean b = tryAdd(i);
+        if (!b) {
             do {
                 TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-            } while (count.addAndGet(i) > maxAccessCount);
+                b = tryAdd(i);
+            } while (!b);
         }
     }
 

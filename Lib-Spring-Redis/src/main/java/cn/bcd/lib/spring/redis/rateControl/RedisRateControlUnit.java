@@ -147,31 +147,39 @@ public class RedisRateControlUnit implements AutoCloseable {
         stopResetTask();
     }
 
-    public void add(int i) throws InterruptedException {
-        while (true) {
-            //检查当前进程是否阻塞状态
-            while (blocking) {
-                TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-            }
-            //尝试获取计数
-            long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
-            //累加之前的计数
-            long prevC = c - i;
-            //如果累加后的计数超过限定次数
-            if (c > maxAccessCount) {
-                //检查累加之前的计数是否小于限定次数
-                if (prevC < maxAccessCount) {
-                    //说明是此次累加导致阻塞、打上阻塞标记
-                    blocking = true;
-                }
-            } else if (c == maxAccessCount) {
-                //如果累加后的计数等于限定次数、则说明此次累加是最后一次合法计数、打上阻塞标记
+    public boolean tryAdd(int i) {
+        if (blocking) {
+            return false;
+        }
+        //尝试获取计数
+        long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
+        //累加之前的计数
+        long prevC = c - i;
+        //如果累加后的计数超过限定次数
+        if (c > maxAccessCount) {
+            //检查累加之前的计数是否小于限定次数
+            if (prevC < maxAccessCount) {
+                //说明是此次累加导致阻塞、打上阻塞标记
                 blocking = true;
-                break;
-            } else {
-                //说明成功获取计数
-                break;
             }
+            return false;
+        } else if (c == maxAccessCount) {
+            //如果累加后的计数等于限定次数、则说明此次累加是最后一次合法计数、打上阻塞标记
+            blocking = true;
+            return true;
+        } else {
+            //说明成功获取计数
+            return true;
+        }
+    }
+
+    public void add(int i) throws InterruptedException {
+        boolean b = tryAdd(i);
+        if (!b) {
+            do {
+                TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
+                b = tryAdd(i);
+            } while (!b);
         }
     }
 }
