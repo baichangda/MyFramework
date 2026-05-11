@@ -58,7 +58,7 @@ public class LocalRateControlUnit implements AutoCloseable {
             return;
         }
         available = true;
-        this.scheduledFuture = this.resetExecutor.scheduleAtFixedRate(() -> count.set(0), timeInSecond * 1000L + DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
+        this.scheduledFuture = this.resetExecutor.scheduleAtFixedRate(() -> count.set(0), timeInSecond * 1000L - DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -74,17 +74,21 @@ public class LocalRateControlUnit implements AutoCloseable {
     }
 
     public boolean tryAdd(int i) {
-        final int c = count.addAndGet(i);
-        return c <= maxAccessCount;
+        while (true) {
+            final int current = count.get();
+            final int next = current + i;
+            if (next > maxAccessCount) {
+                return false;
+            }
+            if (count.compareAndSet(current, next)) {
+                return true;
+            }
+        }
     }
 
     public void add(int i) throws InterruptedException {
-        boolean b = tryAdd(i);
-        if (!b) {
-            do {
-                TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-                b = tryAdd(i);
-            } while (!b);
+        while (!tryAdd(i)) {
+            TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
         }
     }
 

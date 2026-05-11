@@ -7,9 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
+import java.util.Collections;
 import java.util.Date;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -24,6 +25,15 @@ public class RedisRateControlUnit implements AutoCloseable {
 
     static final int RESET_EXECUTOR_NUM = Runtime.getRuntime().availableProcessors();
     static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
+
+    static final DefaultRedisScript<Long> TRY_ADD_SCRIPT = new DefaultRedisScript<>(
+            "local current = tonumber(redis.call('GET', KEYS[1]) or '0') " +
+                    "local i = tonumber(ARGV[1]) " +
+                    "local max = tonumber(ARGV[2]) " +
+                    "if current + i > max then return -1 end " +
+                    "return redis.call('INCRBY', KEYS[1], ARGV[1])",
+            Long.class
+    );
 
     static {
         for (int i = 0; i < resetPool.length; i++) {
@@ -123,7 +133,7 @@ public class RedisRateControlUnit implements AutoCloseable {
                 redisTemplate.delete(redisKeyCount);
                 //释放阻塞
                 blocking = false;
-            }, timeInSecond * 1000L + DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
+            }, timeInSecond * 1000L - DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -151,35 +161,19 @@ public class RedisRateControlUnit implements AutoCloseable {
         if (blocking) {
             return false;
         }
-        //尝试获取计数
-        long c = Optional.ofNullable(redisTemplate.opsForValue().increment(redisKeyCount, i)).orElse(0L);
-        //累加之前的计数
-        long prevC = c - i;
-        //如果累加后的计数超过限定次数
-        if (c > maxAccessCount) {
-            //检查累加之前的计数是否小于限定次数
-            if (prevC < maxAccessCount) {
-                //说明是此次累加导致阻塞、打上阻塞标记
-                blocking = true;
-            }
-            return false;
-        } else if (c == maxAccessCount) {
-            //如果累加后的计数等于限定次数、则说明此次累加是最后一次合法计数、打上阻塞标记
+        Long c = redisTemplate.execute(TRY_ADD_SCRIPT,
+                Collections.singletonList(redisKeyCount),
+                String.valueOf(i), String.valueOf(maxAccessCount));
+        if (c < 0) {
             blocking = true;
-            return true;
-        } else {
-            //说明成功获取计数
-            return true;
+            return false;
         }
+        return true;
     }
 
     public void add(int i) throws InterruptedException {
-        boolean b = tryAdd(i);
-        if (!b) {
-            do {
-                TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
-                b = tryAdd(i);
-            } while (!b);
+        while (!tryAdd(i)) {
+            TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
         }
     }
 }
