@@ -1,5 +1,6 @@
 package cn.bcd.lib.spring.redis.rateControl;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
@@ -56,7 +57,7 @@ public class RedisRateControlUnit implements AutoCloseable {
     private ScheduledFuture<?> managerFuture;
     private ScheduledFuture<?> resetFuture;
 
-    private boolean available = false;
+    private volatile boolean available = false;
 
     /**
      * 创建一个流量控制单元
@@ -158,6 +159,9 @@ public class RedisRateControlUnit implements AutoCloseable {
     }
 
     public boolean tryAdd(int i) {
+        if (!available) {
+            throw BaseException.get("rate control unit closed");
+        }
         if (blocking) {
             return false;
         }
