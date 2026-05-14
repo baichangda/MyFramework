@@ -176,29 +176,6 @@ public class CompressUtil {
     }
 
     /**
-     * gzip压缩
-     *
-     * @param data
-     * @return
-     */
-    public static byte[] gzip(byte[] data, int off, int len, int maxSize) {
-        if (data == null || data.length == 0) {
-            return new byte[0];
-        }
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
-             GZIPOutputStream gos = new GZIPOutputStream(os)) {
-            gos.write(data, off, len);
-            gos.finish();
-            if (os.size() >= maxSize) {
-
-            }
-            return os.toByteArray();
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        }
-    }
-
-    /**
      * 解压zip格式数据
      *
      * @param data

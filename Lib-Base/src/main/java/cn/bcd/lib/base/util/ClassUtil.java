@@ -172,6 +172,9 @@ public class ClassUtil {
         // 如果存在 就获取包下的所有文件 包括目录
         // 自定义过滤规则 如果可以循环(包含子目录) 或则是以.class结尾的文件(编译好的java类文件)
         File[] dirs = dir.listFiles(file -> file.isDirectory() || (file.getName().endsWith(".class")));
+        if (dirs == null) {
+            return;
+        }
         // 循环所有文件
         for (File file : dirs) {
             // 如果是目录 则继续扫描

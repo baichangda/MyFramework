@@ -31,7 +31,7 @@ public class LocalRateControlUnit implements AutoCloseable {
         }
     }
 
-    public final AtomicInteger count = new AtomicInteger();
+    private final AtomicInteger count = new AtomicInteger();
 
     /**
      * 创建一个流量控制单元

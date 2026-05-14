@@ -29,12 +29,12 @@ public interface Initializable {
         if (list == null || list.isEmpty()) {
             return;
         }
+        list.sort(Comparator.comparingInt(Initializable::order));
         logger.info("""
                 --------------initAll start--------------
                 {}
                 --------------initAll finish--------------
                 """, list.stream().map(e -> e.order() + " " + e.getClass().getName()).collect(Collectors.joining("\n")));
-        list.sort(Comparator.comparingInt(Initializable::order));
         for (Initializable e : list) {
             e.init();
         }

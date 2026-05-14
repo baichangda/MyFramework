@@ -42,7 +42,7 @@ public class SM2Utils {
 
     public static ECPrivateKeyParameters privateKeyFromBytes(byte[] bytes) {
         // 解析私钥
-        X9ECParameters sm2ECParameters = GMNamedCurves.getByName("sm2p256v1");
+        X9ECParameters sm2ECParameters = GMNamedCurves.getByName(SM2_CURVE_NAME);
         ECDomainParameters domainParameters = new ECDomainParameters(
                 sm2ECParameters.getCurve(),
                 sm2ECParameters.getG(),

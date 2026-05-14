@@ -27,6 +27,7 @@ public class ExecutorUtil {
     public static <T> void loop(BlockingQueue<T> queue, int except, Consumer<ArrayList<T>> callback, AtomicBoolean running) {
         try {
             final ArrayList<T> cache = new ArrayList<>(except);
+            A:
             while (true) {
                 T t = queue.poll(3, TimeUnit.SECONDS);
                 if (t == null) {
@@ -41,6 +42,9 @@ public class ExecutorUtil {
                     if (cache.size() == except) {
                         callback.accept(cache);
                         cache.clear();
+                        if (running != null && !running.get()) {
+                            break A;
+                        }
                     }
                     t = queue.poll();
                 } while (t != null);

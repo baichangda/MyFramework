@@ -43,11 +43,6 @@ public class BaseException extends RuntimeException {
         return target;
     }
 
-    @Override
-    public String getMessage() {
-        return super.getMessage();
-    }
-
     public String getRealExceptionMessage(){
         return ExceptionUtil.getRealException(this).getMessage();
     }
