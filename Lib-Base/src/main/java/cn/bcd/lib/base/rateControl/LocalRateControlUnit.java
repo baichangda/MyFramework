@@ -1,5 +1,6 @@
 package cn.bcd.lib.base.rateControl;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 
 import java.util.concurrent.Executors;
@@ -19,7 +20,7 @@ public class LocalRateControlUnit implements AutoCloseable {
     public final ScheduledExecutorService resetExecutor;
     ScheduledFuture<?> scheduledFuture;
 
-    private boolean available = false;
+    private volatile boolean available = false;
 
     static final int RESET_EXECUTOR_NUM = 1;
     static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
@@ -74,6 +75,9 @@ public class LocalRateControlUnit implements AutoCloseable {
     }
 
     public boolean tryAdd(int i) {
+        if (!available) {
+            throw BaseException.get("rate control unit closed");
+        }
         while (true) {
             final int current = count.get();
             final int next = current + i;
