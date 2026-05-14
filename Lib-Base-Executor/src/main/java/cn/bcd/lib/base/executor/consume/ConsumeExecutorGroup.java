@@ -142,13 +142,16 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         return executor.submit(() -> {
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
-                if (func == null || !func.apply(remove)) {
-                    return;
-                }
                 try {
-                    remove.destroy();
-                } catch (Exception ex) {
-                    logger.error("entity destroy error id[{}]", id, ex);
+                    if (func == null || !func.apply(remove)) {
+                        return;
+                    }
+                }finally {
+                    try {
+                        remove.destroy();
+                    } catch (Exception ex) {
+                        logger.error("entity destroy error id[{}]", id, ex);
+                    }
                 }
                 if (monitor_period > 0) {
                     monitor_entityNum.decrement();
