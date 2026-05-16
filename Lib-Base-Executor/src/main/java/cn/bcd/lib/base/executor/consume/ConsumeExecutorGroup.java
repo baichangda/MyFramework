@@ -39,11 +39,11 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     /**
      * 监控信息
      */
-    final ScheduledExecutorService monitor_pool;
-    final LongAdder monitor_blockingNum;
-    final LongAdder monitor_entityNum;
-    final LongAdder monitor_receiveNum;
-    final LongAdder monitor_workNum;
+    final ScheduledExecutorService monitorPool;
+    final LongAdder monitorBlockingNum;
+    final LongAdder monitorEntityNum;
+    final LongAdder monitorReceiveNum;
+    final LongAdder monitorWorkNum;
 
     public ConsumeExecutorGroup(String groupName,
                                 int executorNum,
@@ -73,20 +73,20 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             scannerPool.scheduleAtFixedRate(() -> scanAndDestroyEntity(entityScanner.expiredInSecond), entityScanner.periodInSecond, entityScanner.periodInSecond, TimeUnit.SECONDS);
         }
         if (monitor_period > 0) {
-            monitor_blockingNum = new LongAdder();
-            monitor_entityNum = new LongAdder();
-            monitor_receiveNum = new LongAdder();
-            monitor_workNum = new LongAdder();
-            monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
-            monitor_pool.scheduleAtFixedRate(() -> {
-                logger.info(monitor_log());
+            monitorBlockingNum = new LongAdder();
+            monitorEntityNum = new LongAdder();
+            monitorReceiveNum = new LongAdder();
+            monitorWorkNum = new LongAdder();
+            monitorPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
+            monitorPool.scheduleAtFixedRate(() -> {
+                logger.info(monitorLog());
             }, monitor_period, monitor_period, TimeUnit.SECONDS);
         } else {
-            monitor_blockingNum = null;
-            monitor_entityNum = null;
-            monitor_receiveNum = null;
-            monitor_workNum = null;
-            monitor_pool = null;
+            monitorBlockingNum = null;
+            monitorEntityNum = null;
+            monitorReceiveNum = null;
+            monitorWorkNum = null;
+            monitorPool = null;
         }
     }
 
@@ -134,7 +134,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             for (ConsumeExecutor<T> executor : executors) {
                 ExecutorUtil.await(executor);
             }
-            ExecutorUtil.shutdownThenAwait(true, scannerPool, monitor_pool);
+            ExecutorUtil.shutdownThenAwait(true, scannerPool, monitorPool);
         }
     }
 
@@ -154,7 +154,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     }
                 }
                 if (monitor_period > 0) {
-                    monitor_entityNum.decrement();
+                    monitorEntityNum.decrement();
                 }
             }
         });
@@ -187,12 +187,12 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     public void onMessage(T t) {
         if (monitor_period > 0) {
-            monitor_blockingNum.increment();
+            monitorBlockingNum.increment();
         }
         String id = id(t);
         ConsumeExecutor<T> executor = getExecutor(id);
         if (monitor_period > 0) {
-            monitor_receiveNum.increment();
+            monitorReceiveNum.increment();
         }
         executor.execute(() -> {
             ConsumeEntity<T> entity = executor.entityMap.computeIfAbsent(id, k -> {
@@ -201,13 +201,13 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     e.executor = executor;
                     e.init(t);
                     if (monitor_period > 0) {
-                        monitor_entityNum.increment();
+                        monitorEntityNum.increment();
                     }
                     return e;
                 } catch (Exception ex) {
                     logger.error("consumeEntity init error groupName[{}] id[{}]", groupName, id, ex);
                     if (monitor_period > 0) {
-                        monitor_blockingNum.decrement();
+                        monitorBlockingNum.decrement();
                     }
                     return null;
                 }
@@ -219,24 +219,24 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     logger.error("consumeEntity onMessage error groupName[{}] id[{}]", groupName, id, ex);
                 }
                 if (monitor_period > 0) {
-                    monitor_blockingNum.decrement();
+                    monitorBlockingNum.decrement();
                 }
             }
             if (monitor_period > 0) {
-                monitor_workNum.increment();
+                monitorWorkNum.increment();
             }
         });
     }
 
-    public String monitor_log() {
+    public String monitorLog() {
         String queueLog = Arrays.stream(executors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
         return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] receiveSpeed[{}/s] queues[{}] workSpeed[{}/s]",
                 groupName,
-                monitor_blockingNum.sum(),
-                monitor_entityNum.sum(),
-                FloatUtil.format(monitor_receiveNum.sumThenReset() / ((double) monitor_period), 2),
+                monitorBlockingNum.sum(),
+                monitorEntityNum.sum(),
+                FloatUtil.format(monitorReceiveNum.sumThenReset() / ((double) monitor_period), 2),
                 queueLog,
-                FloatUtil.format(monitor_workNum.sumThenReset() / ((double) monitor_period), 2)
+                FloatUtil.format(monitorWorkNum.sumThenReset() / ((double) monitor_period), 2)
         );
     }
 
