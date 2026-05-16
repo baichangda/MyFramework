@@ -1,6 +1,7 @@
 package cn.bcd.lib.base.executor;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -218,8 +219,18 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
-        return executor.invokeAll(list);
+        if (inThread()) {
+            List<Future<T>> futures = new ArrayList<>(tasks.size());
+            for (Callable<T> task : tasks) {
+                CompletableFuture<T> future = CompletableFuture.completedFuture(safeRun(task));
+                futures.add(future);
+            }
+            return futures;
+        } else {
+            List<Callable<T>> list = tasks.stream().map(this::safeWrap).toList();
+            return executor.invokeAll(list);
+        }
+
     }
 
     @Override

@@ -112,7 +112,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     }
                 }
                 for (String id : ids) {
-                    removeEntity(id, executor, null);
+                    removeEntity(id, executor);
                 }
             });
         }
@@ -126,7 +126,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             //销毁entity、停止线程池
             for (ConsumeExecutor<T> executor : executors) {
                 for (String id : executor.entityMap.keySet()) {
-                    removeEntity(id, executor, null);
+                    removeEntity(id, executor);
                 }
                 executor.shutdown();
             }
@@ -138,20 +138,19 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         }
     }
 
-    private Future<?> removeEntity(String id, ConsumeExecutor<T> executor, Function<ConsumeEntity<T>, Boolean> func) {
+    public Future<?> removeEntity(String id) {
+        ConsumeExecutor<T> executor = getExecutor(id);
+        return removeEntity(id,executor);
+    }
+
+    private Future<?> removeEntity(String id, ConsumeExecutor<T> executor) {
         return executor.submit(() -> {
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
                 try {
-                    if (func == null || !func.apply(remove)) {
-                        return;
-                    }
-                }finally {
-                    try {
-                        remove.destroy();
-                    } catch (Exception ex) {
-                        logger.error("entity destroy error id[{}]", id, ex);
-                    }
+                    remove.destroy();
+                } catch (Exception ex) {
+                    logger.error("entity destroy error id[{}]", id, ex);
                 }
                 if (monitor_period > 0) {
                     monitorEntityNum.decrement();
@@ -160,14 +159,23 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         });
     }
 
-    public Future<?> removeEntity(String id) {
-        ConsumeExecutor<T> executor = getExecutor(id);
-        return removeEntity(id, executor, null);
-    }
-
     public Future<?> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
         ConsumeExecutor<T> executor = getExecutor(id);
-        return removeEntity(id, executor, func);
+        return executor.submit(() -> {
+            ConsumeEntity<T> entity = executor.entityMap.get(id);
+            Boolean save = func.apply(entity);
+            if (!save) {
+                executor.entityMap.remove(id);
+                try {
+                    entity.destroy();
+                } catch (Exception ex) {
+                    logger.error("entity destroy error id[{}]", id, ex);
+                }
+                if (monitor_period > 0) {
+                    monitorEntityNum.decrement();
+                }
+            }
+        });
     }
 
     protected ConsumeExecutor<T> getExecutor(String id) {
