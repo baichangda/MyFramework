@@ -104,9 +104,14 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      * @param expiredInSecond 过期时间
      */
     public final void scanAndDestroyEntity(int expiredInSecond) {
+        checkClosed();
         long ts = DateUtil.CacheSecond.current() - expiredInSecond;
         for (ConsumeExecutor<T> executor : executors) {
             executor.execute(() -> {
+                //double-check:进入 executor 线程后再次确认未关闭,避免在 cleanup 之后被 race 进入
+                if (closed) {
+                    return;
+                }
                 List<String> ids = new ArrayList<>();
                 for (ConsumeEntity<T> entity : executor.entityMap.values()) {
                     if (entity.lastMessageTime < ts) {
@@ -166,13 +171,27 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         ExecutorUtil.shutdown(true, monitorPool);
     }
 
+    /**
+     * 检查是否已关闭,关闭后抛出异常让调用方感知
+     */
+    private void checkClosed() {
+        if (closed) {
+            throw new IllegalStateException("ConsumeExecutorGroup[" + groupName + "] is closed");
+        }
+    }
+
     public Future<?> removeEntity(String id) {
+        checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
         return removeEntity(id, executor);
     }
 
     private Future<?> removeEntity(String id, ConsumeExecutor<T> executor) {
         return executor.submit(() -> {
+            //double-check:进入 executor 线程后再次确认未关闭,避免在 cleanup 之后被 race 进入
+            if (closed) {
+                return;
+            }
             ConsumeEntity<T> remove = executor.entityMap.remove(id);
             if (remove != null) {
                 try {
@@ -194,8 +213,13 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      * @param func 入参为当前 entity(可能为 null),返回 true 保留、false 销毁;返回 null 视为保留
      */
     public Future<?> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
+        checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> {
+            //double-check:进入 executor 线程后再次确认未关闭,避免在 cleanup 之后被 race 进入
+            if (closed) {
+                return;
+            }
             ConsumeEntity<T> entity = executor.entityMap.get(id);
             //entity 不存在则无需销毁
             if (entity == null) {
@@ -227,13 +251,21 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public abstract String id(T t);
 
     public Future<ConsumeEntity<T>> getEntity(String id) {
+        checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
-        return executor.submit(() -> executor.entityMap.get(id));
+        return executor.submit(() -> {
+            //double-check:进入 executor 线程后再次确认未关闭
+            if (closed) {
+                throw new IllegalStateException("ConsumeExecutorGroup[" + groupName + "] is closed");
+            }
+            return executor.entityMap.get(id);
+        });
     }
 
     public abstract ConsumeEntity<T> newEntity(String id, T first);
 
     public void onMessage(T t) {
+        checkClosed();
         if (monitorPeriod > 0) {
             monitorBlockingNum.increment();
         }
@@ -243,6 +275,13 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             monitorReceiveNum.increment();
         }
         executor.execute(() -> {
+            //double-check:进入 executor 线程后再次确认未关闭,避免在 cleanup 之后创建新 entity 却无人销毁
+            if (closed) {
+                if (monitorPeriod > 0) {
+                    monitorBlockingNum.decrement();
+                }
+                return;
+            }
             ConsumeEntity<T> entity = executor.entityMap.computeIfAbsent(id, k -> {
                 try {
                     ConsumeEntity<T> e = newEntity(id, t);
