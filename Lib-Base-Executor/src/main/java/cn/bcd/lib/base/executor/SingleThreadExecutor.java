@@ -233,7 +233,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
         if (inThread()) {
-            return runAllInline(tasks);
+            return runAllInline(tasks, -1L);
         }
         return executor.invokeAll(tasks);
     }
@@ -241,8 +241,8 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
         if (inThread()) {
-            //当前线程是执行线程,串行执行无须等待,timeout 在此场景下无意义
-            return runAllInline(tasks);
+            //当前线程就是执行线程,串行执行任务并跟踪累计耗时;超过 timeout 后剩余任务标记 cancelled
+            return runAllInline(tasks, unit.toNanos(timeout));
         }
         return executor.invokeAll(tasks, timeout, unit);
     }
@@ -250,7 +250,12 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
         if (inThread()) {
-            return runAnyInline(tasks);
+            try {
+                return runAnyInline(tasks, -1L);
+            } catch (TimeoutException impossible) {
+                //不带 timeout 时不会抛出
+                throw new ExecutionException(impossible);
+            }
         }
         return executor.invokeAny(tasks);
     }
@@ -258,18 +263,29 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
     @Override
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (inThread()) {
-            //当前线程是执行线程,串行执行无须等待,timeout 在此场景下无意义
-            return runAnyInline(tasks);
+            //当前线程就是执行线程,串行执行;每执行完一个任务检查累计耗时,超过 timeout 抛 TimeoutException
+            return runAnyInline(tasks, unit.toNanos(timeout));
         }
         return executor.invokeAny(tasks, timeout, unit);
     }
 
     /**
-     * 在当前线程内串行执行所有任务,返回每个任务结果的 Future(成功或异常)
+     * 在当前线程内串行执行所有任务,返回每个任务结果的 Future(成功或异常)。
+     * <p>
+     * timeoutNanos &lt; 0 表示无超时;&gt;= 0 时执行完每个任务后检查累计耗时,超过则剩余任务标记 cancelled。
+     * 注意:无法中断已开始执行的任务,timeout 仅在任务之间生效。
      */
-    private <T> List<Future<T>> runAllInline(Collection<? extends Callable<T>> tasks) {
+    private <T> List<Future<T>> runAllInline(Collection<? extends Callable<T>> tasks, long timeoutNanos) {
+        long deadline = timeoutNanos < 0 ? Long.MAX_VALUE : System.nanoTime() + timeoutNanos;
         List<Future<T>> futures = new ArrayList<>(tasks.size());
+        boolean expired = false;
         for (Callable<T> task : tasks) {
+            if (expired) {
+                CompletableFuture<T> future = new CompletableFuture<>();
+                future.cancel(false);
+                futures.add(future);
+                continue;
+            }
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
                 future.complete(task.call());
@@ -277,19 +293,29 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Sch
                 future.completeExceptionally(e);
             }
             futures.add(future);
+            if (timeoutNanos >= 0 && System.nanoTime() >= deadline) {
+                expired = true;
+            }
         }
         return futures;
     }
 
     /**
-     * 在当前线程内串行执行任务,返回第一个成功的结果;全部失败时抛 ExecutionException
+     * 在当前线程内串行执行任务,返回第一个成功的结果;全部失败时抛 ExecutionException。
+     * <p>
+     * timeoutNanos &lt; 0 表示无超时;&gt;= 0 时执行每个任务前检查累计耗时,超过则抛 TimeoutException。
+     * 注意:无法中断已开始执行的任务,timeout 仅在任务之间生效。
      */
-    private <T> T runAnyInline(Collection<? extends Callable<T>> tasks) throws ExecutionException {
+    private <T> T runAnyInline(Collection<? extends Callable<T>> tasks, long timeoutNanos) throws ExecutionException, TimeoutException {
         if (tasks == null || tasks.isEmpty()) {
             throw new IllegalArgumentException("tasks is empty");
         }
+        long deadline = timeoutNanos < 0 ? Long.MAX_VALUE : System.nanoTime() + timeoutNanos;
         Throwable last = null;
         for (Callable<T> task : tasks) {
+            if (timeoutNanos >= 0 && System.nanoTime() >= deadline) {
+                throw new TimeoutException();
+            }
             try {
                 return task.call();
             } catch (Throwable e) {
