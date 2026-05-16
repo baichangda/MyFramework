@@ -59,9 +59,9 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         this.monitor_period = monitor_period;
 
         //创建线程池
-        executors = new ConsumeExecutor[executorNum];
-        for (int i = 0; i < executorNum; i++) {
-            executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + executorNum + ")",
+        executors = new ConsumeExecutor[this.executorNum];
+        for (int i = 0; i < this.executorNum; i++) {
+            executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + this.executorNum + ")",
                     executorQueueSize,
                     executorSchedule);
         }

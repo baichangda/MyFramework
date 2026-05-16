@@ -1,4 +1,5 @@
 dependencies {
+    api platform(libs.vertx.dependencies)
     api project(":Lib-Base")
     api libs.vertx.web
 }
