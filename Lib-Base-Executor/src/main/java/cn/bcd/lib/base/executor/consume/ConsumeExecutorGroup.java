@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,14 +26,14 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public final int executorQueueSize;
     public final boolean executorSchedule;
     public final EntityScanner entityScanner;
-    public final int monitor_period;
+    public final int monitorPeriod;
 
     public final ConsumeExecutor<T>[] executors;
 
     /**
      * 是否关闭
      */
-    boolean closed;
+    volatile boolean closed;
 
     final ScheduledExecutorService scannerPool;
 
@@ -45,18 +46,19 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     final LongAdder monitorReceiveNum;
     final LongAdder monitorWorkNum;
 
+    @SuppressWarnings("unchecked")
     public ConsumeExecutorGroup(String groupName,
                                 int executorNum,
                                 int executorQueueSize,
                                 boolean executorSchedule,
                                 EntityScanner entityScanner,
-                                int monitor_period) {
+                                int monitorPeriod) {
         this.groupName = groupName;
         this.executorNum = tableSizeFor(executorNum);
         this.executorQueueSize = executorQueueSize;
         this.executorSchedule = executorSchedule;
         this.entityScanner = entityScanner;
-        this.monitor_period = monitor_period;
+        this.monitorPeriod = monitorPeriod;
 
         //创建线程池
         executors = new ConsumeExecutor[this.executorNum];
@@ -72,7 +74,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-entityScanner"));
             scannerPool.scheduleAtFixedRate(() -> scanAndDestroyEntity(entityScanner.expiredInSecond), entityScanner.periodInSecond, entityScanner.periodInSecond, TimeUnit.SECONDS);
         }
-        if (monitor_period > 0) {
+        if (monitorPeriod > 0) {
             monitorBlockingNum = new LongAdder();
             monitorEntityNum = new LongAdder();
             monitorReceiveNum = new LongAdder();
@@ -80,7 +82,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             monitorPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-monitor"));
             monitorPool.scheduleAtFixedRate(() -> {
                 logger.info(monitorLog());
-            }, monitor_period, monitor_period, TimeUnit.SECONDS);
+            }, monitorPeriod, monitorPeriod, TimeUnit.SECONDS);
         } else {
             monitorBlockingNum = null;
             monitorEntityNum = null;
@@ -120,27 +122,53 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
 
     @Override
-    public void close() throws Exception {
-        if (!closed) {
-            closed = true;
-            //销毁entity、停止线程池
-            for (ConsumeExecutor<T> executor : executors) {
-                for (String id : executor.entityMap.keySet()) {
-                    removeEntity(id, executor);
-                }
-                executor.shutdown();
-            }
-            //等待线程池停止
-            for (ConsumeExecutor<T> executor : executors) {
-                ExecutorUtil.await(executor);
-            }
-            ExecutorUtil.shutdownThenAwait(true, scannerPool, monitorPool);
+    public synchronized void close() throws Exception {
+        if (closed) {
+            return;
         }
+        closed = true;
+        //1. 先停 scanner 和 monitor,避免在 executor shutdown 后还有任务提交到 executor 引发 RejectedExecutionException
+        ExecutorUtil.shutdownThenAwait(true, scannerPool);
+
+        //2. 在每个 executor 线程内清理 entity(entityMap 只能由 executor 线程访问)
+        List<Future<?>> cleanups = new ArrayList<>();
+        for (ConsumeExecutor<T> executor : executors) {
+            cleanups.add(executor.submit(() -> {
+                for (ConsumeEntity<T> entity : executor.entityMap.values()) {
+                    try {
+                        entity.destroy();
+                    } catch (Exception ex) {
+                        logger.error("entity destroy error id[{}]", entity.id, ex);
+                    }
+                }
+                executor.entityMap.clear();
+            }));
+        }
+        //3. 等待清理任务完成
+        for (Future<?> future : cleanups) {
+            try {
+                future.get();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                logger.error("close cleanup interrupted", ex);
+                break;
+            } catch (ExecutionException ex) {
+                logger.error("close cleanup error", ex.getCause());
+            }
+        }
+        //4. shutdown executor 并 await 全部终止
+        for (ConsumeExecutor<T> executor : executors) {
+            executor.shutdown();
+        }
+        for (ConsumeExecutor<T> executor : executors) {
+            ExecutorUtil.await(executor);
+        }
+        ExecutorUtil.shutdown(true, monitorPool);
     }
 
     public Future<?> removeEntity(String id) {
         ConsumeExecutor<T> executor = getExecutor(id);
-        return removeEntity(id,executor);
+        return removeEntity(id, executor);
     }
 
     private Future<?> removeEntity(String id, ConsumeExecutor<T> executor) {
@@ -152,28 +180,40 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                 } catch (Exception ex) {
                     logger.error("entity destroy error id[{}]", id, ex);
                 }
-                if (monitor_period > 0) {
+                if (monitorPeriod > 0) {
                     monitorEntityNum.decrement();
                 }
             }
         });
     }
 
+    /**
+     * 根据 func 判断是否保留 entity
+     *
+     * @param id   entity id
+     * @param func 入参为当前 entity(可能为 null),返回 true 保留、false 销毁;返回 null 视为保留
+     */
     public Future<?> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> {
             ConsumeEntity<T> entity = executor.entityMap.get(id);
+            //entity 不存在则无需销毁
+            if (entity == null) {
+                return;
+            }
+            //null 或 true 都视为保留,不做销毁
             Boolean save = func.apply(entity);
-            if (!save) {
-                executor.entityMap.remove(id);
-                try {
-                    entity.destroy();
-                } catch (Exception ex) {
-                    logger.error("entity destroy error id[{}]", id, ex);
-                }
-                if (monitor_period > 0) {
-                    monitorEntityNum.decrement();
-                }
+            if (save == null || save) {
+                return;
+            }
+            executor.entityMap.remove(id);
+            try {
+                entity.destroy();
+            } catch (Exception ex) {
+                logger.error("entity destroy error id[{}]", id, ex);
+            }
+            if (monitorPeriod > 0) {
+                monitorEntityNum.decrement();
             }
         });
     }
@@ -194,12 +234,12 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public abstract ConsumeEntity<T> newEntity(String id, T first);
 
     public void onMessage(T t) {
-        if (monitor_period > 0) {
+        if (monitorPeriod > 0) {
             monitorBlockingNum.increment();
         }
         String id = id(t);
         ConsumeExecutor<T> executor = getExecutor(id);
-        if (monitor_period > 0) {
+        if (monitorPeriod > 0) {
             monitorReceiveNum.increment();
         }
         executor.execute(() -> {
@@ -208,13 +248,13 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     ConsumeEntity<T> e = newEntity(id, t);
                     e.executor = executor;
                     e.init(t);
-                    if (monitor_period > 0) {
+                    if (monitorPeriod > 0) {
                         monitorEntityNum.increment();
                     }
                     return e;
                 } catch (Exception ex) {
                     logger.error("consumeEntity init error groupName[{}] id[{}]", groupName, id, ex);
-                    if (monitor_period > 0) {
+                    if (monitorPeriod > 0) {
                         monitorBlockingNum.decrement();
                     }
                     return null;
@@ -226,25 +266,23 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                 } catch (Exception ex) {
                     logger.error("consumeEntity onMessage error groupName[{}] id[{}]", groupName, id, ex);
                 }
-                if (monitor_period > 0) {
+                if (monitorPeriod > 0) {
                     monitorBlockingNum.decrement();
+                    monitorWorkNum.increment();
                 }
-            }
-            if (monitor_period > 0) {
-                monitorWorkNum.increment();
             }
         });
     }
 
     public String monitorLog() {
-        String queueLog = Arrays.stream(executors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
+        String queueLog = Arrays.stream(executors).map(e -> String.valueOf(e.blockingQueue.size())).collect(Collectors.joining(" "));
         return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] receiveSpeed[{}/s] queues[{}] workSpeed[{}/s]",
                 groupName,
                 monitorBlockingNum.sum(),
                 monitorEntityNum.sum(),
-                FloatUtil.format(monitorReceiveNum.sumThenReset() / ((double) monitor_period), 2),
+                FloatUtil.format(monitorReceiveNum.sumThenReset() / ((double) monitorPeriod), 2),
                 queueLog,
-                FloatUtil.format(monitorWorkNum.sumThenReset() / ((double) monitor_period), 2)
+                FloatUtil.format(monitorWorkNum.sumThenReset() / ((double) monitorPeriod), 2)
         );
     }
 
