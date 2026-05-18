@@ -95,6 +95,23 @@ public class BitBuf_reader {
     public long read(int bit, boolean unsigned) {
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
+
+        // 快速路径1: bitOffset != 0 且在单字节内即可完成读取（最常见的小位宽场景）
+        if (bitOffset != 0 && bitOffset + bit <= 8) {
+            long val = (this.b & 0xFFL) >>> (8 - bitOffset - bit);
+            this.bitOffset = bitOffset + bit;
+            return valueOf(val, bit, unsigned);
+        }
+
+        // 快速路径2: bitOffset == 0 且只需要读单字节内（无需循环和复杂位移计算）
+        if (bitOffset == 0 && bit <= 8) {
+            int b = byteBuf.readByte() & 0xFF;
+            this.b = (byte) b;
+            this.bitOffset = bit & 7;
+            return valueOf(b >>> (8 - bit), bit, unsigned);
+        }
+
+        // 通用路径: 跨多字节读取
         byte b;
         if (bitOffset == 0) {
             b = byteBuf.readByte();
