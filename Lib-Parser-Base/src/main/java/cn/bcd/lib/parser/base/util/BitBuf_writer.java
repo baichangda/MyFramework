@@ -58,8 +58,16 @@ public class BitBuf_writer {
         System.out.println(System.currentTimeMillis() - t1);
     }
 
+    /**
+     * 获取指定位宽的掩码
+     * 处理 bit=64 的特殊情况（Java 中 1L << 64 等同于 1L << 0）
+     */
+    public static long mask(int bit) {
+        return bit == 64 ? -1L : ((1L << bit) - 1);
+    }
+
     public void write(long l, int bit) {
-        l = l & ((1L << bit) - 1);
+        l = l & mask(bit);
         final ByteBuf byteBuf = this.byteBuf;
         int bitOffset = this.bitOffset;
         byte b = this.b;

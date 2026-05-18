@@ -84,13 +84,8 @@ public final class BitBuf_reader_log extends BitBuf_reader {
 
         final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
-        log.val1 = cRight & ((1L << bit) - 1);
-
-        if (!unsigned && ((cRight >> (bit - 1)) & 1) == 1) {
-            log.val2 = cRight | (-1L << bit);
-        } else {
-            log.val2 = cRight & ((1L << bit) - 1);
-        }
+        log.val1 = cRight & BitBuf_reader.mask(bit);
+        log.val2 = BitBuf_reader.valueOf(cRight, bit, unsigned);
         logs.add(log);
         return log.val2;
     }
@@ -113,7 +108,7 @@ public final class BitBuf_reader_log extends BitBuf_reader {
             log.bytes[0] = b;
         } else {
             if (bitOffset == 0) {
-                byteBuf.getBytes(0, log.bytes);
+                byteBuf.getBytes(byteBuf.readerIndex(), log.bytes);
                 if (newBitOffsetZero) {
                     byteBuf.skipBytes(byteLen);
                 } else {

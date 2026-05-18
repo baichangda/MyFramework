@@ -37,7 +37,7 @@ public final class BitBuf_writer_log extends BitBuf_writer {
     }
 
     public void write(long l, int bit) {
-        l = l & ((1L << bit) - 1);
+        l = l & BitBuf_writer.mask(bit);
         final ByteBuf byteBuf = this.byteBuf;
         int bitOffset = this.bitOffset;
         byte b = this.b;

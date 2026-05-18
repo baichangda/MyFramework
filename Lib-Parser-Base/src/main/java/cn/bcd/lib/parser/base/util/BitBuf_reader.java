@@ -69,6 +69,29 @@ public class BitBuf_reader {
 
     }
 
+    /**
+     * 获取指定位宽的掩码
+     * 处理 bit=64 的特殊情况（Java 中 1L << 64 等同于 1L << 0）
+     */
+    public static long mask(int bit) {
+        return bit == 64 ? -1L : ((1L << bit) - 1);
+    }
+
+    /**
+     * 将原始值根据位宽和符号标志转换为最终值
+     */
+    public static long valueOf(long raw, int bit, boolean unsigned) {
+        if (bit == 64) {
+            return raw;
+        }
+        long m = mask(bit);
+        long val = raw & m;
+        if (!unsigned && ((val >> (bit - 1)) & 1L) == 1L) {
+            val |= ~m;
+        }
+        return val;
+    }
+
     public long read(int bit, boolean unsigned) {
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
@@ -99,11 +122,7 @@ public class BitBuf_reader {
 
         final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
-        if (!unsigned && ((cRight >> (bit - 1)) & 1) == 1) {
-            return cRight | (-1L << bit);
-        } else {
-            return cRight & ((1L << bit) - 1);
-        }
+        return valueOf(cRight, bit, unsigned);
     }
 
     public void skip(int bit) {
