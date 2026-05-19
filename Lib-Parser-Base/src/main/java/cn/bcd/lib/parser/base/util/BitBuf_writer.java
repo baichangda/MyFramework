@@ -70,31 +70,6 @@ public class BitBuf_writer {
         l = l & mask(bit);
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
-
-        // 快速路径1: bitOffset != 0 且在单字节内即可完成写入（最常见的小位宽场景）
-        if (bitOffset != 0 && bitOffset + bit <= 8) {
-            this.b |= (byte) (l << (8 - bitOffset - bit));
-            this.bitOffset = bitOffset + bit;
-            if (this.bitOffset == 8) {
-                byteBuf.writeByte(this.b);
-                this.bitOffset = 0;
-                this.b = 0;
-            }
-            return;
-        }
-
-        // 快速路径2: bitOffset == 0 且只需要写单字节内（无需循环和复杂位移计算）
-        if (bitOffset == 0 && bit <= 8) {
-            if (bit == 8) {
-                byteBuf.writeByte((byte) l);
-            } else {
-                this.b = (byte) (l << (8 - bit));
-                this.bitOffset = bit;
-            }
-            return;
-        }
-
-        // 通用路径: 跨多字节写入
         byte b = this.b;
         final int temp = bit + bitOffset;
         final int finalBitOffset = temp & 7;
