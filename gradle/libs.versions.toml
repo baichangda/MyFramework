@@ -37,6 +37,7 @@ hbase-client = "2.6.4"
 jooq = "3.20.9"
 awssdk = "2.40.2"
 jctools="4.0.6"
+influxdb3 = "1.9.0"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -131,6 +132,8 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-starter-common", version.ref = "springdoc" }
 
 spring-ai-starter-mcp-server-webmvc = { module = "org.springframework.ai:spring-ai-starter-mcp-server-webmvc", version.ref = "spring-ai" }
+
+influxdb3-java = { module = "com.influxdb:influxdb3-java", version.ref = "influxdb3" }
 
 [plugins]
 jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
