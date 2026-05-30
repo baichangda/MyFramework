@@ -17,10 +17,6 @@ import java.util.concurrent.ExecutionException;
 
 public class TestInfluxdb_gb32960 {
 
-    static {
-        System.setProperty("arrow.memory.allocator.type", "unsafe");
-    }
-
     static Logger logger = LoggerFactory.getLogger(TestInfluxdb_gb32960.class);
 
     static String url = "http://www.baicd.fun:18181";
@@ -33,7 +29,7 @@ public class TestInfluxdb_gb32960 {
             InfluxdbConfig.client = client;
             List<RawData> list = InfluxdbUtil_gb32960.page_rawData("TEST0000000000001",
                     Date.from(LocalDateTime.now().plusDays(-30).toInstant(DateZoneUtil.ZONE_OFFSET)),
-                    Date.from(Instant.now()), 0, 10, true).get();
+                    Date.from(Instant.now()), 0, 10, true);
             for (RawData rawData : list) {
                 logger.info(JsonUtil.toJson(rawData));
             }
@@ -47,7 +43,7 @@ public class TestInfluxdb_gb32960 {
         try (InfluxDBClient client = InfluxDBClient.getInstance(url, token.toCharArray(), database)) {
             InfluxdbConfig.client = client;
             RawData rawData = InfluxdbUtil_gb32960.get_rawData("TEST0000000000000",
-                    Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET)), 1).get();
+                    Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET)), 1);
             logger.info(JsonUtil.toJson(rawData));
         } catch (Exception e) {
             logger.error("error",e);
@@ -85,7 +81,7 @@ public class TestInfluxdb_gb32960 {
                             Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)),
                             Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000004")
             );
-            InfluxdbUtil_gb32960.save_rawData(list).get();
+            InfluxdbUtil_gb32960.save_rawData(list);
         } catch (Exception e) {
             logger.error("error",e);
         }

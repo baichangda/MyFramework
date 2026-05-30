@@ -52,7 +52,7 @@ public class InfluxdbUtil_gb32960 {
      * @param collectTimeDesc 是否时间采集时间降序
      * @return
      */
-    public static CompletableFuture<List<RawData>> page_rawData(String vin, Date beginTime, Date endTime, int offset, int pageSize, boolean collectTimeDesc) {
+    public static List<RawData> page_rawData(String vin, Date beginTime, Date endTime, int offset, int pageSize, boolean collectTimeDesc) {
         String sql = String.format(
                 "%s WHERE vin = '%s' AND time >= '%s' AND time < '%s' ORDER BY time %s LIMIT %d OFFSET %d",
                 SQL_SELECT,
@@ -69,10 +69,10 @@ public class InfluxdbUtil_gb32960 {
             RawData rawData = toRawData(pointValues);
             list.add(rawData);
         }
-        return CompletableFuture.completedFuture(list);
+        return list;
     }
 
-    public static CompletableFuture<RawData> get_rawData(String vin, Date collectTime, int type) {
+    public static RawData get_rawData(String vin, Date collectTime, int type) {
         String sql = String.format(
                 "%s WHERE vin = '%s' AND time = '%s' AND type = %d LIMIT 1",
                 SQL_SELECT,
@@ -80,10 +80,7 @@ public class InfluxdbUtil_gb32960 {
                 RFC3339_NANO.format(collectTime.toInstant()),
                 type
         );
-        RawData rawData = client().queryPoints(sql).findFirst().map(e -> {
-            return toRawData(e);
-        }).orElse(null);
-        return CompletableFuture.completedFuture(rawData);
+        return client().queryPoints(sql).findFirst().map(e -> toRawData(e)).orElse(null);
     }
 
     /**
@@ -91,9 +88,9 @@ public class InfluxdbUtil_gb32960 {
      *
      * @param list
      */
-    public static CompletableFuture<Void> save_rawData(List<RawData> list) {
+    public static void save_rawData(List<RawData> list) {
         if (list == null || list.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
+            return ;
         }
         List<Point> points = new ArrayList<>(list.size());
         for (RawData rawData : list) {
@@ -108,6 +105,5 @@ public class InfluxdbUtil_gb32960 {
             points.add(point);
         }
         client().writePoints(points);
-        return CompletableFuture.completedFuture(null);
     }
 }
