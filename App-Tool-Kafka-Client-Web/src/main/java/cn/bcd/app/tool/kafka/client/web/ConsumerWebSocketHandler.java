@@ -47,13 +47,15 @@ public class ConsumerWebSocketHandler extends PathTextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         logger.info("afterConnectionClosed status[{}]", status);
-        session_consumer.remove(session);
+        KafkaConsumer<String, byte[]> remove = session_consumer.remove(session);
+        remove.close();
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         logger.error("handleTransportError", exception);
-        session_consumer.remove(session);
+        KafkaConsumer<String, byte[]> remove = session_consumer.remove(session);
+        remove.close();
     }
 
 

@@ -283,16 +283,13 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      */
     public final Future<?> removeHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
-        return removeHandler(id, workExecutor, null);
+        return removeHandler(id, workExecutor);
     }
 
-    private Future<?> removeHandler(String id, WorkExecutor executor, Function<WorkHandler, Boolean> func) {
+    private Future<?> removeHandler(String id, WorkExecutor executor) {
         return executor.submit(() -> {
             WorkHandler workHandler = executor.workHandlers.remove(id);
             if (workHandler != null) {
-                if (func == null || !func.apply(workHandler)) {
-                    return;
-                }
                 try {
                     workHandler.destroy();
                 } catch (Exception ex) {
@@ -303,11 +300,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 }
             }
         });
-    }
-
-    public Future<?> checkRemoveEntity(String id, Function<WorkHandler, Boolean> func) {
-        WorkExecutor executor = getWorkExecutor(id);
-        return removeHandler(id, executor, func);
     }
 
     /**
@@ -351,11 +343,15 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             //等待工作执行器退出
             for (WorkExecutor workExecutor : workExecutors) {
                 //添加删除任务
-                workExecutor.execute(() -> {
-                    for (String id : workExecutor.workHandlers.keySet()) {
-                        removeHandler(id);
-                    }
-                });
+                try {
+                    workExecutor.submit(() -> {
+                        for (String id : workExecutor.workHandlers.keySet()) {
+                            removeHandler(id);
+                        }
+                    }).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    logger.error("error", e);
+                }
                 //关闭线程池
                 workExecutor.shutdown();
             }
@@ -554,7 +550,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                     }
                 }
                 for (String id : ids) {
-                    removeHandler(id, workExecutor, null);
+                    removeHandler(id, workExecutor);
                 }
             });
         }
