@@ -17,10 +17,10 @@ public class RedisSerializer_key_string extends StringRedisSerializer {
     @Override
     public String deserialize(byte[] bytes) {
         final String deserialize = super.deserialize(bytes);
-        if (keyPrefixLen > 0) {
-            return deserialize.substring(keyPrefixLen);
-        } else {
+        if (deserialize == null || keyPrefixLen == 0) {
             return deserialize;
+        } else {
+            return deserialize.substring(keyPrefixLen);
         }
     }
 

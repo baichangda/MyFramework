@@ -28,11 +28,15 @@ public class RedisRateControlUnit implements AutoCloseable {
     static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
 
     static final DefaultRedisScript<Long> TRY_ADD_SCRIPT = new DefaultRedisScript<>(
-            "local current = tonumber(redis.call('GET', KEYS[1]) or '0') " +
-                    "local i = tonumber(ARGV[1]) " +
-                    "local max = tonumber(ARGV[2]) " +
-                    "if current + i > max then return -1 end " +
-                    "return redis.call('INCRBY', KEYS[1], ARGV[1])",
+            """
+                    local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+                    local i = tonumber(ARGV[1])
+                    local max = tonumber(ARGV[2])
+                    if current + i > max then return -1 end
+                    redis.call('INCRBY', KEYS[1], ARGV[1])
+                    redis.call('EXPIRE', KEYS[1], ARGV[3])
+                    return redis.call('GET', KEYS[1])
+                    """,
             Long.class
     );
 
@@ -167,7 +171,7 @@ public class RedisRateControlUnit implements AutoCloseable {
         }
         Long c = redisTemplate.execute(TRY_ADD_SCRIPT,
                 Collections.singletonList(redisKeyCount),
-                String.valueOf(i), String.valueOf(maxAccessCount));
+                String.valueOf(i), String.valueOf(maxAccessCount), timeInSecond * 2);
         if (c < 0) {
             blocking = true;
             return false;

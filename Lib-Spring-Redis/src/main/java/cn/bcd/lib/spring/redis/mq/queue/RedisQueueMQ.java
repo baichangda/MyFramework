@@ -24,7 +24,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unchecked")
-public class RedisQueueMQ<V> {
+public class RedisQueueMQ<V> implements AutoCloseable{
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final String name;
@@ -104,7 +104,7 @@ public class RedisQueueMQ<V> {
         boundListOperations.leftPushAll(bytesArr);
     }
 
-    public void initConsumer() {
+    public void init() {
         if (!consumerAvailable) {
             synchronized (this) {
                 if (!consumerAvailable) {
@@ -112,12 +112,13 @@ public class RedisQueueMQ<V> {
                     this.consumeExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(consumerThreadNum);
                     this.workExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(workThreadNum);
                     start();
+                    consumerAvailable=true;
                 }
             }
         }
     }
 
-    public void destroy() {
+    public void close() {
         if (consumerAvailable) {
             synchronized (this) {
                 if (consumerAvailable) {

@@ -5,13 +5,16 @@ import cn.bcd.lib.spring.redis.RedisUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class RegisterInfo {
     public final RegisterServer server;
     final BoundHashOperations<String, String, String> boundHashOperations;
+
     record Info(String[] hosts, long lastUpdateTs) {
 
     }
@@ -40,15 +43,20 @@ public final class RegisterInfo {
                     if (entries == null || entries.isEmpty()) {
                         hosts = new String[0];
                     } else {
-                        hosts = new String[entries.size()];
-                        int i = 0;
+                        List<String> hostList = new ArrayList<>();
                         for (Map.Entry<String, String> entry : entries.entrySet()) {
-                            final String value = entry.getValue();
-                            if (DateZoneUtil.strToDate_yyyyMMddHHmmss(value).getTime() >= server.consumer_providerInfoExpired_ms) {
-                                hosts[i++] = entry.getKey();
+                            long heartbeatTs = DateZoneUtil.strToDate_yyyyMMddHHmmss(entry.getValue()).getTime();
+                            long currentTs = System.currentTimeMillis();
+                            if (currentTs - heartbeatTs <= server.consumer_providerInfoExpired_ms) {
+                                hostList.add(entry.getKey());
                             }
                         }
-                        Arrays.sort(hosts);
+                        if (hostList.isEmpty()) {
+                            hosts = new String[0];
+                        } else {
+                            hosts = hostList.toArray(new String[0]);
+                            Arrays.sort(hosts);
+                        }
                     }
                     this.info = new Info(hosts, curTs);
                     return hosts;
@@ -63,6 +71,9 @@ public final class RegisterInfo {
 
     public String host() {
         String[] hosts = hosts();
+        if (hosts.length == 0) {
+            return null;
+        }
         return hosts[(int) (index.getAndIncrement() % hosts.length)];
     }
 

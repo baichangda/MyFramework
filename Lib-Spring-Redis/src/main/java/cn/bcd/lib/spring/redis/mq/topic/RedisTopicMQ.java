@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-public class RedisTopicMQ<V> {
+public class RedisTopicMQ<V> implements AutoCloseable{
 
     protected Logger logger = LoggerFactory.getLogger(RedisTopicMQ.class);
 
@@ -129,7 +129,7 @@ public class RedisTopicMQ<V> {
         return data;
     }
 
-    public void initConsumer() {
+    public void init() {
         if (!consumerAvailable) {
             synchronized (this) {
                 if (!consumerAvailable) {
@@ -143,12 +143,13 @@ public class RedisTopicMQ<V> {
                     redisMessageListenerContainer.start();
                     messageListener = getMessageListener();
                     redisMessageListenerContainer.addMessageListener(this.messageListener, Arrays.stream(this.names).map(ChannelTopic::new).collect(Collectors.toList()));
+                    consumerAvailable=true;
                 }
             }
         }
     }
 
-    public void destroy() {
+    public void close() {
         if (consumerAvailable) {
             synchronized (this) {
                 if (consumerAvailable) {

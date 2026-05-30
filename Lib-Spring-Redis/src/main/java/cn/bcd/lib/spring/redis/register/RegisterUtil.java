@@ -63,7 +63,13 @@ public class RegisterUtil implements ApplicationListener<ContextRefreshedEvent> 
         for (RegisterServer registerServer : registerProp.servers) {
             final BoundHashOperations<String, String, String> boundHashOperation = stringStringRedisTemplate.boundHashOps(redisKeyPre + registerServer.name());
             final String host = registerProp.host;
-            providerPool.scheduleAtFixedRate(() -> boundHashOperation.put(host, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date())), 1, registerServer.provider_heartbeat_s, TimeUnit.SECONDS);
+            providerPool.scheduleAtFixedRate(() -> {
+                try {
+                    boundHashOperation.put(host, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+                } catch (Exception ex) {
+                    logger.error("error", ex);
+                }
+            }, 1, registerServer.provider_heartbeat_s, TimeUnit.SECONDS);
         }
         //添加关机钩子
         Runtime.getRuntime().addShutdownHook(new Thread(providerPool::shutdown));
@@ -99,6 +105,7 @@ public class RegisterUtil implements ApplicationListener<ContextRefreshedEvent> 
     /**
      * 清除本地缓存
      * 下一次会从redis中获取最新数据
+     *
      * @param server
      */
     public static void clearCache(RegisterServer server) {

@@ -30,7 +30,7 @@ public class MonitorRedisTopicMQ extends RedisTopicMQ<String> {
         this.monitorProp = monitorProp;
         if (monitorProp.serverId != null) {
             this.redisTemplate = RedisUtil.newRedisTemplate_string_jackson(connectionFactory, MonitorData.class);
-            initConsumer();
+            init();
         }
     }
 
