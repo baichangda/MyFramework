@@ -14,7 +14,11 @@ import java.util.stream.Collectors;
  */
 public interface Condition extends Serializable {
     static Condition and(List<Condition> conditions) {
-        return new ConcatCondition(ConcatCondition.ConcatWay.AND, conditions.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        List<Condition> list = conditions.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (list.isEmpty()) {
+            return null;
+        }
+        return new ConcatCondition(ConcatCondition.ConcatWay.AND, list);
     }
 
     static Condition and(Condition... conditions) {
@@ -22,7 +26,11 @@ public interface Condition extends Serializable {
     }
 
     static Condition or(List<Condition> conditions) {
-        return new ConcatCondition(ConcatCondition.ConcatWay.OR, conditions.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        List<Condition> list = conditions.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (list.isEmpty()) {
+            return null;
+        }
+        return new ConcatCondition(ConcatCondition.ConcatWay.OR, list);
     }
 
     static Condition or(Condition... conditions) {

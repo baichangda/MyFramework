@@ -10,6 +10,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by Administrator on 2017/9/15.
@@ -31,13 +32,13 @@ public class StringConditionConverter implements Converter<StringCondition, Crit
                     return Criteria.where(fieldName).ne(val);
                 }
                 case ALL_LIKE: {
-                    return Criteria.where(fieldName).regex(".*(" + val + ").*");
+                    return Criteria.where(fieldName).regex(".*" + Pattern.quote((String) val) + ".*");
                 }
                 case LEFT_LIKE: {
-                    return Criteria.where(fieldName).regex("^(" + val + ")");
+                    return Criteria.where(fieldName).regex("^" + Pattern.quote((String) val));
                 }
                 case RIGHT_LIKE: {
-                    return Criteria.where(fieldName).regex("(" + val + ")$");
+                    return Criteria.where(fieldName).regex(Pattern.quote((String) val) + "$");
                 }
                 case IN: {
                     if (val.getClass().isArray()) {

@@ -9,6 +9,7 @@ import java.util.Date;
  * 当val==null时候忽略此条件
  */
 public class DateCondition implements Condition {
+    private static final long serialVersionUID = 1L;
     public final Handler handler;
     public final String fieldName;
     public final Object val;

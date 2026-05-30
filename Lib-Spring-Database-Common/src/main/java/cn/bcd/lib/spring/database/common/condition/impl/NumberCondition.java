@@ -3,11 +3,15 @@ package cn.bcd.lib.spring.database.common.condition.impl;
 
 import cn.bcd.lib.spring.database.common.condition.Condition;
 
+import java.io.Serial;
+
 /**
- * 日期类型条件
+ * 数值类型条件
  * 当val==null时候忽略此条件
  */
 public class NumberCondition implements Condition {
+    @Serial
+    private static final long serialVersionUID = 1L;
     public final Handler handler;
     public final String fieldName;
     public final Object val;
