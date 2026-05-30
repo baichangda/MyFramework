@@ -38,7 +38,7 @@ public class TestCassandra_gb32960 {
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
-            PageResult<RawData> pageResult = CassandraUtil_gb32960.page_rawData("TEST0000000000001", LocalDateTime.now().plusDays(-30).toInstant(DateZoneUtil.ZONE_OFFSET), Instant.now(), null, 10, true).get();
+            PageResult<RawData> pageResult = CassandraUtil_gb32960.page_rawData("TEST0000000000001", Date.from(LocalDateTime.now().plusDays(-30).toInstant(DateZoneUtil.ZONE_OFFSET)), new Date(), null, 10, true).get();
             for (RawData rawData : pageResult.list) {
                 logger.info(JsonUtil.toJson(rawData));
             }
@@ -60,7 +60,7 @@ public class TestCassandra_gb32960 {
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
-            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000001", LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1).get();
+            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000001", Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET)), 1).get();
             logger.info(JsonUtil.toJson(rawData));
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);

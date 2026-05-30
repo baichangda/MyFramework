@@ -6,9 +6,10 @@ import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.google.common.base.Function;
 
-import java.sql.Date;
+
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,7 +39,7 @@ public class CassandraUtil_gb32960 {
      * @param collectTimeDesc 是否时间采集时间降序
      * @return
      */
-    public static CompletableFuture<PageResult<RawData>> page_rawData(String vin, Instant beginTime, Instant endTime, String pagingState, int pageSize, boolean collectTimeDesc) {
+    public static CompletableFuture<PageResult<RawData>> page_rawData(String vin, Date beginTime, Date endTime, String pagingState, int pageSize, boolean collectTimeDesc) {
         List<RawData> list = new ArrayList<>();
         SimpleStatementBuilder statementBuilder = new SimpleStatementBuilder("select * from " + CassandraConfig.keySpace + ".raw_data where vin=? and collect_time>=? and collect_time<? order by collect_time " + (collectTimeDesc ? "desc" : "asc"))
                 .addPositionalValues(vin, beginTime, endTime);
@@ -55,7 +56,7 @@ public class CassandraUtil_gb32960 {
         }).toCompletableFuture();
     }
 
-    public static CompletableFuture<RawData> get_rawData(String vin, Instant collectTime, int type) {
+    public static CompletableFuture<RawData> get_rawData(String vin, Date collectTime, int type) {
         SimpleStatement statement = new SimpleStatementBuilder("select * from " + CassandraConfig.keySpace + ".raw_data where vin=? and collect_time=? and type=?")
                 .addPositionalValues(vin, collectTime, type)
                 .build();
