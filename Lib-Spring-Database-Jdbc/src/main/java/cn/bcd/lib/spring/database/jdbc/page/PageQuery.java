@@ -23,6 +23,7 @@ import java.util.List;
  * 1、格式必须为 select ... from ... order by ...
  * 2、order by语句可以没有
  * 3、不能以limit语句结尾
+ * 4、不包含group by
  *
  * 也可以{@link #PageQuery(String, String)}自己传入countSql和pageSql
  */

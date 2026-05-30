@@ -7,6 +7,7 @@ import cn.bcd.lib.spring.database.jdbc.anno.Unique;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -66,6 +67,8 @@ public final class BeanInfo<T extends SuperBaseBean> {
      * 唯一字段集合
      */
     public final List<UniqueInfo> uniqueInfoList;
+
+    public final BeanPropertyRowMapper<T> beanPropertyRowMapper;
 
     public BeanInfo(Class<T> clazz) {
         this.clazz = clazz;
@@ -138,6 +141,8 @@ public final class BeanInfo<T extends SuperBaseBean> {
         }
         updateSql = "update " + tableName + " set " + sj3 + " where id=?";
         updateFieldList.add(idFieldInfo);
+
+        beanPropertyRowMapper = new BeanPropertyRowMapper<>(clazz);
     }
 
     public List<Object> getInsertValues_noId(T t) {

@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -104,7 +103,7 @@ public class BaseService<T extends SuperBaseBean> {
     public T get(long id) {
         BeanInfo<T> info = getBeanInfo();
         final String sql = "select * from " + info.tableName + " where id=?";
-        final List<T> list = getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(info.clazz), id);
+        final List<T> list = getJdbcTemplate().query(sql, info.beanPropertyRowMapper, id);
         if (list.isEmpty()) {
             return null;
         } else {
@@ -131,9 +130,20 @@ public class BaseService<T extends SuperBaseBean> {
 
     public List<T> list(long... ids) {
         BeanInfo<T> info = getBeanInfo();
-        String repeat = Strings.repeat(",?", ids.length);
-        final String sql = "select * from " + info.tableName + " where id in (" + repeat.substring(1) + ")";
-        return getJdbcTemplate().query(sql, new BeanPropertyRowMapper<>(info.clazz), Arrays.stream(ids).toArray());
+        if (ids.length == 1) {
+            T t = get(ids[0]);
+            if (t == null) {
+                return new ArrayList<>();
+            } else {
+                List<T> list = new ArrayList<>(1);
+                list.add(t);
+                return list;
+            }
+        } else {
+            String repeat = Strings.repeat(",?", ids.length);
+            final String sql = "select * from " + info.tableName + " where id in (" + repeat.substring(1) + ")";
+            return getJdbcTemplate().query(sql, info.beanPropertyRowMapper, Arrays.stream(ids).boxed().toArray());
+        }
     }
 
     /**
@@ -544,6 +554,9 @@ public class BaseService<T extends SuperBaseBean> {
      * 根据条件删除
      */
     public void delete(Condition condition) {
+        if (condition == null) {
+            return;
+        }
         BeanInfo<T> info = getBeanInfo();
         final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
         final StringBuilder sql = new StringBuilder();
@@ -695,9 +708,9 @@ public class BaseService<T extends SuperBaseBean> {
         }
 
         if (paramList.isEmpty()) {
-            return getJdbcTemplate().query(sql.toString(), new BeanPropertyRowMapper<>(info.clazz));
+            return getJdbcTemplate().query(sql.toString(), info.beanPropertyRowMapper);
         } else {
-            return getJdbcTemplate().query(sql.toString(), new BeanPropertyRowMapper<>(info.clazz), paramList.toArray());
+            return getJdbcTemplate().query(sql.toString(), info.beanPropertyRowMapper, paramList.toArray());
         }
     }
 
