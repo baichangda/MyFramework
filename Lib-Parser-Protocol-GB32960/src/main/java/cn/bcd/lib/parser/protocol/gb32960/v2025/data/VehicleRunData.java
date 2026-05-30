@@ -26,9 +26,9 @@ public class VehicleRunData implements PacketData {
     public VehicleBatteryTemperatureData vehicleBatteryTemperatureData;
     //燃料电池电堆数据
     public VehicleFuelBatteryHeapData vehicleFuelBatteryHeapData;
-    //燃料电池电堆数据
+    //超级电容器数据
     public VehicleSupercapacitorData vehicleSupercapacitorData;
-    //燃料电池电堆数据
+    //超级电容器极值数据
     public VehicleSupercapacitorLimitValueData vehicleSupercapacitorLimitValueData;
     //车辆自定义数据
     public List<VehicleCustomData> vehicleCustomDatas;
