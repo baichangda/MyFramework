@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -59,7 +60,7 @@ public class TestCassandra_gb32960 {
                 .withAuthCredentials("cassandra", "cassandra")
                 .build()) {
             CassandraConfig.session = session;
-            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000001", LocalDateTime.of(2025,5,27,11,0,30,154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1).get();
+            RawData rawData = CassandraUtil_gb32960.get_rawData("TEST0000000000001", LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1).get();
             logger.info(JsonUtil.toJson(rawData));
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -81,30 +82,30 @@ public class TestCassandra_gb32960 {
             CassandraConfig.session = session;
             List<RawData> list = List.of(
                     new RawData("TEST0000000000000",
-                            LocalDateTime.of(2025,5,27,11,0,30,154000000).toInstant(DateZoneUtil.ZONE_OFFSET), 1,
-                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.of(2025,5,27,11,0,30,154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000000"),
+                            Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).toInstant(DateZoneUtil.ZONE_OFFSET)), 1,
+                            Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.of(2025, 5, 27, 11, 0, 30, 154000000).plusDays(-0).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000000"),
                     new RawData("TEST0000000000001",
-                            LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET), 2,
-                            LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000001"),
+                            Date.from(LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET)), 2,
+                            Date.from(LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-1).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000001"),
                     new RawData("TEST0000000000002",
-                            LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET), 3,
-                            LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000002"),
+                            Date.from(LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET)), 3,
+                            Date.from(LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-2).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000002"),
                     new RawData("TEST0000000000003",
-                            LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET), 4,
-                            LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000003"),
+                            Date.from(LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET)), 4,
+                            Date.from(LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-3).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000003"),
                     new RawData("TEST0000000000004",
-                            LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET), 5,
-                            LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET),
-                            LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET), "TEST0000000000004")
+                            Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)), 5,
+                            Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)),
+                            Date.from(LocalDateTime.now().plusDays(-4).toInstant(DateZoneUtil.ZONE_OFFSET)), "TEST0000000000004")
             );
             CassandraUtil_gb32960.save_rawData(list);
         }

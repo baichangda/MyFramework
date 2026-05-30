@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.cql.*;
 import com.google.common.base.Function;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +17,11 @@ public class CassandraUtil_gb32960 {
     static final Function<Row, RawData> rowFunction = row -> {
         RawData rawData = new RawData();
         rawData.vin = row.getString("vin");
-        rawData.collectTime = row.getInstant("collect_time");
+        rawData.collectTime = Date.from(row.getInstant("collect_time"));
         rawData.type = row.getInt("type");
-        rawData.gwReceiveTime = row.getInstant("gw_receive_time");
-        rawData.gwSendTime = row.getInstant("gw_send_time");
-        rawData.parseReceiveTime = row.getInstant("parse_receive_time");
+        rawData.gwReceiveTime = Date.from(row.getInstant("gw_receive_time"));
+        rawData.gwSendTime = Date.from(row.getInstant("gw_send_time"));
+        rawData.parseReceiveTime = Date.from(row.getInstant("parse_receive_time"));
         rawData.hex = row.getString("hex");
         return rawData;
     };
@@ -81,7 +82,9 @@ public class CassandraUtil_gb32960 {
         BatchStatementBuilder batchStatementBuilder = new BatchStatementBuilder(BatchType.UNLOGGED)
                 .setConsistencyLevel(ConsistencyLevel.ONE);
         for (RawData rawData : list) {
-            BoundStatement boundStatement = preparedStatement.bind(rawData.vin, rawData.collectTime, rawData.type, rawData.gwReceiveTime, rawData.gwSendTime, rawData.parseReceiveTime, rawData.hex);
+            BoundStatement boundStatement = preparedStatement.bind(rawData.vin,
+                    rawData.collectTime, rawData.type, rawData.gwReceiveTime,
+                    rawData.gwSendTime, rawData.parseReceiveTime, rawData.hex);
             batchStatementBuilder.addStatement(boundStatement);
         }
         return CassandraConfig.session.executeAsync(batchStatementBuilder.build()).toCompletableFuture();
