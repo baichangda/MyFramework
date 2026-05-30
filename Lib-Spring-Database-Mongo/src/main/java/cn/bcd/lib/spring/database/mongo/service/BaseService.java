@@ -41,7 +41,7 @@ public class BaseService<T extends SuperBaseBean> {
      */
 
 
-    public MongoTemplate mongoTemplate;
+    private MongoTemplate mongoTemplate;
 
     private final BeanInfo<T> beanInfo;
 
@@ -113,6 +113,10 @@ public class BaseService<T extends SuperBaseBean> {
         }
     }
 
+    public long count() {
+        return getMongoTemplate().count(new Query(), getBeanInfo().clazz);
+    }
+
     public long count(Condition condition) {
         Query query = ConditionUtil.toQuery(condition);
         return getMongoTemplate().count(query, getBeanInfo().clazz);
@@ -152,24 +156,25 @@ public class BaseService<T extends SuperBaseBean> {
      * 会验证{@link Unique}
      * 会设置创建信息
      *
-     * @param collection
+     * @param list
      * @return
      */
-    public List<T> insertAll(List<T> collection) {
-        validateUniqueBeforeSave(collection);
+    public List<T> insertAll(List<T> list) {
+        validateUniqueBeforeSave(list);
         if (getBeanInfo().autoSetCreateInfo) {
-            for (T t : collection) {
+            for (T t : list) {
                 setCreateInfo(t);
             }
         }
-        return getMongoTemplate().insertAll(collection).stream().toList();
+        getMongoTemplate().insertAll(list);
+        return list;
     }
 
     /**
      * 删除所有数据
      */
     public void deleteAll() {
-        getMongoTemplate().remove(getBeanInfo().clazz);
+        getMongoTemplate().remove(new Query(), getBeanInfo().clazz);
     }
 
     /**
@@ -181,9 +186,7 @@ public class BaseService<T extends SuperBaseBean> {
         if (ids.length == 1) {
             getMongoTemplate().remove(new Query(Criteria.where("id").is(ids[0])));
         } else if (ids.length > 1) {
-            Object[] newIds = new Object[ids.length];
-            System.arraycopy(ids, 0, newIds, 0, ids.length);
-            Query query = new Query(Criteria.where("id").in(newIds));
+            Query query = new Query(Criteria.where("id").in((Object[]) ids));
             getMongoTemplate().remove(query, getBeanInfo().clazz);
         }
     }
@@ -286,7 +289,9 @@ public class BaseService<T extends SuperBaseBean> {
      * @return
      */
     private boolean isUnique(String fieldName, Object val, String... excludeIds) {
-        List<T> resultList = getMongoTemplate().find(new Query(Criteria.where(fieldName).is(val)), getBeanInfo().clazz);
+        Query query = new Query(Criteria.where(fieldName).is(val));
+        query.fields().include("id");
+        List<T> resultList = getMongoTemplate().find(query, getBeanInfo().clazz);
         if (resultList.isEmpty()) {
             return true;
         } else {

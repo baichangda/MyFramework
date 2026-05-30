@@ -12,6 +12,7 @@ public class UniqueInfo {
     public final int code;
 
     public UniqueInfo(Field field) {
+        field.setAccessible(true);
         Unique unique = field.getAnnotation(Unique.class);
         this.field = field;
         this.fieldName = field.getName();
