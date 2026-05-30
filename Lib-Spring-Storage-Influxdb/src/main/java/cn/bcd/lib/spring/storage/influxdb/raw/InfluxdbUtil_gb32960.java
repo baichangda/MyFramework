@@ -34,9 +34,9 @@ public class InfluxdbUtil_gb32960 {
         rawData.collectTime = new Date(pointValues.getTimestamp().longValue());
         rawData.vin = pointValues.getTag("vin");
         rawData.type = Integer.parseInt(pointValues.getTag("type"));
-        rawData.gwReceiveTime = DateZoneUtil.strToDate_yyyyMMddHHmmss(pointValues.getStringField("gw_receive_time"));
-        rawData.gwSendTime = DateZoneUtil.strToDate_yyyyMMddHHmmss(pointValues.getStringField("gw_send_time"));
-        rawData.parseReceiveTime = DateZoneUtil.strToDate_yyyyMMddHHmmss(pointValues.getStringField("parse_receive_time"));
+        rawData.gwReceiveTime = new Date(pointValues.getIntegerField("gw_receive_time"));
+        rawData.gwSendTime = new Date(pointValues.getIntegerField("gw_send_time"));
+        rawData.parseReceiveTime = new Date(pointValues.getIntegerField("parse_receive_time"));
         rawData.hex = pointValues.getStringField("hex");
         return rawData;
     }
@@ -97,9 +97,9 @@ public class InfluxdbUtil_gb32960 {
             Point point = Point.measurement(MEASUREMENT)
                     .setTag("vin", rawData.vin)
                     .setTag("type", rawData.type + "")
-                    .setField("gw_receive_time", DateZoneUtil.dateToStr_yyyyMMddHHmmss(rawData.gwReceiveTime))
-                    .setField("gw_send_time", DateZoneUtil.dateToStr_yyyyMMddHHmmss(rawData.gwSendTime))
-                    .setField("parse_receive_time", DateZoneUtil.dateToStr_yyyyMMddHHmmss(rawData.parseReceiveTime))
+                    .setField("gw_receive_time", rawData.gwReceiveTime.getTime())
+                    .setField("gw_send_time", rawData.gwSendTime.getTime())
+                    .setField("parse_receive_time", rawData.parseReceiveTime.getTime())
                     .setField("hex", rawData.hex)
                     .setTimestamp(rawData.collectTime.toInstant());
             points.add(point);
