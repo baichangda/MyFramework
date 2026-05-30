@@ -22,6 +22,8 @@ public class InfluxdbConfig {
                 .host(influxdbProp.url)
                 .token(influxdbProp.token.toCharArray())
                 .database(influxdbProp.database)
+                //非同步写入
+                .writeNoSync(true)
                 .build();
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(config);
         client = influxDBClient;
