@@ -42,6 +42,10 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
 
     @Override
     public void accept(TransferAccessData transferAccessData) {
+        if(transferAccessData.getVin()==null){
+            logger.warn("consume data error、vin is null");
+            return;
+        }
         if (transferAccessData.getPlatformCode() == null || transferAccessData.getPlatformCode().isEmpty()) {
             vin_platformCodes.remove(transferAccessData.getVin());
         } else {
@@ -60,24 +64,31 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
                 .url(url)
                 .get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logger.info("request failed、response code[{}]", response.code());
+            }
             byte[] bytes = response.body().bytes();
             Result<List<TransferAccessData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (result.getCode() == 0) {
                 List<TransferAccessData> list = result.getData();
-                if (list != null && !list.isEmpty()) {
-                    for (TransferAccessData data : list) {
-                        if (data.getPlatformCode() != null && !data.getPlatformCode().isEmpty()) {
-                            vin_platformCodes.put(data.getVin(), data.getPlatformCode());
+                if (list == null) {
+                    logger.info("request succeed、result data null");
+                } else {
+                    if (!list.isEmpty()) {
+                        for (TransferAccessData data : list) {
+                            if (data.getPlatformCode() != null && !data.getPlatformCode().isEmpty()) {
+                                vin_platformCodes.put(data.getVin(), data.getPlatformCode());
+                            }
                         }
                     }
+                    logger.info("request succeed、count[{}]", vin_platformCodes.size());
                 }
-                logger.info("PermissionDataInit succeed、count[{}]", vin_platformCodes.size());
             } else {
-                logger.error("TransferAccessDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
+                logger.error("request failed、call url[{}] result:\n{}", url, new String(bytes));
             }
         } catch (Exception e) {
-            logger.error("TransferAccessDataInit error", e);
+            logger.error("request error", e);
         }
     }
 }

@@ -33,8 +33,8 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
 
     private static InitProp initProp;
 
-    public VehicleDataInit(InitProp staticDataInitProp) {
-        VehicleDataInit.initProp = staticDataInitProp;
+    public VehicleDataInit(InitProp initProp) {
+        VehicleDataInit.initProp = initProp;
     }
 
     @Override
@@ -50,15 +50,22 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
         String url = "http://" + hostData.ip + ":" + hostData.port + "/api/vehicle/list";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logger.info("VehicleDataInit request failed、response code[{}]", response.code());
+            }
             byte[] bytes = response.body().bytes();
             Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (resultData.getCode() == 0) {
                 List<VehicleData> list = resultData.getData();
-                for (VehicleData data : list) {
-                    vin_vehicleData.put(data.getVin(), data);
+                if (list == null) {
+                    logger.info("VehicleDataInit succeed、result data null");
+                } else {
+                    for (VehicleData data : list) {
+                        vin_vehicleData.put(data.getVin(), data);
+                    }
+                    logger.info("VehicleDataInit succeed、count[{}]", vin_vehicleData.size());
                 }
-                logger.info("VehicleDataInit succeed、count[{}]", vin_vehicleData.size());
             } else {
                 logger.error("VehicleDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
             }
@@ -69,8 +76,10 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
 
     @Override
     public void accept(VehicleData vehicleData) {
-        if (vehicleData != null) {
-            vin_vehicleData.put(vehicleData.getVin(), vehicleData);
+        if (vehicleData.getVin() == null) {
+            logger.warn("consume data error、vin is null");
+            return;
         }
+        vin_vehicleData.put(vehicleData.getVin(), vehicleData);
     }
 }

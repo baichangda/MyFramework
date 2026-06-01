@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 public class NacosUtil {
     static Logger logger = LoggerFactory.getLogger(NacosUtil.class);
 
-    public static HostData getHostData_business_process_backend(String host, int port) {
+    public static HostData getHostData_business_process_backend(String host, int port, String serviceName) {
         try {
-            ListInstanceData listInstanceData = listInstance(host, port, new ListInstanceRequest(Const.service_name_business_process_backend));
+            ListInstanceData listInstanceData = listInstance(host, port, new ListInstanceRequest(serviceName));
             HostData[] hosts = listInstanceData.hosts;
-            if (hosts.length == 0) {
+            if (hosts == null || hosts.length == 0) {
                 return null;
             } else {
                 return hosts[0];

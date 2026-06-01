@@ -37,6 +37,9 @@ public class TransferConfigDataInit {
                 .url(url)
                 .get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logger.info("TransferConfigDataInit request failed、response code[{}]", response.code());
+            }
             byte[] bytes = response.body().bytes();
             Result<TransferConfigData> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
             });

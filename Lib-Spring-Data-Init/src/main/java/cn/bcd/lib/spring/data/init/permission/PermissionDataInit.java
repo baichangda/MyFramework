@@ -45,14 +45,21 @@ public class PermissionDataInit implements Initializable {
             String url = "http://" + hostData.ip + ":" + hostData.port + "/api/sys/permission/list";
             Request request = new Request.Builder().url(url).get().build();
             try (Response response = OkHttpUtil.client.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    logger.info("PermissionDataInit request failed、response code[{}]", response.code());
+                }
                 byte[] bytes = response.body().bytes();
                 Result<List<PermissionData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
                 });
                 if (result.code == 0) {
-                    for (PermissionData data : result.data) {
-                        resource_permission.put(data.resource, data);
+                    if (result.data == null) {
+                        logger.info("PermissionDataInit succeed、result data null");
+                    } else {
+                        for (PermissionData data : result.data) {
+                            resource_permission.put(data.resource, data);
+                        }
+                        logger.info("PermissionDataInit succeed、count[{}]", resource_permission.size());
                     }
-                    logger.info("PermissionDataInit succeed、count[{}]", resource_permission.size());
                 } else {
                     logger.error("PermissionDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
                 }
