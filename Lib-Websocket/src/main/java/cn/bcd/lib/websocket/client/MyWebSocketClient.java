@@ -101,8 +101,6 @@ public class MyWebSocketClient implements AutoCloseable {
         });
     }
 
-    static final BaseException disconnect = BaseException.get("client disconnect");
-
     /**
      * 发送文本消息
      * 否则返回发送结果
@@ -114,7 +112,7 @@ public class MyWebSocketClient implements AutoCloseable {
         CompletableFuture<Void> future = new CompletableFuture<>();
         context.runOnContext(e -> {
             if (webSocket == null) {
-                future.completeExceptionally(disconnect);
+                future.completeExceptionally(BaseException.get("client disconnect"));
             } else {
                 webSocket.writeTextMessage(text).onComplete(ar -> {
                     if (ar.succeeded()) {

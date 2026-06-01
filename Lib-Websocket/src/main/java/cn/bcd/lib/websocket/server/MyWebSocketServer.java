@@ -41,12 +41,24 @@ public class MyWebSocketServer implements AutoCloseable {
             });
             httpServer.requestHandler(router);
         }
-        httpServer.listen(port, host);
+        httpServer.listen(port, host).onComplete(ar -> {
+            if (ar.succeeded()) {
+                logger.info("host[{}] port[{}] uri[{}] listen succeed", host, port, uri);
+            } else {
+                logger.error("host[{}] port[{}] uri[{}] listen failed", host, port, uri, ar.cause());
+            }
+        });
     }
 
     public void close() {
         if (httpServer != null) {
-            httpServer.close().await();
+            httpServer.close().onComplete(ar -> {
+                if (ar.succeeded()) {
+                    logger.info("host[{}] port[{}] uri[{}] close succeed", host, port, uri);
+                } else {
+                    logger.error("host[{}] port[{}] uri[{}] close failed", host, port, uri, ar.cause());
+                }
+            });
             httpServer = null;
         }
     }
