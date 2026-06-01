@@ -16,23 +16,23 @@ public class TestWebSocketClient {
 
     @Test
     public void test1() throws InterruptedException {
-        MyWebSocketClient webSocketClient = new MyWebSocketClient("127.0.0.1:8080", Duration.ofSeconds(1), msg -> {
+        MyWebSocketClient webSocketClient = new MyWebSocketClient("127.0.0.1:8080", Duration.ofSeconds(2), msg -> {
             logger.info("on text message:{}", msg);
         });
-        webSocketClient.connect();
         test2();
     }
 
     @Test
     public void test2() throws InterruptedException {
-        MyWebSocketServer webSocketServer = new MyWebSocketServer("0.0.0.0", 8080, "/", ws -> {
-            logger.info("websocket connect");
-            ws.writeTextMessage(DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
-        });
         while (true) {
-            webSocketServer.init();
+            MyWebSocketServer webSocketServer = new MyWebSocketServer("0.0.0.0", 8080, "/", ws -> {
+                logger.info("websocket connect");
+                ws.writeTextMessage(DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+            });
+            logger.info("websocket server start");
             TimeUnit.SECONDS.sleep(5);
             webSocketServer.close();
+            logger.info("websocket server close");
             TimeUnit.SECONDS.sleep(5);
         }
     }

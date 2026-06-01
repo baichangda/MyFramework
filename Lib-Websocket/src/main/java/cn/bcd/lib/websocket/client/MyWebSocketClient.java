@@ -1,25 +1,23 @@
 package cn.bcd.lib.websocket.client;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.websocket.Const;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 
-public class MyWebSocketClient {
+public class MyWebSocketClient implements AutoCloseable {
 
     static Logger logger = LoggerFactory.getLogger(MyWebSocketClient.class);
-
-    static final ScheduledExecutorService pool = Executors.newSingleThreadScheduledExecutor();
-
 
     public final String url;
     public final String host;
@@ -28,20 +26,35 @@ public class MyWebSocketClient {
     public final Duration autoReconnectPeriod;
     private final WebSocketClient webSocketClient;
     private final Handler<Void> closeHandler;
-    private final Handler<String> textMessageHandler;
-    private volatile WebSocket webSocket;
-    private long nextConnectTs;
+    private WebSocket webSocket;
+    private boolean closed = false;
+    private final Runnable connectRunnable;
+    private final Context context;
 
-    /**
-     * 创建一个websocket客户端
-     * @param url websocket服务地址、例如：127.0.0.1:8080/ws
-     * @param autoReconnectPeriod 自动重连间隔、不能为空
-     * @param textMessageHandler 文本消息处理函数
-     */
     public MyWebSocketClient(String url,
                              Duration autoReconnectPeriod,
                              Handler<String> textMessageHandler) {
+        this(url, autoReconnectPeriod, textMessageHandler, null, null);
+    }
+
+
+    /**
+     * 创建一个websocket客户端
+     *
+     * @param url                  websocket服务地址、例如：127.0.0.1:8080/ws
+     * @param autoReconnectPeriod  自动重连间隔、不能为空
+     * @param onTextMessageHandler 文本消息处理函数
+     * @param onOpenHandler        连接成功回调、重连成功也会调用
+     * @param onCloseHandler       连接断开回调
+     */
+    public MyWebSocketClient(String url,
+                             Duration autoReconnectPeriod,
+                             Handler<String> onTextMessageHandler,
+                             Consumer<WebSocket> onOpenHandler,
+                             Consumer<WebSocket> onCloseHandler) {
         this.url = url;
+        this.autoReconnectPeriod = autoReconnectPeriod;
+        this.context = Const.vertx.getOrCreateContext();
         String[] split = url.split(":");
         this.host = split[0];
         String s1 = split[1];
@@ -53,48 +66,64 @@ public class MyWebSocketClient {
             this.port = Integer.parseInt(s1.substring(0, index));
             this.uri = s1.substring(index);
         }
-        this.textMessageHandler = textMessageHandler;
+
+        //断线重连逻辑
         closeHandler = v -> {
-            pool.execute(() -> {
-                logger.info("on close ws[{}]", url);
-                webSocket = null;
-                nextConnectTs = 0;
-                connect();
-            });
+            logger.info("on close ws[{}]", url);
+            if (onCloseHandler != null) {
+                onCloseHandler.accept(webSocket);
+            }
+            webSocket = null;
+            connectInterval(true);
         };
+
         webSocketClient = Const.vertx.createWebSocketClient();
-        this.autoReconnectPeriod = autoReconnectPeriod;
+        connectRunnable = () -> {
+            logger.info("connecting ws[{}]", url);
+            webSocketClient.connect(port, host, uri)
+                    .onSuccess(w -> {
+                        logger.info("connect ws[{}] succeed", url);
+                        webSocket = w;
+                        w.closeHandler(closeHandler);
+                        w.textMessageHandler(onTextMessageHandler);
+                        if (onOpenHandler != null) {
+                            onOpenHandler.accept(w);
+                        }
+                    }).onFailure(t -> {
+                        logger.error("connect ws[{}] failed", url, t);
+                        connectInterval(false);
+                    });
+        };
+
+        context.runOnContext(e -> {
+            //触发主动连接
+            connectInterval(true);
+        });
     }
 
-    public final boolean connected() {
-        return webSocket != null;
-    }
+    static final BaseException disconnect = BaseException.get("client disconnect");
 
     /**
      * 发送文本消息
-     * 返回null表示未连接
      * 否则返回发送结果
      *
      * @param text
      * @return
      */
-    public final Future<Void> sendText(String text) {
-        WebSocket webSocket = this.webSocket;
-        if (webSocket == null) {
-            return Future.failedFuture("ws[" + url + "] has closed");
-        }
-        return webSocket.writeTextMessage(text);
-    }
-
-    /**
-     * 异步连接
-     *
-     * @return
-     */
-    public final CompletableFuture<Void> connect() {
+    public final CompletableFuture<Void> sendText(String text) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        pool.execute(() -> {
-            connectInterval(future);
+        context.runOnContext(e -> {
+            if (webSocket == null) {
+                future.completeExceptionally(disconnect);
+            } else {
+                webSocket.writeTextMessage(text).onComplete(ar -> {
+                    if (ar.succeeded()) {
+                        future.complete(null);
+                    } else {
+                        future.completeExceptionally(ar.cause());
+                    }
+                });
+            }
         });
         return future;
     }
@@ -104,47 +133,34 @@ public class MyWebSocketClient {
      *
      * @return
      */
-    public final CompletableFuture<Void> close() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        pool.execute(() -> {
-            if (webSocket == null) {
-                return;
+    public void close() {
+        context.runOnContext(v -> {
+            closed = true;
+            //提交关闭任务
+            if (webSocket != null) {
+                webSocket.closeHandler(null);
+                webSocket.textMessageHandler(null);
+                webSocket.close();
+                webSocket = null;
             }
-            webSocket.closeHandler(null);
-            webSocket.textMessageHandler(null);
-            webSocket = null;
-            webSocketClient.close().onSuccess(v -> future.complete(null));
+            webSocketClient.close();
         });
-        return future;
     }
 
-    private void connectInterval(CompletableFuture<Void> future) {
-        long ts = System.currentTimeMillis();
-        long nextTs = nextConnectTs;
-        long periodMillis = autoReconnectPeriod.toMillis();
-        if (nextTs == 0) {
-            nextTs = ts;
-        }
-        long waitTs = nextTs - ts;
-        nextConnectTs = nextTs + periodMillis;
-        pool.schedule(() -> {
-            logger.info("connecting ws[{}]", url);
-            webSocketClient.connect(port, host, "")
-                    .onSuccess(w -> {
-                        pool.execute(() -> {
-                            logger.error("connect ws[{}] succeed", url);
-                            webSocket = w;
-                            w.closeHandler(closeHandler);
-                            w.textMessageHandler(textMessageHandler);
-                            future.complete(null);
-                        });
 
-                    }).onFailure(t -> {
-                        pool.execute(() -> {
-                            logger.error("connect ws[{}] failed", url, t);
-                            connectInterval(future);
-                        });
-                    });
-        }, waitTs, TimeUnit.MILLISECONDS);
+    /**
+     * 周期性重连
+     */
+    private void connectInterval(boolean connectImmediately) {
+        if (closed) {
+            return;
+        }
+        if (connectImmediately) {
+            connectRunnable.run();
+        } else {
+            context.owner().setTimer(autoReconnectPeriod.toMillis(), l -> {
+                connectRunnable.run();
+            });
+        }
     }
 }
