@@ -1,6 +1,6 @@
 package cn.bcd.lib.spring.data.notify.onlyNotify.platformStatus;
 
-import cn.bcd.lib.base.common.Initializable;
+import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.spring.data.notify.NotifyConst;
 import cn.bcd.lib.spring.data.notify.NotifyProp;
 import cn.bcd.lib.spring.data.notify.onlyNotify.Receiver;

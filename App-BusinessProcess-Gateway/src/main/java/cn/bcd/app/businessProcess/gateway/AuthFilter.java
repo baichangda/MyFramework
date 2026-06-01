@@ -1,8 +1,8 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.spring.cloud.common.Const;
 import cn.bcd.lib.spring.data.init.permission.PermissionDataInit;
 import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.dev33.satoken.exception.NotLoginException;
@@ -40,8 +40,8 @@ public class AuthFilter implements GlobalFilter, Ordered {
         SaReactorSyncHolder.setContext(exchange);
         try {
             boolean check = SaRouter
-                    .match(Const.uri_prefix + "/**")
-                    .notMatch(Const.uri_prefix + "/*/v3/api-docs")
+                    .match(cn.bcd.lib.base.common.Const.uri_prefix + "/**")
+                    .notMatch(cn.bcd.lib.base.common.Const.uri_prefix + "/*/v3/api-docs")
                     .notMatch(
                             getExcludeUrls(Const.uri_prefix_business_process_backend,
                                     "/api/anno",
@@ -57,7 +57,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
                     //用户状态校验
                     AuthUser user = cacheService.getUser(username);
                     if (user.getStatus() == 1) {
-                        ServerHttpRequest newRequest = exchange.getRequest().mutate().header(Const.request_header_authUser, JsonUtil.toJson(user)).build();
+                        ServerHttpRequest newRequest = exchange.getRequest().mutate().header(cn.bcd.lib.base.common.Const.request_header_authUser, JsonUtil.toJson(user)).build();
                         //判断是否权限校验
                         String requestPath = exchange.getRequest().getPath().value();
                         boolean needCheckPermission = PermissionDataInit.resource_permission.containsKey(requestPath);

@@ -1,6 +1,6 @@
 package cn.bcd.app.tool.kafka.client.web;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;

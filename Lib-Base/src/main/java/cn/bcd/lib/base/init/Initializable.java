@@ -1,4 +1,4 @@
-package cn.bcd.lib.base.common;
+package cn.bcd.lib.base.init;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +7,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 用于应用模块初始化spring的自动化组件
+ * 应用应该调用{@link #initByOrder(List)}来完成初始化
+ */
 public interface Initializable {
 
     Logger logger = LoggerFactory.getLogger(Initializable.class);

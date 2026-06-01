@@ -2,7 +2,7 @@ package cn.bcd.app.businessProcess.backend.base.support_satoken;
 
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckAction;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
-import cn.bcd.lib.spring.cloud.common.Const;
+import cn.bcd.lib.base.common.Const;
 import cn.dev33.satoken.annotation.handler.SaAnnotationHandlerInterface;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.stp.StpUtil;

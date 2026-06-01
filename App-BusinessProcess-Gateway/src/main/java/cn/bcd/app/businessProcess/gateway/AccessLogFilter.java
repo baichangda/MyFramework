@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.spring.cloud.common.Const;
+import cn.bcd.lib.base.common.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -26,7 +26,7 @@ public class AccessLogFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         return chain.filter(exchange).then(
                 Mono.fromRunnable(() -> {
-                    String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(Const.request_header_authUser)).map(List::getFirst).orElse(null);
+                    String authUserStr = Optional.ofNullable(exchange.getRequest().getHeaders().get(cn.bcd.lib.base.common.Const.request_header_authUser)).map(List::getFirst).orElse(null);
                     boolean checkAuth = Optional.ofNullable(exchange.getAttribute(AuthFilter.checkAuth_attr_key)).map(e -> (boolean) e).orElse(false);
                     boolean checkPermission = Optional.ofNullable(exchange.getAttribute(AuthFilter.checkPermission_attr_key)).map(e -> (boolean) e).orElse(false);
                     ServerHttpRequest request = exchange.getRequest();

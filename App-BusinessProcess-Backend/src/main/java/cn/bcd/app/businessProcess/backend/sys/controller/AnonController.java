@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.sys.controller;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.app.businessProcess.backend.sys.keys.KeysConst;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;

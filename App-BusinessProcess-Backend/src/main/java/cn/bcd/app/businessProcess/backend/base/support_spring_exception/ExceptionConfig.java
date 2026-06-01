@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.base.support_spring_exception;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.base.util.ExceptionUtil;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;

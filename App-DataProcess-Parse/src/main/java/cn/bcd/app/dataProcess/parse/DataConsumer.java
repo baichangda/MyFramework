@@ -4,7 +4,7 @@ import cn.bcd.app.dataProcess.parse.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2016.WorkHandler_v2016;
 import cn.bcd.app.dataProcess.parse.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.parse.v2025.WorkHandler_v2025;
-import cn.bcd.lib.base.common.Initializable;
+import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;

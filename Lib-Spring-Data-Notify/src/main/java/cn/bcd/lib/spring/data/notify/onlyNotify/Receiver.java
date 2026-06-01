@@ -1,6 +1,6 @@
 package cn.bcd.lib.spring.data.notify.onlyNotify;
 
-import cn.bcd.lib.base.common.Initializable;
+import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;

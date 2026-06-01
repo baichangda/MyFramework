@@ -1,7 +1,8 @@
 package cn.bcd.lib.spring.data.init.vehicle;
 
-import cn.bcd.lib.base.common.Initializable;
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.init.Initializable;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
@@ -43,7 +44,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
     }
 
     public void init() {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
+        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
         if (hostData == null) {
             return;
         }
@@ -51,7 +52,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                logger.info("VehicleDataInit request failed、response code[{}]", response.code());
+                throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
             Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
@@ -59,18 +60,18 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
             if (resultData.getCode() == 0) {
                 List<VehicleData> list = resultData.getData();
                 if (list == null) {
-                    logger.info("VehicleDataInit succeed、result data null");
+                    logger.info("request succeed、result data null");
                 } else {
                     for (VehicleData data : list) {
                         vin_vehicleData.put(data.getVin(), data);
                     }
-                    logger.info("VehicleDataInit succeed、count[{}]", vin_vehicleData.size());
+                    logger.info("request succeed、count[{}]", vin_vehicleData.size());
                 }
             } else {
-                logger.error("VehicleDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
+                logger.error("request failed、call url[{}] result:\n{}", url, new String(bytes));
             }
         } catch (IOException e) {
-            throw BaseException.get("VehicleDataInit error", e);
+            throw BaseException.get("request error", e);
         }
     }
 

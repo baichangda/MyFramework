@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.lib.spring.cloud.common.fegin.user.UserClient;

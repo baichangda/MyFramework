@@ -1,4 +1,4 @@
-package cn.bcd.lib.base.common;
+package cn.bcd.lib.base.result;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ExceptionUtil;

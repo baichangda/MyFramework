@@ -1,6 +1,8 @@
 package cn.bcd.lib.spring.data.init.transferConfig;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
 import cn.bcd.lib.spring.data.init.nacos.HostData;
@@ -28,7 +30,7 @@ public class TransferConfigDataInit {
     }
 
     public static TransferConfigData get(String serverId) {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
+        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
         if (hostData == null) {
             return null;
         }
@@ -38,7 +40,7 @@ public class TransferConfigDataInit {
                 .get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                logger.info("TransferConfigDataInit request failed、response code[{}]", response.code());
+                throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
             Result<TransferConfigData> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
@@ -46,11 +48,11 @@ public class TransferConfigDataInit {
             if (result.getCode() == 0) {
                 return result.getData();
             } else {
-                logger.error("TransferConfigDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
+                logger.error("request failed、call url[{}] result:\n{}", url, new String(bytes));
                 return null;
             }
         } catch (Exception e) {
-            logger.error("TransferConfigDataInit error", e);
+            logger.error("request error", e);
             return null;
         }
     }

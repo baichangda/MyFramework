@@ -4,7 +4,7 @@ import cn.bcd.app.businessProcess.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
 import cn.bcd.app.businessProcess.backend.sys.bean.UserBean;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;

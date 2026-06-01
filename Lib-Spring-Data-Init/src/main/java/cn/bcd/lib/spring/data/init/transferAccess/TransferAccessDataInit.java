@@ -1,7 +1,9 @@
 package cn.bcd.lib.spring.data.init.transferAccess;
 
-import cn.bcd.lib.base.common.Initializable;
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.init.Initializable;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
 import cn.bcd.lib.spring.data.init.nacos.HostData;
@@ -55,7 +57,7 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
 
     @Override
     public void init() {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
+        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
         if (hostData == null) {
             return;
         }
@@ -65,7 +67,7 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
                 .get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                logger.info("request failed、response code[{}]", response.code());
+                throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
             Result<List<TransferAccessData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {

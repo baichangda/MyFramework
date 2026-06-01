@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.spring.cloud.common.Const;
+import cn.bcd.lib.base.common.Const;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.GatewayFilterSpec;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
@@ -17,7 +17,7 @@ public class RouteConfig {
     @Bean
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route(r -> r.path(Const.uri_prefix_business_process_backend + "/**")
+                .route(r -> r.path(cn.bcd.lib.base.common.Const.uri_prefix_business_process_backend + "/**")
                         .filters(e -> rewritePath(e, Const.uri_prefix_business_process_backend))
                         .uri("lb://business-process-backend"))
                 .build();

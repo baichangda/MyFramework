@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend.sys.controller;
 
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.app.businessProcess.backend.base.util.HttpResponseUtil;
 import cn.bcd.app.businessProcess.backend.sys.service.FileService;

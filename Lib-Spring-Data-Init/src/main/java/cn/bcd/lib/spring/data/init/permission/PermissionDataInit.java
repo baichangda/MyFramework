@@ -1,7 +1,9 @@
 package cn.bcd.lib.spring.data.init.permission;
 
-import cn.bcd.lib.base.common.Initializable;
-import cn.bcd.lib.base.common.Result;
+import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.init.Initializable;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
 import cn.bcd.lib.spring.data.init.nacos.HostData;
@@ -38,7 +40,7 @@ public class PermissionDataInit implements Initializable {
     @Override
     public void init() {
         try {
-            HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort);
+            HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
             if (hostData == null) {
                 return;
             }
@@ -46,22 +48,22 @@ public class PermissionDataInit implements Initializable {
             Request request = new Request.Builder().url(url).get().build();
             try (Response response = OkHttpUtil.client.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    logger.info("PermissionDataInit request failed、response code[{}]", response.code());
+                    throw BaseException.get("request failed、response code[{}]", response.code());
                 }
                 byte[] bytes = response.body().bytes();
                 Result<List<PermissionData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
                 });
                 if (result.code == 0) {
                     if (result.data == null) {
-                        logger.info("PermissionDataInit succeed、result data null");
+                        logger.info("request succeed、result data null");
                     } else {
                         for (PermissionData data : result.data) {
                             resource_permission.put(data.resource, data);
                         }
-                        logger.info("PermissionDataInit succeed、count[{}]", resource_permission.size());
+                        logger.info("request succeed、count[{}]", resource_permission.size());
                     }
                 } else {
-                    logger.error("PermissionDataInit failed、call url[{}] result:\n{}", url, new String(bytes));
+                    logger.error("request failed、call url[{}] result:\n{}", url, new String(bytes));
                 }
             }
         } catch (Exception ex) {

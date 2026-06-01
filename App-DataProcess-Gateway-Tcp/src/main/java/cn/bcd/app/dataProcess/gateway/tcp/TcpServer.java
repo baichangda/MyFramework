@@ -1,6 +1,6 @@
 package cn.bcd.app.dataProcess.gateway.tcp;
 
-import cn.bcd.lib.base.common.Initializable;
+import cn.bcd.lib.base.init.Initializable;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;

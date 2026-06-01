@@ -3,7 +3,7 @@ package cn.bcd.app.dataProcess.transfer.v2016;
 import cn.bcd.app.dataProcess.transfer.v2016.handler.KafkaDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpDataHandler;
 import cn.bcd.app.dataProcess.transfer.v2016.tcp.TcpClient;
-import cn.bcd.lib.base.common.Initializable;
+import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.spring.data.init.transferConfig.TransferConfigDataInit;
