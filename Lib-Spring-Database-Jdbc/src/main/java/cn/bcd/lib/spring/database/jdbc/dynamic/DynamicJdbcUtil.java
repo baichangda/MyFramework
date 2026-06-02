@@ -65,7 +65,6 @@ public class DynamicJdbcUtil {
         dataSource.setMaximumPoolSize(DATA_SOURCE_MAX_ACTIVE);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-        dataSource.isRunning();
         return dataSource;
     }
 
