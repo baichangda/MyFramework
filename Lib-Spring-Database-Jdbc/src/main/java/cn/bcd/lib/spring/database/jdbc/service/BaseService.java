@@ -547,7 +547,7 @@ public class BaseService<T extends SuperBaseBean> {
      * 删除所有数据
      */
     public void deleteAll() {
-        delete((Condition) null);
+        getJdbcTemplate().update("delete from " + beanInfo.tableName);
     }
 
     /**

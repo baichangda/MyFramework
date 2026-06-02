@@ -43,8 +43,9 @@ public class MysqlBackupUtil {
                                      String dir,
                                      int maxFileNum) {
         String databaseDir = dir + File.separator + database;
+        Path databaseDirPath = Paths.get(databaseDir);
         try {
-            Files.createDirectories(Paths.get(databaseDir));
+            Files.createDirectories(databaseDirPath);
         } catch (IOException e) {
             throw BaseException.get(e);
         }
@@ -71,7 +72,7 @@ public class MysqlBackupUtil {
             }
 
             if (maxFileNum > 0) {
-                try (Stream<Path> stream = Files.list(Paths.get(dir))) {
+                try (Stream<Path> stream = Files.list(databaseDirPath)) {
                     List<Path> fileList = new ArrayList<>(stream.toList());
                     if (fileList.size() > maxFileNum) {
                         fileList.sort(Comparator.comparing(Path::getFileName));

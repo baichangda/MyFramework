@@ -64,7 +64,7 @@ public class Conn {
                         int index = 0;
                         for (Field field : fields) {
                             int modifiers = field.getModifiers();
-                            if (Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers)) {
+                            if (Modifier.isStatic(modifiers)) {
                                 continue;
                             }
                             field.setAccessible(true);

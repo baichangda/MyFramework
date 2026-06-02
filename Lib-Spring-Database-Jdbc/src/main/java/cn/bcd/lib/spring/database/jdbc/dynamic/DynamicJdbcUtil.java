@@ -22,7 +22,7 @@ public class DynamicJdbcUtil {
     /**
      * datasource闲置过期时间
      */
-    private final static int EXPIRE_IN_SECOND = 5;
+    private final static int EXPIRE_IN_SECOND = 5 * 60;
 
     /**
      * 数据源最大connection激活数量
