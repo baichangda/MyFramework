@@ -15,7 +15,6 @@
 - ***App-Simulator-SingleVehicle-Tcp*** GB32960 TCP单车模拟器服务
 - ***App-Tool-Minio-Client-Web*** minio客户端工具服务
 - ***App-Tool-Kafka-Client-Web*** kafka客户端工具服务
-- ***App-Tool-Stock*** 股票分析工具
 
 # 依赖版本管理
 - 所有的依赖保本定义都在gradle/libs.versions.toml中

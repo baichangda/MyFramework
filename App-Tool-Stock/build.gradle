@@ -1,7 +1,0 @@
-dependencies {
-    implementation platform(libs.vertx.dependencies)
-    implementation libs.log4j.slf4j2.impl
-    implementation libs.vertx.web
-    implementation libs.vertx.web.client
-    implementation libs.sqlite
-}

@@ -33,7 +33,6 @@ include 'App-BusinessProcess-Gateway'
 include 'App-DataProcess-Transfer'
 include 'App-Tool-Minio-Client-Web'
 include 'App-Tool-Kafka-Client-Web'
-include 'App-Tool-Stock'
 include 'App-DataProcess-Gateway-Mqtt'
 
 include 'App-Transponder-GB32960'
