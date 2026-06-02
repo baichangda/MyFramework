@@ -7,9 +7,9 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
-public class Sender<T> {
-    public String topic;
-    public KafkaProducer<String,byte[]> producer;
+public class Sender<T> implements AutoCloseable{
+    public final String topic;
+    public final KafkaProducer<String,byte[]> producer;
 
     public Sender(String topic, KafkaProperties kafkaProp) {
         this.topic = topic;
@@ -18,5 +18,10 @@ public class Sender<T> {
 
     public void send(T data){
         producer.send(new ProducerRecord<>(topic, JsonUtil.toJsonAsBytes(data)));
+    }
+
+    @Override
+    public void close() throws Exception {
+        producer.close();
     }
 }

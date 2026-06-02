@@ -69,9 +69,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     }
 
 
-    public void init() {
-        //开始消费
-        super.startConsume(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
+    public synchronized void init() {
         workPool = Executors.newSingleThreadScheduledExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();
@@ -87,9 +85,11 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 logger.error("notify client schedule error type[{}]", type, e);
             }
         }, 1, 1, TimeUnit.MINUTES);
+        //开始消费
+        startConsume(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
     }
 
-    public void destroy() {
+    public synchronized void close() {
         //停止消费
         super.close();
         //停止工作线程池
@@ -152,6 +152,6 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
             } catch (Exception ex) {
                 logger.error("notify client unsubscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);
             }
-        });
+        },workPool);
     }
 }

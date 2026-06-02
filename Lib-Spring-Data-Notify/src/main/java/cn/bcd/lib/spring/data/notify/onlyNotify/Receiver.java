@@ -42,7 +42,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
     }
 
-    public void init() {
+    public synchronized void init() {
         super.startConsume(properties);
     }
 
@@ -58,4 +58,5 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
             consumer.accept(t);
         }
     }
+
 }

@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component;
 
 @EnableConfigurationProperties(NotifyProp.class)
-@ConditionalOnProperty("lib.data.notify.platformStatus.groupId")
+@ConditionalOnProperty("lib.spring.data.notify.platformStatus.groupId")
 @Component
 public class PlatformStatusReceiver extends Receiver<PlatformStatusData> implements Initializable {
     public PlatformStatusReceiver(KafkaProperties kafkaProp, NotifyProp notifyProp) {

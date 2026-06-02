@@ -265,7 +265,10 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
             closed = true;
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads(), resetConsumeCountPool, queue, queues);
+            if (consumerThreadHolder != null) {
+                ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
+            }
+            ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool, queue, queues);
             //打上退出标记、等待工作线程退出
             running_work = false;
             ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
