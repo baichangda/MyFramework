@@ -584,62 +584,71 @@ public class BaseService<T extends SuperBaseBean> {
         try {
             BeanInfo<T> beanInfo = getBeanInfo();
             List<UniqueInfo> uniqueInfoList = beanInfo.uniqueInfoList;
-            if (list.size() == 1) {
-                T t = list.getFirst();
-                for (UniqueInfo uniqueInfo : uniqueInfoList) {
-                    FieldInfo fieldInfo = uniqueInfo.fieldInfo;
+            if (uniqueInfoList.isEmpty()) {
+                return;
+            }
+
+            for (UniqueInfo uniqueInfo : uniqueInfoList) {
+                FieldInfo fieldInfo = uniqueInfo.fieldInfo;
+
+                // 收集所有非null的值，同时记录对应的beanId
+                List<Object> valList = new ArrayList<>();
+                List<Long> beanIdList = new ArrayList<>();
+
+                for (T t : list) {
                     Object val = fieldInfo.field.get(t);
                     if (val == null) {
                         continue;
                     }
-                    List<Long> idList = getJdbcTemplate().queryForList(uniqueInfo.eqSql, Long.class, val);
-                    int size = idList.size();
-                    switch (size) {
-                        case 0 -> {
+                    // 检查list内部是否有重复值
+                    for (Object existingVal : valList) {
+                        if (Objects.equals(val, existingVal)) {
+                            throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
                         }
-                        case 1 -> {
-                            Long l = idList.getFirst();
-                            Long id = t.getId();
-                            if (!l.equals(id)) {
-                                throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                            }
-                        }
-                        default -> throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
                     }
+                    valList.add(val);
+                    beanIdList.add(t.getId());
                 }
-            } else {
-                for (UniqueInfo uniqueInfo : uniqueInfoList) {
-                    FieldInfo fieldInfo = uniqueInfo.fieldInfo;
-                    List<Object> valList = new ArrayList<>();
-                    for (T t : list) {
-                        Object val = fieldInfo.field.get(t);
-                        if (val != null) {
-                            if (valList.contains(val)) {
-                                throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
+
+                if (valList.isEmpty()) {
+                    continue;
+                }
+
+                // 批量IN查询：select id, column from table where column in (?, ?, ...)
+                StringBuilder sql = new StringBuilder();
+                sql.append("select id,");
+                sql.append(fieldInfo.columnName);
+                sql.append(" from ");
+                sql.append(beanInfo.tableName);
+                sql.append(" where ");
+                sql.append(fieldInfo.columnName);
+                sql.append(" in (");
+                StringJoiner sj = new StringJoiner(",");
+                for (int i = 0; i < valList.size(); i++) {
+                    sj.add("?");
+                }
+                sql.append(sj);
+                sql.append(")");
+
+                List<Map<String, Object>> rows = getJdbcTemplate().queryForList(sql.toString(), valList.toArray());
+
+                // 验证每条返回记录：column值必须对应到一个bean，且id一致
+                for (Map<String, Object> row : rows) {
+                    Object dbVal = row.get(fieldInfo.columnName);
+                    Long dbId = ((Number) row.get("id")).longValue();
+
+                    boolean matched = false;
+                    for (int i = 0; i < valList.size(); i++) {
+                        if (Objects.equals(valList.get(i), dbVal)) {
+                            Long beanId = beanIdList.get(i);
+                            if (beanId != null && beanId.equals(dbId)) {
+                                matched = true;
                             }
+                            break;
                         }
-                        valList.add(val);
                     }
-                    for (int i = 0; i < list.size(); i++) {
-                        T t = list.get(i);
-                        Object val = valList.get(i);
-                        if (val == null) {
-                            continue;
-                        }
-                        List<Long> idList = getJdbcTemplate().queryForList(uniqueInfo.eqSql, Long.class, val);
-                        int size = idList.size();
-                        switch (size) {
-                            case 0 -> {
-                            }
-                            case 1 -> {
-                                Long l = idList.getFirst();
-                                Long id = t.getId();
-                                if (!l.equals(id)) {
-                                    throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                                }
-                            }
-                            default -> throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                        }
+                    if (!matched) {
+                        throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
                     }
                 }
             }
