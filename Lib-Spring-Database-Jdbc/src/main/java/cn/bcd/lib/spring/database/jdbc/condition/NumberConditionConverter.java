@@ -61,7 +61,7 @@ public class NumberConditionConverter implements Converter<NumberCondition, Conv
                     sql.append(sj);
                     sql.append(")");
                     if (paramList.isEmpty()) {
-                        return null;
+                        return new ConvertRes("1=0", paramList);
                     } else {
                         return new ConvertRes(sql.toString(), paramList);
                     }

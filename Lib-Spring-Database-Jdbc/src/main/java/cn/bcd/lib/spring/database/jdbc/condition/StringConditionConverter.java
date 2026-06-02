@@ -38,7 +38,7 @@ public class StringConditionConverter implements Converter<StringCondition, Conv
                 return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of("%" + val)));
             }
             case RIGHT_LIKE: {
-                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of(val+ "%")));
+                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of(val + "%")));
             }
             case IN: {
                 if (val.getClass().isArray()) {
@@ -58,8 +58,8 @@ public class StringConditionConverter implements Converter<StringCondition, Conv
                     sql.append(sj);
                     sql.append(")");
                     if (paramList.isEmpty()) {
-                        return null;
-                    }else{
+                        return new ConvertRes("1=0", paramList);
+                    } else {
                         return new ConvertRes(sql.toString(), paramList);
                     }
                 } else {
@@ -85,7 +85,7 @@ public class StringConditionConverter implements Converter<StringCondition, Conv
                     sql.append(")");
                     if (paramList.isEmpty()) {
                         return null;
-                    }else{
+                    } else {
                         return new ConvertRes(sql.toString(), paramList);
                     }
                 } else {
