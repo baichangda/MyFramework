@@ -132,12 +132,13 @@ public class CommandSender {
                 }, timeout, TimeUnit.SECONDS)
         );
         workExecutor.execute(() -> {
-            requestMap.put(request.getId(), request);
             try {
                 ProducerRecord<String, byte[]> record = new ProducerRecord<>(commandProp.requestTopic, vin, JsonUtil.toJsonAsBytes(request));
                 kafkaProducer.send(record);
+                requestMap.put(request.getId(), request);
             } catch (Exception ex) {
                 logger.error("error", ex);
+                callback.callback(new Response<>(vin, flag, ResponseStatus.program_error, version, null));
             }
         });
     }
