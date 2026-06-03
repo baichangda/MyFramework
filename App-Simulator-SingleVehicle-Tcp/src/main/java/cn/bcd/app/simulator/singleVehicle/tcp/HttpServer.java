@@ -94,6 +94,7 @@ public class HttpServer implements Runnable {
                     ctx.request().toWebSocket().onSuccess(webSocket -> {
                         String vin = ctx.queryParam("vin").getFirst();
                         logger.info("-------------ws open vin[{}]--------------", vin);
+                        StringBuilder sb = new StringBuilder();
                         WsSession wsSession = new WsSession(vin, starter.sendPeriod, vehicleDataFunction, webSocket);
                         webSocket.closeHandler(e -> {
                             try {
@@ -117,7 +118,13 @@ public class HttpServer implements Runnable {
                         wsSession.init();
                         webSocket.frameHandler(frame -> {
                             if (frame.type() == WebSocketFrameType.TEXT) {
-                                String data = frame.textData();
+                                String frameData = frame.textData();
+                                sb.append(frameData);
+                                if (!frame.isFinal()) {
+                                    return;
+                                }
+                                String data = sb.toString();
+                                sb.delete(0, sb.length());
                                 try {
                                     WsInMsg wsInMsg = JsonUtil.OBJECT_MAPPER.readValue(data, WsInMsg.class);
                                     wsSession.ws_onMessage(wsInMsg);
