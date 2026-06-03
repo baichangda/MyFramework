@@ -49,7 +49,7 @@ public class SessionHandler_v2025 implements DataHandler_v2025 {
     public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
     }
 
-    @KafkaListener(topics = "${gateway.sessionTopic}")
+    @KafkaListener(topics = "${gateway.sessionTopic}",groupId = "${gateway.sessionGroupId}")
     public void listen(ConsumerRecord<byte[], byte[]> consumerRecord) {
         //格式为 session类型,sessionId,网关id,连接的时间戳(毫秒)
         final String value = new String(consumerRecord.value());

@@ -5,7 +5,6 @@ spring:
   kafka:
     consumer:
       bootstrap-servers: 127.0.0.1:19092
-      group-id: tsp-gateway
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
     producer:
@@ -51,6 +50,7 @@ lib:
 gateway:
   id: gw1
   sessionTopic: gw-session
+  sessionGroupId: tsp-gateway-1
   parseTopic: gw-parse
   mqttServerHost: 127.0.0.1
   mqttServerPort: 38800
