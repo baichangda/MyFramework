@@ -12,6 +12,6 @@ public class ResponseHandler_v2025 implements DataHandler_v2025 {
     @Override
     public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) throws Exception {
         byte[] response = PacketUtil.build_bytes_common_response(data, (byte) 1);
-        context.ctx.write(response);
+        context.ctx.writeAndFlush(response);
     }
 }

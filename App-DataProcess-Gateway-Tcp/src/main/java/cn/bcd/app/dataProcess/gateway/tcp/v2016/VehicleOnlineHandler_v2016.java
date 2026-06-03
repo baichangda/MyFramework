@@ -2,7 +2,7 @@ package cn.bcd.app.dataProcess.gateway.tcp.v2016;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
-import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
