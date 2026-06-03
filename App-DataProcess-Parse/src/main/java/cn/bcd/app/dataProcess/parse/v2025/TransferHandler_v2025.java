@@ -4,12 +4,14 @@ import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.data.init.transferAccess.TransferAccessDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.Packet;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.List;
 
+@Order(999)
 @Component
 public class TransferHandler_v2025 implements DataHandler_v2025 {
 

@@ -8,12 +8,12 @@ import java.util.Map;
 @Component
 public class MonitorExtCollector_parse implements MonitorExtCollector {
 
-    public static int blockingNum;
-    public static double consumeSpeed;
-    public static String workQueues;
-    public static double workSpeed;
-    public static int saveQueue;
-    public static double saveSpeed;
+    public volatile static int blockingNum;
+    public volatile static double consumeSpeed;
+    public volatile static String workQueues;
+    public volatile static double workSpeed;
+    public volatile static int saveQueue;
+    public volatile static double saveSpeed;
 
     @Override
     public Map<String, Object> collect() {
