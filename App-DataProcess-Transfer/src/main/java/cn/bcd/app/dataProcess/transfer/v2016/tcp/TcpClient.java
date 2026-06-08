@@ -212,6 +212,12 @@ public class TcpClient {
             platformStatusSender.send(platformStatusData);
             //重新连接
             if (autoConnectOnDisconnect) {
+                //短暂延迟
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    logger.error("error", e);
+                }
                 connect();
             }
         });
