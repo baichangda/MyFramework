@@ -4,6 +4,8 @@ import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.spring.storage.mongo.transfer.MongoUtil_transferData;
 import cn.bcd.lib.spring.storage.mongo.transfer.TransferData;
 import cn.bcd.lib.spring.storage.mongo.transfer.TransferResponseData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -11,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
 
 public class SaveUtil {
+    final static Logger logger = LoggerFactory.getLogger(SaveUtil.class);
     public final static int queueSize = 100000;
     public static ArrayBlockingQueue<TransferData> queue_transfer;
     public static ArrayBlockingQueue<TransferResponseData> queue_transferResponse;
@@ -20,10 +23,14 @@ public class SaveUtil {
     public final static LongAdder saveCount_transferResponse = new LongAdder();
 
     static {
-        SaveUtil.init();
+        try {
+            SaveUtil.init();
+        } catch (Exception ex) {
+            logger.error("error", ex);
+        }
     }
 
-    public static void init() {
+    private static void init() {
         queue_transfer = new ArrayBlockingQueue<>(queueSize);
         pool_transfer = Executors.newSingleThreadExecutor();
         pool_transfer.execute(() -> {

@@ -352,7 +352,6 @@ public class TcpClient {
     }
 
     private static void startScheduledExecutor(String platformCode) {
-        manageExecutor = Executors.newSingleThreadScheduledExecutor();
         //启动定时任务、每天清除30天之前redis中的流水号数据
         manageExecutor.scheduleAtFixedRate(() -> {
             Set<String> keys = redisTemplate.keys(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":");

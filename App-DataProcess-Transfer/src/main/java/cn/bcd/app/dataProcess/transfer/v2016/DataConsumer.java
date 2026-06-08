@@ -69,7 +69,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                         "sendQueue[{}/{}] " +
                         "sendSpeed[{}/s]" +
                         "saveQueue_transfer[{}/{}] " +
-                        "saveSpeed_transfer[{}/s]" +
+                        "saveSpeed_transfer[{}/s] " +
                         "saveQueue_transferResponse[{}/{}] " +
                         "saveSpeed_transferResponse[{}/s]",
                 name,

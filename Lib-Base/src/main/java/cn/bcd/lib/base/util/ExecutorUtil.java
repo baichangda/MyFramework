@@ -48,8 +48,10 @@ public class ExecutorUtil {
                     }
                     t = queue.poll();
                 } while (t != null);
-                callback.accept(cache);
-                cache.clear();
+                if (!cache.isEmpty()) {
+                    callback.accept(cache);
+                    cache.clear();
+                }
             }
         } catch (InterruptedException ex) {
             throw BaseException.get(ex);
