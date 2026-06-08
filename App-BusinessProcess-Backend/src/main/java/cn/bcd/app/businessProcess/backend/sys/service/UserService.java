@@ -93,7 +93,16 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
      * @return
      */
     public UserBean login_phone(String phone, String phoneCode) {
+        String redisKey = "phoneCode:" + phone;
+        String s = redisTemplate.opsForValue().get(redisKey);
+        if (s == null || !s.equals(phoneCode)) {
+            throw BaseException.get("验证码错误或已过期");
+        }
+        redisTemplate.delete(redisKey);
         final UserBean userBean = get(StringCondition.EQUAL("phone", phone));
+        if (userBean == null) {
+            throw BaseException.get("用户不存在");
+        }
         StpUtil.login(userBean.username, "phone");
         return userBean;
     }
@@ -105,24 +114,18 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
      */
     public void sendPhoneCode(String phone) {
         String key = "phoneCode:" + phone;
-        long expireTimeInSeconds = redisTemplate.getExpire(key);
-        if (expireTimeInSeconds > 0) {
-            throw BaseException.get("等待" + expireTimeInSeconds + "秒后重试");
-        } else {
-            if (expireTimeInSeconds == -1) {
-                //如果没有过期时间,则删除异常key
-                redisTemplate.delete(key);
-            } else {
-                //如果不存在,则构造key发送短信
-                String phoneCode = RandomUtil.randomString_numeric(6);
-                boolean res = redisTemplate.opsForValue().setIfAbsent("phoneCode:" + phone, phoneCode, 3 * 60, TimeUnit.SECONDS);
-                if (res) {
-                    //todo 发送短信
-
-                } else {
-                    //如果有其他服务器抢先发送了验证码,则再次获取时间
-                    expireTimeInSeconds = redisTemplate.getExpire(key);
-                    throw BaseException.get("等待{0}秒后重试", expireTimeInSeconds);
+        String phoneCode = RandomUtil.randomString_numeric(6);
+        boolean res = redisTemplate.opsForValue().setIfAbsent(key, phoneCode, 3 * 60, TimeUnit.SECONDS);
+        if(res){
+            //todo 发送短信
+        }else{
+            long expireTimeInSeconds = redisTemplate.getExpire(key);
+            if (expireTimeInSeconds > 0) {
+                throw BaseException.get("等待" + expireTimeInSeconds + "秒后重试");
+            }else{
+                if (expireTimeInSeconds == -1) {
+                    //如果没有过期时间,则删除异常key
+                    redisTemplate.delete(key);
                 }
             }
         }
@@ -212,7 +215,8 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
     }
 
     public void resetPassword(Long userId) {
-        update(userId, Map.of("password", CommonConst.INITIAL_PASSWORD));
+        UserBean userBean = get(userId);
+        update(userId, Map.of("password", encryptPassword(userBean.username,CommonConst.INITIAL_PASSWORD)));
     }
 
     /**

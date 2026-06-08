@@ -41,7 +41,7 @@ public class FileController {
     @RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "上传文件")
     @ApiResponse(responseCode = "200", description = "上传结果")
-    public Result<?> download(@Parameter(description = "文件夹路径") @RequestParam(required = false) String dirPath,
+    public Result<?> upload(@Parameter(description = "文件夹路径") @RequestParam(required = false) String dirPath,
                               @Parameter(description = "文件") @RequestParam(required = true) MultipartFile file) {
         fileService.upload(dirPath, file);
         return Result.success();
@@ -60,7 +60,7 @@ public class FileController {
         }
     }
 
-    @RequestMapping(value = "/delete", method = RequestMethod.GET)
+    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
     @Operation(summary = "删除文件")
     @ApiResponse(responseCode = "200", description = "删除结果")
     public void delete(@Parameter(description = "文件路径") @RequestParam(required = true) String path) {

@@ -68,13 +68,17 @@ public class BroadcastStopper extends RedisTopicMQ<BroadcastStopper.StopCmd> {
         //合并结果
         StopResult[] result = new StopResult[ids.length];
         for (int i = 0; i < ids.length; i++) {
+            boolean found = false;
             for (StopResult[] stopResults : list) {
                 if (stopResults[i] != StopResult.WAIT_OR_IN_EXECUTING_NOT_FOUND) {
                     result[i] = stopResults[i];
+                    found = true;
                     break;
                 }
             }
-            result[i] = StopResult.WAIT_OR_IN_EXECUTING_NOT_FOUND;
+            if (!found) {
+                result[i] = StopResult.WAIT_OR_IN_EXECUTING_NOT_FOUND;
+            }
         }
         return result;
     }

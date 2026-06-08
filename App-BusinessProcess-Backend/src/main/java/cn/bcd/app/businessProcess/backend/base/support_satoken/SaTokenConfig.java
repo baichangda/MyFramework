@@ -36,7 +36,7 @@ public class SaTokenConfig implements WebMvcConfigurer, ApplicationListener<Cont
          */
         registry.addInterceptor(new SaInterceptor(handler -> {
             StpUtil.checkLogin();
-        })).addPathPatterns("/api/**").excludePathPatterns("/api/sys/user/login", "/api/anno");
+        })).addPathPatterns("/api/**").excludePathPatterns("/api/sys/user/login", "/api/anno/**");
     }
 
     /**

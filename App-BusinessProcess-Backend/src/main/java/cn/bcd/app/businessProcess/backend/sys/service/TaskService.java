@@ -85,7 +85,7 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
             Path exportPath = Paths.get(exportDirPath + "/" + fileName);
             try {
                 //导出文件
-                ExcelWriterBuilder excelWriterBuilder = EasyExcel.write();
+                ExcelWriterBuilder excelWriterBuilder = EasyExcel.write().file(exportPath.toFile());
                 ExcelWriterSheetBuilder excelWriterSheetBuilder = EasyExcel.writerSheet(0);
                 try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
                     boolean empty = true;
