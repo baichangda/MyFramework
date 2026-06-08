@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 @Component
@@ -56,6 +57,9 @@ public class AuthFilter implements GlobalFilter, Ordered {
                 try {
                     //用户状态校验
                     AuthUser user = cacheService.getUser(username);
+                    if(user==null){
+                        return response(exchange, Result.fail(404, "用户不存在"));
+                    }
                     if (user.getStatus() == 1) {
                         ServerHttpRequest newRequest = exchange.getRequest().mutate().header(cn.bcd.lib.base.common.Const.request_header_authUser, JsonUtil.toJson(user)).build();
                         //判断是否权限校验
@@ -94,7 +98,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
         String json = JsonUtil.toJson(result);
         exchange.getResponse().getHeaders().set(SaTokenConsts.CONTENT_TYPE_KEY, SaTokenConsts.CONTENT_TYPE_APPLICATION_JSON);
         return exchange.getResponse()
-                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(json.getBytes())));
+                .writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(json.getBytes(StandardCharsets.UTF_8))));
     }
 
     @Override

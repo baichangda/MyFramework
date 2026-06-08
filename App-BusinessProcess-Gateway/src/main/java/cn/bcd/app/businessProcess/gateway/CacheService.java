@@ -24,7 +24,7 @@ public class CacheService {
     @Autowired
     UserClient userClient;
 
-    final Duration expire = Duration.ofSeconds(3);
+    final Duration expire = Duration.ofSeconds(5);
 
     private volatile LoadingCache<String, AuthUser> username_user;
     private volatile LoadingCache<String, List<String>> username_roleList;
@@ -35,12 +35,12 @@ public class CacheService {
             synchronized (this) {
                 if (username_user == null) {
                     username_user = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        Result<AuthUser> result = CompletableFuture.supplyAsync(() -> userClient.getAuthUser(k)).join();
-                        if (result.code == 0) {
-                            return result.data;
-                        } else {
-                            logger.warn("getUser error:\n{}", JsonUtil.toJson(result));
-                            return null;
+                        try {
+                            Result<AuthUser> result = userClient.getAuthUser(k);
+                            return result.code == 0 ? result.data : null;
+                        } catch (Exception e) {
+                            logger.error("getUser error key[{}]", k, e);
+                            return null; // 或返回缓存中的旧值
                         }
                     });
                 }
