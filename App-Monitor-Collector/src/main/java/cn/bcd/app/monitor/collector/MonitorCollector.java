@@ -61,6 +61,8 @@ public class MonitorCollector {
         List<MonitorData> list = redisTemplate.opsForList().range(monitorProp.getResponseList(), 0, -1);
         if (list == null) {
             list = new ArrayList<>();
+        }else{
+            redisTemplate.delete(monitorProp.getResponseList());
         }
         logger.info("receive batch[{}] serverIds[{}]", batch, list.stream().map(e -> e.serverId).collect(Collectors.joining(",")));
         List<SaveData> saveDataList = new ArrayList<>();

@@ -20,5 +20,5 @@ CREATE TABLE IF NOT EXISTS t_server_data
     server_type int         NOT NULL DEFAULT 1 COMMENT '服务类型',
     PRIMARY KEY (server_id)
 );
-ALTER TABLE t_monitor_data
+ALTER TABLE t_server_data
     COMMENT '监控服务数据表';
