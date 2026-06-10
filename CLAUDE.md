@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 模块结构
 
+共约 40 个模块，分为两类：
+
 - `Lib-*` 模块：依赖库，不可独立启动，普通 jar 打包
 - `App-*` 模块：可部署应用，bootJar 打包
 
@@ -23,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Lib-Spring-Cloud-Common`：微服务公共组件（含 Feign 客户端 `UserClient`、统一认证用户 `AuthUser`）
 - `Lib-Spring-Database-Common/Jdbc/Mongo`：数据库访问层，提供 `Condition` 条件构造器（`StringCondition`、`NumberCondition`、`DateCondition` 等）支持组合查询
 - `Lib-Spring-Data-Init`：数据初始化框架
-- `Lib-Spring-Data-Notify`：数据变更通知（发布/订阅）
+- `Lib-Spring-Data-Notify`：数据变更通知（发布/订阅），含 `AbstractNotifyServer`/`AbstractNotifyClient` 实现基于 Kafka + Redis 的订阅通知机制
 - `Lib-Spring-Storage-Cassandra/Influxdb`：Cassandra 和 InfluxDB 存储适配
 
 核心 App 模块：
@@ -34,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `App-BusinessProcess-Gateway`：微服务网关
 - `App-Monitor-Collector`：性能监控服务
 - `App-Tool-*`：工具类 Web 服务（Minio 客户端、Kafka Web 客户端）
-- `App-Transponder-GB32960`：GB32960 协议转发器（TCP 服务端，将接收到的数据转发出去）
+- `App-Transponder-GB32960`：GB32960 协议转发器（TCP 服务端，将接收到的数据转发出去；v2025 支持 SSL）
 - `App-Simulator-SingleVehicle-Tcp`：单车模拟器（模拟单台车辆上报数据，带 WebSocket 控制界面）
 - `App-Simulator-PressTest-Tcp`：压测模拟器（模拟多车并发上报）
 
@@ -195,7 +197,7 @@ Condition condition = Condition.and(
 
 `Lib-Spring-Database-Jdbc` 基于 Spring Data JDBC，提供通用的 `BaseService`/`BaseDao`；`Lib-Spring-Database-Mongo` 提供 MongoDB 的对应实现。
 
-`Lib-Jooq` 为 `App-BusinessProcess-Backend` 提供 jOOQ 类型安全 SQL（代码生成自数据库表）。
+`Lib-Jooq` 为 `App-BusinessProcess-Backend` 提供 jOOQ 类型安全 SQL（代码生成自数据库表）。代码生成配置在 `Lib-Jooq/build.gradle` 中，硬编码了本地 MySQL 连接（`jdbc:mysql://127.0.0.1:13306/bcd`）。
 
 ## Kafka 数据驱动消费
 
@@ -205,6 +207,17 @@ Condition condition = Condition.and(
 
 `WorkHandler` 的生命周期由 `DataDrivenKafkaConsumer` 管理：当某个 partition 的第一条消息到达时创建 Handler，后续同 partition 的消息复用该 Handler 顺序处理。
 
+## 数据变更通知
+
+`Lib-Spring-Data-Notify` 提供基于 Kafka + Redis 的发布/订阅机制：
+- `AbstractNotifyServer`：由消息提供方实现，注册为 Spring Bean。启动时从 Redis 加载订阅信息，监听 Kafka 上的订阅/取消订阅请求，每隔 1 分钟检查订阅信息变化。通过 `notify(String id, Supplier<byte[]> supplier)` 发送通知。
+- `AbstractNotifyClient`：由消息消费方实现，注册为 Spring Bean。通过 `subscribe(String id)`/`unsubscribe(String id)` 管理订阅，监听 Kafka 通知 topic 接收消息。
+- 已有通知类型：`VehicleData`（车辆数据）、`PlatformStatus`（平台状态）、`TransferAccess`（转发接入数据）。
+
 ## 微服务认证
 
 使用 sa-token 做登录态管理，`Lib-Spring-Cloud-Common` 提供 `AuthUser` 和 `UserClient` Feign 接口用于服务间用户信息共享。`App-BusinessProcess-Backend` 提供 `/api/sys/user/getAuthUser` 等认证接口。
+
+## 配置文件机制
+
+每个 App 模块的 `src/main/resources/application.yml` 包含默认配置。`bootJar` 打包时会**排除** `application-local.yml`。开发时可在 jar 同级目录放置 `application-local.yml` 实现增量配置覆盖，或通过 `-Dspring.config.additional-location=app.yml` 指定外部配置文件。`startBootJar.sh` 脚本支持自动检测同目录下的 `app.yml` 并作为增量配置加载。
