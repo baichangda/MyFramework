@@ -63,24 +63,22 @@ public class WsSession {
             switch (inMsg.flag()) {
                 case 1 -> {
                     String[] split = inMsg.data().split(":");
-                    executor.execute(() -> {
-                        try {
-                            vehicle.connect(split[0],
-                                    Integer.parseInt(split[1]),
-                                    this::tcp_onConnected,
-                                    this::tcp_onDisConnected,
-                                    this::tcp_onSend,
-                                    this::tcp_onReceive,
-                                    this::vehicle_onDataUpdate);
-                        } catch (Exception ex) {
-                            logger.error("connect tcp address[{}] error", inMsg.data(), ex);
-                            ws_send(new WsOutMsg(1, null, false));
-                        }
-                    });
+                    try {
+                        vehicle.connect(split[0],
+                                Integer.parseInt(split[1]),
+                                this::tcp_onConnected,
+                                this::tcp_onDisConnected,
+                                this::tcp_onSend,
+                                this::tcp_onReceive,
+                                this::vehicle_onDataUpdate);
+                    } catch (Exception ex) {
+                        logger.error("connect tcp address[{}] error", inMsg.data(), ex);
+                        ws_send(new WsOutMsg(1, null, false));
+                    }
                 }
                 case 2 -> {
                     try {
-                        vehicle.vehicleData = JsonUtil.OBJECT_MAPPER.readValue(inMsg.data(), VehicleData.class);
+                        vehicle.updateVehicleData(JsonUtil.OBJECT_MAPPER.readValue(inMsg.data(), VehicleData.class));
                         ws_send(new WsOutMsg(2, null, true));
                     } catch (IOException ex) {
                         logger.error("error", ex);

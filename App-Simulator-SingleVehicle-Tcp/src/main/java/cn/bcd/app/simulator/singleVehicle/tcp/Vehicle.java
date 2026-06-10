@@ -171,7 +171,7 @@ public class Vehicle {
     public void onMessage(byte[] data) {
         executor.execute(() -> {
             try {
-                if (onConnected != null) {
+                if (onReceive != null) {
                     onReceive.accept(data);
                 }
             } catch (Exception ex) {

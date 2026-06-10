@@ -1,9 +1,7 @@
 package cn.bcd.app.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.Unpooled;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.WebSocketFrameType;
@@ -19,7 +17,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public class HttpServer implements Runnable {
+public abstract class HttpServer implements Runnable {
     static Logger logger = LoggerFactory.getLogger(Starter.class);
 
     public final Function<String, VehicleData> vehicleDataFunction;
@@ -30,6 +28,10 @@ public class HttpServer implements Runnable {
     public HttpServer(Function<String, VehicleData> vehicleDataFunction) {
         this.vehicleDataFunction = vehicleDataFunction;
     }
+
+    public abstract String hexToJson(byte[] hex);
+
+    public abstract String jsonToHex(String json) throws Exception;
 
     public void run() {
         Vertx vertx = Vertx.builder().build();
@@ -54,8 +56,7 @@ public class HttpServer implements Runnable {
                         try {
                             byte[] bytes = ByteBufUtil.decodeHexDump(hex);
                             try {
-                                Packet packet = Packet.read(Unpooled.wrappedBuffer(bytes));
-                                String json = JsonUtil.toJson(packet);
+                                String json = hexToJson(bytes);
                                 ctx.response().send(JsonUtil.toJson(Map.of("data", json, "succeed", true)));
                             } catch (Exception ex) {
                                 logger.error("parse protocol error:\n{}", hex, ex);
@@ -74,17 +75,11 @@ public class HttpServer implements Runnable {
                         String json = event.toString();
                         ctx.response().putHeader("content-type", "application/json;charset=utf-8");
                         try {
-                            try {
-                                Packet packet = JsonUtil.OBJECT_MAPPER.readValue(json, Packet.class);
-                                String hex = ByteBufUtil.hexDump(packet.toByteBuf());
-                                ctx.response().send(JsonUtil.toJson(Map.of("data", hex, "succeed", true)));
-                            } catch (Exception ex) {
-                                logger.error("deParse protocol error:\n{}", json, ex);
-                                ctx.response().send(JsonUtil.toJson(Map.of("msg", "反解析失败、json数据不符合协议格式", "succeed", false)));
-                            }
+                            String hex = jsonToHex(json);
+                            ctx.response().send(JsonUtil.toJson(Map.of("data", hex, "succeed", true)));
                         } catch (Exception ex) {
-                            logger.error("deParse json error:\n{}", json, ex);
-                            ctx.response().send(JsonUtil.toJson(Map.of("msg", "反解析失败、数据不是json格式", "succeed", false)));
+                            logger.error("deParse protocol error:\n{}", json, ex);
+                            ctx.response().send(JsonUtil.toJson(Map.of("msg", "反解析失败、json数据不符合协议格式", "succeed", false)));
                         }
                     });
                 });
@@ -96,15 +91,6 @@ public class HttpServer implements Runnable {
                         logger.info("-------------ws open vin[{}]--------------", vin);
                         StringBuilder sb = new StringBuilder();
                         WsSession wsSession = new WsSession(vin, starter.sendPeriod, vehicleDataFunction, webSocket);
-                        webSocket.closeHandler(e -> {
-                            try {
-                                wsSession.ws_onClose();
-                                WsSession.sessionMap.remove(vin);
-                                logger.info("-------------ws close vin[{}]--------------", vin);
-                            } catch (Exception ex) {
-                                logger.error("error", ex);
-                            }
-                        });
                         WsSession prev = WsSession.sessionMap.putIfAbsent(vin, wsSession);
                         if (prev != null) {
                             try {
@@ -116,6 +102,15 @@ public class HttpServer implements Runnable {
                             return;
                         }
                         wsSession.init();
+                        webSocket.closeHandler(e -> {
+                            try {
+                                wsSession.ws_onClose();
+                                WsSession.sessionMap.remove(vin);
+                                logger.info("-------------ws close vin[{}]--------------", vin);
+                            } catch (Exception ex) {
+                                logger.error("error", ex);
+                            }
+                        });
                         webSocket.frameHandler(frame -> {
                             if (frame.type() == WebSocketFrameType.TEXT) {
                                 String frameData = frame.textData();

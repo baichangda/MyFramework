@@ -22,10 +22,11 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        byte[] bytes=new byte[((ByteBuf) msg).readableBytes()];
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        byte[] bytes = new byte[((ByteBuf) msg).readableBytes()];
         ((ByteBuf) msg).readBytes(bytes);
         vehicle.onMessage(bytes);
+        super.channelRead(ctx, msg);
     }
 
     @Override
