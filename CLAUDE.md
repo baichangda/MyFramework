@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 模块结构
 
-共 42 个模块（28 个 Lib + 14 个 App），分为两类：
+共 40 个模块（25 个 Lib + 15 个 App），分为两类：
 
 - `Lib-*` 模块：依赖库，不可独立启动，普通 jar 打包
 - `App-*` 模块：可部署应用，bootJar 打包
@@ -389,7 +389,7 @@ Condition condition = Condition.and(
 - **Picocli**：独立工具应用（`App-Transponder-GB32960`、`App-Simulator-*`）使用 Picocli 解析命令行参数，非 Spring Boot 应用
 - **Bouncy Castle** (`bcprov-jdk18on`)：加密支持
 - **EasyExcel 4.0.3**：阿里 Excel 读写
-- **无 CI/CD 配置**：仓库不含 GitHub Actions、Jenkinsfile、Dockerfile
+- **无 CI/CD 配置**：仓库不含 GitHub Actions、Jenkinsfile；多数 App 模块有 Dockerfile（基于 `openjdk:21`）
 - **无自动化代码风格工具**：无 checkstyle、editorconfig、spotbugs 等配置
 
 ## 配置文件机制
