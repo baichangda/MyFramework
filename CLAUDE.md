@@ -92,9 +92,25 @@ Vehicle (TCP) → App-DataProcess-Gateway-Tcp (Netty)
 
 `DataConsumer`（基于 `DataDrivenKafkaConsumer`，见下文）为每条 Kafka 消息创建一个 `WorkHandler_v2016/v2025`，其内部依次执行：`DataHandler`（解析报文）→ `SaveRawHandler`（保存原始数据到 Mongo）→ `TransferHandler`（发送到下游 Kafka）。同样通过报文头字节判断版本。
 
-### Transfer 模块消费模型
+### Gateway-Tcp 会话集群
 
-`DataConsumer` 继承 `DataDrivenKafkaConsumer`，每个 Kafka partition 对应一个消费线程，每条消息创建一个 `TransferDataHandler`。TransferDataHandler 内部持有多个 `KafkaDataHandler` 组成的处理链，最终将数据通过 `TcpClient` 发送到第三方平台。Transfer 支持原始报文转发和解析后数据转发两种模式。
+`SessionClusterManager` 通过 Kafka `sessionTopic` 处理多网关实例间的会话同步：
+- 每个网关实例维护 `ConcurrentHashMap<String, Session>`（VIN → Channel）
+- 新 TCP 连接建立时，向 Kafka 发送会话通知（含 VIN + 时间戳）
+- 其他实例收到通知后比较时间戳：远端更新则关闭本地旧连接
+- 确保同一 VIN 在集群中仅有一个活动 TCP 连接
+
+### Transfer 模块详解
+
+`DataConsumer` 继承 `DataDrivenKafkaConsumer`，每个 Kafka partition 对应一个消费线程，每条消息创建一个 `TransferDataHandler`。TransferDataHandler 内部持有多个 `KafkaDataHandler` 组成的处理链，最终将数据通过 `TcpClient` 发送到第三方平台。
+
+`TcpClient` 核心特性：
+- 使用 Netty Bootstrap 建立到第三方平台的 TCP 连接，管理平台登录/登出/心跳（SN 序号通过 Redis 维护）
+- **背压**：`ArrayBlockingQueue<SendData>`（容量 100,000），队列满时调用 `dataConsumer.pauseConsume()` 暂停 Kafka 消费
+- **重连策略**：前 3 次失败间隔 1 分钟，之后间隔 30 分钟
+- 同时启动 Vert.x HTTP 服务器暴露平台登录/登出管理端点
+
+Transfer 支持原始报文转发和解析后数据转发两种模式。
 
 ## 构建命令
 
@@ -178,6 +194,13 @@ gradle :App-BusinessProcess-Backend:publishToMavenLocal
 - Web 应用三层结构：`controller` / `service` / `bean`
 - Bean 实体以 `Bean` 结尾，需加 Swagger `@Schema` 注解
 - Controller 查询接口直接返回 Bean，增改合并为保存接口（通过 id 是否为 null 判断）
+
+## 测试
+
+- 使用 **JUnit 6.0.1**（从 JUnit 5 重命名），JUnit Platform，全局配置 `test { useJUnitPlatform() }`
+- 无共享基类测试，每个测试类独立编写（`public class` + `@Test` 方法）
+- `spring-boot-starter-test` 仅在 `App-BusinessProcess-Backend` 中添加；全局依赖**不含** Mockito、AssertJ、TestContainers
+- 当前仅约 13 个测试文件（42 个模块中），多数为手动验证性质的集成测试
 
 ## 协议解析框架
 
@@ -354,6 +377,20 @@ Condition condition = Condition.and(
 ## 微服务认证
 
 使用 sa-token 做登录态管理，`Lib-Spring-Cloud-Common` 提供 `AuthUser` 和 `UserClient` Feign 接口用于服务间用户信息共享。`App-BusinessProcess-Backend` 提供 `/api/sys/user/getAuthUser` 等认证接口。
+
+## 其他重要组件
+
+- **Vert.x 5.0.11**：`Lib-Websocket`、`App-Simulator-SingleVehicle-Tcp`、`App-DataProcess-Transfer` 使用 Vert.x（非 Spring WebMVC），提供 WebSocket 和 HTTP 服务
+- **HiveMQ MQTT 5 Client**：`App-DataProcess-Gateway-Mqtt` 使用 HiveMQ 客户端主动连接外部 MQTT Broker 消费车辆数据
+- **XXL-JOB**：`Lib-Spring-Schedule-Xxljob` 集成分布式任务调度（`XxlJobSpringExecutor`）
+- **Prometheus**：`Lib-Spring-Prometheus-Exporter` 提供指标导出端点（simpleclient）
+- **Nacos**：`Lib-Spring-Data-Init` 通过 Nacos API 进行微服务实例注册/注销
+- **OSHI 6.9.0**：`Lib-Spring-Monitor-Client` 使用 OSHI 采集系统指标（CPU/内存/磁盘/网络）
+- **Picocli**：独立工具应用（`App-Transponder-GB32960`、`App-Simulator-*`）使用 Picocli 解析命令行参数，非 Spring Boot 应用
+- **Bouncy Castle** (`bcprov-jdk18on`)：加密支持
+- **EasyExcel 4.0.3**：阿里 Excel 读写
+- **无 CI/CD 配置**：仓库不含 GitHub Actions、Jenkinsfile、Dockerfile
+- **无自动化代码风格工具**：无 checkstyle、editorconfig、spotbugs 等配置
 
 ## 配置文件机制
 
