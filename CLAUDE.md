@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 模块结构
 
-共约 40 个模块，分为两类：
+共 42 个模块（28 个 Lib + 14 个 App），分为两类：
 
 - `Lib-*` 模块：依赖库，不可独立启动，普通 jar 打包
 - `App-*` 模块：可部署应用，bootJar 打包
@@ -27,6 +27,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Lib-Spring-Data-Init`：数据初始化框架
 - `Lib-Spring-Data-Notify`：数据变更通知（发布/订阅），含 `AbstractNotifyServer`/`AbstractNotifyClient` 实现基于 Kafka + Redis 的订阅通知机制
 - `Lib-Spring-Storage-Cassandra/Influxdb`：Cassandra 和 InfluxDB 存储适配
+- `Lib-Spring-Storage-Mongo`：MongoDB 存储适配（含 Transfer 数据存储）
+- `Lib-Spring-Vehicle-Command`：Kafka 请求/响应车辆下行命令框架（`CommandSender`、`CommandReceiver`）
+- `Lib-Spring-Monitor-Client`：基于 OSHI 的服务器监控代理（CPU/内存/磁盘/网络指标采集）
+- `Lib-Spring-Schedule-Xxljob`：XXL-JOB 分布式任务调度集成
+- `Lib-Spring-Prometheus-Exporter`：Prometheus 指标导出端点
 
 核心 App 模块：
 - `App-DataProcess-Gateway-Tcp/Mqtt`：基于 Netty 的数据层网关，接收车辆 TCP/MQTT 数据，通过 Kafka 发送到下游
@@ -135,6 +140,16 @@ gradle :App-BusinessProcess-Backend:publishToMavenLocal
 
 部署时可用根目录的 `startBootJar.sh` 脚本启动 jar（支持增量配置文件覆盖）。
 
+## 构建细节
+
+- **无 Gradle Wrapper**：`.gitignore` 显式排除了 `gradlew*`，需系统安装 Gradle
+- **Spring Boot 插件来源**：根 `build.gradle` 的 `buildscript` 块通过 version catalog（`libs.spring.boot.gradle.plugin`）解析插件，非本地声明
+- **`io.spring.dependency-management` 插件被注释掉**：项目直接使用 platform BOM（`platform(libs.spring.boot.dependencies)`），而非 Spring 依赖管理插件
+- **SNAPSHOT 不缓存**：`configurations.configureEach { resolutionStrategy { cacheChangingModulesFor 0, 'seconds' } }` 确保 SNAPSHOT 依赖每次重新解析
+- **`afterEvaluate` 时序**：Lib vs App 的 bootJar 开关逻辑在 `afterEvaluate` 中执行；所有子项目统一设置 `springBoot { mainClass = 'cn.bcd.Application' }` 和 `sourceJar` task
+- **bootRun JVM 参数**（App 模块）：`-XX:-RestrictContended`、`-Dfile.encoding=UTF-8`、`-Dsun.jnu.encoding=UTF-8`、`--add-opens=java.base/java.nio=ALL-UNNAMED`、`--add-opens=java.base/java.lang=ALL-UNNAMED`、`--add-opens=java.base/java.lang.reflect=ALL-UNNAMED`
+- **IDE 支持**：`idea` 插件配置了 `downloadSources = true`、`downloadJavadoc = true`
+
 ## 依赖管理
 
 - 所有依赖版本定义在 `gradle/libs.versions.toml`
@@ -142,6 +157,12 @@ gradle :App-BusinessProcess-Backend:publishToMavenLocal
 - 阿里云 Maven 仓库 + Maven Central
 - 所有子项目自动引入 Lombok 和 MapStruct
 - **Lib 模块**使用 `api` 传递依赖（`api platform(libs.spring.boot.dependencies)`），**App 模块**使用 `implementation`
+
+## Maven 发布
+
+以下模块配置了 `maven-publish` 插件，发布到 `https://repository.incarcloud.com/content/repositories/snapshots/`：
+- `App-BusinessProcess-Backend`：业务后台
+- `Lib-Parser-Protocol-GB32960`（`version='1.0-SNAPSHOT'` 覆盖根项目 `version='1.0'`）
 
 ## 代码规范
 
@@ -160,19 +181,82 @@ gradle :App-BusinessProcess-Backend:publishToMavenLocal
 
 ## 协议解析框架
 
-`Lib-Parser-Base` 是核心框架，**基于 Javassist 动态字节码生成**实现高性能解析。通过字段注解描述二进制报文结构：
+`Lib-Parser-Base` 是核心框架，**基于 Javassist 运行时字节码生成**实现高性能二进制协议解析，性能等同于手写解析代码。
 
-- `@F_num`：数字字段，支持 `uint8/16/32/64`、`int8/16/32/64`、`float32/64`
-- `@F_string`：字符串字段
-- `@F_string_bcd`：BCD 编码字符串
-- `@F_num_array`：数字数组
-- `@F_date_bcd` / `@F_date_bytes_6` / `@F_date_bytes_7` / `@F_date_ts`：日期字段
-- `@F_customize`：自定义类型，指定 `processorClass` 实现 `Processor<T>`
-- `@F_bit_num` / `@F_bit_num_easy` / `@F_bit_num_array`：位域数字
-- `@F_bean` / `@F_bean_list`：嵌套对象/列表
-- `@F_skip` / `@C_skip`：跳过字节
+### 注解体系
 
-数据类使用静态 `Processor` 实例：`static final Processor<Packet> processor = Parser.getProcessor(Packet.class)`，然后通过 `Packet.read(byteBuf)` / `packet.write(byteBuf)` 进行解析/反解析。`Parser.getProcessor()` 内部使用 Javassist 编译生成实现了 `Processor<T>` 接口的字节码类，避免运行时反射带来的性能损耗。
+**字段注解（F_*）**：
+
+- `@F_num`：数值字段，支持 `uint8/16/24/32/40/48/56/64`、`int8~int64`、`float32/64` 及枚举类型（枚举需有 `fromInteger(int)` 和 `toInteger()` 方法）。关键参数：
+  - `valExpr`：值表达式，使用 `x` 代表原始值（如 `x-10`、`(x+10)*100`）。框架通过 `RpnUtil.reverseExpr()` 自动推导反解析表达式
+  - `var`（a-z）：局部变量，缓存解析值供同类的其他字段表达式（`lenExpr`、`valExpr`）引用
+  - `globalVar`（A-Z）：全局变量，存入 `ProcessContext.globalVars`（int[26]），贯穿嵌套解析生命周期
+  - `checkVal`：值校验，配合 `NumValGetter` 识别异常值（`DefaultNumValGetter`：0xFF/0xFFFF=异常，0xFE/0xFFFE=无效）
+  - `precision`：仅 float/double，小数精度四舍五入
+- `@F_string`：字符串字段，参数：`len`/`lenExpr`（字节长度）、`charset`（默认 UTF-8）、`appendMode`（补零方向）
+- `@F_string_bcd`：BCD 编码字符串（8421 码）
+- `@F_num_array`：数值数组，参数：`len`/`lenExpr`（元素个数）、`singleType`、`singleSkip`
+- `@F_bean`：嵌套对象。对于接口字段，通过 `implClassExpr` 表达式动态选择 `@C_impl` 标注的实现类
+- `@F_bean_list`：嵌套对象列表/数组，支持 `T[]` 和 `List<T>`
+- `@F_customize`：自定义 Processor，`processorClass` 实现 `Processor<T>`，`processorArgs` 传递构造参数
+- `@F_bit_num`：位域数值（任意位数），参数：`len`（位数）、`unsigned`、`bitRemainingMode`
+- `@F_bit_num_easy`：轻量位域解析，用于总位数 ≤32 的连续位组，性能高于 `F_bit_num`。相邻字段形成位组，`end()` 分隔组
+- `@F_bit_num_array`：位域数值数组
+- `@F_date_ts`：时间戳（模式：uint64_ms/s、uint32_s、float64_ms/s）
+- `@F_date_bcd`：6 字节 BCD 日期，参数：`baseYear`、`zoneId`
+- `@F_date_bytes_6`：6 字节日期（y/M/d/H/m/s）
+- `@F_date_bytes_7`：7 字节日期（2 字节年 + M/d/H/m/s）
+- `@F_skip`：字段前后跳过字节（不可单独使用，需与其他 F_ 注解配合）
+
+**类注解（C_*）**：
+
+- `@C_skip(len/lenExpr)`：确保类总字节数匹配指定长度，不足时跳过（parse）或填零（deParse）。`@Inherited`
+- `@C_impl(value, processorClass)`：标记接口的实现类，`value` 为选择该实现的表达式值（`Integer.MAX_VALUE` 为默认分支）
+
+### 代码生成流程
+
+`Parser.getProcessor(Class<T>)` 内部流程：
+1. 读取类的所有字段注解，按声明顺序排列（父类字段优先）
+2. 通过 Javassist `ClassPool` 创建新的 `CtClass`，实现 `Processor<T>`
+3. 在 `process(ByteBuf, ProcessContext)` 方法中生成逐字段读取代码，在 `deProcess(ByteBuf, ProcessContext, T)` 中生成逐字段写入代码
+4. 每个 `F_*` 注解对应一个 `FieldBuilder` 实现（如 `FieldBuilder__F_num`），负责生成对应类型的解析/反解析 Javassist 代码
+5. 编译为字节码 → 实例化 → 缓存到 HashMap（key = `className + byteOrder + numValGetter`）
+
+### 使用方式
+
+数据类定义静态 `Processor` 实例：
+
+```java
+public class Packet {
+    static final Processor<Packet> processor = Parser.getProcessor(Packet.class);
+    // ... 字段 + 注解
+}
+```
+
+然后通过 `Packet.read(byteBuf)` / `packet.write(byteBuf)` 进行解析/反解析。
+
+### ProcessContext
+
+贯穿解析过程的上下文对象：
+- `byteBuf`：当前 ByteBuf
+- `parentContext`：父级上下文链（嵌套 bean 可访问父级字段）
+- `bitBuf_reader` / `bitBuf_writer`：按需懒创建的位级读写器
+- `globalVars`：`int[26]`，A-Z 全局变量，跨嵌套层级传递（如解析头部长度字段后在嵌套 bean 中使用）
+
+### 调试支持
+
+- `Parser.enableGenerateClassFile()`：将生成的 .class 文件写入磁盘
+- `Parser.enablePrintBuildLog()`：打印生成的方法体源码到 SLF4J 日志
+- `Parser.withDefaultLogCollector_parse/deParse()`：插入日志收集代码（有性能影响）
+- `Parser.disableByteBufCheck()`：禁用 Netty ByteBuf 边界检查，提升 10-20% 性能
+
+### 表达式系统
+
+`valExpr`、`lenExpr` 等支持算术表达式（`+`、`-`、`*`、`/`、括号、一元取反 `!`），可引用：
+- 局部变量 `var`（a-z）：同类的其他字段
+- 全局变量 `globalVar`（A-Z，前缀 `@`）：`ProcessContext` 中的全局变量
+
+`RpnUtil`（逆波兰表达式工具）能将 valExpr 代数反转，自动生成 deParse 代码，避免手动指定逆向表达式。
 
 测试参考：`Lib-Parser-Protocol-GB32960/src/test/java/cn/bcd/lib/parser/protocol/gb32960/v2016/ParserTest.java`
 
@@ -201,18 +285,71 @@ Condition condition = Condition.and(
 
 ## Kafka 数据驱动消费
 
-`Lib-Spring-Kafka` 提供 `DataDrivenKafkaConsumer`，一种基于多线程 Executor + BlockingQueue 的数据驱动消费模型。每个 Kafka partition 分配到一个 `WorkExecutor`（独立线程 + BlockingQueue），子类需要实现：
+`Lib-Spring-Kafka` 提供两种消费模型：
+
+### DataDrivenKafkaConsumer（数据驱动消费）
+
+基于多线程 Executor + BlockingQueue 的异步消费模型。
+
+**双层线程模型**：
+1. **Consumer 线程**（N 个，每个 Kafka partition 一个或每个 topic 一个）：轮询 Kafka，将每条记录按 `id` hash 路由到对应的 `WorkExecutor`，但**不执行业务逻辑**
+2. **Worker 线程**（M 个 `WorkExecutor`，每个是 `SingleThreadExecutor` 单线程）：执行 `WorkHandler.init()` / `onMessage()` / `destroy()`
+
+**路由与串行化**：同一 `id`（如 VIN）通过 `hashCode() & (workExecutorNum - 1)` 始终路由到同一个 Worker 线程，保证该 id 的所有消息**串行有序处理**，子类无需加锁。
+
+**WorkHandler 生命周期**（所有方法在同一个 Worker 线程中执行）：
+- `newHandler(String id, ConsumerRecord)`：在 Worker 线程中通过 `computeIfAbsent` 懒创建
+- `init(ConsumerRecord)`：Handler 创建后立即调用（处理首条消息）
+- `onMessage(ConsumerRecord)`：处理后续消息
+- `destroy()`：手动删除或 TTL 过期时调用
+
+**背压机制**：`blockingNum` LongAdder 在每次 poll 后递增，`onMessage()` 返回后递减。达到 `maxBlockingNum` 时，Consumer 线程暂停消费（100ms 轮询等待）。
+
+**速率限制**：`maxConsumeSpeed > 0` 时，每秒重置计数器，超过限制则暂停 poll。
+
+**WorkHandler TTL 清理**：可选 `WorkHandlerScanner` 定时销毁超过 `expiredInSecond` 的空闲 Handler。
+
+**监控**：`monitor_log()`（可覆盖）每 `monitor_period` 秒输出一行日志，包含：workExecutor 数量、workHandler 数量、阻塞队列深度（当前/最大）、消费速度（条/秒）、处理速度（条/秒）。
+
+子类需实现：
 - `newHandler(String id, ConsumerRecord)`：根据首条消息创建 `WorkHandler`
 - `monitor_log()`：返回监控日志字符串
 
-`WorkHandler` 的生命周期由 `DataDrivenKafkaConsumer` 管理：当某个 partition 的第一条消息到达时创建 Handler，后续同 partition 的消息复用该 Handler 顺序处理。
+### ThreadDrivenKafkaConsumer（线程驱动消费）
+
+简单的线程内循环消费模型，子类在独立线程中直接实现 `consume(String key, byte[] value)`，用于请求-响应式处理。`Lib-Spring-Vehicle-Command` 中的 `CommandRequestConsumer` 和 `CommandResponseConsumer` 均基于此模型。
 
 ## 数据变更通知
 
-`Lib-Spring-Data-Notify` 提供基于 Kafka + Redis 的发布/订阅机制：
-- `AbstractNotifyServer`：由消息提供方实现，注册为 Spring Bean。启动时从 Redis 加载订阅信息，监听 Kafka 上的订阅/取消订阅请求，每隔 1 分钟检查订阅信息变化。通过 `notify(String id, Supplier<byte[]> supplier)` 发送通知。
-- `AbstractNotifyClient`：由消息消费方实现，注册为 Spring Bean。通过 `subscribe(String id)`/`unsubscribe(String id)` 管理订阅，监听 Kafka 通知 topic 接收消息。
-- 已有通知类型：`VehicleData`（车辆数据）、`PlatformStatus`（平台状态）、`TransferAccess`（转发接入数据）。
+`Lib-Spring-Data-Notify` 提供两种通知模式：
+
+### subscribeNotify（点对点订阅通知）
+
+基于 **Kafka + Redis 双通道**设计：
+
+| 用途 | 技术 | 说明 |
+|------|------|------|
+| 订阅注册（持久化） | Redis Hash | key=`_notify_{type}`，field=订阅者 ID，value=`ListenerInfo` JSON |
+| 订阅/取消事件（实时信令） | Kafka topic | `_subscribe_{type}`，消息格式：`'1' + json`（订阅）/ `'2' + id`（取消） |
+| 通知投递 | Kafka topic | `_notify_{type}`，key=订阅者 ID |
+
+**心跳与故障恢复**：
+- Client 每 **60 秒**将所有订阅的时间戳刷新到 Redis Hash
+- Server 每 **60 秒**从 Redis 全量加载，过滤掉时间戳超过 60 秒的过期条目
+- Client 崩溃后，其 Redis 条目在 1-2 分钟内自动清除（无需显式调用 `unsubscribe`）
+- Server 重启后，在 1 分钟内从 Redis 恢复所有活跃订阅缓存
+
+核心接口：
+- `AbstractNotifyServer`：消息提供方实现。`notify(String id, Supplier<byte[]>)` 检查内存缓存中 id 是否订阅，若已订阅则发 Kafka 消息
+- `AbstractNotifyClient`：消息消费方实现。`subscribe(String id, Consumer<byte[]>)` / `unsubscribe(String id)` 管理订阅
+
+### onlyNotify（广播通知）
+
+基于 Kafka topic 的简单广播，无订阅管理：
+- `Sender<T>`：泛型 Kafka 生产者，序列化为 JSON 字节发送
+- `Receiver<T>`：泛型 Kafka 消费者（基于 `ThreadDrivenKafkaConsumer`），反序列化后调用注入的 `Consumer<T>` Bean
+
+内置三种广播类型：`VehicleData`（车辆数据）、`PlatformStatus`（平台在线状态）、`TransferAccess`（转发接入数据）。每种类型的 Sender/Receiver 通过配置属性独立启用。
 
 ## 微服务认证
 
