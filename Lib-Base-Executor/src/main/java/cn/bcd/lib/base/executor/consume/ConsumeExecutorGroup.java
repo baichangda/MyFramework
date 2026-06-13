@@ -4,6 +4,7 @@ import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.base.util.StringUtil;
+import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -150,21 +150,20 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         //3. 等待清理任务完成
         for (Future<?> future : cleanups) {
             try {
-                future.get();
+                future.await();
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 logger.error("close cleanup interrupted", ex);
                 break;
-            } catch (ExecutionException ex) {
-                logger.error("close cleanup error", ex.getCause());
             }
         }
-        //4. shutdown executor 并 await 全部终止
+        //4. shutdown executor
+        List<Future<?>> futureList=new ArrayList<>();
         for (ConsumeExecutor<T> executor : executors) {
-            executor.shutdown();
+            futureList.add(executor.shutdownGracefully());
         }
-        for (ConsumeExecutor<T> executor : executors) {
-            ExecutorUtil.await(executor);
+        for (Future<?> future : futureList) {
+            future.await();
         }
         ExecutorUtil.shutdown(true, monitorPool);
     }
