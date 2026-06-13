@@ -31,7 +31,7 @@ public class RedisConnectionFactoryUtil {
             if (pool.getEnabled() != null && pool.getEnabled()) {
                 builder = new PoolBuilderFactory().createBuilder(pool);
             } else {
-                builder = LettucePoolingClientConfiguration.builder();
+                builder = LettuceClientConfiguration.builder();
             }
             if (ssl.isEnabled()) {
                 connectionFactory = new LettuceConnectionFactory(standaloneConfiguration, builder.useSsl().build());
@@ -52,7 +52,7 @@ public class RedisConnectionFactoryUtil {
             if (pool.getEnabled() != null && pool.getEnabled()) {
                 builder = new PoolBuilderFactory().createBuilder(pool);
             } else {
-                builder = LettucePoolingClientConfiguration.builder();
+                builder = LettuceClientConfiguration.builder();
             }
             if (ssl.isEnabled()) {
                 connectionFactory = new LettuceConnectionFactory(clusterConfiguration, builder.useSsl().build());

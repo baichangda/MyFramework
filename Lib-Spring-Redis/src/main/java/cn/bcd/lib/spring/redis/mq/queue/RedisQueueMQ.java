@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -43,7 +42,7 @@ public class RedisQueueMQ<V> implements AutoCloseable{
 
     private final RedisTemplate<String, byte[]> redisTemplate;
 
-    private boolean stop;
+    private volatile boolean stop;
 
     private volatile boolean consumerAvailable;
 
@@ -142,7 +141,7 @@ public class RedisQueueMQ<V> implements AutoCloseable{
     protected void start() {
         while (consumeExecutor.getPoolSize() < consumeExecutor.getMaximumPoolSize()) {
             consumeExecutor.execute(() -> {
-                long popTimeout = ((LettuceConnectionFactory) redisTemplate.getConnectionFactory()).getTimeout() / 2;
+                long popTimeout = 1000L;
                 while (!stop) {
                     try {
                         byte[] data = boundListOperations.rightPop(popTimeout, TimeUnit.MILLISECONDS);
@@ -163,7 +162,8 @@ public class RedisQueueMQ<V> implements AutoCloseable{
                             try {
                                 Thread.sleep(10000L);
                             } catch (InterruptedException e) {
-                                throw BaseException.get(e);
+                                Thread.currentThread().interrupt();
+                                break;
                             }
                         }
                     }
