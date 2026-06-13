@@ -238,10 +238,18 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * 开始消费
      */
     public final synchronized void startConsume(Map<String, Object> consumerProp) {
+        if (closed) {
+            throw new IllegalStateException("consumer already closed");
+        }
         if (!running_consume) {
             running_consume = true;
-            consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
-            consumerThreadHolder.start();
+            try {
+                consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
+                consumerThreadHolder.start();
+            } catch (RuntimeException ex) {
+                running_consume = false;
+                throw ex;
+            }
         }
     }
 
@@ -340,25 +348,30 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             closed = true;
             //打上退出标记、等待消费线程退出
             running_consume = false;
-            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads(), resetConsumeCountPool);
-            //等待工作执行器退出
-            for (WorkExecutor workExecutor : workExecutors) {
-                //添加删除任务
-                try {
-                    workExecutor.submit(() -> {
-                        for (String id : workExecutor.workHandlers.keySet()) {
-                            removeHandler(id);
-                        }
-                    }).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    logger.error("error", e);
-                }
-                //关闭线程池
-                workExecutor.shutdown();
+            if (consumerThreadHolder != null) {
+                ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
             }
-            for (WorkExecutor workExecutor : workExecutors) {
-                //等待工作执行器退出
-                ExecutorUtil.await(workExecutor);
+            ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool);
+            //等待工作执行器退出
+            if (workExecutors != null) {
+                for (WorkExecutor workExecutor : workExecutors) {
+                    //添加删除任务
+                    try {
+                        workExecutor.submit(() -> {
+                            for (String id : workExecutor.workHandlers.keySet()) {
+                                removeHandler(id);
+                            }
+                        }).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.error("error", e);
+                    }
+                    //关闭线程池
+                    workExecutor.shutdownGracefully();
+                }
+                for (WorkExecutor workExecutor : workExecutors) {
+                    //等待工作执行器退出
+                    ExecutorUtil.await(workExecutor);
+                }
             }
             //取消监控、扫描过期线程
             ExecutorUtil.shutdownAllThenAwait(false, monitor_pool, scannerPool);
@@ -370,7 +383,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * 消费
      */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
-        try (consumer) {
+        try {
             boolean paused = false;
             int blockCount = 0;
             while (running_consume) {
@@ -488,8 +501,17 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 }
             }
         } finally {
-            String assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
-            logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
+            String assignment = "";
+            try {
+                assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
+            } catch (Exception ex) {
+                logger.debug("get consumer assignment before close error", ex);
+            }
+            try {
+                consumer.close();
+            } finally {
+                logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
+            }
         }
 
     }

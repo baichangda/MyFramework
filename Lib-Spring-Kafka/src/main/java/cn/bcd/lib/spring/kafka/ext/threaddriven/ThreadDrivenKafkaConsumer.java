@@ -102,7 +102,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     public final LongAdder monitor_workCount;
     public final ScheduledExecutorService monitor_pool;
 
-
     /**
      * 是否关闭
      */
@@ -236,11 +235,19 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      */
     @SuppressWarnings("unchecked")
     public synchronized void startConsume(Map<String, Object> consumerProp) {
+        if (closed) {
+            throw new IllegalStateException("consumer already closed");
+        }
         if (!running_consume) {
             running_consume = true;
-            //启动消费者
-            consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
-            consumerThreadHolder.start();
+            try {
+                //启动消费者
+                consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
+                consumerThreadHolder.start();
+            } catch (RuntimeException ex) {
+                running_consume = false;
+                throw ex;
+            }
         }
     }
 
@@ -320,7 +327,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                         }
 
                         //检查阻塞
-                        if (blockingNum.sum() >= maxBlockingNum) {
+                        if (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);
                             blockCount++;
                             continue;
@@ -401,7 +408,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                         }
 
                         //检查阻塞
-                        if (blockingNum.sum() >= maxBlockingNum) {
+                        if (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum) {
                             TimeUnit.MILLISECONDS.sleep(100);
                             continue;
                         }
@@ -494,7 +501,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
 
     public abstract void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception;
-
 
     private String getQueueLog(BlockingQueue<ConsumerRecord<String, byte[]>> queue) {
         return queue.size() + (workThreadQueueSize > 0 ? ("/" + workThreadQueueSize) : "");

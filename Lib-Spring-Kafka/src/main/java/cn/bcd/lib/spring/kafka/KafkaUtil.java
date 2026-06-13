@@ -24,42 +24,48 @@ public class KafkaUtil {
     static Logger logger = LoggerFactory.getLogger(KafkaUtil.class);
 
     public static KafkaTemplate<String, String> newKafkaTemplate_string_string(Map<String, Object> properties) {
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        DefaultKafkaProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        DefaultKafkaProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(config);
         return new KafkaTemplate<>(producerFactory);
     }
 
     public static KafkaTemplate<String, byte[]> newKafkaTemplate_string_bytes(Map<String, Object> properties) {
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        DefaultKafkaProducerFactory<String, byte[]> producerFactory = new DefaultKafkaProducerFactory<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        DefaultKafkaProducerFactory<String, byte[]> producerFactory = new DefaultKafkaProducerFactory<>(config);
         return new KafkaTemplate<>(producerFactory);
     }
 
     public static KafkaProducer<String, String> newKafkaProducer_string_string(Map<String, Object> properties) {
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        return new KafkaProducer<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        return new KafkaProducer<>(config);
     }
 
     public static KafkaProducer<String, byte[]> newKafkaProducer_string_bytes(Map<String, Object> properties) {
-        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-        return new KafkaProducer<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+        return new KafkaProducer<>(config);
     }
 
 
     public static KafkaConsumer<String, String> newKafkaConsumer_string_string(Map<String, Object> properties) {
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        return new KafkaConsumer<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        return new KafkaConsumer<>(config);
     }
 
     public static KafkaConsumer<String, byte[]> newKafkaConsumer_string_bytes(Map<String, Object> properties) {
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-        return new KafkaConsumer<>(properties);
+        Map<String, Object> config = new HashMap<>(properties);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+        return new KafkaConsumer<>(config);
     }
 
 
