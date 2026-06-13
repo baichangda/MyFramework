@@ -190,7 +190,7 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         String varNameNum = info.varNameNum();
         int maxBitEnd = info.maxBit();
         if (info.startFieldIndex == context.fieldIndex) {
-            ParseUtil.append(body, "final int {}=0;\n", varNameNum);
+            ParseUtil.append(body, "int {}=0;\n", varNameNum);
         }
 
         ParseUtil.append(body, "{};\n", getBitNumCode_write(varNameNum, varNameVal, anno.bitStart(), anno.bitEnd()));

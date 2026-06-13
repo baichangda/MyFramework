@@ -167,8 +167,8 @@ public class BuilderContext {
 
     public final String getBitBuf_deParse() {
         if (!method_cache.containsKey("hasBitBuf")) {
-            final String bitBuf_writer_className = Parser.logCollector_parse == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
-            final String funcName = Parser.logCollector_parse == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
+            final String bitBuf_writer_className = Parser.logCollector_deParse == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
+            final String funcName = Parser.logCollector_deParse == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
             ParseUtil.append(method_body, "final {} {}={}.{}();\n", bitBuf_writer_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
             method_cache.put("hasBitBuf", true);
         }

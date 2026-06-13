@@ -73,7 +73,7 @@ public class FieldBuilder__F_string extends FieldBuilder {
         final String charsetVarName = ParseUtil.defineClassVar(context, Charset.class, "{}.forName(\"{}\")", charsetClassName, charset.name());
         switch (anno.appendMode()) {
             case noAppend -> {
-                ParseUtil.append(body, "{}.writeBytes({}.getBytes({}));\n", varNameByteBuf, varNameFieldVal, charsetVarName);
+                ParseUtil.append(body, "{}.write_noAppend({},{},{},{});\n", FieldBuilder__F_string.class.getName(), varNameByteBuf, varNameFieldVal, lenRes, charsetVarName);
             }
             case lowAddressAppend -> {
                 ParseUtil.append(body, "{}.write_lowAddressAppend({},{},{},{});\n", FieldBuilder__F_string.class.getName(), varNameByteBuf, varNameFieldVal, lenRes, charsetVarName);
@@ -88,12 +88,15 @@ public class FieldBuilder__F_string extends FieldBuilder {
     public static String read_lowAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
         final byte[] bytes = new byte[len];
         byteBuf.readBytes(bytes);
-        int startIndex = 0;
+        int startIndex = -1;
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] != 0) {
                 startIndex = i;
                 break;
             }
+        }
+        if (startIndex == -1) {
+            return "";
         }
         return new String(bytes, startIndex, len - startIndex, charset);
     }
@@ -101,19 +104,30 @@ public class FieldBuilder__F_string extends FieldBuilder {
     public static String read_highAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
         final byte[] bytes = new byte[len];
         byteBuf.readBytes(bytes);
-        int endIndex = bytes.length - 1;
+        int endIndex = -1;
         for (int i = bytes.length - 1; i >= 0; i--) {
             if (bytes[i] != 0) {
                 endIndex = i;
                 break;
             }
         }
+        if (endIndex == -1) {
+            return "";
+        }
         return new String(bytes, 0, endIndex + 1, charset);
     }
 
+    public static void write_noAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
+        byte[] bytes = str.getBytes(charset);
+        if (bytes.length != len) {
+            throw BaseException.get("encoded string byte length[{}] must equal configured length[{}]", bytes.length, len);
+        }
+        byteBuf.writeBytes(bytes);
+    }
 
     public static void write_lowAddressAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
         byte[] bytes = str.getBytes(charset);
+        checkMaxEncodedLength(bytes.length, len);
         int leaveLen = len - bytes.length;
         if (leaveLen > 0) {
             byteBuf.writeZero(leaveLen);
@@ -123,10 +137,17 @@ public class FieldBuilder__F_string extends FieldBuilder {
 
     public static void write_highAddressAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
         byte[] bytes = str.getBytes(charset);
+        checkMaxEncodedLength(bytes.length, len);
         byteBuf.writeBytes(bytes);
         int leaveLen = len - bytes.length;
         if (leaveLen > 0) {
             byteBuf.writeZero(leaveLen);
+        }
+    }
+
+    private static void checkMaxEncodedLength(int actualLen, int expectedLen) {
+        if (actualLen > expectedLen) {
+            throw BaseException.get("encoded string byte length[{}] exceeds configured length[{}]", actualLen, expectedLen);
         }
     }
 }

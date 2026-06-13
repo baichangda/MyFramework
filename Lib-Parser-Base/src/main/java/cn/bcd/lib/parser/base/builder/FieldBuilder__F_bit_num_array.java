@@ -128,7 +128,7 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         final String varNameBitBuf = context.getBitBuf_deParse();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
-        ParseUtil.append(body, "if({}!=null){\n", FieldBuilder.varNameInstance, valCode);
+        ParseUtil.append(body, "if({}!=null){\n", valCode);
         if (skipBefore > 0) {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, skipBefore);
         }

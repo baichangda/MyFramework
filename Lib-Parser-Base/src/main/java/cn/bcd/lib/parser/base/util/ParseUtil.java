@@ -163,8 +163,8 @@ public class ParseUtil {
 
     public static void newBitBuf_deParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
-        final String bitBuf_writer_className = Parser.logCollector_parse == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
-        final String funcName = Parser.logCollector_parse == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
+        final String bitBuf_writer_className = Parser.logCollector_deParse == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
+        final String funcName = Parser.logCollector_deParse == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
         ParseUtil.append(body, "final {} {}={}.{}();\n", bitBuf_writer_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
     }
 
@@ -640,7 +640,7 @@ public class ParseUtil {
 
             F_bit_num_easy f_bit_num_easy = parseField.getAnnotation(F_bit_num_easy.class);
             if (f_bit_num_easy != null) {
-                maxBitEndEasy = Math.max(maxBitEndEasy, f_bit_num_easy.bitEnd());
+                maxBitEndEasy = Math.max(maxBitEndEasy, f_bit_num_easy.bitStart() + 1);
                 boolean end;
                 if (f_bit_num_easy.end()) {
                     end = true;

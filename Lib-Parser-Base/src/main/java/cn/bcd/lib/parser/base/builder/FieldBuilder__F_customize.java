@@ -21,10 +21,9 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final String fieldTypeClassName = fieldType.getName();
         final String processContextVarName = context.getProcessContextVarName();
         final String unBoxing = ParseUtil.unBoxing(ParseUtil.format("{}.process({},{})", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName), fieldType);
-        if (anno.var() == '0') {
-            ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), unBoxing);
-        } else {
-            ParseUtil.append(body, "final {} {}={};\n", fieldTypeClassName, varNameField, unBoxing);
+        ParseUtil.append(body, "final {} {}={};\n", fieldTypeClassName, varNameField, unBoxing);
+        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
+        if (anno.var() != '0') {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
             context.method_varToFieldName.put(anno.var(), varNameField);
         }
@@ -61,7 +60,7 @@ public class FieldBuilder__F_customize extends FieldBuilder {
 
         final String processContextVarName = context.getProcessContextVarName();
         final String processorClassVarName = context.getCustomizeProcessorVarName(processorClass, anno.processorArgs());
-        ParseUtil.append(body, "{}.deProcess({},{},{});\n", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName, valCode);
+        ParseUtil.append(body, "{}.deProcess({},{},{});\n", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName, ParseUtil.boxing(valCode, field.getType()));
     }
 
 }

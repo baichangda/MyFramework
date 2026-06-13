@@ -129,9 +129,6 @@ public class Parser {
         if (fieldList.isEmpty()) {
             return;
         }
-        if (ParseUtil.needBitBuf(fieldList)) {
-            ParseUtil.newBitBuf_parse(context);
-        }
         for (int i = 0; i < fieldList.size(); i++) {
             Field field = fieldList.get(i);
             context.field = field;
@@ -174,14 +171,11 @@ public class Parser {
         if (fieldList.isEmpty()) {
             return;
         }
-        if (ParseUtil.needBitBuf(fieldList)) {
-            ParseUtil.newBitBuf_deParse(context);
-        }
         for (int i = 0; i < fieldList.size(); i++) {
             Field field = fieldList.get(i);
             context.field = field;
             context.fieldIndex = i;
-            boolean logBit = field.isAnnotationPresent(F_bit_num.class);
+            boolean logBit = field.isAnnotationPresent(F_bit_num.class) || field.isAnnotationPresent(F_bit_num_array.class);
             F_skip f_skip = field.getAnnotation(F_skip.class);
             if (f_skip != null && (f_skip.lenBefore() != 0 || !f_skip.lenExprBefore().isEmpty())) {
                 ParseUtil.appendSkip_deParse(f_skip.lenBefore(), f_skip.lenExprBefore(), context);
@@ -328,21 +322,21 @@ public class Parser {
                 buildMethodBody_deProcess(deParseBuilderContext);
                 String lenValCode;
                 if (c_skip.len() == 0) {
-                    lenValCode = ParseUtil.replaceExprToCode(c_skip.lenExpr(), parseBuilderContext);
+                    lenValCode = ParseUtil.replaceExprToCode_class(c_skip.lenExpr(), deParseBuilderContext);
                 } else {
                     lenValCode = c_skip.len() + "";
                 }
                 ParseUtil.append(deProcessBody, "final int {}={}-{}.writerIndex()+{};\n", FieldBuilder.varNameShouldSkip, lenValCode, FieldBuilder.varNameByteBuf, FieldBuilder.varNameStartIndex);
                 ParseUtil.append(deProcessBody, "if({}>0){\n", FieldBuilder.varNameShouldSkip);
                 ParseUtil.append(deProcessBody, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, FieldBuilder.varNameShouldSkip);
-                if (logCollector_parse != null) {
+                if (logCollector_deParse != null) {
                     ParseUtil.append(deProcessBody, "{}.logCollector_deParse.collect_class({}.class,1,new Object[]{\"@C_skip append[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, FieldBuilder.varNameShouldSkip);
                 }
                 ParseUtil.append(deProcessBody, "}\n");
             } else {
                 buildMethodBody_deProcess(deParseBuilderContext);
                 if (c_skip.len() == 0) {
-                    String lenValCode = ParseUtil.replaceExprToCode(c_skip.lenExpr(), parseBuilderContext);
+                    String lenValCode = ParseUtil.replaceExprToCode_class(c_skip.lenExpr(), deParseBuilderContext);
                     String skipCode = "(" + lenValCode + "-" + classByteLen + ")";
                     ParseUtil.append(deProcessBody, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, skipCode);
                     if (logCollector_deParse != null) {

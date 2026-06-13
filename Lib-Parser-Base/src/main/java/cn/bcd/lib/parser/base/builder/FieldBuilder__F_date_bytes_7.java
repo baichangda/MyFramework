@@ -80,8 +80,8 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
         } else if (Instant.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "final long {}={}.toEpochMilli();\n", varNameLongField, valCode);
         } else if (LocalDateTime.class.isAssignableFrom(fieldTypeClass)) {
-            final String varNameValueZoneOffset = ParseUtil.defineClassVar(context, ZoneOffset.class, "{}.of(\"{}\")", ZoneOffset.class.getName(), anno.valueZoneId());
-            ParseUtil.append(body, "final long {}={}.toInstant({}).toEpochMilli();\n", varNameLongField, valCode, varNameValueZoneOffset);
+            final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
+            ParseUtil.append(body, "final long {}={}.atZone({}).toInstant().toEpochMilli();\n", varNameLongField, valCode, varNameValueZoneId);
         } else if (OffsetDateTime.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "final long {}={}.toInstant().toEpochMilli();\n", varNameLongField, valCode);
         } else if (ZonedDateTime.class.isAssignableFrom(fieldTypeClass)) {

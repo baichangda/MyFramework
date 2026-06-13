@@ -68,7 +68,7 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
 
         switch (anno.appendMode()) {
             case noAppend -> {
-                ParseUtil.append(body, "{}.write_noAppend({},{});\n", FieldBuilder__F_string_bcd.class.getName(), varNameByteBuf, varNameFieldVal);
+                ParseUtil.append(body, "{}.write_noAppend({},{},{});\n", FieldBuilder__F_string_bcd.class.getName(), varNameByteBuf, varNameFieldVal, lenRes);
             }
             case lowAddressAppend -> {
                 ParseUtil.append(body, "{}.write_lowAddressAppend({},{},{});\n", FieldBuilder__F_string_bcd.class.getName(), varNameByteBuf, varNameFieldVal, lenRes);
@@ -107,6 +107,9 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
                 System.arraycopy(BcdUtil.BCD_8421_DUMP_TABLE, (b & 0xff) << 1, chars, i << 1, 2);
             }
         }
+        if (startIndex == -1) {
+            return "";
+        }
         return new String(chars, startIndex, chars.length - startIndex);
     }
 
@@ -133,13 +136,17 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
         return new String(chars, 0, endIndex + 1);
     }
 
-    public static int write_noAppend(ByteBuf byteBuf, String s) {
+    public static int write_noAppend(ByteBuf byteBuf, String s, int len) {
         byte[] bytes = BcdUtil.stringToBytes_8421(s);
+        if (bytes.length != len) {
+            throw BaseException.get("encoded bcd byte length[{}] must equal configured length[{}]", bytes.length, len);
+        }
         byteBuf.writeBytes(bytes);
         return bytes.length;
     }
 
     public static void write_lowAddressAppend(ByteBuf byteBuf, String s, int len) {
+        checkMaxCharLength(s, len);
         byte[] res = new byte[len];
         char[] charArray = s.toCharArray();
         int sLen = charArray.length;
@@ -157,8 +164,8 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
         byteBuf.writeBytes(res);
     }
 
-
     public static void write_highAddressAppend(ByteBuf byteBuf, String s, int len) {
+        checkMaxCharLength(s, len);
         byte[] res = new byte[len];
         char[] charArray = s.toCharArray();
         int sLen = charArray.length;
@@ -175,6 +182,12 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
         byteBuf.writeBytes(res);
     }
 
+    private static void checkMaxCharLength(String s, int len) {
+        if (s.length() > (len << 1)) {
+            throw BaseException.get("bcd string length[{}] exceeds configured digit length[{}]", s.length(), len << 1);
+        }
+    }
+
     public static void main(String[] args) {
         String s = "2117299841738";
         ByteBuf buffer1 = Unpooled.buffer();
@@ -188,7 +201,7 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
         System.out.println(s2);
 
         ByteBuf buffer3 = Unpooled.buffer();
-        int len3 = write_noAppend(buffer3, s);
+        int len3 = write_noAppend(buffer3, s, 7);
         String s3 = read_noAppend(buffer3, len3);
         System.out.println(s3);
     }
