@@ -1,8 +1,8 @@
 package cn.bcd.app.dataProcess.transfer.v2016.tcp;
 
-import cn.bcd.lib.base.executor.SingleThreadExecutor;
+import io.netty.util.concurrent.EventExecutor;
 
-public record SendData(byte[] data, Runnable sendCallback, SingleThreadExecutor executor) {
+public record SendData(byte[] data, Runnable sendCallback, EventExecutor executor) {
     public void callback(){
         executor.execute(sendCallback);
     }

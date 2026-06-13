@@ -1,7 +1,6 @@
 package cn.bcd.app.simulator.singleVehicle.tcp;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.executor.SingleThreadExecutor;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufUtil;
@@ -14,6 +13,7 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.concurrent.EventExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ public class Vehicle {
     static MultiThreadIoEventLoopGroup tcp_workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     public final String vin;
     public VehicleData vehicleData;
-    public final SingleThreadExecutor executor;
+    public final EventExecutor executor;
     public final Function<String, VehicleData> vehicleDataFunction;
     public final int sendPeriod;
 
@@ -43,7 +43,7 @@ public class Vehicle {
     Consumer<VehicleData> onDataUpdate;
     ScheduledFuture<?> scheduledFuture;
 
-    public Vehicle(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, SingleThreadExecutor executor) {
+    public Vehicle(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, EventExecutor executor) {
         this.vin = vin;
         this.sendPeriod = sendPeriod;
         this.vehicleDataFunction = vehicleDataFunction;

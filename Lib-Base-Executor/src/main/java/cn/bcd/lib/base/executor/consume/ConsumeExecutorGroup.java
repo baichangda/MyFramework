@@ -63,9 +63,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         //创建线程池
         executors = new ConsumeExecutor[this.executorNum];
         for (int i = 0; i < this.executorNum; i++) {
-            executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + this.executorNum + ")",
-                    executorQueueSize,
-                    executorSchedule);
+            executors[i] = new ConsumeExecutor<>(groupName + "-executor(" + (i + 1) + "/" + this.executorNum + ")");
         }
         //启动扫描过期数据
         if (entityScanner == null) {
@@ -314,7 +312,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     public String monitorLog() {
-        String queueLog = Arrays.stream(executors).map(e -> String.valueOf(e.blockingQueue.size())).collect(Collectors.joining(" "));
+        String queueLog = Arrays.stream(executors).map(e -> String.valueOf(e.pendingTasks())).collect(Collectors.joining(" "));
         return StringUtil.format("consume group[{}] blockingNum[{}] entityNum[{}] receiveSpeed[{}/s] queues[{}] workSpeed[{}/s]",
                 groupName,
                 monitorBlockingNum.sum(),

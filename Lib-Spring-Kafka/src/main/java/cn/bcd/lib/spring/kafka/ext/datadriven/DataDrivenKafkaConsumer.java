@@ -219,7 +219,8 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             //启动任务执行器
             this.workExecutors = new WorkExecutor[this.workExecutorNum];
             for (int i = 0; i < this.workExecutorNum; i++) {
-                this.workExecutors[i] = new WorkExecutor(name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")", workExecutorSchedule);
+                String workThreadName = name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")";
+                this.workExecutors[i] = new WorkExecutor(r -> new Thread(r, workThreadName));
             }
 
         } catch (Exception ex) {
@@ -510,13 +511,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> {
-            if (e.queueSize == 0) {
-                return e.blockingQueue.size() + "";
-            } else {
-                return e.blockingQueue.size() + "/" + e.queueSize;
-            }
-        }).collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +

@@ -1,9 +1,9 @@
 package cn.bcd.app.simulator.singleVehicle.tcp;
 
-import cn.bcd.lib.base.executor.SingleThreadExecutor;
-import cn.bcd.lib.base.executor.SingleThreadExecutorGroup;
+import cn.bcd.lib.base.executor.IdEventExecutorGroup;
 import cn.bcd.lib.base.json.JsonUtil;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.http.ServerWebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +19,20 @@ public class WsSession {
     public final String vin;
     public final ServerWebSocket channel;
     public final Vehicle vehicle;
-    public final SingleThreadExecutor executor;
+    public final EventExecutor executor;
     public ScheduledFuture<?> scheduledFuture;
 
     boolean closed;
 
     public final static ConcurrentHashMap<String, WsSession> sessionMap = new ConcurrentHashMap<>();
 
-    final static SingleThreadExecutorGroup executorGroup = new SingleThreadExecutorGroup("vehicleWorker", Runtime.getRuntime().availableProcessors(), 0, true);
+
+    final static IdEventExecutorGroup executorGroup = new IdEventExecutorGroup(Runtime.getRuntime().availableProcessors());
 
     public WsSession(String vin, int sendPeriod, Function<String, VehicleData> vehicleDataFunction, ServerWebSocket channel) {
+
         this.vin = vin;
-        this.executor = executorGroup.getExecutor(vin);
+        this.executor = executorGroup.getEventExecutor(vin);
         this.channel = channel;
         this.vehicle = new Vehicle(vin, sendPeriod, vehicleDataFunction, executor);
         this.closed = false;
