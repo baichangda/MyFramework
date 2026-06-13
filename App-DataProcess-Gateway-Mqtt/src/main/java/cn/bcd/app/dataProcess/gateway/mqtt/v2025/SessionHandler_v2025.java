@@ -58,7 +58,7 @@ public class SessionHandler_v2025 implements DataHandler_v2025 {
         //忽略本网关自己的通知
         if (!gatewayProp.id.equals(remoteGatewayId)) {
             final long remoteTs = Long.parseLong(split[2]);
-            vehicleConsumeExecutorGroup.checkRemoveEntity(split[0], (entity) -> {
+            vehicleConsumeExecutorGroup.removeEntityIf(split[0], (entity) -> {
                 if (entity.createTime < remoteTs) {
                     logger.debug("remove local entity[{},{}] with listen[{}]", entity.id, entity.createTime, value);
                     return true;

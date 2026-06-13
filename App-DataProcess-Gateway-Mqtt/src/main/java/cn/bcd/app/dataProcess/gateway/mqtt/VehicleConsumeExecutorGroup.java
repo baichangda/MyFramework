@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
 @Component
 public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
 
@@ -30,7 +29,6 @@ public class VehicleConsumeExecutorGroup extends ConsumeExecutorGroup<byte[]> {
         super("vehicleConsume",
                 Runtime.getRuntime().availableProcessors(),
                 0,
-                false,
                 EntityScanner.get(300, 60),
                 5);
         this.handlers_v2016 = handlers_v2016;

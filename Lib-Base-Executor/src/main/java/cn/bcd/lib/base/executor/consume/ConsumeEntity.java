@@ -5,7 +5,7 @@ import cn.bcd.lib.base.util.DateUtil;
 public abstract class ConsumeEntity<T> {
     public final String id;
     /**
-     * 创建时间(秒)
+     * 创建时间(毫秒)
      */
     public final long createTime;
 
@@ -16,12 +16,10 @@ public abstract class ConsumeEntity<T> {
      */
     public long lastMessageTime;
 
-
     public ConsumeEntity(String id) {
         this.id = id;
-        this.createTime = DateUtil.CacheSecond.current();
+        this.createTime = DateUtil.CacheMillisecond.current();
     }
-
 
     void onMessageInternal(T t) throws Exception {
         lastMessageTime = DateUtil.CacheSecond.current();
@@ -31,10 +29,8 @@ public abstract class ConsumeEntity<T> {
     public abstract void onMessage(T t) throws Exception;
 
     public void init(T first) throws Exception {
-
     }
 
     public void destroy() throws Exception {
-
     }
 }

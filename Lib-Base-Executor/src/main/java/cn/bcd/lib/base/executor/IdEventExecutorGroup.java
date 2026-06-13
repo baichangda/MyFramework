@@ -1,8 +1,12 @@
 package cn.bcd.lib.base.executor;
 
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.MultithreadEventExecutorGroup;
+import io.netty.util.concurrent.RejectedExecutionHandler;
+import io.netty.util.concurrent.RejectedExecutionHandlers;
 
-import io.netty.util.concurrent.*;
-
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.stream.StreamSupport;
@@ -13,32 +17,27 @@ public class IdEventExecutorGroup extends MultithreadEventExecutorGroup {
     public final int executorNum;
 
     public IdEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
-        super(nThreads, threadFactory);
-        this.executorNum = tableSizeFor(nThreads);
+        super(nThreads, threadFactory, Integer.MAX_VALUE, RejectedExecutionHandlers.reject());
         this.executors = StreamSupport.stream(spliterator(), false).toArray(EventExecutor[]::new);
+        this.executorNum = executors.length;
     }
 
     public IdEventExecutorGroup(int nThreads) {
         this(nThreads, null);
     }
 
-    private static int tableSizeFor(int cap) {
-        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
-        return (n < 0) ? 1 : n + 1;
-    }
-
     public EventExecutor getEventExecutor(String id) {
+        Objects.requireNonNull(id, "id");
         int h = id.hashCode();
-        h = h ^ (h >>> 16);
-        return getEventExecutor(h);
+        return getEventExecutor(h ^ (h >>> 16));
     }
 
     public EventExecutor getEventExecutor(int id) {
-        return executors[id & (executorNum - 1)];
+        return executors[Math.floorMod(id, executorNum)];
     }
 
     @Override
-    protected EventExecutor newChild(Executor executor, Object... args) throws Exception {
+    protected EventExecutor newChild(Executor executor, Object... args) {
         return new DefaultEventExecutor(this, executor, (Integer) args[0], (RejectedExecutionHandler) args[1]);
     }
 }
