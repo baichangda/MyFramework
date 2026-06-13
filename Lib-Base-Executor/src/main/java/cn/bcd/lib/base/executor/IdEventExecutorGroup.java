@@ -18,7 +18,8 @@ import java.util.stream.StreamSupport;
  * 串行处理同一业务对象的任务。不同 ID 可被分配到不同执行器并行处理。
  * </p>
  * <p>
- * 分片使用取模而不是位掩码，因此线程数不要求是 2 的幂。
+ * 实际线程数会向上取整为 2 的幂，例如 {@code 3 -> 4}、{@code 5 -> 8}，
+ * 从而可以通过位掩码快速完成分片。
  * </p>
  */
 public class IdEventExecutorGroup extends MultithreadEventExecutorGroup {
@@ -34,11 +35,11 @@ public class IdEventExecutorGroup extends MultithreadEventExecutorGroup {
     public final int executorNum;
 
     /**
-     * @param nThreads     执行器线程数，必须大于 0
+     * @param nThreads     期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
      * @param threadFactory 线程工厂；传 {@code null} 时使用 Netty 默认线程工厂
      */
     public IdEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
-        super(nThreads, threadFactory, Integer.MAX_VALUE, RejectedExecutionHandlers.reject());
+        super(tableSizeFor(nThreads), threadFactory, Integer.MAX_VALUE, RejectedExecutionHandlers.reject());
         this.executors = StreamSupport.stream(spliterator(), false).toArray(EventExecutor[]::new);
         this.executorNum = executors.length;
     }
@@ -46,10 +47,18 @@ public class IdEventExecutorGroup extends MultithreadEventExecutorGroup {
     /**
      * 使用 Netty 默认线程工厂创建执行器组。
      *
-     * @param nThreads 执行器线程数，必须大于 0
+     * @param nThreads 期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
      */
     public IdEventExecutorGroup(int nThreads) {
         this(nThreads, null);
+    }
+
+    private static int tableSizeFor(int cap) {
+        if (cap <= 0 || cap > (1 << 30)) {
+            throw new IllegalArgumentException("nThreads must be between 1 and " + (1 << 30));
+        }
+        int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+        return n + 1;
     }
 
     /**
@@ -71,7 +80,7 @@ public class IdEventExecutorGroup extends MultithreadEventExecutorGroup {
      * @return 该 ID 固定对应的单线程执行器
      */
     public EventExecutor getEventExecutor(int id) {
-        return executors[Math.floorMod(id, executorNum)];
+        return executors[id & (executorNum - 1)];
     }
 
     @Override

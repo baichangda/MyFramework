@@ -17,13 +17,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConsumeExecutorGroupTest {
 
     @Test
-    void idExecutorSupportsNonPowerOfTwoThreadCounts() {
+    void idExecutorRoundsThreadCountUpToPowerOfTwo() {
         IdEventExecutorGroup group = new IdEventExecutorGroup(3);
         try {
             for (int id = Integer.MIN_VALUE; id < Integer.MIN_VALUE + 100; id++) {
                 assertNotNull(group.getEventExecutor(id));
             }
-            assertEquals(3, group.executorNum);
+            assertEquals(4, group.executorNum);
         } finally {
             group.shutdownGracefully(0, 1, TimeUnit.SECONDS).syncUninterruptibly();
         }
