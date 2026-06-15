@@ -1,7 +1,6 @@
 package cn.bcd.lib.base.rateControl;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.DateUtil;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,6 +45,18 @@ public class LocalRateControlUnit implements AutoCloseable {
                                 int timeInSecond,
                                 int maxAccessCount,
                                 int waitTimeWhenExceedInMillis) {
+        if (name == null) {
+            throw new NullPointerException("name");
+        }
+        if (timeInSecond <= 0) {
+            throw new IllegalArgumentException("timeInSecond must be greater than 0");
+        }
+        if (maxAccessCount <= 0) {
+            throw new IllegalArgumentException("maxAccessCount must be greater than 0");
+        }
+        if (waitTimeWhenExceedInMillis <= 0) {
+            throw new IllegalArgumentException("waitTimeWhenExceedInMillis must be greater than 0");
+        }
         this.name = name;
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
@@ -59,7 +70,7 @@ public class LocalRateControlUnit implements AutoCloseable {
             return;
         }
         available = true;
-        this.scheduledFuture = this.resetExecutor.scheduleAtFixedRate(() -> count.set(0), timeInSecond * 1000L - DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
+        this.scheduledFuture = this.resetExecutor.scheduleAtFixedRate(() -> count.set(0), timeInSecond * 1000L - System.currentTimeMillis() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -75,6 +86,9 @@ public class LocalRateControlUnit implements AutoCloseable {
     }
 
     public boolean tryAdd(int i) {
+        if (i <= 0) {
+            throw new IllegalArgumentException("i must be greater than 0");
+        }
         if (!available) {
             throw BaseException.get("rate control unit closed");
         }

@@ -308,6 +308,9 @@ public class CompressUtil {
                 }
 
             }
+            if (buffer != null && buffer.length > 0) {
+                function.apply(buffer);
+            }
         } catch (IOException e) {
             throw BaseException.get(e);
         }

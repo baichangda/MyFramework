@@ -139,6 +139,15 @@ public class DateUtil {
      */
     public static List<Date[]> range(Date startDate, Date endDate, int amount, ChronoUnit unit, ZoneOffset zoneOffset) {
         List<Date[]> returnList = new ArrayList<>();
+        if (amount <= 0) {
+            throw BaseException.get("amount[{}] must be greater than 0", amount);
+        }
+        if (startDate.equals(endDate)) {
+            return returnList;
+        }
+        if (startDate.after(endDate)) {
+            throw BaseException.get("startDate[{}] must be before endDate[{}]", startDate, endDate);
+        }
         LocalDateTime ldt1 = LocalDateTime.ofInstant(startDate.toInstant(), zoneOffset);
         LocalDateTime ldt2 = LocalDateTime.ofInstant(endDate.toInstant(), zoneOffset);
         switch (unit) {
@@ -273,16 +282,16 @@ public class DateUtil {
         if (diff > 0) {
             double res = diff / ((double) unitMillis);
             if (up) {
-                return (int) Math.ceil(res);
+                return (long) Math.ceil(res);
             } else {
-                return (int) Math.floor(res);
+                return (long) Math.floor(res);
             }
         } else if (diff < 0) {
             double res = diff / ((double) unitMillis);
             if (up) {
-                return -(int) Math.ceil(-res);
+                return -(long) Math.ceil(-res);
             } else {
-                return -(int) Math.floor(-res);
+                return -(long) Math.floor(-res);
             }
         } else {
             return 0;
