@@ -50,11 +50,7 @@ public class NumberConditionConverter implements Converter<NumberCondition, Crit
                                 list.add(o);
                             }
                         }
-                        if (list.isEmpty()) {
-                            return null;
-                        } else {
-                            return Criteria.where(fieldName).in(list);
-                        }
+                        return Criteria.where(fieldName).in(list);
                     } else {
                         throw BaseException.get("type[{}] not support", val.getClass().getName());
                     }
