@@ -23,4 +23,11 @@ public class SessionHandler_v2016 implements DataHandler_v2016{
             sessionClusterManager.send(context.session);
         }
     }
+
+    @Override
+    public void destroy(String vin, Context_v2016 context) {
+        if (context.session != null) {
+            context.session.close();
+        }
+    }
 }

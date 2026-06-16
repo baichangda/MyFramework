@@ -7,6 +7,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -39,14 +40,27 @@ public class GatewayCommandReceiver implements CommandReceiver {
             cache.put(request.id, request);
         }
         Session session = Session.getSession(request.vin);
-        if (session == null) {
+        if (session == null || !session.channel.isActive()) {
+            cache.invalidate(request.id);
+            CommandReceiver.response(request, ResponseStatus.offline, null);
             return;
         }
-        //写报文到车端
-        session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.toPacketBytes()));
-        //判断直接响应
-        if (!request.waitVehicleResponse) {
-            CommandReceiver.response(request, ResponseStatus.success, null);
+        try {
+            //写报文到车端
+            session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.toPacketBytes())).addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    //判断直接响应
+                    if (!request.waitVehicleResponse) {
+                        CommandReceiver.response(request, ResponseStatus.success, null);
+                    }
+                } else {
+                    cache.invalidate(request.id);
+                    CommandReceiver.response(request, ResponseStatus.program_error, null);
+                }
+            });
+        } catch (Exception ex) {
+            cache.invalidate(request.id);
+            CommandReceiver.response(request, ResponseStatus.program_error, null);
         }
     }
 

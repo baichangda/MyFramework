@@ -8,14 +8,14 @@ import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
 
-public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
+public class DataInboundHandler_v2016 extends SimpleChannelInboundHandler<ByteBuf> {
 
     public List<DataHandler_v2016> handlers;
 
@@ -29,10 +29,9 @@ public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) throws Exception {
         Date receiveTime = new Date();
         //读取数据
-        ByteBuf byteBuf = (ByteBuf) msg;
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(bytes);
 

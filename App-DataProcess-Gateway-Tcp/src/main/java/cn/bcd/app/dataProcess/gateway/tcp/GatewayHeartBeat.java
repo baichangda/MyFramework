@@ -1,6 +1,8 @@
 package cn.bcd.app.dataProcess.gateway.tcp;
 
 import cn.bcd.lib.base.util.DateZoneUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
@@ -15,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class GatewayHeartBeat implements ApplicationListener<ContextRefreshedEvent> {
+    static Logger logger = LoggerFactory.getLogger(GatewayHeartBeat.class);
     //保持网关在redis状态
     static ScheduledExecutorService pool_saveRedis_heartBeat = Executors.newSingleThreadScheduledExecutor();
     @Autowired
@@ -31,9 +34,13 @@ public class GatewayHeartBeat implements ApplicationListener<ContextRefreshedEve
     private void startHeartBeatToRedis() {
         long seconds = gatewayProp.heartBeatPeriod.getSeconds();
         pool_saveRedis_heartBeat.scheduleAtFixedRate(() -> {
-            redisTemplate.opsForHash().put(gatewayOnline_redisHashKey,
-                    gatewayProp.id,
-                    DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+            try {
+                redisTemplate.opsForHash().put(gatewayOnline_redisHashKey,
+                        gatewayProp.id,
+                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+            } catch (Exception ex) {
+                logger.error("heartbeat error", ex);
+            }
         }, seconds, seconds, TimeUnit.SECONDS);
     }
 

@@ -24,4 +24,11 @@ public class SessionHandler_v2025 implements DataHandler_v2025{
             sessionClusterManager.send(context.session);
         }
     }
+
+    @Override
+    public void destroy(String vin, Context_v2025 context) {
+        if (context.session != null) {
+            context.session.close();
+        }
+    }
 }
