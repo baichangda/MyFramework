@@ -2,9 +2,8 @@ package cn.bcd.lib.spring.database.jdbc.service;
 
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import cn.bcd.lib.spring.database.jdbc.condition.ConditionUtil;
+import cn.bcd.lib.spring.database.jdbc.condition.ConvertRes;
 import org.springframework.data.domain.Sort;
 
 import java.util.Iterator;
@@ -34,20 +33,23 @@ public class BatchIterable<T extends SuperBaseBean> implements Iterable<List<T>>
 
     static class BatchIterator<T extends SuperBaseBean> implements Iterator<List<T>> {
         private boolean hasNext;
-        private Pageable pageable;
+        private int offset;
 
         private final BaseService<T> baseService;
-        private final Condition condition;
+        private final ConvertRes convertRes;
+        private final Sort sort;
+        private final int batch;
 
         public BatchIterator(int batch, BaseService<T> baseService, Condition condition, Sort sort) {
-            hasNext = true;
-            if (sort == null) {
-                pageable = PageRequest.of(0, batch);
-            } else {
-                pageable = PageRequest.of(0, batch, sort);
+            if (batch <= 0) {
+                throw new IllegalArgumentException();
             }
+            hasNext = true;
+            offset = 0;
+            this.batch = batch;
             this.baseService = baseService;
-            this.condition = condition;
+            this.convertRes = ConditionUtil.convertCondition(condition, baseService.getBeanInfo());
+            this.sort = sort;
         }
 
         @Override
@@ -57,10 +59,10 @@ public class BatchIterable<T extends SuperBaseBean> implements Iterable<List<T>>
 
         @Override
         public List<T> next() {
-            Page<T> page = baseService.page(condition, pageable);
-            pageable = page.nextPageable();
-            hasNext = page.hasNext();
-            return page.getContent();
+            List<T> content = baseService.list(convertRes, sort, offset, batch);
+            offset += batch;
+            hasNext = content.size() == batch;
+            return content;
         }
     }
 }

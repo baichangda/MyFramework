@@ -1,8 +1,8 @@
 package cn.bcd.lib.spring.database.jdbc.dynamic;
 
 import cn.bcd.lib.spring.database.jdbc.rowmapper.MyColumnMapRowMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
@@ -29,33 +29,21 @@ public class DynamicJdbcUtil {
      */
     private final static int DATA_SOURCE_MAX_ACTIVE = 3;
     static Logger logger = LoggerFactory.getLogger(DynamicJdbcUtil.class);
-    private static final LoadingCache<String, DynamicJdbcData> CACHE = Caffeine.newBuilder()
+    private static final Cache<CacheKey, DynamicJdbcData> CACHE = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(EXPIRE_IN_SECOND))
-            .<String, DynamicJdbcData>evictionListener((k, v, c) -> {
+            .<CacheKey, DynamicJdbcData>evictionListener((k, v, c) -> {
                 if (k != null && v != null) {
                     //移除数据源时候关闭数据源
                     HikariDataSource dataSource = (HikariDataSource) v.jdbcTemplate().getDataSource();
                     if (dataSource != null) {
-                        logger.info("dataSource[{}] [{}] start remove", k, dataSource.hashCode());
+                        logger.info("dataSource[{}] [{}] start remove", k.safeKey(), dataSource.hashCode());
                         dataSource.close();
-                        logger.info("dataSource[{}] [{}] finish remove", k, dataSource.hashCode());
+                        logger.info("dataSource[{}] [{}] finish remove", k.safeKey(), dataSource.hashCode());
                     }
                 }
             })
             .scheduler(Scheduler.systemScheduler())
-            .build(s -> {
-                //加载新的数据源
-                logger.info("dataSource[{}] start load", s);
-                String[] arr = s.split(",");
-                HikariDataSource dataSource = getDataSource(arr[0], arr[1], arr[2]);
-                JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-                jdbcTemplate.afterPropertiesSet();
-                TransactionTemplate transactionTemplate = new TransactionTemplate(new JdbcTransactionManager(dataSource));
-                transactionTemplate.afterPropertiesSet();
-                DynamicJdbcData jdbcData = new DynamicJdbcData(jdbcTemplate, transactionTemplate);
-                logger.info("dataSource[{}] [{}] finish load", s, dataSource.hashCode());
-                return jdbcData;
-            });
+            .build();
 
     private static HikariDataSource getDataSource(String url, String username, String password) {
         //首先测试
@@ -68,19 +56,35 @@ public class DynamicJdbcUtil {
         return dataSource;
     }
 
-    private static String getKey(String url, String username, String password) {
+    private record CacheKey(String url, String username) {
+        String safeKey() {
+            return url + "," + username;
+        }
+    }
+
+    private static CacheKey getKey(String url, String username) {
         Objects.requireNonNull(url);
         Objects.requireNonNull(username);
-        Objects.requireNonNull(password);
-        return url + "," + username + "," + password;
+        return new CacheKey(url, username);
     }
 
     public static DynamicJdbcData getJdbcData(String url, String username, String password) {
-        return CACHE.get(getKey(url, username, password));
+        return CACHE.get(getKey(url, username), key -> {
+            //加载新的数据源
+            logger.info("dataSource[{}] start load", key.safeKey());
+            HikariDataSource dataSource = getDataSource(url, username, password);
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            jdbcTemplate.afterPropertiesSet();
+            TransactionTemplate transactionTemplate = new TransactionTemplate(new JdbcTransactionManager(dataSource));
+            transactionTemplate.afterPropertiesSet();
+            DynamicJdbcData jdbcData = new DynamicJdbcData(jdbcTemplate, transactionTemplate);
+            logger.info("dataSource[{}] [{}] finish load", key.safeKey(), dataSource.hashCode());
+            return jdbcData;
+        });
     }
 
-    public static void close(String url, String username, String password) {
-        CACHE.invalidate(getKey(url, username, password));
+    public static void close(String url, String username) {
+        CACHE.invalidate(getKey(url, username));
     }
 
     public static void closeAll() {

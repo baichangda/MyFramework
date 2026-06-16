@@ -130,7 +130,9 @@ public class BaseService<T extends SuperBaseBean> {
 
     public List<T> list(long... ids) {
         BeanInfo<T> info = getBeanInfo();
-        if (ids.length == 1) {
+        if (ids.length == 0) {
+            return new ArrayList<>();
+        } else if (ids.length == 1) {
             T t = get(ids[0]);
             if (t == null) {
                 return new ArrayList<>();
@@ -690,7 +692,7 @@ public class BaseService<T extends SuperBaseBean> {
         }
     }
 
-    private List<T> list(ConvertRes convertRes, Sort sort, int offset, int limit) {
+    List<T> list(ConvertRes convertRes, Sort sort, int offset, int limit) {
         BeanInfo<T> info = getBeanInfo();
         final StringBuilder sql = new StringBuilder();
         sql.append("select * from ");
@@ -706,7 +708,7 @@ public class BaseService<T extends SuperBaseBean> {
 
         if (sort != null && sort.isSorted()) {
             sql.append(" order by ");
-            final String orderBy = sort.stream().map(e -> e.getProperty() + " " + e.getDirection()).reduce((e1, e2) -> e1 + "," + e2).get();
+            final String orderBy = sort.stream().map(e -> info.toColumnName(e.getProperty()) + " " + e.getDirection()).reduce((e1, e2) -> e1 + "," + e2).get();
             sql.append(orderBy);
         }
 
