@@ -4,21 +4,15 @@ import cn.bcd.app.dataProcess.gateway.tcp.v2016.DataHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.tcp.v2016.DataInboundHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataInboundHandler_v2025;
-import cn.bcd.lib.base.util.StringUtil;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class DispatchHandler extends ByteToMessageDecoder {
     private static final Logger logger = LoggerFactory.getLogger(DispatchHandler.class);
@@ -40,15 +34,17 @@ public class DispatchHandler extends ByteToMessageDecoder {
         final byte b0 = in.getByte(readerIndex);
         final byte b1 = in.getByte(readerIndex + 1);
         if (b0 == 0x23 && b1 == 0x23) {
+            ByteBuf packet = in.readRetainedSlice(in.readableBytes());
             ctx.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
             ctx.pipeline().addLast(new DataInboundHandler_v2016(handlers_v2016));
             ctx.pipeline().remove(this);
-            out.add(in.readRetainedSlice(in.readableBytes()));
+            out.add(packet);
         } else if (b0 == 0x24 && b1 == 0x24) {
+            ByteBuf packet = in.readRetainedSlice(in.readableBytes());
             ctx.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
             ctx.pipeline().addLast(new DataInboundHandler_v2025(handlers_v2025));
             ctx.pipeline().remove(this);
-            out.add(in.readRetainedSlice(in.readableBytes()));
+            out.add(packet);
         } else {
             logger.info("receive header[{},{}]、close channel", b0, b1);
             in.skipBytes(in.readableBytes());
