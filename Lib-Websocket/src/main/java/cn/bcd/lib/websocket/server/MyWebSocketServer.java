@@ -2,7 +2,6 @@ package cn.bcd.lib.websocket.server;
 
 
 import cn.bcd.lib.websocket.Const;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.ServerWebSocket;
