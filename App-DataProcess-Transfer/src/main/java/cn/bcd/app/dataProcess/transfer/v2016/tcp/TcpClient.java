@@ -233,7 +233,7 @@ public class TcpClient {
             case platform_login_data -> execute(() -> onPlatformLoginResponse(bytes));
             case platform_logout_data -> execute(() -> onPlatformLogoutResponse(bytes));
             default -> {
-                String vin = new String(bytes,4,17);
+                String vin = PacketUtil.getVin(bytes);
                 dataConsumer.getWorkExecutor(vin).execute(() -> {
                     for (TcpDataHandler handler : tcpDataHandlers) {
                         try {
