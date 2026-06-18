@@ -22,7 +22,7 @@ public class KafkaSendDataHandler implements KafkaDataHandler {
 
     @Override
     public void handle(String vin, byte[] bytes, Context context) throws Exception {
-        PacketFlag flag = PacketFlag.fromInteger(bytes[2]);
+        PacketFlag flag = PacketFlag.fromInteger(bytes[2]&0xFF);
         if (flag == PacketFlag.vehicle_run_data) {
             long ts = PacketUtil.getTime(bytes).getTime();
             /**

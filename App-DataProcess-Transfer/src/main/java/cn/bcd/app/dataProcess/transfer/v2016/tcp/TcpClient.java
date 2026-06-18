@@ -223,18 +223,17 @@ public class TcpClient {
         });
     }
 
-    public static void onMessage(ByteBuf byteBuf) {
-        PacketFlag flag = PacketFlag.fromInteger(byteBuf.getUnsignedByte(2));
+    public static void onMessage(byte[] bytes) {
+        PacketFlag flag = PacketFlag.fromInteger(bytes[2]&0xff);
         if (Const.logEnable) {
-            logger.info("--------------------------receive type[{}]:\n{}", flag, ByteBufUtil.hexDump(byteBuf));
+            logger.info("--------------------------receive type[{}]:\n{}", flag, ByteBufUtil.hexDump(bytes));
         }
         switch (flag) {
-            case heartbeat -> execute(() -> onHeartbeatResponse(byteBuf));
-            case platform_login_data -> execute(() -> onPlatformLoginResponse(byteBuf));
-            case platform_logout_data -> execute(() -> onPlatformLogoutResponse(byteBuf));
+            case heartbeat -> execute(() -> onHeartbeatResponse(bytes));
+            case platform_login_data -> execute(() -> onPlatformLoginResponse(bytes));
+            case platform_logout_data -> execute(() -> onPlatformLogoutResponse(bytes));
             default -> {
-                String vin = byteBuf.getCharSequence(4, 17, StandardCharsets.UTF_8).toString();
-                byte[] bytes = ByteBufUtil.getBytes(byteBuf);
+                String vin = new String(bytes,4,17);
                 dataConsumer.getWorkExecutor(vin).execute(() -> {
                     for (TcpDataHandler handler : tcpDataHandlers) {
                         try {
@@ -259,9 +258,9 @@ public class TcpClient {
         }
     }
 
-    private static void onPlatformLoginResponse(ByteBuf byteBuf) {
-        Date time = PacketUtil.getTime(byteBuf);
-        byte replyFlag = byteBuf.getByte(3);
+    private static void onPlatformLoginResponse(byte[] bytes) {
+        Date time = PacketUtil.getTime(bytes);
+        byte replyFlag = bytes[3];
         if (time.equals(platformLoginPacketTime) && replyFlag == 1) {
             //平台登陆成功后设置可用状态
             setIsLogin(true);
@@ -293,8 +292,8 @@ public class TcpClient {
         }
     }
 
-    private static void onPlatformLogoutResponse(ByteBuf byteBuf) {
-        byte replyFlag = byteBuf.getByte(3);
+    private static void onPlatformLogoutResponse(byte[] bytes) {
+        byte replyFlag = bytes[3];
         if (replyFlag == 1) {
             //设置不可用
             setIsLogin(false);
@@ -318,8 +317,8 @@ public class TcpClient {
         redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_STATUS + transferConfigData.serverId, String.valueOf(isLogin ? 1 : 0));
     }
 
-    private static void onHeartbeatResponse(ByteBuf byteBuf) {
-        Date time = PacketUtil.getTime(byteBuf);
+    private static void onHeartbeatResponse(byte[] bytes) {
+        Date time = PacketUtil.getTime(bytes);
         //保存最后心跳时间
         redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_HEARTBEAT_TIME + transferConfigData.serverId, DateZoneUtil.dateToStr_yyyyMMddHHmmss(time));
     }
