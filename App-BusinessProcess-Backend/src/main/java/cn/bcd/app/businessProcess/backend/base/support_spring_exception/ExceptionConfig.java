@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
@@ -63,12 +64,16 @@ public class ExceptionConfig {
             final List<ObjectError> allErrors = bindingResult.getAllErrors();
             final List<Map<String, String>> errorList = allErrors.stream().map(e -> {
                 Map<String, String> msgMap = new HashMap<>();
-                final String defaultMessage = e.getDefaultMessage();
-                final String field = ((FieldError) e).getField();
-                msgMap.put("field", field);
-                msgMap.put("msg", defaultMessage);
-                return msgMap;
-            }).collect(Collectors.toList());
+                if (e instanceof FieldError fe) {
+                    final String defaultMessage = fe.getDefaultMessage();
+                    final String field = fe.getField();
+                    msgMap.put("field", field);
+                    msgMap.put("msg", defaultMessage);
+                    return msgMap;
+                } else {
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
             result = Result.fail(ExceptionCode.arg_error.code, errorList).message(ExceptionCode.arg_error.msg);
         } else {
             result = Result.from(realException);
