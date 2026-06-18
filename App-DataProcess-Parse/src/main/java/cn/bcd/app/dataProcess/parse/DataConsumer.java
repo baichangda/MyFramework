@@ -88,12 +88,13 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / period, 2);
-        String workQueues = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
+        String workQueues = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / period, 2);
         int saveQueue = SaveUtil.queue.size();
         double saveSpeed = FloatUtil.format(SaveUtil.saveCount.sumThenReset() / period, 2);
 
         MonitorExtCollector_parse.blockingNum = (int) curBlockingNum;
+        MonitorExtCollector_parse.workQueues = workQueues;
         MonitorExtCollector_parse.consumeSpeed = consumeSpeed;
         MonitorExtCollector_parse.workSpeed = workSpeed;
         MonitorExtCollector_parse.saveQueue = saveQueue;

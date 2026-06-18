@@ -1,6 +1,6 @@
 parse:
   id: parse-1
-  topic: parseTopic
+  topic: gw-parse
 
 spring:
   data:

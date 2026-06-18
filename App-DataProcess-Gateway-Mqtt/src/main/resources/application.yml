@@ -12,7 +12,6 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
     #解析数据专用topic
-    parseTopic: parseData
   data:
     #redis配置
     #如果都进行了配置,加载的先后顺序为:
