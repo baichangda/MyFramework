@@ -3,8 +3,9 @@ package cn.bcd.app.simulator.singleVehicle.tcp;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 
-public class TcpClientHandler extends ChannelInboundHandlerAdapter {
+public class TcpClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
     public Vehicle vehicle;
 
     public TcpClientHandler(Vehicle vehicle) {
@@ -22,11 +23,10 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        byte[] bytes = new byte[((ByteBuf) msg).readableBytes()];
-        ((ByteBuf) msg).readBytes(bytes);
+    public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
+        byte[] bytes = new byte[msg.readableBytes()];
+        msg.readBytes(bytes);
         vehicle.onMessage(bytes);
-        super.channelRead(ctx, msg);
     }
 
     @Override

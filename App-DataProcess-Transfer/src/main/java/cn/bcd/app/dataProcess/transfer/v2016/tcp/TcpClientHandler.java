@@ -5,10 +5,11 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TcpClientHandler extends ChannelInboundHandlerAdapter {
+public class TcpClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
     static Logger logger = LoggerFactory.getLogger(TcpClientHandler.class);
 
@@ -18,11 +19,9 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf byteBuf = (ByteBuf) msg;
-        byte[] bytes = ByteBufUtil.getBytes(byteBuf);
+    public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
+        byte[] bytes = ByteBufUtil.getBytes(msg);
         TcpClient.onMessage(bytes);
-        super.channelRead(ctx,msg);
     }
 
     @Override
