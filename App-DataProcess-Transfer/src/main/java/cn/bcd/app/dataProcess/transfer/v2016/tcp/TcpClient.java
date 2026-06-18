@@ -65,7 +65,7 @@ public class TcpClient {
     /**
      * 平台是否已登录
      */
-    static boolean isLogin = false;
+    static volatile boolean isLogin = false;
 
     public static LongAdder sendNum = new LongAdder();
 
@@ -224,7 +224,7 @@ public class TcpClient {
     }
 
     public static void onMessage(ByteBuf byteBuf) {
-        PacketFlag flag = PacketFlag.fromInteger(byteBuf.getByte(2));
+        PacketFlag flag = PacketFlag.fromInteger(byteBuf.getUnsignedByte(2));
         if (Const.logEnable) {
             logger.info("--------------------------receive type[{}]:\n{}", flag, ByteBufUtil.hexDump(byteBuf));
         }
@@ -360,7 +360,7 @@ public class TcpClient {
     private static void startScheduledExecutor(String platformCode) {
         //启动定时任务、每天清除30天之前redis中的流水号数据
         manageExecutor.scheduleAtFixedRate(() -> {
-            Set<String> keys = redisTemplate.keys(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":");
+            Set<String> keys = redisTemplate.keys(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":*");
             int i = Integer.parseInt(LocalDate.now().plusDays(-30).format(DateZoneUtil.FORMATTER_yyyyMMdd));
             for (String key : keys) {
                 int temp = Integer.parseInt(key.substring(key.length() - 8));

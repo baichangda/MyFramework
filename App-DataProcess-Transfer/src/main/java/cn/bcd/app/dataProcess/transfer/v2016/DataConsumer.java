@@ -54,7 +54,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
         double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.blockingQueue.size() + "").collect(Collectors.joining(" "));
+        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
         double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         double sendSpeed = FloatUtil.format(TcpClient.sendNum.sumThenReset() / ((double) monitor_period), 2);
         double saveSpeed_transfer = FloatUtil.format(SaveUtil.saveCount_transfer.sumThenReset() / ((double) monitor_period), 2);

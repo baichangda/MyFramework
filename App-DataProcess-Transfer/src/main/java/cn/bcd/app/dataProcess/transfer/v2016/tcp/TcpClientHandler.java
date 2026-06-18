@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 public class TcpClientHandler extends ChannelInboundHandlerAdapter {
 
-    static Logger logger= LoggerFactory.getLogger(TcpClientHandler.class);
+    static Logger logger = LoggerFactory.getLogger(TcpClientHandler.class);
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
@@ -16,12 +16,13 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         TcpClient.onMessage((ByteBuf) msg);
+        super.channelRead(ctx, msg);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.error("error",cause);
+        logger.error("error", cause);
     }
 }
