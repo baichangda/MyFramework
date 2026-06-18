@@ -22,7 +22,6 @@ public class TcpClientHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = (ByteBuf) msg;
         byte[] bytes = ByteBufUtil.getBytes(byteBuf);
         TcpClient.onMessage(bytes);
-        super.channelRead(ctx, msg);
     }
 
     @Override
