@@ -10,38 +10,38 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
-public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
+public class DataInboundHandler_v2016 extends SimpleChannelInboundHandler<ByteBuf> {
     static Logger logger = LoggerFactory.getLogger(DataInboundHandler_v2016.class);
     PlatformLoginData platformLoginData;
     Monitor.ClientMetric clientMetric;
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         //读取数据
-        ByteBuf byteBuf = (ByteBuf) msg;
-        PacketFlag packetFlag = PacketUtil.getPacketFlag(byteBuf);
+        PacketFlag packetFlag = PacketUtil.getPacketFlag(msg);
         if (clientMetric == null) {
-            Date time = PacketUtil.getTime(byteBuf);
+            Date time = PacketUtil.getTime(msg);
             clientMetric = new Monitor.ClientMetric(time);
             Monitor.clientMetrics.add(clientMetric);
         }
         //构建应答报文
-        byte[] response = PacketUtil.build_bytes_common_response(byteBuf, (byte) 0x00);
+        byte[] response = PacketUtil.build_bytes_common_response(msg, (byte) 0x00);
         switch (packetFlag) {
             case PacketFlag.platform_login_data -> {
-                Packet p = Packet.read(byteBuf);
+                Packet p = Packet.read(msg);
                 platformLoginData = ((PlatformLoginData) p.data);
                 clientMetric.username = platformLoginData.username;
                 logger.info("receive platform login:\n{}", JsonUtil.toJsonPretty(platformLoginData));
                 ctx.writeAndFlush(Unpooled.wrappedBuffer(response));
             }
             case PacketFlag.platform_logout_data -> {
-                Packet p = Packet.read(byteBuf);
+                Packet p = Packet.read(msg);
                 logger.info("receive platform logout:\n{}", JsonUtil.toJsonPretty(p.data));
                 ctx.writeAndFlush(Unpooled.wrappedBuffer(response));
                 //关闭连接
@@ -56,6 +56,7 @@ public class DataInboundHandler_v2016 extends ChannelInboundHandlerAdapter {
                 ctx.writeAndFlush(Unpooled.wrappedBuffer(response));
             }
         }
+        super.channelRead(ctx,msg);
     }
 
     @Override
