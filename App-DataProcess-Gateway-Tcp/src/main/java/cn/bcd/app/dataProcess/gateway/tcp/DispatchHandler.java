@@ -5,6 +5,7 @@ import cn.bcd.app.dataProcess.gateway.tcp.v2016.DataInboundHandler_v2016;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataHandler_v2025;
 import cn.bcd.app.dataProcess.gateway.tcp.v2025.DataInboundHandler_v2025;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -44,7 +45,7 @@ public class DispatchHandler extends ByteToMessageDecoder {
             ctx.pipeline().remove(this);
             out.add(in.readRetainedSlice(in.readableBytes()));
         } else {
-            logger.info("receive header[{},{}]、close channel", b0, b1);
+            logger.info("receive unknown header[0x{}]、close channel", ByteBufUtil.hexDump(new byte[]{b0, b1}));
             in.skipBytes(in.readableBytes());
             ctx.close();
         }
