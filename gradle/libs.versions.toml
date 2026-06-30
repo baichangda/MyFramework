@@ -1,9 +1,9 @@
 [versions]
-spring-boot = "3.5.7"
-spring-cloud = "2025.0.0"
-alibaba-cloud = "2025.0.0.0-preview"
+spring-boot = "4.1.0"
+spring-cloud = "2025.1.2"
+alibaba-cloud = "2025.1.0.0"
 netty = "4.2.7.Final"
-jackson = "2.20.1"
+jackson = "3.2.0"
 okhttp = "5.3.2"
 junit = "6.0.1"
 lombok = "1.18.42"
@@ -22,7 +22,7 @@ minio = "8.6.0"
 oshi = "6.9.0"
 javassist = "3.30.2-GA"
 prometheus = "1.4.1"
-xxl-job = "3.2.0"
+xxl-job = "3.4.2"
 cassandra = "4.19.0"
 vertx = "5.0.11"
 spring-ai = "1.0.2"
@@ -68,11 +68,10 @@ netty-common = { module = "io.netty:netty-common"}
 netty-buffer = { module = "io.netty:netty-buffer"}
 netty-all = { module = "io.netty:netty-all"}
 
-jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core"}
-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind"}
-jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310"}
-jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml"}
+jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson" }
+jackson-core = { module = "tools.jackson.core:jackson-core"}
+jackson-databind = { module = "tools.jackson.core:jackson-databind"}
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml"}
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations"}
 
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
@@ -120,7 +119,7 @@ spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boo
 spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc"}
 spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb"}
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation"}
-spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop"}
+spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj"}
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web"}
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor"}
 

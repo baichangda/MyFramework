@@ -6,7 +6,7 @@ import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
-import com.fasterxml.jackson.databind.JavaType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.QueryTimeoutException;
@@ -14,6 +14,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import tools.jackson.databind.JavaType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

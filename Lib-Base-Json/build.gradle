@@ -4,5 +4,4 @@ dependencies {
     api libs.jackson.core
     api libs.jackson.databind
     api libs.jackson.annotations
-    api libs.jackson.datatype.jsr310
 }
