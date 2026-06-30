@@ -46,7 +46,6 @@ lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 commons-pool2 = { module = "org.apache.commons:commons-pool2", version.ref = "commons-pool2" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
-easyexcel = { module = "com.alibaba:easyexcel", version.ref = "easyexcel" }
 mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
