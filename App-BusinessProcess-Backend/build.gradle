@@ -15,19 +15,19 @@ dependencies {
     implementation project(":Lib-Spring-Minio")
 
     //springboot cache支持
-    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation libs.spring.boot.starter.cache
     //springboot web支持
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation libs.spring.boot.starter.web
     //springboot websocket支持
-    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation libs.spring.boot.starter.websocket
 
     //邮件支持
-    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation libs.spring.boot.starter.mail
 
     //springboot validation支持
-    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation libs.spring.boot.starter.validation
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation libs.spring.boot.starter.test
 
     implementation libs.sa.token.spring.boot3.starter
     implementation libs.sa.token.redis.jackson

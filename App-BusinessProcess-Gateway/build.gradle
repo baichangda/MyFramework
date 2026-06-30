@@ -8,6 +8,6 @@ dependencies {
     implementation libs.sa.token.reactor.spring.boot.starter
     implementation libs.caffeine
 
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.cloud:spring-cloud-gateway-server-webflux")
+    implementation libs.spring.boot.starter.webflux
+    implementation libs.spring.cloud.gateway.server.webflux
 }

@@ -4,9 +4,9 @@ dependencies {
     api platform(libs.spring.cloud.alibaba.dependencies)
 
     api project(":Lib-Base-Json")
-    api("org.springframework.boot:spring-boot-configuration-processor")
-    api("org.springframework.cloud:spring-cloud-loadbalancer")
-    api("com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery")
-    api("org.springframework.cloud:spring-cloud-starter-openfeign")
-    api("org.springframework.boot:spring-boot-starter-log4j2")
+    api libs.spring.boot.configuration.processor
+    api libs.spring.cloud.loadbalancer
+    api libs.spring.cloud.starter.openfeign
+    api libs.spring.cloud.starter.alibaba.nacos.discovery
+    api libs.spring.boot.starter.log4j2
 }
