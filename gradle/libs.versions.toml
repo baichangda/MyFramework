@@ -37,6 +37,7 @@ jooq = "3.20.9"
 awssdk = "2.40.2"
 jctools="4.0.6"
 influxdb3 = "1.9.0"
+fesod="2.0.2-incubating"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -139,6 +140,9 @@ springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openap
 springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-starter-common", version.ref = "springdoc" }
 
 influxdb3-java = { module = "com.influxdb:influxdb3-java", version.ref = "influxdb3" }
+
+fesod-bom = { module = "org.apache.fesod:fesod-bom", version.ref = "fesod" }
+fesod-sheet = { module = "org.apache.fesod:fesod-sheet", version.ref = "fesod"}
 
 [plugins]
 jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }

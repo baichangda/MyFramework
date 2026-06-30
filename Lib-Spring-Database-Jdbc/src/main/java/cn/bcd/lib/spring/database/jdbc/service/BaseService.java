@@ -8,12 +8,12 @@ import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
 import cn.bcd.lib.spring.database.jdbc.condition.ConditionUtil;
 import cn.bcd.lib.spring.database.jdbc.condition.ConvertRes;
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelWriter;
-import com.alibaba.excel.write.builder.ExcelWriterBuilder;
-import com.alibaba.excel.write.builder.ExcelWriterSheetBuilder;
-import com.alibaba.excel.write.metadata.WriteSheet;
 import com.google.common.base.Strings;
+import org.apache.fesod.sheet.ExcelWriter;
+import org.apache.fesod.sheet.FesodSheet;
+import org.apache.fesod.sheet.write.builder.ExcelWriterBuilder;
+import org.apache.fesod.sheet.write.builder.ExcelWriterSheetBuilder;
+import org.apache.fesod.sheet.write.metadata.WriteSheet;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -217,7 +217,7 @@ public class BaseService<T extends SuperBaseBean> {
 
     /**
      * 默认导出到第一个sheet
-     * 默认使用bean里面的{@link com.alibaba.excel.annotation.ExcelProperty}字段进行导出
+     * 默认使用bean里面的{@link org.apache.fesod.sheet.annotation.ExcelProperty}字段进行导出
      * 参考{@link #export(Condition, Sort, Consumer, Consumer, Function)}
      *
      * @param condition                  条件
@@ -237,17 +237,17 @@ public class BaseService<T extends SuperBaseBean> {
      *                                        必须设置导出的结果文件或者输出流
      * @param excelWriterSheetBuilderConsumer excelWriterSheet修改器、可以为null、默认sheet0
      * @param function                        对象转换为一行row、可以为null、
-     *                                        当null时候、会设置{@link ExcelWriterSheetBuilder#head(Class)}、此时读取bean里面{@link com.alibaba.excel.annotation.ExcelProperty}字段
-     *                                        不为null、会调用此方法一个对象转为一行数据、如果需要设置head、需要自己调用{@link ExcelWriterSheetBuilder#head(List)}、
+     *                                        当null时候、会设置{@link org.apache.fesod.sheet.write.builder.ExcelWriterSheetBuilder#head(Class)}、此时读取bean里面{@link org.apache.fesod.sheet.annotation.ExcelProperty}字段
+     *                                        不为null、会调用此方法一个对象转为一行数据、如果需要设置head、需要自己调用{@link org.apache.fesod.sheet.write.builder.ExcelWriterSheetBuilder#head(List)}、
      */
     public void export(Condition condition, Sort sort,
                        Consumer<ExcelWriterBuilder> excelWriterBuilderConsumer,
                        Consumer<ExcelWriterSheetBuilder> excelWriterSheetBuilderConsumer,
                        Function<T, List<String>> function) {
         int batch = 1000;
-        ExcelWriterBuilder excelWriterBuilder = EasyExcel.write();
+        ExcelWriterBuilder excelWriterBuilder = FesodSheet.write();
         excelWriterBuilderConsumer.accept(excelWriterBuilder);
-        ExcelWriterSheetBuilder excelWriterSheetBuilder = EasyExcel.writerSheet(0);
+        ExcelWriterSheetBuilder excelWriterSheetBuilder = FesodSheet.writerSheet(0);
         if (excelWriterSheetBuilderConsumer != null) {
             excelWriterSheetBuilderConsumer.accept(excelWriterSheetBuilder);
         }

@@ -5,10 +5,10 @@ import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.ColumnsBean;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.TablesBean;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.util.DBInfoUtil;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.service.DBService;
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.write.handler.SheetWriteHandler;
-import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
-import com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder;
+import org.apache.fesod.sheet.FesodSheet;
+import org.apache.fesod.sheet.write.handler.SheetWriteHandler;
+import org.apache.fesod.sheet.write.metadata.holder.WriteSheetHolder;
+import org.apache.fesod.sheet.write.metadata.holder.WriteWorkbookHolder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
@@ -96,7 +96,7 @@ public class MysqlDBServiceImpl implements DBService {
             doBeforeWrite.run();
         }
 
-        EasyExcel.write(os).sheet(0).registerWriteHandler(new SheetWriteHandler() {
+        FesodSheet.write(os).sheet(0).registerWriteHandler(new SheetWriteHandler() {
             @Override
             public void afterSheetCreate(WriteWorkbookHolder writeWorkbookHolder, WriteSheetHolder writeSheetHolder) {
                 applyStyleToSheet(writeSheetHolder.getCachedSheet());

@@ -6,7 +6,7 @@ dependencies {
     api libs.spring.boot.starter.validation
     api libs.caffeine
     api libs.freemarker
-    api libs.easyexcel
+    api libs.fesod.sheet
     api libs.mysql
     api libs.postgresql
 }
