@@ -76,6 +76,18 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
+     * 获取代理对象
+     * 需要如下注解开启 @EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
+     * 如下场景使用
+     * 同一个service中a()调用b()、其中b()符合aop切面定义、此时不会走aop逻辑、因为此时执行a()中this对象已经不是代理对象、此时需要getProxy().b()
+     * 注意:
+     * 此方法不要乱用、避免造成性能损失
+     */
+    protected BaseService<T> getProxy() {
+        return (BaseService<T>) AopContext.currentProxy();
+    }
+
+    /**
      * 统计所有数量
      *
      * @return
@@ -657,19 +669,6 @@ public class BaseService<T extends SuperBaseBean> {
         } catch (IllegalAccessException e) {
             throw BaseException.get(e);
         }
-    }
-
-    /**
-     * 获取代理对象
-     * 需要如下注解开启 @EnableAspectJAutoProxy(proxyTargetClass = true, exposeProxy = true)
-     * 如下场景使用
-     * 同一个service中a()调用b()、其中b()符合aop切面定义、此时不会走aop逻辑、因为此时执行a()中this对象已经不是代理对象、此时需要getProxy().b()
-     * 注意:
-     * 此方法可能会报错、因为原本的service对象不是代理对象
-     * 此方法不要乱用、避免造成性能损失
-     */
-    protected BaseService<T> getProxy() {
-        return (BaseService<T>) AopContext.currentProxy();
     }
 
     private int count(ConvertRes convertRes) {
