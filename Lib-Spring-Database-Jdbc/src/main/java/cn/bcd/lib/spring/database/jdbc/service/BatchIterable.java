@@ -1,5 +1,6 @@
 package cn.bcd.lib.spring.database.jdbc.service;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.jdbc.condition.ConditionUtil;
@@ -42,7 +43,7 @@ public class BatchIterable<T extends SuperBaseBean> implements Iterable<List<T>>
 
         public BatchIterator(int batch, BaseService<T> baseService, Condition condition, Sort sort) {
             if (batch <= 0) {
-                throw new IllegalArgumentException();
+                throw BaseException.get("param batch[{}] error", batch);
             }
             hasNext = true;
             offset = 0;
