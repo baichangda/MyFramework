@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Created by Administrator on 2017/5/2.
@@ -30,17 +31,9 @@ public abstract class SuperBaseBean implements Serializable {
             if (obj == null) {
                 return false;
             } else {
-                if (obj instanceof SuperBaseBean) {
-                    Object objId = ((SuperBaseBean) obj).id;
-                    if (id == objId) {
-                        return true;
-                    } else {
-                        if (id == null || objId == null) {
-                            return false;
-                        } else {
-                            return id.equals(objId);
-                        }
-                    }
+                if (obj instanceof SuperBaseBean bean) {
+                    Long objId = bean.id;
+                    return Objects.equals(id, objId);
                 } else {
                     return false;
                 }
