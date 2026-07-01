@@ -252,7 +252,7 @@ public class BaseService<T extends SuperBaseBean> {
             excelWriterSheetBuilderConsumer.accept(excelWriterSheetBuilder);
         }
         if (function == null) {
-            excelWriterSheetBuilder.head(beanInfo.clazz);
+            excelWriterSheetBuilder.head(getBeanInfo().clazz);
             try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
                 WriteSheet writeSheet = excelWriterSheetBuilder.build();
                 boolean empty = true;
@@ -549,7 +549,7 @@ public class BaseService<T extends SuperBaseBean> {
      * 删除所有数据
      */
     public void deleteAll() {
-        getJdbcTemplate().update("delete from " + beanInfo.tableName);
+        getJdbcTemplate().update("delete from " + getBeanInfo().tableName);
     }
 
     /**
