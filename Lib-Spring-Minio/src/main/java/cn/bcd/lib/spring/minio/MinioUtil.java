@@ -2,7 +2,7 @@ package cn.bcd.lib.spring.minio;
 
 import cn.bcd.lib.base.exception.BaseException;
 import io.minio.*;
-import io.minio.messages.DeleteObject;
+import io.minio.messages.DeleteRequest;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,7 @@ public class MinioUtil {
 
     public static void removeObjects(String... paths) {
         try {
-            List<DeleteObject> deleteObjects = Arrays.stream(paths).map(DeleteObject::new).toList();
+            List<DeleteRequest.Object> deleteObjects = Arrays.stream(paths).map(DeleteRequest.Object::new).toList();
             RemoveObjectsArgs removeObjectsArgs = RemoveObjectsArgs.builder().bucket(minioProp.bucket).objects(deleteObjects).build();
             minioClient.removeObjects(removeObjectsArgs);
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class MinioUtil {
             PutObjectArgs args = PutObjectArgs.builder()
                     .bucket(minioProp.bucket)
                     .object(path)
-                    .stream(is, is.available(), 5 * 1024 * 1024)
+                    .stream(is, (long)is.available(), (long) (5 * 1024 * 1024))
                     .build();
             minioClient.putObject(args);
         } catch (Exception e) {

@@ -49,7 +49,7 @@ mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 minio = { module = "io.minio:minio", version.ref = "minio" }
-oshi = { module = "com.github.oshi:oshi-core-java11", version.ref = "oshi" }
+oshi = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 bcprov-jdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bcprov-jdk18on" }
