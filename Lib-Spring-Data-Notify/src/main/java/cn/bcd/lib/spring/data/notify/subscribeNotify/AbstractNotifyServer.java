@@ -13,7 +13,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
@@ -80,7 +80,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         this.notifyTopic = "_notify_" + type;
         this.type = type;
         this.boundHashOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).boundHashOps(this.notifyTopic);
-        this.producer = KafkaUtil.newKafkaProducer_string_bytes(producerProp.buildProperties(new DefaultSslBundleRegistry()));
+        this.producer = KafkaUtil.newKafkaProducer_string_bytes(producerProp.buildProperties());
     }
 
 
@@ -90,7 +90,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         //初始化redis订阅数据到缓存
         checkAndUpdateCache().join();
         //开始消费
-        super.startConsume(consumerProp.buildProperties(new DefaultSslBundleRegistry()));
+        super.startConsume(consumerProp.buildProperties());
         //启动线程定时更新缓存
         startUpdateCacheFromRedis();
     }

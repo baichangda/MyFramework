@@ -2,7 +2,7 @@ package cn.bcd.lib.spring.redis;
 
 import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -14,12 +14,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.util.List;
 
 public class RedisConnectionFactoryUtil {
-    public static LettuceConnectionFactory newLettuceConnectionFactory(RedisProperties redisProperties) {
+    public static LettuceConnectionFactory newLettuceConnectionFactory(DataRedisProperties redisProperties) {
         LettuceConnectionFactory connectionFactory;
-        RedisProperties.Ssl ssl = redisProperties.getSsl();
-        RedisProperties.Lettuce lettuce = redisProperties.getLettuce();
-        RedisProperties.Pool pool = lettuce.getPool();
-        RedisProperties.Cluster cluster = redisProperties.getCluster();
+        DataRedisProperties.Ssl ssl = redisProperties.getSsl();
+        DataRedisProperties.Lettuce lettuce = redisProperties.getLettuce();
+        DataRedisProperties.Pool pool = lettuce.getPool();
+        DataRedisProperties.Cluster cluster = redisProperties.getCluster();
         if (cluster == null) {
             RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();
             standaloneConfiguration.setHostName(redisProperties.getHost());
@@ -65,11 +65,11 @@ public class RedisConnectionFactoryUtil {
     }
 
     private static final class PoolBuilderFactory {
-        LettuceClientConfiguration.LettuceClientConfigurationBuilder createBuilder(RedisProperties.Pool properties) {
+        LettuceClientConfiguration.LettuceClientConfigurationBuilder createBuilder(DataRedisProperties.Pool properties) {
             return LettucePoolingClientConfiguration.builder().poolConfig(getPoolConfig(properties));
         }
 
-        private GenericObjectPoolConfig<StatefulConnection<?, ?>> getPoolConfig(RedisProperties.Pool properties) {
+        private GenericObjectPoolConfig<StatefulConnection<?, ?>> getPoolConfig(DataRedisProperties.Pool properties) {
             GenericObjectPoolConfig<StatefulConnection<?, ?>> config = new GenericObjectPoolConfig<>();
             config.setMaxTotal(properties.getMaxActive());
             config.setMaxIdle(properties.getMaxIdle());
@@ -85,11 +85,11 @@ public class RedisConnectionFactoryUtil {
     }
 
     public static void main(String[] args) {
-        RedisProperties redisProperties = new RedisProperties();
+        DataRedisProperties redisProperties = new DataRedisProperties();
         redisProperties.setHost("10.0.11.50");
         redisProperties.setPort(36379);
         redisProperties.setPassword("wq");
-        RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
+        DataRedisProperties.Pool pool = redisProperties.getLettuce().getPool();
         pool.setEnabled(false);
         pool.setMaxActive(10);
         pool.setMaxIdle(10);

@@ -2,14 +2,14 @@ package cn.bcd.app.businessProcess.backend.base.support_swagger;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ClassUtil;
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.write.handler.CellWriteHandler;
-import com.alibaba.excel.write.handler.WorkbookWriteHandler;
-import com.alibaba.excel.write.handler.context.CellWriteHandlerContext;
-import com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder;
 import com.google.common.base.Strings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.apache.fesod.sheet.FesodSheet;
+import org.apache.fesod.sheet.write.handler.CellWriteHandler;
+import org.apache.fesod.sheet.write.handler.WorkbookWriteHandler;
+import org.apache.fesod.sheet.write.handler.context.CellWriteHandlerContext;
+import org.apache.fesod.sheet.write.metadata.holder.WriteWorkbookHolder;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 import org.springframework.web.bind.annotation.*;
@@ -216,7 +216,7 @@ public class SwaggerApiScanner {
 
                 //生成excel
                 //准备样式
-                EasyExcel.write(os).sheet("接口设计")
+                FesodSheet.write(os).sheet("接口设计")
                         .registerWriteHandler(MyWorkbookWriteHandler1.instance)
                         .registerWriteHandler(new MyCellWriteHandler1())
                         .doWrite(excelList);
@@ -241,7 +241,7 @@ public class SwaggerApiScanner {
 
                 //生成excel
                 //准备样式
-                EasyExcel.write(os).sheet("接口设计")
+                FesodSheet.write(os).sheet("接口设计")
                         .registerWriteHandler(MyWorkbookWriteHandler2.instance)
                         .registerWriteHandler(new MyCellWriteHandler2())
                         .doWrite(excelList);

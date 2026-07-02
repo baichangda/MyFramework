@@ -1,6 +1,6 @@
 package cn.bcd.app.businessProcess.backend;
 
-import com.alibaba.excel.EasyExcel;
+import org.apache.fesod.sheet.FesodSheet;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -46,6 +46,6 @@ public class JVTest {
             }
             res.add(list);
         }
-        EasyExcel.write(Paths.get("d:/d.xlsx").toFile()).sheet(0).doWrite(res);
+        FesodSheet.write(Paths.get("d:/d.xlsx").toFile()).sheet(0).doWrite(res);
     }
 }

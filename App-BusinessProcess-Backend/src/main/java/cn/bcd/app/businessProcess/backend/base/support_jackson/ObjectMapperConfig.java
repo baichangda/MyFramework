@@ -1,9 +1,9 @@
 package cn.bcd.app.businessProcess.backend.base.support_jackson;
 
 import cn.bcd.lib.base.json.JsonUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 public class ObjectMapperConfig {

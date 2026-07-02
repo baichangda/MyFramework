@@ -4,13 +4,13 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.serializer.RedisSerializer_key_string;
 import cn.bcd.lib.spring.redis.serializer.RedisSerializer_value_integer;
-import com.fasterxml.jackson.databind.JavaType;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import tools.jackson.databind.JavaType;
 
 import java.io.Serializable;
 import java.lang.reflect.Type;
@@ -38,7 +38,7 @@ public class RedisUtil {
     public static <V> RedisTemplate<String, V> newRedisTemplate_string_jackson(RedisConnectionFactory redisConnectionFactory, Type type) {
         RedisTemplate<String, V> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
-        Jackson2JsonRedisSerializer<V> redisSerializer = newJackson2JsonRedisSerializer(type);
+        JacksonJsonRedisSerializer<V> redisSerializer = newJackson2JsonRedisSerializer(type);
         redisTemplate.setKeySerializer(RedisUtil.SERIALIZER_KEY_STRING);
         redisTemplate.setValueSerializer(redisSerializer);
         redisTemplate.setHashKeySerializer(RedisUtil.SERIALIZER_VALUE_STRING);
@@ -71,12 +71,12 @@ public class RedisUtil {
      * @param <V>
      * @return
      */
-    public static <V> Jackson2JsonRedisSerializer<V> newJackson2JsonRedisSerializer(Type type) {
-        Jackson2JsonRedisSerializer<V> redisSerializer;
+    public static <V> JacksonJsonRedisSerializer<V> newJackson2JsonRedisSerializer(Type type) {
+        JacksonJsonRedisSerializer<V> redisSerializer;
         if (type instanceof Class) {
-            redisSerializer = new Jackson2JsonRedisSerializer<>(JsonUtil.OBJECT_MAPPER, (Class<V>) type);
+            redisSerializer = new JacksonJsonRedisSerializer<>(JsonUtil.OBJECT_MAPPER, (Class<V>) type);
         } else if (type instanceof JavaType) {
-            redisSerializer = new Jackson2JsonRedisSerializer<>(JsonUtil.OBJECT_MAPPER, (JavaType) type);
+            redisSerializer = new JacksonJsonRedisSerializer<>(JsonUtil.OBJECT_MAPPER, (JavaType) type);
         } else {
             throw BaseException.get("Param Type[{0}] Not Support", type.getTypeName());
         }

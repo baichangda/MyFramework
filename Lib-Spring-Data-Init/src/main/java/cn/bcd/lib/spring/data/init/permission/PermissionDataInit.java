@@ -9,7 +9,6 @@ import cn.bcd.lib.spring.data.init.InitProp;
 import cn.bcd.lib.spring.data.init.nacos.HostData;
 import cn.bcd.lib.spring.data.init.nacos.NacosUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.slf4j.Logger;
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;

@@ -6,8 +6,8 @@ import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.spring.redis.mq.topic.RedisTopicMQ;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import tools.jackson.core.JacksonException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -61,7 +61,7 @@ public class BroadcastStopper extends RedisTopicMQ<BroadcastStopper.StopCmd> {
                 //删除缓存
                 redisTemplate.delete(cmdId);
             }
-        } catch (IOException e) {
+        } catch (JacksonException e) {
             throw BaseException.get(e);
         }
 

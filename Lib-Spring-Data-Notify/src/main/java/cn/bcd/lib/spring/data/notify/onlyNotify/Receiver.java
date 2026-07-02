@@ -8,8 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
@@ -38,7 +37,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
                 0,
                 ConsumerParam.get_singleConsumer(topic));
         this.clazz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        properties = kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry());
+        properties = kafkaProp.getConsumer().buildProperties();
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
     }
 

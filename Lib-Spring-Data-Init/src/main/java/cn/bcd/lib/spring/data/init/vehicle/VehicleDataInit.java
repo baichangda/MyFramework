@@ -10,13 +10,13 @@ import cn.bcd.lib.spring.data.init.nacos.HostData;
 import cn.bcd.lib.spring.data.init.nacos.NacosUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
 import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
-import com.fasterxml.jackson.core.type.TypeReference;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.slf4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.util.List;

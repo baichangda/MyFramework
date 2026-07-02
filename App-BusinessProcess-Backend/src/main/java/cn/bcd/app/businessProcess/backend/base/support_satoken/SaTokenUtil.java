@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
 
 import java.util.Optional;
 
@@ -53,7 +54,7 @@ public class SaTokenUtil {
         return Optional.ofNullable(request.getHeader(Const.request_header_authUser)).map(e -> {
             try {
                 return JsonUtil.OBJECT_MAPPER.readValue(e, AuthUser.class);
-            } catch (JsonProcessingException ex) {
+            } catch (JacksonException ex) {
                 logger.error("error", ex);
                 return null;
             }

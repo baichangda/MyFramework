@@ -4,8 +4,7 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 
 public class Sender<T> implements AutoCloseable{
     public final String topic;
@@ -13,7 +12,7 @@ public class Sender<T> implements AutoCloseable{
 
     public Sender(String topic, KafkaProperties kafkaProp) {
         this.topic = topic;
-        this.producer = KafkaUtil.newKafkaProducer_string_bytes(kafkaProp.getProducer().buildProperties(new DefaultSslBundleRegistry()));
+        this.producer = KafkaUtil.newKafkaProducer_string_bytes(kafkaProp.getProducer().buildProperties());
     }
 
     public void send(T data){

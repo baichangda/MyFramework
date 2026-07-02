@@ -6,11 +6,11 @@ import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.businessProcess.backend.base.support_task.TaskBuilder;
 import cn.bcd.app.businessProcess.backend.base.support_task.TaskDao;
 import cn.bcd.app.businessProcess.backend.sys.bean.TaskBean;
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.ExcelWriter;
-import com.alibaba.excel.write.builder.ExcelWriterBuilder;
-import com.alibaba.excel.write.builder.ExcelWriterSheetBuilder;
-import com.alibaba.excel.write.metadata.WriteSheet;
+import org.apache.fesod.sheet.ExcelWriter;
+import org.apache.fesod.sheet.FesodSheet;
+import org.apache.fesod.sheet.write.builder.ExcelWriterBuilder;
+import org.apache.fesod.sheet.write.builder.ExcelWriterSheetBuilder;
+import org.apache.fesod.sheet.write.metadata.WriteSheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,8 +85,8 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
             Path exportPath = Paths.get(exportDirPath + "/" + fileName);
             try {
                 //导出文件
-                ExcelWriterBuilder excelWriterBuilder = EasyExcel.write().file(exportPath.toFile());
-                ExcelWriterSheetBuilder excelWriterSheetBuilder = EasyExcel.writerSheet(0);
+                ExcelWriterBuilder excelWriterBuilder = FesodSheet.write().file(exportPath.toFile());
+                ExcelWriterSheetBuilder excelWriterSheetBuilder = FesodSheet.writerSheet(0);
                 try (ExcelWriter excelWriter = excelWriterBuilder.build()) {
                     boolean empty = true;
                     WriteSheet writeSheet = excelWriterSheetBuilder.build();
