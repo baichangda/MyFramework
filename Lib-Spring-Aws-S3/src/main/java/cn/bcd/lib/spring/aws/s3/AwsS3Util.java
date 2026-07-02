@@ -132,6 +132,10 @@ public class AwsS3Util {
         }
     }
 
+    public static void putObject(Path filePath) {
+        putObject(filePath, filePath.getFileName().toString());
+    }
+
     /**
      * 小文件上传。
      * <p>

@@ -34,6 +34,6 @@ public class TestRustFs {
 
     @Test
     public void testPutObject() {
-        AwsS3Util.putObject(Paths.get("d:/1.txt"), "a/2.txt");
+        AwsS3Util.putObject(Paths.get("d:/file/test1.xlsx"));
     }
 }
