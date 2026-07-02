@@ -322,6 +322,7 @@ public class AwsS3Util {
         } catch (S3Exception e) {
             if (e.statusCode() == 404) {
                 consumer.accept(null);
+                return;
             }
             throw BaseException.get(e);
         } catch (Exception e) {
