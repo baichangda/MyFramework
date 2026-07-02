@@ -305,6 +305,11 @@ public class AwsS3Util {
         }
     }
 
+    /**
+     * 获取对象
+     * @param path 对象路径
+     * @param consumer 对象输入流消费者、当输入流为null时候代表对象不存在
+     */
     public static void getObject(String path, Consumer<ResponseInputStream<GetObjectResponse>> consumer) {
         GetObjectRequest request = GetObjectRequest.builder()
                 .bucket(awsS3Prop.bucket)
