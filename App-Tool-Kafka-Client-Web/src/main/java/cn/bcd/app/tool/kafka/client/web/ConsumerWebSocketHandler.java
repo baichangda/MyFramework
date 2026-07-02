@@ -9,7 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
@@ -74,7 +74,7 @@ public class ConsumerWebSocketHandler extends PathTextWebSocketHandler {
         KafkaProperties.Consumer consumerProp = new KafkaProperties.Consumer();
         consumerProp.setBootstrapServers(Arrays.asList(kafkaAddrs));
         consumerProp.setGroupId(kafkaGroupId);
-        Map<String, Object> prop = consumerProp.buildProperties(new DefaultSslBundleRegistry());
+        Map<String, Object> prop = consumerProp.buildProperties();
         KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(prop);
 
         session_consumer.put(session, consumer);

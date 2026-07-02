@@ -27,16 +27,12 @@ spring:
         cache: false
   profiles:
     active: dev
-  freemarker:
-    checkTemplateLocation: false
 
-# Minio settings
-minio:
-  #minio地址
-  endpoint: http://10.0.11.50:49000
-  #访问密钥accessKey
-  accessKey: xxx
-  #访问密钥secretKey
-  secretKey: xxx
-  #桶名称
-  bucket: bucket-wq
+lib:
+  spring:
+    aws:
+      s3:
+        endpoint:
+        accessKey:
+        secretKey:
+        bucket:

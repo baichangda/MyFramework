@@ -8,8 +8,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -41,12 +41,12 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
                 0,
                 ConsumerParam.get_singleConsumer(commandProp.requestTopic));
         CommandRequestConsumer.commandProp = commandProp;
-        CommandRequestConsumer.kafkaProducer = KafkaUtil.newKafkaProducer_string_bytes(kafkaProp.getProducer().buildProperties(new DefaultSslBundleRegistry()));
+        CommandRequestConsumer.kafkaProducer = KafkaUtil.newKafkaProducer_string_bytes(kafkaProp.getProducer().buildProperties());
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        startConsume(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProp.getConsumer().buildProperties());
     }
 
     @Override

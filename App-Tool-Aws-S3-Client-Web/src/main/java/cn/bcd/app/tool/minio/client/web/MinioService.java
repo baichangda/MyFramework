@@ -1,9 +1,7 @@
 package cn.bcd.app.tool.minio.client.web;
 
-import io.minio.GetObjectArgs;
-import io.minio.GetObjectResponse;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import cn.bcd.lib.spring.aws.s3.AwsS3Prop;
+import cn.bcd.lib.spring.aws.s3.AwsS3Util;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -22,10 +22,10 @@ public class MinioService {
     static Logger logger = LoggerFactory.getLogger(MinioService.class);
 
     @Autowired
-    MinioClient minioClient;
+    S3Client s3Client;
 
     @Autowired
-    MinioProp minioProp;
+    AwsS3Prop awsS3Prop;
 
     public String upload(MultipartFile file, String path) {
         String fileName = file.getOriginalFilename();
@@ -34,17 +34,11 @@ public class MinioService {
             path = fileName;
         }
         try {
-            PutObjectArgs args = PutObjectArgs.builder()
-                    .bucket(minioProp.bucket)
-                    .object(path)
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .build();
-            minioClient.putObject(args);
+            AwsS3Util.putObject(file.getInputStream(),file.getSize(),path);
             String res = "upload file[" + fileName + "] to path[" + path + "] succeed";
             logger.info(res);
             return res;
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("upload file[{}] to path[{}] error", fileName, path, e);
             return "upload file[" + fileName + "] to path[" + path + "] error:\n" + e.getMessage();
         }
@@ -62,12 +56,7 @@ public class MinioService {
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
             String encode = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + encode);
-            GetObjectArgs args = GetObjectArgs.builder()
-                    .bucket(minioProp.bucket)
-                    .object(path)
-                    .build();
-            GetObjectResponse resp = minioClient.getObject(args);
-            resp.transferTo(response.getOutputStream());
+            AwsS3Util.getObject(path,response.getOutputStream());
             logger.info("download path[{}] succeed", path);
         } catch (Exception e) {
             logger.error("download path[{}] error", path, e);

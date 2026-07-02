@@ -6,8 +6,8 @@ import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -35,7 +35,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        startConsume(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProp.getConsumer().buildProperties());
     }
 
     @Override

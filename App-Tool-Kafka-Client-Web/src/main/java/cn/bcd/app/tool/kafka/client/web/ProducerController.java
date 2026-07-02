@@ -6,7 +6,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +25,7 @@ public class ProducerController {
     public Result<?> send(@RequestBody ProducerParam param) {
         KafkaProperties.Producer producerProp = new KafkaProperties.Producer();
         producerProp.setBootstrapServers(Arrays.asList(param.kafkaAddrs));
-        Map<String, Object> prop = producerProp.buildProperties(new DefaultSslBundleRegistry());
+        Map<String, Object> prop = producerProp.buildProperties();
         String[] messages;
         try (KafkaProducer<String, String> producer = KafkaUtil.newKafkaProducer_string_string(prop)) {
             if (param.msgSplitType == null || param.msgSplitType.isEmpty()) {

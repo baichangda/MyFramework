@@ -9,7 +9,7 @@ import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 
 import java.util.Arrays;
@@ -40,7 +40,7 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         //暂停消费、等待连接
         pauseConsume();
         //启动消费
-        startConsume(kafkaProp.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProp.getConsumer().buildProperties());
     }
 
     @Override

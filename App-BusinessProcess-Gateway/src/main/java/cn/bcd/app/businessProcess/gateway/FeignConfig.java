@@ -1,37 +1,51 @@
 package cn.bcd.app.businessProcess.gateway;
 
 import feign.codec.Decoder;
-import org.springframework.beans.factory.ObjectFactory;
-import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
+import feign.optionals.OptionalDecoder;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cloud.openfeign.support.FeignHttpMessageConverters;
+import org.springframework.cloud.openfeign.support.HttpMessageConverterCustomizer;
 import org.springframework.cloud.openfeign.support.ResponseEntityDecoder;
 import org.springframework.cloud.openfeign.support.SpringDecoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class FeignConfig {
 
     @Bean
-    public Decoder feignDecoder() {
-        return new ResponseEntityDecoder(new SpringDecoder(feignHttpMessageConverter()));
+    public Decoder feignDecoder(ObjectProvider<FeignHttpMessageConverters> messageConverters) {
+        return new OptionalDecoder(
+                new ResponseEntityDecoder(
+                        new SpringDecoder(messageConverters)
+                )
+        );
     }
 
-    public ObjectFactory<HttpMessageConverters> feignHttpMessageConverter() {
-        final HttpMessageConverters httpMessageConverters = new HttpMessageConverters(new GateWayMappingJackson2HttpMessageConverter());
-        return () -> httpMessageConverters;
+    /**
+     * OpenFeign 专用的 HttpMessageConverter 定制器。
+     *
+     * 用来处理某些接口返回的是 JSON，
+     * 但响应头却是 text/html;charset=UTF-8 的情况。
+     */
+    @Bean
+    public HttpMessageConverterCustomizer gatewayFeignMessageConverterCustomizer() {
+        return converters -> converters.addFirst(new GateWayMappingJackson2HttpMessageConverter());
     }
 
-    public static class GateWayMappingJackson2HttpMessageConverter extends MappingJackson2HttpMessageConverter {
-        GateWayMappingJackson2HttpMessageConverter(){
-            List<MediaType> mediaTypes = new ArrayList<>();
-            mediaTypes.add(MediaType.valueOf(MediaType.TEXT_HTML_VALUE + ";charset=UTF-8"));
-            mediaTypes.add(MediaType.valueOf(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8"));
-            setSupportedMediaTypes(mediaTypes);
+    public static class GateWayMappingJackson2HttpMessageConverter extends JacksonJsonHttpMessageConverter {
+
+        public GateWayMappingJackson2HttpMessageConverter() {
+            setSupportedMediaTypes(List.of(
+                    MediaType.APPLICATION_JSON,
+                    MediaType.valueOf("application/*+json"),
+                    MediaType.TEXT_HTML,
+                    MediaType.valueOf("text/html;charset=UTF-8")
+            ));
         }
     }
 }

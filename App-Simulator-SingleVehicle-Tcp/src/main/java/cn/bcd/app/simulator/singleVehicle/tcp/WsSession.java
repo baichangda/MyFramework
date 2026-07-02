@@ -7,6 +7,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.http.ServerWebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.core.JacksonException;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,7 +83,7 @@ public class WsSession {
                     try {
                         vehicle.updateVehicleData(JsonUtil.OBJECT_MAPPER.readValue(inMsg.data(), VehicleData.class));
                         ws_send(new WsOutMsg(2, null, true));
-                    } catch (IOException ex) {
+                    } catch (JacksonException ex) {
                         logger.error("error", ex);
                         ws_send(new WsOutMsg(2, null, false));
                     }

@@ -14,6 +14,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -123,6 +124,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
     public void run(String... args) {
         //初始化组件
         Initializable.initByOrder(initList);
-        startConsume(kafkaProperties.getConsumer().buildProperties(new DefaultSslBundleRegistry()));
+        startConsume(kafkaProperties.getConsumer().buildProperties());
     }
 }
