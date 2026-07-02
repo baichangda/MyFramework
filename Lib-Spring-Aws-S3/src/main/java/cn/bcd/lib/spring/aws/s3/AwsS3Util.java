@@ -7,19 +7,19 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 @Component
 @ConditionalOnProperty(value = "lib.spring.aws.s3.endpoint")
@@ -120,6 +120,35 @@ public class AwsS3Util {
         }
     }
 
+    record PutEle(Path path, String prefix) {
+    }
+
+    public static void putDir(String pathPrefix, Path... dirPaths) {
+        List<PutEle> filePathList = new ArrayList<>();
+        List<PutEle> dirPathList = new ArrayList<>(Arrays.stream(dirPaths).map(e -> new PutEle(e, pathPrefix + "/" + e.getFileName().toString())).toList());
+        try {
+            for (int i = 0; i < dirPathList.size(); i++) {
+                PutEle putEle = dirPathList.get(i);
+                try (Stream<Path> stream = Files.list(putEle.path)) {
+                    stream.forEach(e -> {
+                        if (Files.isDirectory(e)) {
+                            PutEle ele = new PutEle(e, putEle.prefix + "/" + e.getFileName().toString());
+                            dirPathList.add(ele);
+                        } else {
+                            PutEle ele = new PutEle(e, putEle.prefix);
+                            filePathList.add(ele);
+                        }
+                    });
+                }
+            }
+            for (PutEle ele : filePathList) {
+                putObject(ele.prefix, ele.path);
+            }
+        } catch (IOException ex) {
+            throw BaseException.get(ex);
+        }
+    }
+
     public static void putObject(Path filePath, String path) {
         try {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -132,8 +161,11 @@ public class AwsS3Util {
         }
     }
 
-    public static void putObject(Path filePath) {
-        putObject(filePath, filePath.getFileName().toString());
+
+    public static void putObject(String pathPrefix, Path... filePaths) {
+        for (Path filePath : filePaths) {
+            putObject(filePath, pathPrefix + "/" + filePath.getFileName().toString());
+        }
     }
 
     /**
@@ -307,7 +339,8 @@ public class AwsS3Util {
 
     /**
      * 获取对象
-     * @param path 对象路径
+     *
+     * @param path     对象路径
      * @param consumer 对象输入流消费者、当输入流为null时候代表对象不存在
      */
     public static void getObject(String path, Consumer<ResponseInputStream<GetObjectResponse>> consumer) {
