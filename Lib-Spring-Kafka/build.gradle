@@ -3,8 +3,8 @@ dependencies {
     api project(":Lib-Base")
     api project(":Lib-Base-Executor")
     //spring kafka支持
-    api libs.spring.kafka
     api libs.spring.boot.starter
+    api libs.spring.boot.starter.kafka
 }
 
 

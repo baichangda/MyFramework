@@ -13,7 +13,6 @@ import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.core.annotation.Order;

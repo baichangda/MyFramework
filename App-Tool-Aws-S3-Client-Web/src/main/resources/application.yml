@@ -10,7 +10,7 @@ server:
 
 spring:
   application:
-    name: tool-minio-client-server
+    name: tool-aws-s3-client-server
   threads:
     virtual:
       enabled: true

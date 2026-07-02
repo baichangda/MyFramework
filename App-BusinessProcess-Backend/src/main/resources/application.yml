@@ -26,8 +26,6 @@ spring:
         cache: false
   profiles:
     active: dev
-  freemarker:
-    checkTemplateLocation: false
   datasource:
     hikari:
       minimum-idle: 5
@@ -49,12 +47,12 @@ spring:
       fetch-size: 1000
       max-rows: -1
       query-timeout:
-  data:
-    #mongodb配置
-    mongodb.uri: mongodb://root:root@127.0.0.1:27017/bcd
+  #mongodb配置
+  mongodb.uri: mongodb://root:root@127.0.0.1:27017/bcd
     #redis配置
     #如果都进行了配置,加载的先后顺序为:
     #sentinel>cluster>single
+  data:
     redis:
       ssl:
         enabled: false
@@ -91,8 +89,7 @@ spring:
       #单机配置
       host: 127.0.0.1
       port: 16379
-
-  #  kafka配置
+  # kafka配置
   kafka:
     consumer:
       #      bootstrap-servers: kafka-test-1:9092,kafka-test-2:9093,kafka-test-3:9094
@@ -183,7 +180,7 @@ lib:
         response-list: monitorResponse
         server-id: ${spring.application.name}
         server-type: 3
-    minio:
+    aws.s3:
       endpoint: http://127.0.0.1:19000
       accessKey: qsOaWQjLYQr09EVkNVik
       secretKey: 2JH6UcrGXZWCJiewr7Oe6aZuhCJo6g7HVZzMgcKd

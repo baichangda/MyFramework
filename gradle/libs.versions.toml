@@ -80,8 +80,6 @@ log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", ver
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 
-spring-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
-
 okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp" }
 okhttp = { module = "com.squareup.okhttp3:okhttp"}
 okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor"}
@@ -114,6 +112,7 @@ spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-depe
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter"}
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2"}
 spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis"}
+spring-boot-starter-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka"}
 spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc"}
 spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb"}
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation"}

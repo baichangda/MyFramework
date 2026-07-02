@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import java.net.URI;
 
 @Configuration
-@ConditionalOnProperty(value = "lib.spring.minio.endpoint")
+@ConditionalOnProperty(value = "lib.spring.aws.s3.endpoint")
 @EnableConfigurationProperties(AwsS3Prop.class)
 public class AwsS3Config {
     @Bean

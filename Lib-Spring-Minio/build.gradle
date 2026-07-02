@@ -1,6 +1,0 @@
-dependencies {
-    api platform(libs.spring.boot.dependencies)
-    api project(":Lib-Base")
-    api libs.spring.boot.starter
-    api libs.minio
-}
