@@ -123,6 +123,12 @@ public class AwsS3Util {
     record PutEle(Path path, String prefix) {
     }
 
+    /**
+     * 上传dir和其下的所有dir和文件
+     * 文件路径为 pathPrefix+dir/.../dir/filename
+     * @param pathPrefix aws s3文件路径前缀
+     * @param dirPaths 上传的本地文件夹
+     */
     public static void putDir(String pathPrefix, Path... dirPaths) {
         List<PutEle> filePathList = new ArrayList<>();
         List<PutEle> dirPathList = new ArrayList<>(Arrays.stream(dirPaths).map(e -> new PutEle(e, pathPrefix + "/" + e.getFileName().toString())).toList());
@@ -149,6 +155,11 @@ public class AwsS3Util {
         }
     }
 
+    /**
+     * 上传文件
+     * @param filePath 本地文件路径
+     * @param path aws s3文件路径
+     */
     public static void putObject(Path filePath, String path) {
         try {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -161,7 +172,11 @@ public class AwsS3Util {
         }
     }
 
-
+    /**
+     * 上传多个文件、aws s3文件路径为 pathPrefix+文件名称
+     * @param pathPrefix aws s3文件路径前缀
+     * @param filePaths 上传的本地文件
+     */
     public static void putObject(String pathPrefix, Path... filePaths) {
         for (Path filePath : filePaths) {
             putObject(filePath, pathPrefix + "/" + filePath.getFileName().toString());
