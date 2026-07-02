@@ -126,7 +126,7 @@ public class AwsS3Util {
     /**
      * 上传dir和其下的所有dir和文件
      * 文件路径为 pathPrefix+dir/.../dir/filename
-     * @param pathPrefix aws s3文件路径前缀
+     * @param pathPrefix aws s3文件路径前缀、不能以/开头和结尾
      * @param dirPaths 上传的本地文件夹
      */
     public static void putDir(String pathPrefix, Path... dirPaths) {
@@ -174,7 +174,7 @@ public class AwsS3Util {
 
     /**
      * 上传多个文件、aws s3文件路径为 pathPrefix+文件名称
-     * @param pathPrefix aws s3文件路径前缀
+     * @param pathPrefix aws s3文件路径前缀、不能以/开头和结尾
      * @param filePaths 上传的本地文件
      */
     public static void putObject(String pathPrefix, Path... filePaths) {
