@@ -5,27 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
-import software.amazon.awssdk.services.s3.model.CompletedPart;
-import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
-import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.model.UploadPartRequest;
-import software.amazon.awssdk.services.s3.model.UploadPartResponse;
+import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -34,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Component
 @ConditionalOnProperty(value = "lib.spring.aws.s3.endpoint")
@@ -249,7 +235,6 @@ public class AwsS3Util {
                     .build();
 
             s3Client.completeMultipartUpload(completeRequest);
-
             logger.info("multipart upload success, path: {}, partCount: {}", path, completedParts.size());
         } catch (Exception e) {
             if (uploadId != null) {
@@ -289,25 +274,47 @@ public class AwsS3Util {
                     .build();
 
             s3Client.abortMultipartUpload(abortRequest);
-
             logger.warn("multipart upload aborted, path: {}, uploadId: {}", path, uploadId);
         } catch (Exception ex) {
             logger.error("abort multipart upload failed, path: {}, uploadId: {}", path, uploadId, ex);
         }
     }
 
-    public static void getObject(String path, OutputStream os) {
+    public static boolean objectExists(String path) {
         try {
-            GetObjectRequest request = GetObjectRequest.builder()
+            HeadObjectRequest request = HeadObjectRequest.builder()
                     .bucket(awsS3Prop.bucket)
                     .key(path)
                     .build();
 
-            GetObjectResponse response = s3Client.getObject(
-                    request,
-                    ResponseTransformer.toOutputStream(os)
-            );
-            logger.debug("getObject success, path: {}, contentLength: {}", path, response.contentLength());
+            s3Client.headObject(request);
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
+                return false;
+            }
+            throw BaseException.get(e);
+        } catch (Exception e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    public static void getObject(String path, Consumer<ResponseInputStream<GetObjectResponse>> consumer) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(awsS3Prop.bucket)
+                .key(path)
+                .build();
+        try (ResponseInputStream<GetObjectResponse> responseInputStream = s3Client.getObject(request)) {
+            consumer.accept(responseInputStream);
+        } catch (NoSuchKeyException e) {
+            consumer.accept(null);
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
+                consumer.accept(null);
+            }
+            throw BaseException.get(e);
         } catch (Exception e) {
             throw BaseException.get(e);
         }

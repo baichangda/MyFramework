@@ -13,7 +13,7 @@
 - ***App-Monitor-Collector*** 性能监控服务
 - ***App-Simulator-PressTest-Tcp*** GB32960 TCP压测模拟器服务
 - ***App-Simulator-SingleVehicle-Tcp*** GB32960 TCP单车模拟器服务
-- ***App-Tool-Minio-Client-Web*** minio客户端工具服务
+- ***App-Tool-Aws-S3-Client-Web*** aws s3客户端工具服务
 - ***App-Tool-Kafka-Client-Web*** kafka客户端工具服务
 
 # 依赖版本管理

@@ -42,7 +42,7 @@ public class FileController {
     @Operation(summary = "上传文件")
     @ApiResponse(responseCode = "200", description = "上传结果")
     public Result<?> upload(@Parameter(description = "文件夹路径") @RequestParam(required = false) String dirPath,
-                              @Parameter(description = "文件") @RequestParam(required = true) MultipartFile file) {
+                            @Parameter(description = "文件") @RequestParam(required = true) MultipartFile file) {
         fileService.upload(dirPath, file);
         return Result.success();
     }
@@ -53,8 +53,14 @@ public class FileController {
     public void download(@Parameter(description = "文件路径") @RequestParam(required = true) String path,
                          HttpServletResponse response) {
         try {
-            HttpResponseUtil.setDownloadResponse(path.substring(path.lastIndexOf("/") + 1), response);
-            fileService.download(path, response.getOutputStream());
+
+            fileService.download(path, response.getOutputStream(), exists -> {
+                if (exists) {
+                    HttpResponseUtil.setDownloadResponse(path.substring(path.lastIndexOf("/") + 1), response);
+                } else {
+
+                }
+            });
         } catch (IOException e) {
             throw BaseException.get(e);
         }

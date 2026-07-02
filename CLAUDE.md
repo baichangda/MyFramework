@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `Lib-Parser-Protocol-*`：GB32960、JTT808、Immotors 协议实现
 - `Lib-Jooq`：jOOQ 代码生成模块，为 `App-BusinessProcess-Backend` 提供类型安全 SQL
 - `Lib-Websocket`：WebSocket 相关封装
-- `Lib-Spring-*`：Spring 生态扩展（Redis、Kafka、Mongo、JDBC、Database Common、Minio、xxl-job、Prometheus 等）
+- `Lib-Spring-*`：Spring 生态扩展（Redis、Kafka、Mongo、JDBC、Database Common、aws s3、xxl-job、Prometheus 等）
 - `Lib-Spring-Cloud-Common`：微服务公共组件（含 Feign 客户端 `UserClient`、统一认证用户 `AuthUser`）
 - `Lib-Spring-Database-Common/Jdbc/Mongo`：数据库访问层，提供 `Condition` 条件构造器（`StringCondition`、`NumberCondition`、`DateCondition` 等）支持组合查询
 - `Lib-Spring-Data-Init`：数据初始化框架
@@ -40,7 +40,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `App-BusinessProcess-Backend`：微服务业务后台（Web 服务），使用 sa-token 鉴权，Spring Data JDBC + Mongo 双数据库
 - `App-BusinessProcess-Gateway`：微服务网关
 - `App-Monitor-Collector`：性能监控服务
-- `App-Tool-*`：工具类 Web 服务（Minio 客户端、Kafka Web 客户端）
+- `App-Tool-*`：工具类 Web 服务（aws s3 客户端、Kafka Web 客户端）
 - `App-Transponder-GB32960`：GB32960 协议转发器（TCP 服务端，将接收到的数据转发出去；v2025 支持 SSL）
 - `App-Simulator-SingleVehicle-Tcp`：单车模拟器（模拟单台车辆上报数据，带 WebSocket 控制界面）
 - `App-Simulator-PressTest-Tcp`：压测模拟器（模拟多车并发上报）
