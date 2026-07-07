@@ -39,6 +39,6 @@ public class TestRustFs {
 
     @Test
     public void testPutDir() {
-        AwsS3Util.putDir("",Paths.get("d:/test"));
+        AwsS3Util.putDir("",false,Paths.get("d:/file"));
     }
 }

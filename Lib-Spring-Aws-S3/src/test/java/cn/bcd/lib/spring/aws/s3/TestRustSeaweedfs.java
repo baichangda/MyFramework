@@ -34,11 +34,11 @@ public class TestRustSeaweedfs {
 
     @Test
     public void testPutObject() {
-        AwsS3Util.putObject("",Paths.get("d:/file/test1.xlsx"));
+        AwsS3Util.putObject("", Paths.get("d:/file/test1.xlsx"));
     }
 
     @Test
     public void testPutDir() {
-        AwsS3Util.putDir("",Paths.get("d:/test"));
+        AwsS3Util.putDir("", true, Paths.get("d:/file"));
     }
 }

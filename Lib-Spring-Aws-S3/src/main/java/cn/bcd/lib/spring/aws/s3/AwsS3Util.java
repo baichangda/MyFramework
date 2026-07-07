@@ -127,17 +127,22 @@ public class AwsS3Util {
      * 上传dir和其下的所有dir和文件
      * 文件路径为 pathPrefix+dir/.../dir/filename
      *
-     * @param pathPrefix aws s3文件路径前缀、不能以/开头和结尾、可以为null或空字符串
-     * @param dirPaths   上传的本地文件夹
+     * @param pathPrefix           aws s3文件路径前缀、不能以/开头和结尾、可以为null或空字符串
+     * @param appendOuterDirToPath 是否将最外层的dir添加到路径中
+     * @param dirPaths             上传的本地文件夹
      */
-    public static void putDir(String pathPrefix, Path... dirPaths) {
+    public static void putDir(String pathPrefix, boolean appendOuterDirToPath, Path... dirPaths) {
         List<PutEle> filePathList = new ArrayList<>();
         List<PutEle> dirPathList = new ArrayList<>(Arrays.stream(dirPaths).map(e -> {
             String prefix;
             if (pathPrefix == null || pathPrefix.isEmpty()) {
-                prefix = e.getFileName().toString();
+                prefix = appendOuterDirToPath ? e.getFileName().toString() : "";
             } else {
-                prefix = pathPrefix + "/" + e.getFileName().toString();
+                if (appendOuterDirToPath) {
+                    prefix = pathPrefix + "/" + e.getFileName().toString();
+                } else {
+                    prefix = pathPrefix;
+                }
             }
             return new PutEle(e, prefix);
         }).toList());
