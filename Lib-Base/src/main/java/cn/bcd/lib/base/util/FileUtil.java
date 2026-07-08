@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -15,48 +18,44 @@ public class FileUtil {
      * 删除文件
      * 或者递归删除文件夹
      *
-     * @param path
+     * @param dirs
      */
-    public static void deleteDirRecursion(Path path) {
-        if (Files.notExists(path) || !Files.isDirectory(path)) {
-            return;
-        }
-        clearDirRecursion(path);
+    public static void deleteDirRecursion(String... dirs) {
+        List<Path> fileList = listDir(true, dirs);
         try {
-            Files.deleteIfExists(path);
-        } catch (IOException ex) {
-            throw BaseException.get(ex);
+            for (Path path : fileList) {
+                Files.deleteIfExists(path);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * 递归删除文件夹
-     *
-     * @param path
-     */
-    public static void clearDirRecursion(Path path) {
-        if (Files.notExists(path) || !Files.isDirectory(path)) {
-            return;
-        }
-        try (final Stream<Path> stream = Files.list(path)) {
-            List<Path> collect = stream.toList();
-            for (Path p : collect) {
-                try {
-                    if (Files.isDirectory(p)) {
-                        clearDirRecursion(p);
+    public static List<Path> listDir(boolean recursion, String... dirs) {
+        List<Path> fileList = new ArrayList<>();
+        List<Path> dirList = Arrays.stream(dirs).map(Paths::get).toList();
+        try {
+            for (int i = 0; i < dirList.size(); i++) {
+                Path dir = dirList.get(i);
+                if (Files.isDirectory(dir)) {
+                    try (final Stream<Path> stream = Files.list(dir)) {
+                        List<Path> collect = stream.toList();
+                        for (Path p : collect) {
+                            if (Files.isDirectory(p)) {
+                                if (recursion) {
+                                    dirList.add(p);
+                                }
+                            } else {
+                                fileList.add(p);
+                            }
+                        }
                     }
-                    Files.delete(p);
-                } catch (IOException ex) {
-                    throw BaseException.get(ex);
                 }
             }
         } catch (IOException ex) {
             throw BaseException.get(ex);
         }
+        return fileList;
     }
 
-    public static void main(String[] args) {
-        clearDirRecursion(Paths.get("/Users/baichangda/Downloads/PDAA202142010000520557"));
-        deleteDirRecursion(Paths.get("/Users/baichangda/Downloads/PDAA202142010000520557"));
-    }
 }

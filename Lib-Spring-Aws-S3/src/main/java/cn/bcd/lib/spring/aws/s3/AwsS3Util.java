@@ -1,6 +1,7 @@
 package cn.bcd.lib.spring.aws.s3;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.base.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,8 +14,10 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -377,7 +380,7 @@ public class AwsS3Util {
     /**
      * 获取对象
      *
-     * @param path     对象路径
+     * @param path     aws对象路径
      * @param consumer 对象输入流消费者、当输入流为null时候代表对象不存在
      */
     public static void getObject(String path, Consumer<ResponseInputStream<GetObjectResponse>> consumer) {
@@ -392,6 +395,48 @@ public class AwsS3Util {
         } catch (S3Exception e) {
             if (e.statusCode() == 404) {
                 consumer.accept(null);
+                return;
+            }
+            throw BaseException.get(e);
+        } catch (Exception e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    /**
+     * 获取对象
+     *
+     * @param path aws对象路径
+     */
+    public static byte[] getObject(String path) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(awsS3Prop.bucket)
+                .key(path)
+                .build();
+        try {
+            return s3Client.getObjectAsBytes(request).asByteArray();
+        } catch (NoSuchKeyException e) {
+            return null;
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
+                return null;
+            }
+            throw BaseException.get(e);
+        } catch (Exception e) {
+            throw BaseException.get(e);
+        }
+    }
+
+    public static void getObject(String path, String destFilePath) {
+        GetObjectRequest request = GetObjectRequest.builder()
+                .bucket(awsS3Prop.bucket)
+                .key(path)
+                .build();
+        try {
+            s3Client.getObject(request, Paths.get(destFilePath));
+        } catch (NoSuchKeyException _) {
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
                 return;
             }
             throw BaseException.get(e);
