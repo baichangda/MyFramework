@@ -47,6 +47,12 @@ public class TestRustFs {
     }
 
     @Test
+    public void test1() throws IOException {
+        Files.copy(Paths.get("d:/file/test1.png"),Paths.get("d:/file/test2.png"));
+        Files.copy(Paths.get("d:/file/test1.pdf"),Paths.get("d:/file/test2.pdf"));
+    }
+
+    @Test
     public void testPutObjectAndGetObject() {
         String dir = "d:/file";
         List<Path> fileList = FileUtil.listDir(false, dir);
@@ -65,4 +71,6 @@ public class TestRustFs {
             AwsS3Util.getObject(fileName, destFilePath);
         }
     }
+
+
 }
