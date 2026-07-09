@@ -52,18 +52,7 @@ public class FileController {
     @ApiResponse(responseCode = "200", description = "文件流")
     public void download(@Parameter(description = "文件路径") @RequestParam(required = true) String path,
                          HttpServletResponse response) {
-        try {
-
-            fileService.download(path, response.getOutputStream(), exists -> {
-                if (exists) {
-                    HttpResponseUtil.setDownloadResponse(path.substring(path.lastIndexOf("/") + 1), response);
-                } else {
-
-                }
-            });
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        }
+        fileService.download(path, response);
     }
 
     @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
