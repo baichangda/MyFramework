@@ -10,7 +10,7 @@ public class IOUtil {
     public static long copy(InputStream in, OutputStream out) throws IOException {
         byte[] buf = new byte[BUFFER_SIZE];
         long count = 0;
-        int n = 0;
+        int n;
         while ((n = in.read(buf)) > -1) {
             out.write(buf, 0, n);
             count += n;
