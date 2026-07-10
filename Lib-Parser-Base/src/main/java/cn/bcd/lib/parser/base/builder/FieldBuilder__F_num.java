@@ -116,7 +116,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
             }
         }
         //读取原始数据
-        ParseUtil.append(body, "final {} {}=({}){};\n", sourceValTypeName, varNameField, sourceValTypeName, funcName);
+        ParseUtil.append(body, "final {} {}=({})({});\n", sourceValTypeName, varNameField, sourceValTypeName, funcName);
         //表达式运算
         String valCode = ParseUtil.replaceValExprToCode(anno.valExpr(), varNameField);
         if (fieldTypeClass.isEnum()) {
@@ -126,9 +126,9 @@ public class FieldBuilder__F_num extends FieldBuilder {
             //格式化精度
             if ((fieldTypeClass == float.class || fieldTypeClass == double.class) && precision >= 0) {
                 if (precision == 0) {
-                    valCode = ParseUtil.format("{}.round((double){})", ParseUtil.class.getName(), valCode);
+                    valCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(), valCode);
                 } else {
-                    valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, precision);
+                    valCode = ParseUtil.format("{}.round((double)({}),{})", ParseUtil.class.getName(), valCode, precision);
                 }
             }
             ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
