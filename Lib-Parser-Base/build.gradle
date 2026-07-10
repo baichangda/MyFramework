@@ -2,5 +2,4 @@ dependencies {
     api platform(libs.netty.bom)
     api project(":Lib-Base")
     api libs.netty.buffer
-    api libs.javassist
 }

@@ -14,15 +14,13 @@ import cn.bcd.lib.parser.base.log.LogCollector_deParse;
 import cn.bcd.lib.parser.base.log.LogCollector_parse;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
+import cn.bcd.lib.parser.base.util.DynamicProcessorCompiler;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import io.netty.buffer.AbstractByteBuf;
 import io.netty.buffer.ByteBuf;
-import javassist.*;
-import javassist.bytecode.SignatureAttribute;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -43,7 +41,7 @@ import java.util.Map;
  *
  * <p>
  * 工作原理:
- * 使用javassist框架配合自定义注解、生成一套解析代码
+ * 使用JDK编译器配合自定义注解、生成一套解析代码
  * 使用方法:
  * 1、首先获取类处理器
  * {@link #getProcessor(Class)}
@@ -92,7 +90,7 @@ public class Parser {
      */
     private static boolean generateClassFile = false;
     /**
-     * 是否打印javassist生成class的过程日志
+     * 是否打印动态生成class的过程日志
      */
     private static boolean printBuildLog = false;
 
@@ -207,51 +205,25 @@ public class Parser {
         }
     }
 
-    private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) throws CannotCompileException, NotFoundException, IOException {
+    private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         final String processor_class_name = Processor.class.getName();
         final String byteBufClassName = ByteBuf.class.getName();
+        final String processContextClassName = ProcessContext.class.getName();
         final String clazzName = clazz.getName();
 
         String implProcessor_class_name = ParseUtil.getProcessorClassName(clazz, byteOrder, numValGetter);
-        final CtClass cc = ClassPool.getDefault().makeClass(implProcessor_class_name);
-
-        //添加泛型
-        SignatureAttribute.ClassSignature class_cs = new SignatureAttribute.ClassSignature(null, null, new SignatureAttribute.ClassType[]{
-                new SignatureAttribute.ClassType(processor_class_name, new SignatureAttribute.TypeArgument[]{
-                        new SignatureAttribute.TypeArgument(new SignatureAttribute.ClassType(clazzName))
-                })
-        });
-        cc.setGenericSignature(class_cs.encode());
-
-        cc.setModifiers(Modifier.FINAL | Modifier.PUBLIC);
+        String packageName = implProcessor_class_name.substring(0, implProcessor_class_name.lastIndexOf('.'));
+        String simpleClassName = implProcessor_class_name.substring(implProcessor_class_name.lastIndexOf('.') + 1);
 
         StringBuilder classFieldDefineBody = new StringBuilder();
         StringBuilder constructBody = new StringBuilder();
-        final CtConstructor constructor = CtNewConstructor.make(new CtClass[]{}, null, cc);
         final Map<String, String> classVarDefineToVarName = new HashMap<>();
 
-        //添加实现、定义process方法
-        final CtClass interface_cc = ClassPool.getDefault().get(processor_class_name);
-        cc.addInterface(interface_cc);
-        final CtMethod process_cm = CtNewMethod.make(
-                /**
-                 * 在这里定义返回值为Object类型
-                 * 因为正常的继承、asm实现方法需要额外创建一个桥接方法、针对泛型部分的参数为Object类型
-                 */
-                ClassPool.getDefault().get(Object.class.getName()),
-                "process",
-                new CtClass[]{
-                        ClassPool.getDefault().get(byteBufClassName),
-                        ClassPool.getDefault().get(ProcessContext.class.getName())
-                }, null, null, cc);
-
-        cc.addMethod(process_cm);
-        //process方法体
         StringBuilder processBody = new StringBuilder();
         processBody.append("\n{\n");
         ParseUtil.append(processBody, "final {} {}=new {}();\n", clazzName, FieldBuilder.varNameInstance, clazzName);
         final List<Field> fieldList = ParseUtil.getParseFields(clazz);
-        BuilderContext parseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, processBody, clazz, cc, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
+        BuilderContext parseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, processBody, clazz, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
 
         C_skip c_skip = clazz.getAnnotation(C_skip.class);
         if (c_skip == null) {
@@ -297,22 +269,10 @@ public class Parser {
         ParseUtil.append(processBody, "return {};\n", FieldBuilder.varNameInstance);
         processBody.append("}");
 
-        //添加实现、定义deProcess方法
-        final CtMethod deProcess_cm = CtNewMethod.make(
-                ClassPool.getDefault().get(void.class.getName()),
-                "deProcess",
-                new CtClass[]{
-                        ClassPool.getDefault().get(byteBufClassName),
-                        ClassPool.getDefault().get(ProcessContext.class.getName()),
-                        ClassPool.getDefault().get(Object.class.getName()),
-                }, null, null, cc);
-
-        cc.addMethod(deProcess_cm);
-        //deProcess方法体
         StringBuilder deProcessBody = new StringBuilder();
         deProcessBody.append("\n{\n");
         ParseUtil.append(deProcessBody, "final {} {}=({})$3;\n", clazzName, FieldBuilder.varNameInstance, clazzName);
-        BuilderContext deParseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, deProcessBody, clazz, cc, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
+        BuilderContext deParseBuilderContext = new BuilderContext(classFieldDefineBody, constructBody, deProcessBody, clazz, classVarDefineToVarName, byteOrder, fieldList, numValGetter);
         if (c_skip == null) {
             buildMethodBody_deProcess(deParseBuilderContext);
         } else {
@@ -355,35 +315,30 @@ public class Parser {
         }
         deProcessBody.append("}");
 
-
-        //开始创建类
         if (printBuildLog) {
             logger.info("\n----------clazz[{}] class field define body-------------\n{}\n", clazz.getName(), classFieldDefineBody.toString());
-        }
-
-        constructBody.insert(0, "\n{\n");
-        constructBody.append("}\n");
-        if (printBuildLog) {
-            logger.info("\n----------clazz[{}] constructor body-------------{}\n", clazz.getName(), constructBody.toString());
-        }
-        constructor.setBody(constructBody.toString());
-        cc.addConstructor(constructor);
-
-        if (printBuildLog) {
+            logger.info("\n----------clazz[{}] constructor body-------------\n{{\n{}\n}}\n", clazz.getName(), constructBody.toString());
             logger.info("\n-----------class[{}] process-----------{}\n", clazz.getName(), processBody.toString());
-        }
-        process_cm.setBody(processBody.toString());
-
-        if (printBuildLog) {
             logger.info("\n-----------class[{}] deProcess-----------{}\n", clazz.getName(), deProcessBody.toString());
         }
-        deProcess_cm.setBody(deProcessBody.toString());
 
-        if (generateClassFile) {
-            cc.writeFile("src/main/java");
+        StringBuilder source = new StringBuilder();
+        ParseUtil.append(source, "package {};\n\n", packageName);
+        ParseUtil.append(source, "public final class {} implements {}{\n", simpleClassName, processor_class_name);
+        source.append(classFieldDefineBody);
+        ParseUtil.append(source, "public {}(){\n", simpleClassName);
+        source.append(constructBody);
+        source.append("}\n");
+        ParseUtil.append(source, "@Override\npublic Object process(final {} {}, final {} {})", byteBufClassName, FieldBuilder.varNameByteBuf, processContextClassName, FieldBuilder.varNameProcessContext);
+        source.append(processBody).append("\n");
+        ParseUtil.append(source, "@Override\npublic void deProcess(final {} {}, final {} {}, final Object $3)", byteBufClassName, FieldBuilder.varNameByteBuf, processContextClassName, FieldBuilder.varNameProcessContext);
+        source.append(deProcessBody).append("\n");
+        source.append("}\n");
+
+        if (printBuildLog) {
+            logger.info("\n-----------class[{}] source-----------\n{}\n", clazz.getName(), source.toString());
         }
-        return (Class<T>) cc.toClass(Processor.class);
-//        return cc.toClass();
+        return (Class<T>) DynamicProcessorCompiler.compileAndDefine(implProcessor_class_name, source.toString(), generateClassFile);
     }
 
     /**

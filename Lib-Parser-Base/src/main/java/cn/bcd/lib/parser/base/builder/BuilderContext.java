@@ -7,7 +7,6 @@ import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.*;
 import io.netty.buffer.ByteBuf;
-import javassist.CtClass;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -19,11 +18,6 @@ public class BuilderContext {
      * 类
      */
     public final Class<?> clazz;
-    /**
-     * 生产的{@link Processor}子类
-     */
-    public final CtClass implCc;
-
     /**
      * 当前字段
      */
@@ -99,13 +93,12 @@ public class BuilderContext {
     public final NumValGetter numValGetter;
 
     public BuilderContext(StringBuilder class_fieldDefineBody, StringBuilder class_constructBody, StringBuilder method_body, Class<?> clazz,
-                          CtClass implCc, Map<String, String> class_varDefineToVarName, ByteOrder byteOrder,
+                          Map<String, String> class_varDefineToVarName, ByteOrder byteOrder,
                           List<Field> class_fieldList, NumValGetter numValGetter) {
         this.class_fieldDefineBody = class_fieldDefineBody;
         this.class_constructBody = class_constructBody;
         this.method_body = method_body;
         this.clazz = clazz;
-        this.implCc = implCc;
         this.class_varDefineToVarName = class_varDefineToVarName;
         this.byteOrder = byteOrder;
         this.class_fieldList = class_fieldList;

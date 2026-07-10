@@ -43,7 +43,7 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
         //在for循环外构造复用对象
         ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", typeClassName, varNameField, typeClassName, varNameListLen);
         ParseUtil.append(body, "for(int i=0;i<{};i++){\n", varNameListLen);
-        ParseUtil.append(body, "{}[i]={}.process({},{});\n", varNameField, processorVarName, FieldBuilder.varNameByteBuf, processContextVarName);
+        ParseUtil.append(body, "{}[i]=({}){}.process({},{});\n", varNameField,typeClassName, processorVarName, FieldBuilder.varNameByteBuf, processContextVarName);
         ParseUtil.append(body, "}\n");
         switch (fieldTypeFlag) {
             case 1 -> {

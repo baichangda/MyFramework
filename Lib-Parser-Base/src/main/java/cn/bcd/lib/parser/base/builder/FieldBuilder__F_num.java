@@ -131,7 +131,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
                     valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, precision);
                 }
             }
-            ParseUtil.append(body, "{}.{}=({}){};\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
+            ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
         }
         final char var = anno.var();
         if (var != '0') {
@@ -324,7 +324,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
             }
 
         } else {
-            ParseUtil.append(body, "{}=({}){};\n",
+            ParseUtil.append(body, "{}=({})({});\n",
                     varExprValDefineInIfCode,
                     fieldTypeName,
                     ParseUtil.replaceValExprToCode(anno.valExpr(), rawValCode));

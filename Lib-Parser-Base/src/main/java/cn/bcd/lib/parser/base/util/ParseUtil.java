@@ -10,9 +10,6 @@ import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.Processor;
-import javassist.CannotCompileException;
-import javassist.CtClass;
-import javassist.CtField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.MessageFormatter;
@@ -102,15 +99,8 @@ public class ParseUtil {
         return context.class_varDefineToVarName.computeIfAbsent(format(valDefine, params), k -> {
             final int size = context.class_varDefineToVarName.size();
             final String varName = "_" + size + "_" + varNameSuffix;
-            final CtClass ctClass = context.implCc;
             String define = "private final " + varClass.getName() + " " + varName + "=" + k + ";\n";
             context.class_fieldDefineBody.append(define);
-            try {
-                final CtField ctField = CtField.make(define, ctClass);
-                ctClass.addField(ctField);
-            } catch (CannotCompileException e) {
-                throw BaseException.get(e);
-            }
             if (doAfterDefine != null) {
                 doAfterDefine.accept(varName);
             }

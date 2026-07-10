@@ -17,7 +17,6 @@ freemarker = "2.3.34"
 mysql = "9.7.0"
 postgresql = "42.7.11"
 oshi = "7.3.2"
-javassist = "3.30.2-GA"
 prometheus = "1.8.0"
 xxl-job = "3.4.2"
 cassandra = "4.19.3"
@@ -48,7 +47,6 @@ mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 oshi = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
-javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 bcprov-jdk18on = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bcprov-jdk18on" }
 geo = { module = "com.github.davidmoten:geo", version.ref = "geo" }

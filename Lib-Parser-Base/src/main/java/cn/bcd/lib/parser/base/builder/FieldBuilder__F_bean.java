@@ -5,7 +5,6 @@ import cn.bcd.lib.parser.base.anno.C_impl;
 import cn.bcd.lib.parser.base.anno.F_bean;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
-import javassist.*;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -208,36 +207,5 @@ public class FieldBuilder__F_bean extends FieldBuilder {
         }
     }
 
-    public static void main(String[] args) throws CannotCompileException, IOException {
-        CtClass cc = ClassPool.getDefault().makeClass("cn.bcd.parser.base.builder.TestSwitch");
-        String body = """
-                public void test(int i){
-                    switch(i){
-                        case 1,3->java.lang.System.out.println(1);
-                        case 2->java.lang.System.out.println(2);
-                    }
-                }
-                """;
-//        String body = """
-//                public void test(int i){
-//                    switch(i){
-//                        case 1:{}
-//                        case 3:{
-//                            java.lang.System.out.println(1);
-//                            break;
-//                        }
-//                        case 2:{
-//                            java.lang.System.out.println(2);
-//                            break;
-//                        }
-//                    }
-//                }
-//                """;
-        CtMethod cm = CtNewMethod.make(body, cc);
-        cc.addMethod(cm);
-        cc.writeFile("src/main/java");
-        Class<?> aClass = cc.toClass(FieldBuilder__F_bean.class);
-        System.out.println(aClass.getName());
-    }
 
 }
