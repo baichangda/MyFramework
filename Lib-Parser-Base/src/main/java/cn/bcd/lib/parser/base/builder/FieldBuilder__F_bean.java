@@ -70,10 +70,11 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                 for (int i = 0; i < filterValue.size() - 1; i++) {
                     ParseUtil.append(body, "case {}:{}\n", value[i]);
                 }
-                ParseUtil.append(body, "case {}:{\n{}.{}={}.process({},{});\nbreak;\n}\n",
+                ParseUtil.append(body, "case {}:{\n{}.{}=({}){}.process({},{});\nbreak;\n}\n",
                         filterValue.get(filterValue.size()-1),
                         varNameInstance,
                         field.getName(),
+                        fieldTypeName,
                         implProcessorVarName,
                         varNameByteBuf,
                         processContextVarName);
@@ -91,9 +92,10 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                 } else {
                     defaultImplProcessorVarName = context.getCustomizeProcessorVarName(c_impl.processorClass(), c_impl.processorArgs());
                 }
-                ParseUtil.append(body, "default:{\n{}.{}={}.process({},{});\n}\n",
+                ParseUtil.append(body, "default:{\n{}.{}=({}){}.process({},{});\n}\n",
                         varNameInstance,
                         field.getName(),
+                        fieldTypeName,
                         defaultImplProcessorVarName,
                         varNameByteBuf,
                         processContextVarName);
