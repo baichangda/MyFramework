@@ -359,7 +359,6 @@ public class Parser {
      * @param clazz        实体类类型
      * @param byteOrder    实体类字节码实现 字节序模式
      * @param numValGetter 数值字段获取器、可以为null
-     *                     为null时候不支持NumVal_字段类型
      * @param <T>
      * @return
      */
