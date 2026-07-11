@@ -146,15 +146,15 @@ public class ParseUtil {
 
     public static void newBitBuf_parse(BuilderContext context) {
         final StringBuilder body = context.method_body;
-        final String bitBuf_reader_className = Parser.logCollector_parse == null ? BitBuf_reader.class.getName() : BitBuf_reader_log.class.getName();
-        final String funcName = Parser.logCollector_parse == null ? "getBitBuf_reader" : "getBitBuf_reader_log";
+        final String bitBuf_reader_className = Parser.parseLogCollector() == null ? BitBuf_reader.class.getName() : BitBuf_reader_log.class.getName();
+        final String funcName = Parser.parseLogCollector() == null ? "getBitBuf_reader" : "getBitBuf_reader_log";
         ParseUtil.append(body, "final {} {}={}.{}();\n", bitBuf_reader_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
     }
 
     public static void newBitBuf_deParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
-        final String bitBuf_writer_className = Parser.logCollector_deParse == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
-        final String funcName = Parser.logCollector_deParse == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
+        final String bitBuf_writer_className = Parser.deParseLogCollector() == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
+        final String funcName = Parser.deParseLogCollector() == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
         ParseUtil.append(body, "final {} {}={}.{}();\n", bitBuf_writer_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
     }
 
@@ -163,7 +163,7 @@ public class ParseUtil {
         if (varNameBitBuf != null) {
             final Class<?> clazz = context.clazz;
             final String fieldName = context.field.getName();
-            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",2,new Object[]{{}.takeLogs(),{}});\n",
+            append(context.method_body, "{}.parseLogCollector().collect_field({}.class,\"{}\",2,new Object[]{{}.takeLogs(),{}});\n",
                     Parser.class.getName()
                     , clazz.getName()
                     , fieldName
@@ -177,7 +177,7 @@ public class ParseUtil {
         if (varNameBitBuf != null) {
             final Class<?> clazz = context.clazz;
             final String fieldName = context.field.getName();
-            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",2,new Object[]{{},{}.takeLogs()});\n",
+            append(context.method_body, "{}.deParseLogCollector().collect_field({}.class,\"{}\",2,new Object[]{{},{}.takeLogs()});\n",
                     Parser.class.getName()
                     , clazz.getName()
                     , fieldName
@@ -211,7 +211,7 @@ public class ParseUtil {
             } catch (NoSuchFieldException e) {
                 throw BaseException.get(e);
             }
-            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
+            append(context.method_body, "{}.parseLogCollector().collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -220,7 +220,7 @@ public class ParseUtil {
                     boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__v", field__v.getType())
             );
         } else {
-            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
+            append(context.method_body, "{}.parseLogCollector().collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -255,7 +255,7 @@ public class ParseUtil {
             } catch (NoSuchFieldException e) {
                 throw BaseException.get(e);
             }
-            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
+            append(context.method_body, "{}.deParseLogCollector().collect_field({}.class,\"{}\",3,new Object[]{{},{},{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -263,7 +263,7 @@ public class ParseUtil {
                     fieldLogBytesVarName,
                     boxing(FieldBuilder.varNameInstance + "." + context.field.getName() + "__v", field__v.getType()));
         } else {
-            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
+            append(context.method_body, "{}.deParseLogCollector().collect_field({}.class,\"{}\",0,new Object[]{{},{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -455,9 +455,9 @@ public class ParseUtil {
 
     private static String getProcessorSuffix(ByteOrder byteOrder, NumValGetter numValGetter) {
         return "_" + (byteOrder == ByteOrder.smallEndian ? 0 : 1)
-                + "_" + (Parser.logCollector_parse == null ? 0 : 1)
-                + "_" + (Parser.logCollector_deParse == null ? 0 : 1)
-                + "_" + (numValGetter.index)
+                + "_" + (Parser.parseLogCollector() == null ? 0 : 1)
+                + "_" + (Parser.deParseLogCollector() == null ? 0 : 1)
+                + "_" + (numValGetter == null ? "none" : numValGetter.index)
                 ;
     }
 
@@ -469,13 +469,13 @@ public class ParseUtil {
     /**
      * 生成类的序号
      */
-    private static int processorIndex = 0;
+    private static final java.util.concurrent.atomic.AtomicInteger processorIndex = new java.util.concurrent.atomic.AtomicInteger();
 
     public static String getProcessorClassName(Class<?> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         String clazzName = Processor.class.getName();
         return clazzName.substring(0, clazzName.lastIndexOf("."))
                 + ".P_"
-                + (processorIndex++) + "_"
+                + processorIndex.getAndIncrement() + "_"
                 + clazz.getSimpleName()
                 + getProcessorSuffix(byteOrder, numValGetter);
     }
@@ -771,14 +771,14 @@ public class ParseUtil {
         }
         final String fieldByteBufReaderIndexVarName = getFieldByteBufReaderIndexVarName(context) + "_skip_" + (context.method_varIndex++);
         final String fieldLogBytesVarName = getFieldLogBytesVarName(context) + "_skip_" + (context.method_varIndex++);
-        if (Parser.logCollector_parse != null) {
+        if (Parser.parseLogCollector() != null) {
             append(context.method_body, "final int {}={}.readerIndex();\n", fieldByteBufReaderIndexVarName, FieldBuilder.varNameByteBuf);
         }
         ParseUtil.append(context.method_body, "{}.skipBytes({});\n", FieldBuilder.varNameByteBuf, lenValCode);
-        if (Parser.logCollector_parse != null) {
+        if (Parser.parseLogCollector() != null) {
             append(context.method_body, "final byte[] {}=new byte[{}.readerIndex()-{}];\n", fieldLogBytesVarName, FieldBuilder.varNameByteBuf, fieldByteBufReaderIndexVarName);
             append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufReaderIndexVarName, fieldLogBytesVarName);
-            append(context.method_body, "{}.logCollector_parse.collect_field({}.class,\"{}\",1,new Object[]{{}});\n",
+            append(context.method_body, "{}.parseLogCollector().collect_field({}.class,\"{}\",1,new Object[]{{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -795,14 +795,14 @@ public class ParseUtil {
         }
         final String fieldByteBufWriterIndexVarName = getFieldByteBufWriterIndexVarName(context) + "_skip_" + (context.method_varIndex++);
         final String fieldLogBytesVarName = getFieldLogBytesVarName(context) + "_skip_" + (context.method_varIndex++);
-        if (Parser.logCollector_deParse != null) {
+        if (Parser.deParseLogCollector() != null) {
             append(context.method_body, "final int {}={}.writerIndex();\n", fieldByteBufWriterIndexVarName, FieldBuilder.varNameByteBuf);
         }
         ParseUtil.append(context.method_body, "{}.writeBytes(new byte[{}]);\n", FieldBuilder.varNameByteBuf, lenValCode);
-        if (Parser.logCollector_deParse != null) {
+        if (Parser.deParseLogCollector() != null) {
             append(context.method_body, "final byte[] {}=new byte[{}.writerIndex()-{}];\n", fieldLogBytesVarName, FieldBuilder.varNameByteBuf, fieldByteBufWriterIndexVarName);
             append(context.method_body, "{}.getBytes({},{});\n", FieldBuilder.varNameByteBuf, fieldByteBufWriterIndexVarName, fieldLogBytesVarName);
-            append(context.method_body, "{}.logCollector_deParse.collect_field({}.class,\"{}\",1,new Object[]{{}});\n",
+            append(context.method_body, "{}.deParseLogCollector().collect_field({}.class,\"{}\",1,new Object[]{{}});\n",
                     Parser.class.getName(),
                     context.clazz.getName(),
                     context.field.getName(),
@@ -849,15 +849,15 @@ public class ParseUtil {
         return valType;
     }
 
-    public final static ConcurrentHashMap<Class<?>, HashMap<String, Field>> field_classFields = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<Class<?>, Map<String, Field>> field_classFields = new ConcurrentHashMap<>();
 
     public static Field getField__v(Class<?> clazz, String field) {
-        HashMap<String, Field> map = field_classFields.computeIfAbsent(clazz, k -> {
+        Map<String, Field> map = field_classFields.computeIfAbsent(clazz, k -> {
             HashMap<String, Field> m = new HashMap<>();
             for (Field f : clazz.getFields()) {
                 m.put(f.getName(), f);
             }
-            return m;
+            return Map.copyOf(m);
         });
         return map.get(field + "__v");
     }

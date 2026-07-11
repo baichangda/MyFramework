@@ -23,10 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -61,8 +61,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 可配置方法
  * {@link #enableGenerateClassFile()} 生成class类文件、文件声称在{@link Processor}同目录下
  * {@link #enablePrintBuildLog()} 开启打印build日志
- * {@link #withDefaultLogCollector_parse()} 开启解析日志采集、此方法开启后会在解析程序中插入日志采集功能、降低程序性能、建议只在开发调试阶段开启
- * {@link #withDefaultLogCollector_deParse()} 开启反解析日志采集、此方法开启后会在反解析程序中插入日志采集功能、降低程序性能、建议只在开发调试阶段开启
+ * {@link #enableParseLog()} 开启解析日志采集、此方法开启后会在解析程序中插入日志采集功能、降低程序性能、建议只在开发调试阶段开启
+ * {@link #enableDeParseLog()} 开启反解析日志采集、此方法开启后会在反解析程序中插入日志采集功能、降低程序性能、建议只在开发调试阶段开启
  * <p>
  * 注意:
  * 如果启动了解析和反解析日志、并不是所有字段都会打印、逻辑参考
@@ -74,26 +74,28 @@ public class Parser {
     public final static Map<Class<? extends Annotation>, FieldBuilder> anno_fieldBuilder;
 
     static {
-        anno_fieldBuilder = ParseUtil.getAllFieldBuild();
+        anno_fieldBuilder = Map.copyOf(ParseUtil.getAllFieldBuild());
     }
 
-    public final static Map<String, Processor<?>> beanProcessorKey_processor = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<String, Processor<?>> PROCESSOR_CACHE = new ConcurrentHashMap<>();
+    private final static Object PROCESSOR_BUILD_LOCK = new Object();
+    private static volatile boolean configurationFrozen;
     /**
-     * 解析log采集器g
+     * 解析log采集器
      * 需要注意的是、此功能用于调试、会在生成的class中加入日志代码、影响性能
      * 而且此功能开启时候避免多线程调用解析、会产生日志混淆、不易调试
      */
-    public static LogCollector_parse logCollector_parse;
-    public static LogCollector_deParse logCollector_deParse;
+    private static volatile LogCollector_parse logCollector_parse;
+    private static volatile LogCollector_deParse logCollector_deParse;
     /**
      * 是否在src/main/java下面生成class文件
      * 主要用于开发测试阶段、便于查看生成的结果
      */
-    private static boolean generateClassFile = false;
+    private static volatile boolean generateClassFile = false;
     /**
      * 是否打印动态生成class的过程日志
      */
-    private static boolean printBuildLog = false;
+    private static volatile boolean printBuildLog = false;
 
     /**
      * 禁用ByteBuf检查
@@ -107,20 +109,66 @@ public class Parser {
         System.setProperty("io.netty.buffer.checkAccessible", "false");
     }
 
-    public static void withDefaultLogCollector_parse() {
-        logCollector_parse = LogCollector_parse.defaultInstance;
+    public static void enableParseLog() {
+        synchronized (PROCESSOR_BUILD_LOCK) {
+            ensureConfigurationMutable();
+            logCollector_parse = LogCollector_parse.defaultInstance;
+        }
     }
 
-    public static void withDefaultLogCollector_deParse() {
-        logCollector_deParse = LogCollector_deParse.defaultInstance;
+    public static void enableDeParseLog() {
+        synchronized (PROCESSOR_BUILD_LOCK) {
+            ensureConfigurationMutable();
+            logCollector_deParse = LogCollector_deParse.defaultInstance;
+        }
     }
 
     public static void enablePrintBuildLog() {
-        printBuildLog = true;
+        synchronized (PROCESSOR_BUILD_LOCK) {
+            ensureConfigurationMutable();
+            printBuildLog = true;
+        }
     }
 
     public static void enableGenerateClassFile() {
-        generateClassFile = true;
+        synchronized (PROCESSOR_BUILD_LOCK) {
+            ensureConfigurationMutable();
+            generateClassFile = true;
+        }
+    }
+
+    public static boolean isConfigurationFrozen() {
+        return configurationFrozen;
+    }
+
+    public static LogCollector_parse parseLogCollector() {
+        return logCollector_parse;
+    }
+
+    public static LogCollector_deParse deParseLogCollector() {
+        return logCollector_deParse;
+    }
+
+    private static void freezeConfiguration() {
+        if (!configurationFrozen) {
+            synchronized (PROCESSOR_BUILD_LOCK) {
+                configurationFrozen = true;
+            }
+        }
+    }
+
+    private static void ensureConfigurationMutable() {
+        if (configurationFrozen) {
+            throw new IllegalStateException("Parser configuration is frozen after the first processor lookup");
+        }
+    }
+
+    public static void clearProcessorCache() {
+        PROCESSOR_CACHE.clear();
+    }
+
+    public static Processor<?> getCachedProcessor(String key) {
+        return PROCESSOR_CACHE.get(key);
     }
 
     private static void buildMethodBody_process(BuilderContext context) {
@@ -207,6 +255,7 @@ public class Parser {
     }
 
     private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
+        ParserModelValidator.validate(clazz, numValGetter);
         final String processor_class_name = Processor.class.getName();
         final String byteBufClassName = ByteBuf.class.getName();
         final String processContextClassName = ProcessContext.class.getName();
@@ -244,7 +293,7 @@ public class Parser {
                 ParseUtil.append(processBody, "if({}>0){\n", FieldBuilder.varNameShouldSkip);
                 ParseUtil.append(processBody, "{}.skipBytes({});\n", FieldBuilder.varNameByteBuf, FieldBuilder.varNameShouldSkip);
                 if (logCollector_parse != null) {
-                    ParseUtil.append(processBody, "{}.logCollector_parse.collect_class({}.class,1,new Object[]{\"@C_skip skip[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, FieldBuilder.varNameShouldSkip);
+                    ParseUtil.append(processBody, "{}.parseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip skip[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, FieldBuilder.varNameShouldSkip);
                 }
                 ParseUtil.append(processBody, "}\n");
             } else {
@@ -254,14 +303,14 @@ public class Parser {
                     String skipCode = "(" + lenValCode + "-" + classByteLen + ")";
                     ParseUtil.append(processBody, "{}.skipBytes({});\n", FieldBuilder.varNameByteBuf, skipCode);
                     if (logCollector_parse != null) {
-                        ParseUtil.append(processBody, "{}.logCollector_parse.collect_class({}.class,1,new Object[]{\"@C_skip skip[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, skipCode);
+                        ParseUtil.append(processBody, "{}.parseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip skip[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, skipCode);
                     }
                 } else {
                     int skip = c_skip.len() - classByteLen;
                     if (skip > 0) {
                         ParseUtil.append(processBody, "{}.skipBytes({});\n", FieldBuilder.varNameByteBuf, skip);
                         if (logCollector_parse != null) {
-                            ParseUtil.append(processBody, "{}.logCollector_parse.collect_class({}.class,1,new Object[]{\"@C_skip skip[{}]\"});\n", Parser.class.getName(), clazzName, skip);
+                            ParseUtil.append(processBody, "{}.parseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip skip[{}]\"});\n", Parser.class.getName(), clazzName, skip);
                         }
                     }
                 }
@@ -291,7 +340,7 @@ public class Parser {
                 ParseUtil.append(deProcessBody, "if({}>0){\n", FieldBuilder.varNameShouldSkip);
                 ParseUtil.append(deProcessBody, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, FieldBuilder.varNameShouldSkip);
                 if (logCollector_deParse != null) {
-                    ParseUtil.append(deProcessBody, "{}.logCollector_deParse.collect_class({}.class,1,new Object[]{\"@C_skip append[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, FieldBuilder.varNameShouldSkip);
+                    ParseUtil.append(deProcessBody, "{}.deParseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip append[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, FieldBuilder.varNameShouldSkip);
                 }
                 ParseUtil.append(deProcessBody, "}\n");
             } else {
@@ -301,14 +350,14 @@ public class Parser {
                     String skipCode = "(" + lenValCode + "-" + classByteLen + ")";
                     ParseUtil.append(deProcessBody, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, skipCode);
                     if (logCollector_deParse != null) {
-                        ParseUtil.append(deProcessBody, "{}.logCollector_deParse.collect_class({}.class,1,new Object[]{\"@C_skip append[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, skipCode);
+                        ParseUtil.append(deProcessBody, "{}.deParseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip append[\"+{}+\"]\"});\n", Parser.class.getName(), clazzName, skipCode);
                     }
                 } else {
                     int skip = c_skip.len() - classByteLen;
                     if (skip > 0) {
                         ParseUtil.append(deProcessBody, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, skip);
                         if (logCollector_deParse != null) {
-                            ParseUtil.append(deProcessBody, "{}.logCollector_deParse.collect_class({}.class,1,new Object[]{\"@C_skip append[{}]\"});\n", Parser.class.getName(), clazzName, skip);
+                            ParseUtil.append(deProcessBody, "{}.deParseLogCollector().collect_class({}.class,1,new Object[]{\"@C_skip append[{}]\"});\n", Parser.class.getName(), clazzName, skip);
                         }
                     }
                 }
@@ -364,16 +413,19 @@ public class Parser {
      * @return
      */
     public static <T> Processor<T> getProcessor(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
+        Objects.requireNonNull(clazz, "clazz");
+        Objects.requireNonNull(byteOrder, "byteOrder");
+        freezeConfiguration();
         final String key = ParseUtil.getProcessorKey(clazz, byteOrder, numValGetter);
-        Processor<T> processor = (Processor<T>) beanProcessorKey_processor.get(key);
+        Processor<T> processor = (Processor<T>) PROCESSOR_CACHE.get(key);
         if (processor == null) {
-            synchronized (beanProcessorKey_processor) {
-                processor = (Processor<T>) beanProcessorKey_processor.get(key);
+            synchronized (PROCESSOR_BUILD_LOCK) {
+                processor = (Processor<T>) PROCESSOR_CACHE.get(key);
                 if (processor == null) {
                     try {
                         final Class<T> processClass = Parser.buildClass(clazz, byteOrder, numValGetter);
                         processor = (Processor<T>) processClass.getConstructor().newInstance();
-                        beanProcessorKey_processor.put(key, processor);
+                        PROCESSOR_CACHE.put(key, processor);
                     } catch (Exception ex) {
                         throw BaseException.get(ex);
                     }

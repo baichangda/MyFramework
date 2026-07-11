@@ -17,8 +17,8 @@ public class ParserTest {
 
     @Test
     public void sample() {
-        Parser.withDefaultLogCollector_parse();
-        Parser.withDefaultLogCollector_deParse();
+        Parser.enableParseLog();
+        Parser.enableDeParseLog();
         Parser.enableGenerateClassFile();
         Parser.enablePrintBuildLog();
         Packet packet = new Packet();
@@ -174,8 +174,8 @@ public class ParserTest {
 
     @Test
     public void test() {
-        Parser.withDefaultLogCollector_parse();
-        Parser.withDefaultLogCollector_deParse();
+        Parser.enableParseLog();
+        Parser.enableDeParseLog();
         Parser.enableGenerateClassFile();
         Parser.enablePrintBuildLog();
         String data = Const.sample_vehicleRunData;

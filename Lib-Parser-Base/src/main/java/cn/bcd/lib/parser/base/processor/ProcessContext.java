@@ -5,6 +5,7 @@ import cn.bcd.lib.parser.base.util.BitBuf_reader_log;
 import cn.bcd.lib.parser.base.util.BitBuf_writer;
 import cn.bcd.lib.parser.base.util.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
+import java.util.Objects;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
@@ -29,7 +30,7 @@ public class ProcessContext {
 
     public ProcessContext(Object instance, ProcessContext parentContext) {
         this.instance = instance;
-        this.parentContext = parentContext;
+        this.parentContext = Objects.requireNonNull(parentContext, "parentContext");
         this.byteBuf = parentContext.byteBuf;
         this.bitBuf_reader = parentContext.bitBuf_reader;
         this.bitBuf_writer = parentContext.bitBuf_writer;
@@ -45,7 +46,7 @@ public class ProcessContext {
     public ProcessContext(ByteBuf byteBuf) {
         this.instance = null;
         this.parentContext = null;
-        this.byteBuf = byteBuf;
+        this.byteBuf = Objects.requireNonNull(byteBuf, "byteBuf");
     }
 
     public final BitBuf_reader getBitBuf_reader() {
@@ -77,6 +78,7 @@ public class ProcessContext {
     }
 
     public final void putGlobalVar(int varIndex, int v) {
+        checkGlobalVarIndex(varIndex);
         if (globalVars == null) {
             globalVars = new int[26];
         }
@@ -84,6 +86,16 @@ public class ProcessContext {
     }
 
     public final int getGlobalVar(int varIndex) {
+        checkGlobalVarIndex(varIndex);
+        if (globalVars == null) {
+            throw new IllegalStateException("global variable has not been initialized: " + (char) ('A' + varIndex));
+        }
         return globalVars[varIndex];
+    }
+
+    private static void checkGlobalVarIndex(int varIndex) {
+        if (varIndex < 0 || varIndex >= 26) {
+            throw new IllegalArgumentException("global variable index must be between 0 and 25: " + varIndex);
+        }
     }
 }

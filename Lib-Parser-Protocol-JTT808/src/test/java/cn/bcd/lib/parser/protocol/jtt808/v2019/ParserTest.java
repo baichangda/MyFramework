@@ -10,8 +10,8 @@ public class ParserTest {
 
     @Test
     public void sample() {
-        Parser.withDefaultLogCollector_parse();
-        Parser.withDefaultLogCollector_deParse();
+        Parser.enableParseLog();
+        Parser.enableDeParseLog();
         Parser.enableGenerateClassFile();
         Parser.enablePrintBuildLog();
     }
