@@ -27,6 +27,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -76,9 +77,9 @@ public class Parser {
         anno_fieldBuilder = ParseUtil.getAllFieldBuild();
     }
 
-    public final static Map<String, Processor<?>> beanProcessorKey_processor = new HashMap<>();
+    public final static Map<String, Processor<?>> beanProcessorKey_processor = new ConcurrentHashMap<>();
     /**
-     * 解析log采集器
+     * 解析log采集器g
      * 需要注意的是、此功能用于调试、会在生成的class中加入日志代码、影响性能
      * 而且此功能开启时候避免多线程调用解析、会产生日志混淆、不易调试
      */
