@@ -389,6 +389,7 @@ public class Parser {
             logger.info("\n-----------class[{}] source-----------\n{}\n", clazz.getName(), source.toString());
         }
         return (Class<T>) DynamicProcessorCompiler.compileAndDefine(implProcessor_class_name, source.toString(), generateClassFile);
+
     }
 
     /**

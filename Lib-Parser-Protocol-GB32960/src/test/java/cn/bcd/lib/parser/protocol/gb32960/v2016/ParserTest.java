@@ -2,6 +2,7 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
+import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBuf;
