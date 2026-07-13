@@ -5,7 +5,6 @@ import cn.bcd.lib.parser.base.anno.C_skip;
 import io.netty.buffer.ByteBuf;
 
 public abstract class FieldBuilder {
-    public final static String varNameThis = "$0";
     public final static String varNameByteBuf = "$1";
     public final static String varNameProcessContext = "$2";
 

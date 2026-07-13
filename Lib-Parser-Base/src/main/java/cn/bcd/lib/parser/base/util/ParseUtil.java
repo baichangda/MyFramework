@@ -140,24 +140,6 @@ public class ParseUtil {
         return true;
     }
 
-    public static boolean needBitBuf(List<Field> fieldList) {
-        return fieldList.stream().anyMatch(e -> e.isAnnotationPresent(F_bit_num.class) || e.isAnnotationPresent(F_bit_num_array.class));
-    }
-
-    public static void newBitBuf_parse(BuilderContext context) {
-        final StringBuilder body = context.method_body;
-        final String bitBuf_reader_className = Parser.parseLogCollector() == null ? BitBuf_reader.class.getName() : BitBuf_reader_log.class.getName();
-        final String funcName = Parser.parseLogCollector() == null ? "getBitBuf_reader" : "getBitBuf_reader_log";
-        ParseUtil.append(body, "final {} {}={}.{}();\n", bitBuf_reader_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
-    }
-
-    public static void newBitBuf_deParse(BuilderContext context) {
-        final StringBuilder body = context.method_body;
-        final String bitBuf_writer_className = Parser.deParseLogCollector() == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
-        final String funcName = Parser.deParseLogCollector() == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
-        ParseUtil.append(body, "final {} {}={}.{}();\n", bitBuf_writer_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
-    }
-
     public static void appendBitLogCode_parse(final BuilderContext context) {
         final String varNameBitBuf = context.getBitBuf_parse();
         if (varNameBitBuf != null) {
