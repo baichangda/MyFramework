@@ -42,7 +42,7 @@ public class ParserTest {
     @Test
     public void test_performance() {
         Parser.disableByteBufCheck();
-        Parser.enablePrintBuildLog();
+//        Parser.enablePrintBuildLog();
         Parser.enableGenerateClassFile();
         String data = Const.sample_vehicleRunData;
         int threadNum = 1;
