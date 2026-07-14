@@ -101,8 +101,10 @@ public class Parser {
     private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         ParserModelValidator.validate(clazz, numValGetter);
         return (Class<T>) ProcessorSourceBuilder.build(clazz, byteOrder, numValGetter,
-                logCollector_parse != null, logCollector_deParse != null,
-                printBuildLog, generateClassFile);
+                logCollector_parse != null,
+                logCollector_deParse != null,
+                printBuildLog,
+                generateClassFile);
     }
 
     public static <T> Processor<T> getProcessor(Class<T> clazz) {

@@ -142,7 +142,7 @@ final class ProcessorSourceBuilder {
     }
 
     private void appendFieldLogBefore(BuilderContext context, Direction direction) {
-        if (!loggingEnabled(direction) || isBitField(context.field)) {
+        if (loggingDisable(direction) || isBitField(context.field)) {
             return;
         }
         if (direction == Direction.PARSE) {
@@ -153,7 +153,7 @@ final class ProcessorSourceBuilder {
     }
 
     private void appendFieldLogAfter(BuilderContext context, Direction direction) {
-        if (!loggingEnabled(direction)) {
+        if (loggingDisable(direction)) {
             return;
         }
         boolean bitField = isBitField(context.field);
@@ -170,8 +170,8 @@ final class ProcessorSourceBuilder {
         }
     }
 
-    private boolean loggingEnabled(Direction direction) {
-        return direction == Direction.PARSE ? parseLogging : deParseLogging;
+    private boolean loggingDisable(Direction direction) {
+        return direction == Direction.PARSE ? !parseLogging : !deParseLogging;
     }
 
     private static boolean isBitField(Field field) {
@@ -229,7 +229,7 @@ final class ProcessorSourceBuilder {
     }
 
     private void appendClassSkipLog(StringBuilder body, String lengthCode, boolean expression, Direction direction) {
-        if (!loggingEnabled(direction)) {
+        if (loggingDisable(direction)) {
             return;
         }
         String collector = direction == Direction.PARSE ? "parseLogCollector" : "deParseLogCollector";
