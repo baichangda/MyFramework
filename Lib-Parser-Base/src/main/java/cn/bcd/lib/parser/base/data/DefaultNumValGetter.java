@@ -6,8 +6,8 @@ package cn.bcd.lib.parser.base.data;
  * 正常、则进行偏移量运算、否则直接标注值的异常类型
  * 只针对数值类型
  * 目前有如下几种异常情况
- * 0xFF为异常值
- * 0xFE为无效值
+ * 0xFF为异常值、对应type=1
+ * 0xFE为无效值、对应type=2
  */
 public final class DefaultNumValGetter extends NumValGetter {
     public final static DefaultNumValGetter instance = new DefaultNumValGetter();
