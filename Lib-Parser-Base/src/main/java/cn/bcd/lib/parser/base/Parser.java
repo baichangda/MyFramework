@@ -1,6 +1,7 @@
 package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
@@ -9,8 +10,10 @@ import cn.bcd.lib.parser.base.log.LogCollector_deParse;
 import cn.bcd.lib.parser.base.log.LogCollector_parse;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.ParseUtil;
+import cn.bcd.lib.parser.base.validator.*;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -99,12 +102,54 @@ public class Parser {
     }
 
     private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
-        ParserModelValidator.validate(clazz, numValGetter);
+        validateModel(clazz, numValGetter);
         return (Class<T>) ProcessorSourceBuilder.build(clazz, byteOrder, numValGetter,
                 logCollector_parse != null,
                 logCollector_deParse != null,
                 printBuildLog,
                 generateClassFile);
+    }
+
+    private static void validateModel(Class<?> clazz, NumValGetter numValGetter) {
+        ModelClassValidator.validate(clazz);
+        C_impl cImpl = clazz.getAnnotation(C_impl.class);
+        if (cImpl != null) {
+            C_implValidator.validate(clazz, cImpl);
+        }
+        C_skip cSkip = clazz.getAnnotation(C_skip.class);
+        if (cSkip != null) {
+            C_skipValidator.validate(clazz, cSkip);
+        }
+        for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
+            for (Field field : current.getDeclaredFields()) {
+                Annotation annotation = ModelFieldValidator.validate(field, anno_fieldBuilder);
+                if (annotation != null) {
+                    validateAnnotation(field, annotation, numValGetter);
+                }
+            }
+        }
+    }
+
+    private static void validateAnnotation(Field field, Annotation parserAnnotation, NumValGetter numValGetter) {
+        switch (parserAnnotation) {
+            case F_bean annotation -> F_beanValidator.validate(field, annotation);
+            case F_bean_list annotation -> F_bean_listValidator.validate(field, annotation);
+            case F_bit_num annotation -> F_bit_numValidator.validate(field, annotation);
+            case F_bit_num_array annotation -> F_bit_num_arrayValidator.validate(field, annotation);
+            case F_bit_num_easy annotation -> F_bit_num_easyValidator.validate(field, annotation);
+            case F_customize annotation -> F_customizeValidator.validate(field, annotation);
+            case F_date_bcd annotation -> F_date_bcdValidator.validate(field, annotation);
+            case F_date_bytes_6 annotation -> F_date_bytes_6Validator.validate(field, annotation);
+            case F_date_bytes_7 annotation -> F_date_bytes_7Validator.validate(field, annotation);
+            case F_date_ts annotation -> F_date_tsValidator.validate(field, annotation);
+            case F_num annotation -> F_numValidator.validate(field, annotation, numValGetter);
+            case F_num_array annotation -> F_num_arrayValidator.validate(field, annotation, numValGetter);
+            case F_skip annotation -> F_skipValidator.validate(field, annotation);
+            case F_string annotation -> F_stringValidator.validate(field, annotation);
+            case F_string_bcd annotation -> F_string_bcdValidator.validate(field, annotation);
+            default -> throw BaseException.get("unsupported parser annotation[{}] on class[{}] field[{}]",
+                    parserAnnotation.annotationType().getName(), field.getDeclaringClass().getName(), field.getName());
+        }
     }
 
     public static <T> Processor<T> getProcessor(Class<T> clazz) {
