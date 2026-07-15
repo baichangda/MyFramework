@@ -10,6 +10,10 @@ package cn.bcd.lib.parser.base.data;
  * 0xFE为异常、对应type=2
  */
 public final class DefaultNumValGetter extends NumValGetter {
+    public static final byte TYPE_NORMAL = 0;
+    public static final byte TYPE_INVALID = 1;
+    public static final byte TYPE_ABNORMAL = 2;
+
     public final static DefaultNumValGetter instance = new DefaultNumValGetter();
 
     private DefaultNumValGetter() {
@@ -20,181 +24,181 @@ public final class DefaultNumValGetter extends NumValGetter {
     public byte getType8(int val) {
         int normalizedVal = val & 0xFF;
         if (normalizedVal == 0xFF) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFE) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType16(int val) {
         int normalizedVal = val & 0xFFFF;
         if (normalizedVal == 0xFFFF) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFFFE) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType24(int val) {
         int normalizedVal = val & 0xFFFFFF;
         if (normalizedVal == 0xFFFFFF) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFFFFFE) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType32(int val) {
         if (val == 0xFFFFFFFF) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (val == 0xFFFFFFFE) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType40(long val) {
         long normalizedVal = val & 0xFFFFFFFFFFL;
         if (normalizedVal == 0xFFFFFFFFFFL) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFFFFFFFFFEL) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType48(long val) {
         long normalizedVal = val & 0xFFFFFFFFFFFFL;
         if (normalizedVal == 0xFFFFFFFFFFFFL) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFFFFFFFFFFFEL) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType56(long val) {
         long normalizedVal = val & 0xFFFFFFFFFFFFFFL;
         if (normalizedVal == 0xFFFFFFFFFFFFFFL) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (normalizedVal == 0xFFFFFFFFFFFFFEL) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public byte getType64(long val) {
         if (val == 0xFFFFFFFFFFFFFFFFL) {
-            return 1;
+            return TYPE_INVALID;
         }
         if (val == 0xFFFFFFFFFFFFFFFEL) {
-            return 2;
+            return TYPE_ABNORMAL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public int getVal_int8(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFF;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFE;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public int getVal_int16(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFF;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFE;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public int getVal_int24(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFF;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFE;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public int getVal_int32(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFFFF;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFFFE;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public long getVal_long40(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFFFFFFL;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFFFFFEL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public long getVal_long48(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFFFFFFFFL;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFFFFFFFEL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public long getVal_long56(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFFFFFFFFFFL;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFFFFFFFFFEL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 
     @Override
     public long getVal_long64(byte type) {
-        if (type == 1) {
+        if (type == TYPE_INVALID) {
             return 0xFFFFFFFFFFFFFFFFL;
         }
-        if (type == 2) {
+        if (type == TYPE_ABNORMAL) {
             return 0xFFFFFFFFFFFFFFFEL;
         }
-        return 0;
+        return TYPE_NORMAL;
     }
 }
