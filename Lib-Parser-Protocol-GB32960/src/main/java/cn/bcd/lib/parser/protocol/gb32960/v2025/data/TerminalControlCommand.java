@@ -4,7 +4,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
-import cn.bcd.lib.parser.base.data.NumType;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Date;
@@ -49,7 +48,7 @@ public class TerminalControlCommand implements PacketData {
         public static Alarm from(byte[] data) {
             Alarm alarm = new Alarm();
             byte b = data[0];
-            byte type = DefaultNumValGetter.instance.getType(NumType.uint8, b);
+            byte type = DefaultNumValGetter.instance.getType8(b);
             alarm.level__v = type;
             if (type == 0) {
                 alarm.level = b;
@@ -62,7 +61,7 @@ public class TerminalControlCommand implements PacketData {
             if (level__v == 0) {
                 data[0] = level;
             } else {
-                data[0] = (byte) DefaultNumValGetter.instance.getVal_int(NumType.uint8, level__v);
+                data[0] = (byte) DefaultNumValGetter.instance.getVal_int8(level__v);
             }
             return data;
         }

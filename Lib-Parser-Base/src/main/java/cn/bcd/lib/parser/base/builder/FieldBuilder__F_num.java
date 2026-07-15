@@ -277,13 +277,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         if (type == NumType.uint32) {
             //特殊处理、避免调用参数为long的方法
-            ParseUtil.append(body, "final byte {}={}.getType({}.{},(int){});\n",
-                    varNameNumValType, varNameNumValGetter,
-                    NumType.class.getName(), type.name(), varNameRawVal);
+            ParseUtil.append(body, "final byte {}={}.getType32((int){});\n",
+                    varNameNumValType, varNameNumValGetter, varNameRawVal);
         } else {
-            ParseUtil.append(body, "final byte {}={}.getType({}.{},{});\n",
-                    varNameNumValType, varNameNumValGetter,
-                    NumType.class.getName(), type.name(), varNameRawVal);
+            String typeWidth = type.name().replace("uint", "").replace("int", "");
+            ParseUtil.append(body, "final byte {}={}.getType{}({});\n",
+                    varNameNumValType, varNameNumValGetter, typeWidth, varNameRawVal);
         }
 
 
@@ -495,7 +494,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
         String varNameNumValGetter = context.getNumValGetterVarName();
 
 
-        String valCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), type.name(), varNameNumValType);
+        String typeWidth = type.name().replace("uint", "").replace("int", "");
+        String valCode = ParseUtil.format("{}.getVal_{}{}({})", varNameNumValGetter, funcSuffix, typeWidth, varNameNumValType);
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
 
         if (var != '0') {

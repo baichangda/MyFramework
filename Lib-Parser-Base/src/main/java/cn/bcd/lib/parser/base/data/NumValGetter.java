@@ -22,11 +22,35 @@ public abstract class NumValGetter {
         INDEX_NUM_VAL_GETTER.put(index, this);
     }
 
-    public abstract byte getType(NumType numType, int val);
+    public abstract byte getType8(int val);
 
-    public abstract byte getType(NumType numType, long val);
+    public abstract byte getType16(int val);
 
-    public abstract int getVal_int(NumType numType, byte type);
+    public abstract byte getType24(int val);
 
-    public abstract long getVal_long(NumType numType, byte type);
+    public abstract byte getType32(int val);
+
+    public abstract byte getType40(long val);
+
+    public abstract byte getType48(long val);
+
+    public abstract byte getType56(long val);
+
+    public abstract byte getType64(long val);
+
+    public abstract int getVal_int8(byte type);
+
+    public abstract int getVal_int16(byte type);
+
+    public abstract int getVal_int24(byte type);
+
+    public abstract int getVal_int32(byte type);
+
+    public abstract long getVal_long40(byte type);
+
+    public abstract long getVal_long48(byte type);
+
+    public abstract long getVal_long56(byte type);
+
+    public abstract long getVal_long64(byte type);
 }

@@ -313,11 +313,12 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         String varNameArrEleNumValType = varNameField + "_arrEleRawVal__v";
         String varNameNumValGetter = context.getNumValGetterVarName();
         if (singleType == NumType.uint32) {
-            ParseUtil.append(body, "final byte {}={}.getType({}.{},(int){});\n", varNameArrEleNumValType, varNameNumValGetter,
-                    NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
+            ParseUtil.append(body, "final byte {}={}.getType32((int){});\n", varNameArrEleNumValType,
+                    varNameNumValGetter, varNameArrEleRawVal);
         } else {
-            ParseUtil.append(body, "final byte {}={}.getType({}.{},{});\n", varNameArrEleNumValType, varNameNumValGetter,
-                    NumType.class.getName(), singleType.name(), varNameArrEleRawVal);
+            String typeWidth = singleType.name().replace("uint", "").replace("int", "");
+            ParseUtil.append(body, "final byte {}={}.getType{}({});\n", varNameArrEleNumValType,
+                    varNameNumValGetter, typeWidth, varNameArrEleRawVal);
         }
 
         //判断值类型
@@ -509,7 +510,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         String varNameNumValGetter = context.getNumValGetterVarName();
 
-        String arrEleValCode = ParseUtil.format("{}.getVal_{}({}.{},{})", varNameNumValGetter, funcSuffix, NumType.class.getName(), singleType.name(), varNameArrEle__v);
+        String typeWidth = singleType.name().replace("uint", "").replace("int", "");
+        String arrEleValCode = ParseUtil.format("{}.getVal_{}{}({})", varNameNumValGetter, funcSuffix, typeWidth, varNameArrEle__v);
         //写入
         ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(anno.singleType(), bigEndian, arrEleValCode));
 

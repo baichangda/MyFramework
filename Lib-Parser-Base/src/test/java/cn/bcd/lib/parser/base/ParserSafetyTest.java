@@ -2,6 +2,7 @@ package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.anno.F_num;
+import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
@@ -31,6 +32,11 @@ public class ParserSafetyTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> Parser.getProcessor(CheckedBean.class, ByteOrder.Default, null));
         assertTrue(hasMessage(exception, "requires NumValGetter"));
+    }
+
+    @Test
+    void compilesFixedWidthGetterCallsForEveryWidth() {
+        assertDoesNotThrow(() -> Parser.getProcessor(AllWidthsCheckedBean.class));
     }
 
     @Test
@@ -102,6 +108,44 @@ public class ParserSafetyTest {
         @F_num(type = NumType.uint8, checkVal = true)
         public int value;
         public byte value__v;
+    }
+
+    public static class AllWidthsCheckedBean {
+        @F_num(type = NumType.uint8, checkVal = true)
+        public int value8;
+        public byte value8__v;
+
+        @F_num(type = NumType.uint16, checkVal = true)
+        public int value16;
+        public byte value16__v;
+
+        @F_num(type = NumType.uint24, checkVal = true)
+        public int value24;
+        public byte value24__v;
+
+        @F_num(type = NumType.uint32, checkVal = true)
+        public long value32;
+        public byte value32__v;
+
+        @F_num(type = NumType.uint40, checkVal = true)
+        public long value40;
+        public byte value40__v;
+
+        @F_num(type = NumType.uint48, checkVal = true)
+        public long value48;
+        public byte value48__v;
+
+        @F_num(type = NumType.uint56, checkVal = true)
+        public long value56;
+        public byte value56__v;
+
+        @F_num(type = NumType.uint64, checkVal = true)
+        public long value64;
+        public byte value64__v;
+
+        @F_num_array(singleType = NumType.uint16, len = 1, singleCheckVal = true)
+        public int[] values;
+        public byte[] values__v;
     }
 
     public static class ConcurrentBean {

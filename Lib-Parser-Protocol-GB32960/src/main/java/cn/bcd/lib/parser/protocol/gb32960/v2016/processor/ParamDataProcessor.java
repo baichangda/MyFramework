@@ -2,7 +2,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016.processor;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
-import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
@@ -39,11 +38,11 @@ public class ParamDataProcessor implements Processor<ParamData> {
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();
-            DefaultNumValGetter.instance.getType(NumType.uint16, data.readUnsignedByte());
+            DefaultNumValGetter.instance.getType16(data.readUnsignedByte());
             switch (paramId) {
                 case 0x01 -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.localStorageTimeCycle__v = type;
                     if (type == 0) {
                         paramData.localStorageTimeCycle = v;
@@ -51,7 +50,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x02 -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.normalReportTime__v = type;
                     if (type == 0) {
                         paramData.normalReportTime = v;
@@ -59,7 +58,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x03 -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.alarmReportTime__v = type;
                     if (type == 0) {
                         paramData.alarmReportTime = v;
@@ -70,7 +69,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                         paramData.remotePlatformName = data.readCharSequence(paramData.remotePlatformNameLen, StandardCharsets.UTF_8).toString();
                 case 0x06 -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.remotePlatformPort__v = type;
                     if (type == 0) {
                         paramData.remotePlatformPort = v;
@@ -82,7 +81,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                         paramData.terminalSoftwareData = data.readCharSequence(5, StandardCharsets.UTF_8).toString();
                 case 0x09 -> {
                     short v = data.readUnsignedByte();
-                    byte type = numValGetter.getType(NumType.uint8, v);
+                    byte type = numValGetter.getType8(v);
                     paramData.heartbeatSendCycleData__v = type;
                     if (type == 0) {
                         paramData.heartbeatSendCycleData = v;
@@ -90,7 +89,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x0A -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.terminalResponseTimeoutData__v = type;
                     if (type == 0) {
                         paramData.terminalResponseTimeoutData = v;
@@ -98,7 +97,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x0B -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.domainResponseTimeoutData__v = type;
                     if (type == 0) {
                         paramData.domainResponseTimeoutData = v;
@@ -106,7 +105,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x0C -> {
                     short v = data.readUnsignedByte();
-                    byte type = numValGetter.getType(NumType.uint8, v);
+                    byte type = numValGetter.getType8(v);
                     paramData.loginFailureData__v = type;
                     if (type == 0) {
                         paramData.loginFailureData = v;
@@ -117,7 +116,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                         paramData.publicPlatformName = data.readCharSequence(paramData.publicPlatformNameLen, StandardCharsets.UTF_8).toString();
                 case 0x0F -> {
                     int v = data.readUnsignedShort();
-                    byte type = numValGetter.getType(NumType.uint16, v);
+                    byte type = numValGetter.getType16(v);
                     paramData.publicPlatformPort__v = type;
                     if (type == 0) {
                         paramData.publicPlatformPort = v;
@@ -125,7 +124,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 }
                 case 0x10 -> {
                     short v = data.readUnsignedByte();
-                    byte type = numValGetter.getType(NumType.uint8, v);
+                    byte type = numValGetter.getType8(v);
                     paramData.samplingDetectionData__v = type;
                     if (type == 0) {
                         paramData.samplingDetectionData = v;
@@ -143,7 +142,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.localStorageTimeCycle__v == 0) {
                 data.writeShort(instance.localStorageTimeCycle);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.localStorageTimeCycle__v));
+                data.writeShort(numValGetter.getVal_int16(instance.localStorageTimeCycle__v));
             }
         }
 
@@ -152,7 +151,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.normalReportTime__v == 0) {
                 data.writeShort(instance.normalReportTime);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.normalReportTime__v));
+                data.writeShort(numValGetter.getVal_int16(instance.normalReportTime__v));
             }
         }
 
@@ -162,7 +161,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.alarmReportTime__v == 0) {
                 data.writeShort(instance.alarmReportTime);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.alarmReportTime__v));
+                data.writeShort(numValGetter.getVal_int16(instance.alarmReportTime__v));
             }
         }
 
@@ -178,7 +177,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.remotePlatformPort__v == 0) {
                 data.writeShort(instance.remotePlatformPort);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.remotePlatformPort__v));
+                data.writeShort(numValGetter.getVal_int16(instance.remotePlatformPort__v));
             }
         }
 
@@ -196,7 +195,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.heartbeatSendCycleData__v == 0) {
                 data.writeByte(instance.heartbeatSendCycleData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.heartbeatSendCycleData__v));
+                data.writeByte(numValGetter.getVal_int8(instance.heartbeatSendCycleData__v));
             }
         }
 
@@ -205,7 +204,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.terminalResponseTimeoutData__v == 0) {
                 data.writeShort(instance.terminalResponseTimeoutData);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.terminalResponseTimeoutData__v));
+                data.writeShort(numValGetter.getVal_int16(instance.terminalResponseTimeoutData__v));
             }
         }
 
@@ -214,7 +213,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.domainResponseTimeoutData__v == 0) {
                 data.writeShort(instance.domainResponseTimeoutData);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.domainResponseTimeoutData__v));
+                data.writeShort(numValGetter.getVal_int16(instance.domainResponseTimeoutData__v));
             }
         }
 
@@ -223,7 +222,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.loginFailureData__v == 0) {
                 data.writeByte(instance.loginFailureData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.loginFailureData__v));
+                data.writeByte(numValGetter.getVal_int8(instance.loginFailureData__v));
             }
         }
 
@@ -239,7 +238,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.publicPlatformPort__v == 0) {
                 data.writeShort(instance.publicPlatformPort);
             } else {
-                data.writeShort(numValGetter.getVal_int(NumType.uint16, instance.publicPlatformPort__v));
+                data.writeShort(numValGetter.getVal_int16(instance.publicPlatformPort__v));
             }
         }
 
@@ -248,7 +247,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
             if (instance.samplingDetectionData__v == 0) {
                 data.writeByte(instance.samplingDetectionData);
             } else {
-                data.writeByte(numValGetter.getVal_int(NumType.uint8, instance.samplingDetectionData__v));
+                data.writeByte(numValGetter.getVal_int8(instance.samplingDetectionData__v));
             }
         }
     }

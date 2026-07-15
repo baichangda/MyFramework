@@ -9,64 +9,113 @@ class DefaultNumValGetterTest {
 
     @Test
     void recognizesIntSpecialValuesForEverySupportedWidth() {
-        assertIntValues(NumType.uint8, 0xFF);
-        assertIntValues(NumType.int8, 0xFF);
-        assertIntValues(NumType.uint16, 0xFFFF);
-        assertIntValues(NumType.int16, 0xFFFF);
-        assertIntValues(NumType.uint24, 0xFFFFFF);
-        assertIntValues(NumType.int24, 0xFFFFFF);
-        assertIntValues(NumType.uint32, 0xFFFFFFFF);
-        assertIntValues(NumType.int32, 0xFFFFFFFF);
+        assertIntValues(8, 0xFF);
+        assertIntValues(16, 0xFFFF);
+        assertIntValues(24, 0xFFFFFF);
+        assertIntValues(32, 0xFFFFFFFF);
     }
 
     @Test
     void recognizesLongSpecialValuesForEverySupportedWidth() {
-        assertLongValues(NumType.uint40, 0xFFFFFFFFFFL);
-        assertLongValues(NumType.int40, 0xFFFFFFFFFFL);
-        assertLongValues(NumType.uint48, 0xFFFFFFFFFFFFL);
-        assertLongValues(NumType.int48, 0xFFFFFFFFFFFFL);
-        assertLongValues(NumType.uint56, 0xFFFFFFFFFFFFFFL);
-        assertLongValues(NumType.int56, 0xFFFFFFFFFFFFFFL);
-        assertLongValues(NumType.uint64, 0xFFFFFFFFFFFFFFFFL);
-        assertLongValues(NumType.int64, 0xFFFFFFFFFFFFFFFFL);
+        assertLongValues(40, 0xFFFFFFFFFFL);
+        assertLongValues(48, 0xFFFFFFFFFFFFL);
+        assertLongValues(56, 0xFFFFFFFFFFFFFFL);
+        assertLongValues(64, 0xFFFFFFFFFFFFFFFFL);
     }
 
     @Test
-    void onlyChecksBitsWithinTheDeclaredWidth() {
-        assertEquals(1, getter.getType(NumType.uint8, 0x1FF));
-        assertEquals(2, getter.getType(NumType.uint8, 0x1FE));
-        assertEquals(1, getter.getType(NumType.uint40, 0x1FFFFFFFFFFL));
-        assertEquals(2, getter.getType(NumType.uint40, 0x1FFFFFFFFFEL));
+    void recognizesSpecialValuesThroughFixedWidthMethods() {
+        assertEquals(1, getter.getType8(0xFF));
+        assertEquals(2, getter.getType8(0xFE));
+        assertEquals(1, getter.getType16(0xFFFF));
+        assertEquals(2, getter.getType16(0xFFFE));
+        assertEquals(1, getter.getType24(0xFFFFFF));
+        assertEquals(2, getter.getType24(0xFFFFFE));
+        assertEquals(1, getter.getType32(0xFFFFFFFF));
+        assertEquals(2, getter.getType32(0xFFFFFFFE));
+        assertEquals(1, getter.getType40(0xFFFFFFFFFFL));
+        assertEquals(2, getter.getType40(0xFFFFFFFFFEL));
+        assertEquals(1, getter.getType48(0xFFFFFFFFFFFFL));
+        assertEquals(2, getter.getType48(0xFFFFFFFFFFFEL));
+        assertEquals(1, getter.getType56(0xFFFFFFFFFFFFFFL));
+        assertEquals(2, getter.getType56(0xFFFFFFFFFFFFFEL));
+        assertEquals(1, getter.getType64(0xFFFFFFFFFFFFFFFFL));
+        assertEquals(2, getter.getType64(0xFFFFFFFFFFFFFFFEL));
     }
 
     @Test
-    void returnsZeroForUnsupportedTypesAndValueKinds() {
-        assertEquals(0, getter.getType(NumType.uint40, 0xFFFFFFFF));
-        assertEquals(0, getter.getType(NumType.uint32, 0xFFFFFFFFL));
-        assertEquals(0, getter.getType(NumType.float32, 0xFFFFFFFF));
-        assertEquals(0, getter.getType(NumType.float64, 0xFFFFFFFFFFFFFFFFL));
-
-        assertEquals(0, getter.getVal_int(NumType.uint40, (byte) 1));
-        assertEquals(0, getter.getVal_long(NumType.uint32, (byte) 1));
-        assertEquals(0, getter.getVal_int(NumType.uint8, (byte) 0));
-        assertEquals(0, getter.getVal_int(NumType.uint8, (byte) 3));
-        assertEquals(0, getter.getVal_long(NumType.uint64, (byte) 0));
-        assertEquals(0, getter.getVal_long(NumType.uint64, (byte) 3));
+    void normalizesValuesToTheDeclaredWidth() {
+        assertEquals(1, getter.getType8(-1));
+        assertEquals(2, getter.getType8(-2));
+        assertEquals(1, getter.getType40(-1L));
+        assertEquals(2, getter.getType40(-2L));
+        assertEquals(1, getter.getType8(0x1FF));
+        assertEquals(2, getter.getType8(0x1FE));
+        assertEquals(1, getter.getType40(0x1FFFFFFFFFFL));
+        assertEquals(2, getter.getType40(0x1FFFFFFFFFEL));
     }
 
-    private void assertIntValues(NumType numType, int mask) {
-        assertEquals(1, getter.getType(numType, mask));
-        assertEquals(2, getter.getType(numType, mask - 1));
-        assertEquals(0, getter.getType(numType, mask - 2));
-        assertEquals(mask, getter.getVal_int(numType, (byte) 1));
-        assertEquals(mask - 1, getter.getVal_int(numType, (byte) 2));
+    @Test
+    void returnsZeroForUnknownValueTypes() {
+        assertEquals(0, getter.getVal_int8((byte) 0));
+        assertEquals(0, getter.getVal_int8((byte) 3));
+        assertEquals(0, getter.getVal_long64((byte) 0));
+        assertEquals(0, getter.getVal_long64((byte) 3));
     }
 
-    private void assertLongValues(NumType numType, long mask) {
-        assertEquals(1, getter.getType(numType, mask));
-        assertEquals(2, getter.getType(numType, mask - 1));
-        assertEquals(0, getter.getType(numType, mask - 2));
-        assertEquals(mask, getter.getVal_long(numType, (byte) 1));
-        assertEquals(mask - 1, getter.getVal_long(numType, (byte) 2));
+    private void assertIntValues(int width, int mask) {
+        assertEquals(1, getFixedType(width, mask));
+        assertEquals(2, getFixedType(width, mask - 1));
+        assertEquals(0, getFixedType(width, mask - 2));
+        assertEquals(mask, getFixedIntVal(width, (byte) 1));
+        assertEquals(mask - 1, getFixedIntVal(width, (byte) 2));
+    }
+
+    private void assertLongValues(int width, long mask) {
+        assertEquals(1, getFixedType(width, mask));
+        assertEquals(2, getFixedType(width, mask - 1));
+        assertEquals(0, getFixedType(width, mask - 2));
+        assertEquals(mask, getFixedLongVal(width, (byte) 1));
+        assertEquals(mask - 1, getFixedLongVal(width, (byte) 2));
+    }
+
+    private byte getFixedType(int width, int value) {
+        return switch (width) {
+            case 8 -> getter.getType8(value);
+            case 16 -> getter.getType16(value);
+            case 24 -> getter.getType24(value);
+            case 32 -> getter.getType32(value);
+            default -> throw new IllegalArgumentException("Unsupported width: " + width);
+        };
+    }
+
+    private byte getFixedType(int width, long value) {
+        return switch (width) {
+            case 40 -> getter.getType40(value);
+            case 48 -> getter.getType48(value);
+            case 56 -> getter.getType56(value);
+            case 64 -> getter.getType64(value);
+            default -> throw new IllegalArgumentException("Unsupported width: " + width);
+        };
+    }
+
+    private int getFixedIntVal(int width, byte type) {
+        return switch (width) {
+            case 8 -> getter.getVal_int8(type);
+            case 16 -> getter.getVal_int16(type);
+            case 24 -> getter.getVal_int24(type);
+            case 32 -> getter.getVal_int32(type);
+            default -> throw new IllegalArgumentException("Unsupported width: " + width);
+        };
+    }
+
+    private long getFixedLongVal(int width, byte type) {
+        return switch (width) {
+            case 40 -> getter.getVal_long40(type);
+            case 48 -> getter.getVal_long48(type);
+            case 56 -> getter.getVal_long56(type);
+            case 64 -> getter.getVal_long64(type);
+            default -> throw new IllegalArgumentException("Unsupported width: " + width);
+        };
     }
 }
