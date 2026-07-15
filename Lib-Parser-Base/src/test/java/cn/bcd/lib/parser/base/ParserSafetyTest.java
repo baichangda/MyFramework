@@ -35,6 +35,20 @@ public class ParserSafetyTest {
     }
 
     @Test
+    void rejectsValueCheckingForFloatingPointTypes() {
+        assertUnsupportedValueChecking(Float32CheckedBean.class, "float32");
+        assertUnsupportedValueChecking(Float64CheckedBean.class, "float64");
+        assertUnsupportedValueChecking(Float32ArrayCheckedBean.class, "float32");
+        assertUnsupportedValueChecking(Float64ArrayCheckedBean.class, "float64");
+    }
+
+    private void assertUnsupportedValueChecking(Class<?> modelClass, String type) {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> Parser.getProcessor(modelClass));
+        assertTrue(hasMessage(exception, "does not support value checking"));
+        assertTrue(hasMessage(exception, type));
+    }
+
+    @Test
     void compilesFixedWidthGetterCallsForEveryWidth() {
         assertDoesNotThrow(() -> Parser.getProcessor(AllWidthsCheckedBean.class));
     }
@@ -108,6 +122,30 @@ public class ParserSafetyTest {
         @F_num(type = NumType.uint8, checkVal = true)
         public int value;
         public byte value__v;
+    }
+
+    public static class Float32CheckedBean {
+        @F_num(type = NumType.float32, checkVal = true)
+        public float value;
+        public byte value__v;
+    }
+
+    public static class Float64CheckedBean {
+        @F_num(type = NumType.float64, checkVal = true)
+        public double value;
+        public byte value__v;
+    }
+
+    public static class Float32ArrayCheckedBean {
+        @F_num_array(singleType = NumType.float32, len = 1, singleCheckVal = true)
+        public float[] values;
+        public byte[] values__v;
+    }
+
+    public static class Float64ArrayCheckedBean {
+        @F_num_array(singleType = NumType.float64, len = 1, singleCheckVal = true)
+        public double[] values;
+        public byte[] values__v;
     }
 
     public static class AllWidthsCheckedBean {
