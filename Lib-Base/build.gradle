@@ -2,5 +2,4 @@ dependencies {
     api libs.slf4j.api
     api libs.guava
     api libs.bcprov.jdk18on
-    api libs.jts
 }
