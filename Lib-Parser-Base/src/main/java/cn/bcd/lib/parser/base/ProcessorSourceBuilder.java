@@ -10,7 +10,7 @@ import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
-import cn.bcd.lib.parser.base.util.DynamicProcessorCompiler;
+import cn.bcd.lib.parser.base.complier.DynamicProcessorCompiler;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
