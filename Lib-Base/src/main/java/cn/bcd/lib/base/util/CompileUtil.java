@@ -15,8 +15,35 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CompileUtil {
+    private static final Pattern BINARY_NESTED_CLASS_NAME = Pattern.compile(
+            "([a-zA-Z_$][\\w$]*\\.)+[a-zA-Z_$][\\w$]*(\\$[a-zA-Z_$][\\w$]*)+");
+
+    public static String normalizeBinaryNestedClassNames(String source) {
+        Matcher matcher = BINARY_NESTED_CLASS_NAME.matcher(source);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            String binaryName = matcher.group();
+            String replacement = binaryName;
+            try {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                if (classLoader == null) {
+                    classLoader = CompileUtil.class.getClassLoader();
+                }
+                Class<?> clazz = Class.forName(binaryName, false, classLoader);
+                if (clazz.getCanonicalName() != null) {
+                    replacement = clazz.getCanonicalName();
+                }
+            } catch (ClassNotFoundException ignored) {
+            }
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
 
     public static Class<?> compileInMemory(String className, String sourceCode) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
