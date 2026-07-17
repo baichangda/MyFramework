@@ -22,11 +22,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType8(int val) {
-        int normalizedVal = val & 0xFF;
-        if (normalizedVal == 0xFF) {
+        val = val & 0xFF;
+        if (val == 0xFF) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFE) {
+        if (val == 0xFE) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
@@ -34,11 +34,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType16(int val) {
-        int normalizedVal = val & 0xFFFF;
-        if (normalizedVal == 0xFFFF) {
+        val = val & 0xFFFF;
+        if (val == 0xFFFF) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFFFE) {
+        if (val == 0xFFFE) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
@@ -46,11 +46,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType24(int val) {
-        int normalizedVal = val & 0xFFFFFF;
-        if (normalizedVal == 0xFFFFFF) {
+        val = val & 0xFFFFFF;
+        if (val == 0xFFFFFF) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFFFFFE) {
+        if (val == 0xFFFFFE) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
@@ -69,11 +69,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType40(long val) {
-        long normalizedVal = val & 0xFFFFFFFFFFL;
-        if (normalizedVal == 0xFFFFFFFFFFL) {
+        val = val & 0xFFFFFFFFFFL;
+        if (val == 0xFFFFFFFFFFL) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFFFFFFFFFEL) {
+        if (val == 0xFFFFFFFFFEL) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
@@ -81,11 +81,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType48(long val) {
-        long normalizedVal = val & 0xFFFFFFFFFFFFL;
-        if (normalizedVal == 0xFFFFFFFFFFFFL) {
+        val = val & 0xFFFFFFFFFFFFL;
+        if (val == 0xFFFFFFFFFFFFL) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFFFFFFFFFFFEL) {
+        if (val == 0xFFFFFFFFFFFEL) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
@@ -93,11 +93,11 @@ public final class DefaultNumValGetter extends NumValGetter {
 
     @Override
     public byte getType56(long val) {
-        long normalizedVal = val & 0xFFFFFFFFFFFFFFL;
-        if (normalizedVal == 0xFFFFFFFFFFFFFFL) {
+        val = val & 0xFFFFFFFFFFFFFFL;
+        if (val == 0xFFFFFFFFFFFFFFL) {
             return TYPE_INVALID;
         }
-        if (normalizedVal == 0xFFFFFFFFFFFFFEL) {
+        if (val == 0xFFFFFFFFFFFFFEL) {
             return TYPE_ABNORMAL;
         }
         return TYPE_NORMAL;
