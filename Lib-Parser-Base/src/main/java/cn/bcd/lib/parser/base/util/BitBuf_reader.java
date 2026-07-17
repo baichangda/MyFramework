@@ -84,17 +84,20 @@ public class BitBuf_reader {
         if (bit == 64) {
             return raw;
         }
-        long m = mask(bit);
-        long val = raw & m;
-        if (!unsigned && ((val >> (bit - 1)) & 1L) == 1L) {
-            val |= ~m;
+        final long val = raw & ((1L << bit) - 1);
+        if (unsigned) {
+            return val;
         }
-        return val;
+        final int shift = 64 - bit;
+        return (val << shift) >> shift;
     }
 
     public long read(int bit, boolean unsigned) {
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
+        if (bit + bitOffset > 64) {
+            return readOverEightBytes(bit, unsigned, bitOffset);
+        }
         byte b;
         if (bitOffset == 0) {
             b = byteBuf.readByte();
@@ -123,6 +126,26 @@ public class BitBuf_reader {
         final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
 
         return valueOf(cRight, bit, unsigned);
+    }
+
+    private long readOverEightBytes(int bit, boolean unsigned, int bitOffset) {
+        final ByteBuf byteBuf = this.byteBuf;
+        final int available = 8 - bitOffset;
+        long value = (b & 0xFFL) & ((1L << available) - 1);
+        int remaining = bit - available;
+        int lastByte = b & 0xFF;
+        while (remaining >= 8) {
+            lastByte = byteBuf.readUnsignedByte();
+            value = (value << 8) | lastByte;
+            remaining -= 8;
+        }
+        if (remaining != 0) {
+            lastByte = byteBuf.readUnsignedByte();
+            value = (value << remaining) | (lastByte >>> (8 - remaining));
+        }
+        b = (byte) lastByte;
+        this.bitOffset = remaining;
+        return valueOf(value, bit, unsigned);
     }
 
     public void skip(int bit) {
