@@ -4,6 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
+import java.nio.ByteOrder;
+
 public class BitBuf_writer {
     public final ByteBuf byteBuf;
 
@@ -66,10 +68,15 @@ public class BitBuf_writer {
         return bit == 64 ? -1L : ((1L << bit) - 1);
     }
 
+    @SuppressWarnings("deprecation")
     public void write(long l, int bit) {
         l = l & mask(bit);
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
+        if (bit + bitOffset > 64) {
+            writeOverEightBytes(l, bit, bitOffset);
+            return;
+        }
         byte b = this.b;
         final int temp = bit + bitOffset;
         final int finalBitOffset = temp & 7;
@@ -94,6 +101,25 @@ public class BitBuf_writer {
         } else {
             this.bitOffset = finalBitOffset;
             this.b = b;
+        }
+    }
+
+    private void writeOverEightBytes(long value, int bit, int bitOffset) {
+        final ByteBuf byteBuf = this.byteBuf;
+        final int available = 8 - bitOffset;
+        byteBuf.writeByte(b | (byte) (value >>> (bit - available)));
+
+        int remaining = bit - available;
+        while (remaining >= 8) {
+            remaining -= 8;
+            byteBuf.writeByte((byte) (value >>> remaining));
+        }
+        if (remaining == 0) {
+            b = 0;
+            this.bitOffset = 0;
+        } else {
+            b = (byte) (value << (8 - remaining));
+            this.bitOffset = remaining;
         }
     }
 
