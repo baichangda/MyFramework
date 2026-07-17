@@ -6,27 +6,27 @@ import io.netty.buffer.Unpooled;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-final class ParserTestSupport {
+public final class ParserTestSupport {
     private ParserTestSupport() {
     }
 
-    static byte[] readAll(ByteBuf byteBuf) {
+    public static byte[] readAll(ByteBuf byteBuf) {
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(bytes);
         return bytes;
     }
 
-    static <T> byte[] deProcess(Processor<T> processor, T bean) {
+    public static <T> byte[] deProcess(Processor<T> processor, T bean) {
         ByteBuf byteBuf = Unpooled.buffer();
         processor.deProcess(byteBuf, bean);
         return readAll(byteBuf);
     }
 
-    static <T> T process(Processor<T> processor, byte... bytes) {
+    public static <T> T process(Processor<T> processor, byte... bytes) {
         return processor.process(Unpooled.wrappedBuffer(bytes));
     }
 
-    static <T> T roundTrip(Processor<T> processor, T bean, byte... expectedBytes) {
+    public static <T> T roundTrip(Processor<T> processor, T bean, byte... expectedBytes) {
         byte[] bytes = deProcess(processor, bean);
         assertArrayEquals(expectedBytes, bytes);
         return processor.process(Unpooled.wrappedBuffer(bytes));
