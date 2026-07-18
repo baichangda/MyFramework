@@ -42,7 +42,7 @@ public class CSkipTest {
 
     @C_skip(lenExpr = "a")
     public static class DynamicSkipBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int len;
 
         @F_num(type = NumType.uint8)

@@ -21,7 +21,7 @@ public class BatteryMinVoltageData {
     public byte current__v;
 
     //最小并联单元总数
-    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
     public int total;
     public byte total__v;
 

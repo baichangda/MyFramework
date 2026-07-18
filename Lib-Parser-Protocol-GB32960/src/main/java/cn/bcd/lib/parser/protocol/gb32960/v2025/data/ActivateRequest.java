@@ -18,7 +18,7 @@ public class ActivateRequest implements PacketData{
     public String id;
 
     //公钥长度
-    @F_num(type = NumType.uint16, numVar = 'n')
+    @F_num(type = NumType.uint16, var = 'n')
     public int publicKeyLen;
 
     //公钥

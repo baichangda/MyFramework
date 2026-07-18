@@ -27,7 +27,7 @@ public class FSkipTest {
     }
 
     public static class SkipBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int len;
 
         @F_skip(lenExprBefore = "a", lenAfter = 2)

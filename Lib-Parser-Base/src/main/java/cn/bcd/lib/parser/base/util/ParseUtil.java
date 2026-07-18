@@ -37,12 +37,12 @@ public class ParseUtil {
         }
     }
 
-    public static void checkNumVar(BuilderContext context, Class<?> annoClass, char numVar, char globalNumVar) {
-        if (numVar != '0' && (numVar < 'a' || numVar > 'z')) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] numVar[{}] not in [a-z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), numVar);
+    public static void check_var(BuilderContext context, Class<?> annoClass, char var, char globalVar) {
+        if (var != '0' && (var < 'a' || var > 'z')) {
+            throw BaseException.get("class[{}] field[{}] anno[{}] var[{}] not in [a-z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), var);
         }
-        if (globalNumVar != '0' && (globalNumVar < 'A' || globalNumVar > 'Z')) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] globalNumVar[{}] not in [A-Z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), globalNumVar);
+        if (globalVar != '0' && (globalVar < 'A' || globalVar > 'Z')) {
+            throw BaseException.get("class[{}] field[{}] anno[{}] globalVar[{}] not in [A-Z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), globalVar);
         }
     }
 
@@ -318,7 +318,7 @@ public class ParseUtil {
     }
 
     public static String replaceExprToCode(final String lenExpr, final BuilderContext context) {
-        final Map<Character, String> map = context.method_numVarToFieldName;
+        final Map<Character, String> map = context.method_varToFieldName;
         final Field field = context.field;
         final StringBuilder sb = new StringBuilder();
         final char[] chars = lenExpr.toCharArray();
@@ -328,8 +328,8 @@ public class ParseUtil {
             }
             if (c != '+' && c != '-' && c != '*' && c != '/' && c != '(' && c != ')' && !Character.isDigit(c)) {
                 if (Character.isUpperCase(c)) {
-                    String globalNumVarName = context.getGlobalNumVarName(c);
-                    sb.append(globalNumVarName);
+                    String globalVarName = context.getGlobalVarName(c);
+                    sb.append(globalVarName);
                 } else {
                     final String s = map.get(c);
                     if (s == null) {
@@ -354,10 +354,10 @@ public class ParseUtil {
             }
             if (c != '+' && c != '-' && c != '*' && c != '/' && c != '(' && c != ')' && !Character.isDigit(c)) {
                 if (Character.isUpperCase(c)) {
-                    String globalNumVarName = context.getGlobalNumVarName(c);
-                    sb.append(globalNumVarName);
+                    String globalVarName = context.getGlobalVarName(c);
+                    sb.append(globalVarName);
                 } else {
-                    final String s = context.method_numVarToFieldName.get(c);
+                    final String s = context.method_varToFieldName.get(c);
                     if (s == null) {
                         throw BaseException.get("class[{}] c_skip lenExpr[{}] can't find char[{}] value", context.clazz.getName(), lenExpr, c);
                     }
@@ -792,21 +792,21 @@ public class ParseUtil {
         }
     }
 
-    public static void appendPutGlobalNumVar(BuilderContext context, char globalNumVar, String val) {
-        append(context.method_body, "{}.putGlobalNumVar({},(int)({}));\n", FieldBuilder.varNameProcessContext, getGlobalNumVarIndex(globalNumVar), val);
+    public static void appendPutGlobalVar(BuilderContext context, char var, String val) {
+        append(context.method_body, "{}.putGlobalVar({},(int)({}));\n", FieldBuilder.varNameProcessContext, getGlobalVarIndex(var), val);
     }
 
-    public static void appendGetGlobalNumVar(BuilderContext context, char globalNumVar) {
-        String globalNumVarName = getGlobalNumVarName(globalNumVar);
-        append(context.method_body, "final int {} = {}.getGlobalNumVar({});\n", globalNumVarName, FieldBuilder.varNameProcessContext, getGlobalNumVarIndex(globalNumVar));
+    public static void appendGetGlobalVar(BuilderContext context, char var) {
+        String globalVarName = getGlobalVarName(var);
+        append(context.method_body, "final int {} = {}.getGlobalVar({});\n", globalVarName, FieldBuilder.varNameProcessContext, getGlobalVarIndex(var));
     }
 
-    private static int getGlobalNumVarIndex(char globalNumVar) {
-        return globalNumVar - 'A';
+    private static int getGlobalVarIndex(char var) {
+        return var - 'A';
     }
 
-    public static String getGlobalNumVarName(char globalNumVar) {
-        return "globalNumVar_" + globalNumVar;
+    public static String getGlobalVarName(char var) {
+        return "globalVar_" + var;
     }
 
     public static Class<?> getNumFieldValType(BuilderContext context) {
