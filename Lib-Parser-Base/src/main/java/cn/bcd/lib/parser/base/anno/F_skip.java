@@ -6,12 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 用于和其他字段一起配合使用、不能单独使用
+ * 在字段解析前后跳过数个字节
  *
+ * 用于和其他字段一起配合使用、不能单独使用
  * 适用于任何字段
- * 跳过数个字节
- * 可以配合其他注解一起使用
- * 用在字段上面只是为了占位、解析不会对字段进行赋值、反解析也不会使用字段值
  *
  * 注意:
  * 如果和{@link F_bit_num}、{@link F_bit_num_array}一起配合使用、需要保证skip之前的bit解析不存在多余的bit
