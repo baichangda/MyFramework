@@ -9,8 +9,7 @@ import cn.bcd.lib.parser.base.processor.Processor;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FNumArrayTest {
     @Test
@@ -39,6 +38,35 @@ public class FNumArrayTest {
         assertEquals(2, target.len);
         assertArrayEquals(bean.values, target.values);
         assertArrayEquals(bean.floats, target.floats);
+    }
+
+    @Test
+    public void usesNullForZeroLengthAndLazilyCreatesValueTypeArray() {
+        Processor<CheckedArrayBean> processor = Parser.getProcessor(CheckedArrayBean.class);
+
+        CheckedArrayBean empty = processor.process(Unpooled.wrappedBuffer(new byte[]{0}));
+        assertNull(empty.values);
+        assertNull(empty.values__v);
+        assertArrayEquals(new byte[]{0}, ParserTestSupport.deProcess(processor, empty));
+
+        CheckedArrayBean normal = processor.process(Unpooled.wrappedBuffer(new byte[]{3, 1, 2, 3}));
+        assertArrayEquals(new int[]{1, 2, 3}, normal.values);
+        assertNull(normal.values__v);
+        assertArrayEquals(new byte[]{3, 1, 2, 3}, ParserTestSupport.deProcess(processor, normal));
+
+        CheckedArrayBean special = processor.process(Unpooled.wrappedBuffer(new byte[]{3, 1, (byte) 0xFF, (byte) 0xFE}));
+        assertArrayEquals(new int[]{1, 0, 0}, special.values);
+        assertArrayEquals(new byte[]{0, 1, 2}, special.values__v);
+        assertArrayEquals(new byte[]{3, 1, (byte) 0xFF, (byte) 0xFE}, ParserTestSupport.deProcess(processor, special));
+    }
+
+    public static class CheckedArrayBean {
+        @F_num(type = NumType.uint8, var = 'a')
+        public int len;
+
+        @F_num_array(lenExpr = "a", singleType = NumType.uint8, singleCheckVal = true)
+        public int[] values;
+        public byte[] values__v;
     }
 
     public static class ByteArrayBean {

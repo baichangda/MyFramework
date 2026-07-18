@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
  * T[] 数组
  * List<T> 集合、默认实例是ArrayList类型
  * {@link #listLen()}和{@link #listLenExpr()} 二选一、代表字段所占用总字节数
+ * 解析时集合长度为0、T[]和List<T>字段值都为null
  * <p>
  * 反解析中
  * 值可以为null、此时代表空集合

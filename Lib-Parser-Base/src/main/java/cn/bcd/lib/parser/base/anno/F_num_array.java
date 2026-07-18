@@ -16,6 +16,7 @@ import java.lang.annotation.Target;
  *
  * 数组长度=总字节数/singleLen
  * {@link #len()}和{@link #lenExpr()} 二选一、代表字段数组长度
+ * 解析时数组长度为0、字段值为null
  * <p>
  * 枚举类
  * 仅支持整型数字
@@ -97,6 +98,8 @@ public @interface F_num_array {
      * 注意对于{@link NumType#float32}和{@link NumType#float64}不支持
      * 此属性为true时候、必须指定一个伴生字段public byte[] {field}__v
      * 伴生字段值来源于方法
+     * 主数组长度为0时主数组和伴生数组都为null
+     * 主数组非null时仅在出现非正常值时创建伴生数组、此时伴生数组为null代表所有元素都是正常值
      * {@link cn.bcd.lib.parser.base.Parser#getProcessor(Class, ByteOrder, NumValGetter)}的其中参数{@link NumValGetter}
      */
     boolean singleCheckVal() default false;

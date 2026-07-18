@@ -53,12 +53,19 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         final StringBuilder body = context.method_body;
         final String varNameField = ParseUtil.getFieldVarName(context);
         String arrVarName = varNameField + "_arr";
+        String arrLenVarName = varNameField + "_arrLen";
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
         final int singleSkip = anno.singleSkip();
-        ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", arrayElementTypeName, arrVarName, arrayElementTypeName, arrLenRes);
+        ParseUtil.append(body, "final int {}={};\n", arrLenVarName, arrLenRes);
+        ParseUtil.append(body, "{}[] {}=null;\n", arrayElementTypeName, arrVarName);
+        ParseUtil.append(body, "if({}!=0){\n", arrLenVarName);
+        ParseUtil.append(body, "{}=new {}[{}];\n", arrVarName, arrayElementTypeName, arrLenVarName);
+        ParseUtil.append(body, "}\n");
         //优化处理 byte[]数组解析
         if (byte[].class.isAssignableFrom(fieldTypeClass) && (singleType == NumType.int8 || singleType == NumType.uint8) && singleValExpr.isEmpty() && singleSkip == 0) {
+            ParseUtil.append(body, "if({}>0){\n", arrLenVarName);
             ParseUtil.append(body, "{}.readBytes({});\n", FieldBuilder.varNameByteBuf, arrVarName);
+            ParseUtil.append(body, "}\n");
         } else {
             String funcName;
             switch (singleType) {
@@ -129,7 +136,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                     funcName = null;
                 }
             }
-            ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", arrVarName);
+            ParseUtil.append(body, "for(int i=0;i<{};i++){\n", arrLenVarName);
             final String varNameArrayElement = varNameField + "_arrEle";
             ParseUtil.append(body, "final {} {}=({}){};\n", sourceValTypeName, varNameArrayElement, sourceValTypeName, funcName);
             if (singleSkip > 0) {
@@ -198,10 +205,15 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         String varNameArr = varNameField + "_arr";
         String varNameArr__v = varNameField + "_arr__v";
+        String varNameArrLen = varNameField + "_arrLen";
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
         final int singleSkip = anno.singleSkip();
-        ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", arrEleTypeName, varNameArr, arrEleTypeName, arrLenRes);
-        ParseUtil.append(body, "final byte[] {}=new byte[{}];\n", varNameArr__v, arrLenRes);
+        ParseUtil.append(body, "final int {}={};\n", varNameArrLen, arrLenRes);
+        ParseUtil.append(body, "{}[] {}=null;\n", arrEleTypeName, varNameArr);
+        ParseUtil.append(body, "if({}!=0){\n", varNameArrLen);
+        ParseUtil.append(body, "{}=new {}[{}];\n", varNameArr, arrEleTypeName, varNameArrLen);
+        ParseUtil.append(body, "}\n");
+        ParseUtil.append(body, "byte[] {}=null;\n", varNameArr__v);
         String funcName;
         String singleRawValTypeName;
         switch (singleType) {
@@ -297,7 +309,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 singleRawValTypeName = null;
             }
         }
-        ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", varNameArr);
+        ParseUtil.append(body, "for(int i=0;i<{};i++){\n", varNameArrLen);
 
         //读取原始数据
         String varNameArrEleRawVal = varNameField + "_arrEleRawVal";
@@ -365,6 +377,9 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "}else{\n");
 
         //设置值类型
+        ParseUtil.append(body, "if({}==null){\n", varNameArr__v);
+        ParseUtil.append(body, "{}=new byte[{}];\n", varNameArr__v, varNameArrLen);
+        ParseUtil.append(body, "}\n");
         ParseUtil.append(body, "{}[i]={};\n", varNameArr__v, varNameArrEleNumValType);
 
         ParseUtil.append(body, "}\n");
@@ -465,7 +480,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         String varNameArrEle = varNameField + "_arrEle";
         String varNameArrEle__v = varNameField + "_arrEle__v";
         ParseUtil.append(body, "final {} {}={}[i];\n", arrEleTypeName, varNameArrEle, varNameArr);
-        ParseUtil.append(body, "final byte {}={}[i];\n", varNameArrEle__v, varNameArr__v);
+        ParseUtil.append(body, "final byte {}={}==null?0:{}[i];\n", varNameArrEle__v, varNameArr__v, varNameArr__v);
 
         final boolean isFloat = arrEleRawValTypeName.equals("float") || arrEleRawValTypeName.equals("double");
 

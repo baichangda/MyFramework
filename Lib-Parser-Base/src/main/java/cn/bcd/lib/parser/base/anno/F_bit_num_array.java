@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
  * byte[]、short[]、int[]、long[]、float[]、double[]、enum[]
  * 数组长度=总字节数/singleLen
  * {@link #len()}和{@link #lenExpr()} 二选一、代表字段数组长度
+ * 解析时数组长度为0、字段值为null
  * <p>
  * 枚举类
  * 仅支持整型数字

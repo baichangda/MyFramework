@@ -77,11 +77,16 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
 
 
         String arrVarName = varNameField + "_arr";
+        String arrLenVarName = varNameField + "_arrLen";
         final String varNameArrayElement = varNameField + "_arrEle";
 
 
-        ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", arrayElementTypeName, arrVarName, arrayElementTypeName, arrLenRes);
-        ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", arrVarName);
+        ParseUtil.append(body, "final int {}={};\n", arrLenVarName, arrLenRes);
+        ParseUtil.append(body, "{}[] {}=null;\n", arrayElementTypeName, arrVarName);
+        ParseUtil.append(body, "if({}!=0){\n", arrLenVarName);
+        ParseUtil.append(body, "{}=new {}[{}];\n", arrVarName, arrayElementTypeName, arrLenVarName);
+        ParseUtil.append(body, "}\n");
+        ParseUtil.append(body, "for(int i=0;i<{};i++){\n", arrLenVarName);
         ParseUtil.append(body, "final {} {}=({}){}.read({},{});\n", arrayElementTypeName, varNameArrayElement, arrayElementTypeName, varNameBitBuf, singleLen, unsigned);
 
         if (singleSkip > 0) {

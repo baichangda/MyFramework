@@ -41,7 +41,10 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
             ParseUtil.append(body, "final int {}={};\n", varNameListLen, anno.listLen());
         }
         //在for循环外构造复用对象
-        ParseUtil.append(body, "final {}[] {}=new {}[{}];\n", typeClassName, varNameField, typeClassName, varNameListLen);
+        ParseUtil.append(body, "{}[] {}=null;\n", typeClassName, varNameField);
+        ParseUtil.append(body, "if({}!=0){\n", varNameListLen);
+        ParseUtil.append(body, "{}=new {}[{}];\n", varNameField, typeClassName, varNameListLen);
+        ParseUtil.append(body, "}\n");
         ParseUtil.append(body, "for(int i=0;i<{};i++){\n", varNameListLen);
         ParseUtil.append(body, "{}[i]=({}){}.process({},{});\n", varNameField,typeClassName, processorVarName, FieldBuilder.varNameByteBuf, processContextVarName);
         ParseUtil.append(body, "}\n");
@@ -50,7 +53,13 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
                 ParseUtil.append(body, "{}.{}={};\n", FieldBuilder.varNameInstance, field.getName(), varNameField);
             }
             case 2 -> {
-                ParseUtil.append(body, "{}.{}={}.asList({});\n", FieldBuilder.varNameInstance, field.getName(), Arrays.class.getName(), varNameField);
+                ParseUtil.append(body, "if({}==0){\n", varNameListLen);
+                ParseUtil.append(body, "{}.{}=null;\n",
+                        FieldBuilder.varNameInstance, field.getName());
+                ParseUtil.append(body, "}else{\n");
+                ParseUtil.append(body, "{}.{}={}.asList({});\n",
+                        FieldBuilder.varNameInstance, field.getName(), Arrays.class.getName(), varNameField);
+                ParseUtil.append(body, "}\n");
             }
         }
     }

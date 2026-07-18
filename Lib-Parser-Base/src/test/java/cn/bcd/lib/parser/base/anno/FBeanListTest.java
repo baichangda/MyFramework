@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class FBeanListTest {
     @Test
@@ -33,6 +34,28 @@ public class FBeanListTest {
         bean.array = null;
         bean.list = null;
         assertArrayEquals(new byte[]{2}, ParserTestSupport.deProcess(processor, bean));
+    }
+
+    @Test
+    public void usesNullArrayAndListForZeroLength() {
+        Processor<VariableContainer> processor = Parser.getProcessor(VariableContainer.class);
+
+        VariableContainer target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(new byte[]{0}));
+
+        assertNull(target.array);
+        assertNull(target.list);
+        assertArrayEquals(new byte[]{0}, ParserTestSupport.deProcess(processor, target));
+    }
+
+    public static class VariableContainer {
+        @F_num(type = NumType.uint8, var = 'a')
+        public int len;
+
+        @F_bean_list(listLenExpr = "a")
+        public Child[] array;
+
+        @F_bean_list(listLenExpr = "a")
+        public List<Child> list;
     }
 
     private static Child child(int value) {

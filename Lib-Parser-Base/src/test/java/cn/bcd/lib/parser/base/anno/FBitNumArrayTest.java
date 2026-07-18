@@ -4,12 +4,14 @@ import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.ParserTestSupport;
 
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
+import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.processor.Processor;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class FBitNumArrayTest {
     @Test
@@ -26,6 +28,25 @@ public class FBitNumArrayTest {
         bean.values = null;
         bean.floats = null;
         assertEquals(0, ParserTestSupport.deProcess(processor, bean).length);
+    }
+
+    @Test
+    public void usesNullForZeroLengthArray() {
+        Processor<VariableBitArrayBean> processor = Parser.getProcessor(VariableBitArrayBean.class);
+
+        VariableBitArrayBean bean = processor.process(Unpooled.wrappedBuffer(new byte[]{0}));
+
+        assertEquals(0, bean.len);
+        assertNull(bean.values);
+        assertArrayEquals(new byte[]{0}, ParserTestSupport.deProcess(processor, bean));
+    }
+
+    public static class VariableBitArrayBean {
+        @F_num(type = NumType.uint8, var = 'a')
+        public int len;
+
+        @F_bit_num_array(lenExpr = "a", singleLen = 8)
+        public int[] values;
     }
 
     public static class BitArrayBean {
