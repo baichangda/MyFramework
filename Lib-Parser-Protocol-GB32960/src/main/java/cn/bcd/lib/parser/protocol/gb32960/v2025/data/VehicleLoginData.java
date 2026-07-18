@@ -20,7 +20,7 @@ public class VehicleLoginData implements PacketData {
     public String iccid;
 
     //电池管理系统数
-    @F_num(type = NumType.uint8, var = 'n')
+    @F_num(type = NumType.uint8, numVar = 'n')
     public short num;
 
     //电池管理系统对应动力蓄电池包个数

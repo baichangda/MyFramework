@@ -45,7 +45,7 @@ public class FNumTest {
 
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(new byte[]{11, 12, 2}));
         processor.process(context.byteBuf, context);
-        assertEquals(11, context.getGlobalVar(0));
+        assertEquals(11, context.getGlobalNumVar(0));
     }
 
     public static class NumericBean {
@@ -69,7 +69,7 @@ public class FNumTest {
     }
 
     public static class ExpressionBean {
-        @F_num(type = NumType.uint8, valExpr = "x-10", var = 'a', globalVar = 'A')
+        @F_num(type = NumType.uint8, valExpr = "x-10", numVar = 'a', globalNumVar = 'A')
         public int value;
 
         @F_num(type = NumType.uint8, valExpr = "x/10", precision = 1)

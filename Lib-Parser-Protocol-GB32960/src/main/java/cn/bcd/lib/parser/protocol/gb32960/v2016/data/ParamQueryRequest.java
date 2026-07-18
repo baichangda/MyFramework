@@ -11,7 +11,7 @@ public class ParamQueryRequest implements PacketData{
     @F_date_bytes_6
     public Date queryTime;
 
-    @F_num(type = NumType.uint8, var = 'n', checkVal = true)
+    @F_num(type = NumType.uint8, numVar = 'n', checkVal = true)
     public short num;
     public byte num__v;
 

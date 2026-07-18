@@ -32,7 +32,7 @@ public class StorageVoltageData {
     public int frameNo;
 
     //本帧单体电池总数
-    @F_num(type = NumType.uint8, var = 'm')
+    @F_num(type = NumType.uint8, numVar = 'm')
     public short frameTotal;
 
     //单体电池电压

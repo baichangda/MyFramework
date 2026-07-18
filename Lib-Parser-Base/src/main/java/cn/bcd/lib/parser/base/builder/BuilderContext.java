@@ -59,21 +59,12 @@ public class BuilderContext {
      */
     public final StringBuilder method_body;
 
-    /**
-     * 解析/反解析 方法中
-     * 用于给
-     * {@link Processor#process(ByteBuf, ProcessContext)}
-     * {@link Processor#deProcess(ByteBuf, ProcessContext, Object)}
-     * 的参数对象、对象复用、避免构造多个
-     * 解析和反解析不共用
-     */
-    public String method_processContextVarName;
 
     /**
      * 解析/反解析 方法中使用的变量对应字段名
      * 解析和反解析不共用
      */
-    public final Map<Character, String> method_varToFieldName = new HashMap<>();
+    public final Map<Character, String> method_numVarToFieldName = new HashMap<>();
 
     /**
      * 构造 解析/反解析 方法所使用的缓存
@@ -106,18 +97,7 @@ public class BuilderContext {
     }
 
     public final String getProcessContextVarName() {
-        if (method_processContextVarName == null) {
-            method_processContextVarName = "processContext";
-            final String processContextClassName = ProcessContext.class.getName();
-            ParseUtil.append(method_body, "final {} {}=new {}({},{});\n",
-                    processContextClassName,
-                    method_processContextVarName,
-                    processContextClassName,
-                    FieldBuilder.varNameInstance,
-                    FieldBuilder.varNameProcessContext
-            );
-        }
-        return method_processContextVarName;
+        return FieldBuilder.varNameProcessContext;
     }
 
     public final String getCustomizeProcessorVarName(Class<?> processorClass, String processorArgs) {
@@ -146,9 +126,9 @@ public class BuilderContext {
                 Parser.class.getName(), ParseUtil.getProcessorKey(beanClazz, byteOrder, numValGetter));
     }
 
-    public final String getGlobalVarName(char c) {
-        return (String) method_cache.computeIfAbsent(ParseUtil.getGlobalVarName(c), k -> {
-            ParseUtil.appendGetGlobalVar(this, c);
+    public final String getGlobalNumVarName(char c) {
+        return (String) method_cache.computeIfAbsent(ParseUtil.getGlobalNumVarName(c), k -> {
+            ParseUtil.appendGetGlobalNumVar(this, c);
             return k;
         });
     }

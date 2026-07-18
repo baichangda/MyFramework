@@ -25,7 +25,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext processContext) {
-        Packet packet = (Packet) processContext.instance;
+        Packet packet = (Packet) processContext.parent;
         boolean cmd = packet.replyFlag == 0xfe;
         PacketFlag flag = packet.flag;
         switch (flag) {
@@ -89,7 +89,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, PacketData instance) {
-        Packet packet = (Packet) processContext.instance;
+        Packet packet = (Packet) processContext.parent;
         PacketFlag flag = packet.flag;
         boolean cmd = packet.replyFlag == 0xfe;
         switch (flag) {

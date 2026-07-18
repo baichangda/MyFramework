@@ -13,7 +13,7 @@ public class StorageTemperatureData {
     public short no;
 
     //可充电储能温度探针个数
-    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int num;
     public byte num__v;
 
