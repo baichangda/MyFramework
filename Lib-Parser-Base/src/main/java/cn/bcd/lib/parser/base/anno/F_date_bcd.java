@@ -22,7 +22,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_date_bcd {
     /**
-     * Whether to skip this field and write six zero bytes during deParse.
+     * 是否跳过当前字段。为 {@code true} 时，解析阶段跳过六个字节，
+     * 反解析阶段写入六个值为 {@code 0} 的字节。
      */
     boolean skip() default false;
 

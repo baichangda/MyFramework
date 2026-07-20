@@ -43,7 +43,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_bit_num_easy {
     /**
-     * Whether to skip this field value and leave its bits as zero during deParse.
+     * 是否跳过当前字段。为 {@code true} 时，解析阶段不读取字段值，
+     * 反解析阶段将该字段占用的位保持为 {@code 0}。
      */
     boolean skip() default false;
 

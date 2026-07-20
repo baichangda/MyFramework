@@ -19,7 +19,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_string {
     /**
-     * Whether to skip this field and preserve its encoded length with zero bytes during deParse.
+     * 是否跳过当前字段。为 {@code true} 时，解析阶段按字符串编码长度跳过，
+     * 反解析阶段写入相同长度、值为 {@code 0} 的字节。
      */
     boolean skip() default false;
 

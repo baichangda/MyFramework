@@ -26,7 +26,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_bit_num {
     /**
-     * Whether to skip this field and preserve its encoded bit length with zero bits during deParse.
+     * 是否跳过当前字段。为 {@code true} 时，解析阶段跳过该字段占用的位，
+     * 反解析阶段写入相同位数的 {@code 0}。
      */
     boolean skip() default false;
 
