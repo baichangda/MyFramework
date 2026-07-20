@@ -218,7 +218,7 @@ gradle :App-BusinessProcess-Backend:publishToMavenLocal
   - `precision`：仅 float/double，小数精度四舍五入
 - `@F_string`：字符串字段，参数：`len`/`lenExpr`（字节长度）、`charset`（默认 UTF-8）、`appendMode`（补零方向）
 - `@F_string_bcd`：BCD 编码字符串（8421 码）
-- `@F_num_array`：数值数组，参数：`len`/`lenExpr`（元素个数）、`singleType`、`singleSkip`
+- `@F_num_array`：数值数组，参数：`len`/`lenExpr`（元素个数）、`singleType`、`singleSkipBefore`/`singleSkipAfter`
 - `@F_bean`：嵌套对象。对于接口字段，通过 `implClassExpr` 表达式动态选择 `@C_impl` 标注的实现类
 - `@F_bean_list`：嵌套对象列表/数组，支持 `T[]` 和 `List<T>`
 - `@F_customize`：自定义 Processor，`processorClass` 实现 `Processor<T>`，`processorArgs` 传递构造参数

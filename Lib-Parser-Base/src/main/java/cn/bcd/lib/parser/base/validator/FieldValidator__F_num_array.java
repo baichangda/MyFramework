@@ -26,7 +26,8 @@ public final class FieldValidator__F_num_array {
         }
         ValidatorUtil.validateRequiredLengthPair(ValidatorUtil.fieldDescription(field), "@F_num_array",
                 annotation.len(), annotation.lenExpr());
-        ValidatorUtil.validateNonNegative(field, "@F_num_array singleSkip", annotation.singleSkip());
+        ValidatorUtil.validateNonNegative(field, "@F_num_array singleSkipBefore", annotation.singleSkipBefore());
+        ValidatorUtil.validateNonNegative(field, "@F_num_array singleSkipAfter", annotation.singleSkipAfter());
         ValidatorUtil.validatePrecision(field, "@F_num_array singlePrecision", annotation.singlePrecision());
     }
 }

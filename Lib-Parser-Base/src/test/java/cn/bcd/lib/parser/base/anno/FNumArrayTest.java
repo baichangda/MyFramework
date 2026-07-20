@@ -79,7 +79,7 @@ public class FNumArrayTest {
         public int len;
 
         @F_num_array(lenExpr = "a", singleType = NumType.uint16, singleOrder = ByteOrder.smallEndian,
-                singleValExpr = "x-1", singleSkip = 1)
+                singleValExpr = "x-1", singleSkipAfter = 1)
         public int[] values;
 
         @F_num_array(len = 2, singleType = NumType.uint8, singleValExpr = "x/10", singlePrecision = 1)

@@ -65,9 +65,15 @@ public @interface F_num_array {
 
     /**
      * 每个数组元素
+     * 在读取前、应该skip的byte长度
+     */
+    int singleSkipBefore() default 0;
+
+    /**
+     * 每个数组元素
      * 在读取后、应该skip的byte长度
      */
-    int singleSkip() default 0;
+    int singleSkipAfter() default 0;
 
     /**
      * 每个数组元素

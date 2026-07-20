@@ -92,7 +92,7 @@ public class FFieldSkipTest {
         @F_num(type = NumType.uint16, skip = true)
         public int number;
 
-        @F_num_array(lenExpr = "a", singleType = NumType.uint8, singleSkip = 1, skip = true)
+        @F_num_array(lenExpr = "a", singleType = NumType.uint8, singleSkipAfter = 1, skip = true)
         public int[] numbers;
 
         @F_string(lenExpr = "a", skip = true)

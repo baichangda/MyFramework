@@ -48,14 +48,15 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         String arrVarName = varNameField + "_arr";
         String arrLenVarName = varNameField + "_arrLen";
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
-        final int singleSkip = anno.singleSkip();
+        final int singleSkipBefore = anno.singleSkipBefore();
+        final int singleSkipAfter = anno.singleSkipAfter();
         ParseUtil.append(body, "final int {}={};\n", arrLenVarName, arrLenRes);
         ParseUtil.append(body, "{}[] {}=null;\n", arrayElementTypeName, arrVarName);
         ParseUtil.append(body, "if({}!=0){\n", arrLenVarName);
         ParseUtil.append(body, "{}=new {}[{}];\n", arrVarName, arrayElementTypeName, arrLenVarName);
         ParseUtil.append(body, "}\n");
         //优化处理 byte[]数组解析
-        if (byte[].class.isAssignableFrom(fieldTypeClass) && (singleType == NumType.int8 || singleType == NumType.uint8) && singleValExpr.isEmpty() && singleSkip == 0) {
+        if (byte[].class.isAssignableFrom(fieldTypeClass) && (singleType == NumType.int8 || singleType == NumType.uint8) && singleValExpr.isEmpty() && singleSkipBefore == 0 && singleSkipAfter == 0) {
             ParseUtil.append(body, "if({}>0){\n", arrLenVarName);
             ParseUtil.append(body, "{}.readBytes({});\n", FieldBuilder.varNameByteBuf, arrVarName);
             ParseUtil.append(body, "}\n");
@@ -131,9 +132,12 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
             }
             ParseUtil.append(body, "for(int i=0;i<{};i++){\n", arrLenVarName);
             final String varNameArrayElement = varNameField + "_arrEle";
+            if (singleSkipBefore > 0) {
+                ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkipBefore);
+            }
             ParseUtil.append(body, "final {} {}=({}){};\n", sourceValTypeName, varNameArrayElement, sourceValTypeName, funcName);
-            if (singleSkip > 0) {
-                ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkip);
+            if (singleSkipAfter > 0) {
+                ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkipAfter);
             }
             //表达式运算
             String valCode = ParseUtil.replaceValExprToCode(singleValExpr, varNameArrayElement);
@@ -185,7 +189,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         String varNameArr__v = varNameField + "_arr__v";
         String varNameArrLen = varNameField + "_arrLen";
         final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
-        final int singleSkip = anno.singleSkip();
+        final int singleSkipBefore = anno.singleSkipBefore();
+        final int singleSkipAfter = anno.singleSkipAfter();
         ParseUtil.append(body, "final int {}={};\n", varNameArrLen, arrLenRes);
         ParseUtil.append(body, "{}[] {}=null;\n", arrEleTypeName, varNameArr);
         ParseUtil.append(body, "if({}!=0){\n", varNameArrLen);
@@ -290,12 +295,15 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "for(int i=0;i<{};i++){\n", varNameArrLen);
 
         //读取原始数据
+        if (singleSkipBefore > 0) {
+            ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkipBefore);
+        }
         String varNameArrEleRawVal = varNameField + "_arrEleRawVal";
         ParseUtil.append(body, "final {} {}={};\n", singleRawValTypeName, varNameArrEleRawVal, funcName);
 
         //跳过数据
-        if (singleSkip > 0) {
-            ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkip);
+        if (singleSkipAfter > 0) {
+            ParseUtil.append(body, "{}.skipBytes({});\n", varNameByteBuf, singleSkipAfter);
         }
 
 
@@ -385,7 +393,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         final Class<?> fieldTypeClass = field.getType();
         final NumType singleType = anno.singleType();
-        final int singleSkip = anno.singleSkip();
+        final int singleSkipBefore = anno.singleSkipBefore();
+        final int singleSkipAfter = anno.singleSkipAfter();
         final StringBuilder body = context.method_body;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final String fieldName = field.getName();
@@ -395,7 +404,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         ParseUtil.append(body, "if({}!=null){\n", valCode);
 
-        if (byte[].class.isAssignableFrom(fieldTypeClass) && (singleType == NumType.int8 || singleType == NumType.uint8) && singleValExpr.isEmpty() && singleSkip == 0) {
+        if (byte[].class.isAssignableFrom(fieldTypeClass) && (singleType == NumType.int8 || singleType == NumType.uint8) && singleValExpr.isEmpty() && singleSkipBefore == 0 && singleSkipAfter == 0) {
             ParseUtil.append(body, "{}.writeBytes({});\n", FieldBuilder.varNameByteBuf, valCode);
         } else {
             final Class<?> arrayElementType = fieldTypeClass.componentType();
@@ -419,9 +428,12 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 }
             }
             final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
+            if (singleSkipBefore > 0) {
+                ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkipBefore);
+            }
             ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(singleType, bigEndian, arrEleValCode));
-            if (singleSkip > 0) {
-                ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkip);
+            if (singleSkipAfter > 0) {
+                ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkipAfter);
             }
             ParseUtil.append(body, "}\n");
         }
@@ -440,7 +452,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         final String arrEleTypeName = arrEleType.getName();
         final String arrEleRawValTypeName = ParseUtil.getNumFieldValType(context).getName();
         final NumType singleType = anno.singleType();
-        final int singleSkip = anno.singleSkip();
+        final int singleSkipBefore = anno.singleSkipBefore();
+        final int singleSkipAfter = anno.singleSkipAfter();
         final StringBuilder body = context.method_body;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final String fieldName = field.getName();
@@ -466,6 +479,10 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, "final byte {}={}==null?0:{}[i];\n", varNameArrEle__v, varNameArr__v, varNameArr__v);
 
         final boolean isFloat = arrEleRawValTypeName.equals("float") || arrEleRawValTypeName.equals("double");
+
+        if (singleSkipBefore > 0) {
+            ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkipBefore);
+        }
 
         //判断值类型正常
         ParseUtil.append(body, "if({}==0){\n", varNameArrEle__v);
@@ -500,8 +517,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(anno.singleType(), bigEndian, varNameArrEleExprVal));
 
         //写入0
-        if (singleSkip > 0) {
-            ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkip);
+        if (singleSkipAfter > 0) {
+            ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkipAfter);
         }
 
         ParseUtil.append(body, "}else{\n");
@@ -514,8 +531,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         ParseUtil.append(body, FieldBuilder__F_num.getWriteCode(anno.singleType(), bigEndian, arrEleValCode));
 
         //写入0
-        if (singleSkip > 0) {
-            ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkip);
+        if (singleSkipAfter > 0) {
+            ParseUtil.append(body, "{}.writeZero({});\n", varNameByteBuf, singleSkipAfter);
         }
 
 
@@ -527,7 +544,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
 
     private static void buildSkip(BuilderContext context, F_num_array anno, boolean parse) {
-        int singleByteLen = FieldBuilder__F_num.getByteLen(anno.singleType()) + anno.singleSkip();
+        int singleByteLen = FieldBuilder__F_num.getByteLen(anno.singleType()) + anno.singleSkipBefore() + anno.singleSkipAfter();
         int len = anno.len() == 0 ? 0 : anno.len() * singleByteLen;
         String lenExpr = anno.lenExpr().isEmpty() ? "" : "(" + anno.lenExpr() + ")*" + singleByteLen;
         if (parse) {

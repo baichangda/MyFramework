@@ -508,7 +508,7 @@ public class ParseUtil {
             F_num_array f_num_array = parseField.getAnnotation(F_num_array.class);
             if (f_num_array != null) {
                 int len = f_num_array.len();
-                int singleSkip = f_num_array.singleSkip();
+                int singleSkip = f_num_array.singleSkipBefore() + f_num_array.singleSkipAfter();
                 if (len > 0) {
                     switch (f_num_array.singleType()) {
                         case uint8, int8 -> all += (1 + singleSkip) * len;
