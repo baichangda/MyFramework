@@ -9,7 +9,7 @@ public class SubPacketRequest implements PacketBody {
     @F_num(type = NumType.uint16)
     public int sn;
     //重传包总数
-    @F_num(type = NumType.uint16, numVar = 'n')
+    @F_num(type = NumType.uint16, var = 'n')
     public int total;
     //重传包id列表
     @F_num_array(singleType = NumType.uint16, lenExpr = "n")

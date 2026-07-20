@@ -18,7 +18,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext processContext) {
-        Object obj = processContext.parent;
+        Object obj = processContext.instance;
         int num;
         if (obj instanceof ParamQueryResponse paramQueryResponse) {
             if (paramQueryResponse.num__v == 0) {

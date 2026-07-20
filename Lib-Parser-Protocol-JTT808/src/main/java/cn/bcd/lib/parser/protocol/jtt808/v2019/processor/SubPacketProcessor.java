@@ -9,7 +9,7 @@ import io.netty.buffer.ByteBuf;
 public class SubPacketProcessor implements Processor<SubPacket> {
     @Override
     public SubPacket process(ByteBuf data, ProcessContext processContext) {
-        PacketHeader packetHeader = (PacketHeader) processContext.parent;
+        PacketHeader packetHeader = (PacketHeader) processContext.instance;
         if (packetHeader.subPacketFlag == 0) {
             return null;
         } else {
@@ -22,7 +22,7 @@ public class SubPacketProcessor implements Processor<SubPacket> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, SubPacket instance) {
-        PacketHeader packetHeader = (PacketHeader) processContext.parent;
+        PacketHeader packetHeader = (PacketHeader) processContext.instance;
         if (packetHeader.subPacketFlag == 1) {
             data.writeShort(instance.total);
             data.writeShort(instance.no);

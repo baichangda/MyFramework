@@ -123,10 +123,6 @@ public class Parser {
         for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
                 Annotation annotation = ModelFieldValidator.validate(field, anno_fieldBuilder);
-                F_var fVar = field.getAnnotation(F_var.class);
-                if (fVar != null) {
-                    F_varValidator.validate(field, fVar, annotation != null);
-                }
                 if (annotation != null) {
                     validateAnnotation(field, annotation, numValGetter);
                 }

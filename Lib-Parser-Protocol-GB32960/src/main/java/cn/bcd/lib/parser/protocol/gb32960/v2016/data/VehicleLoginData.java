@@ -26,11 +26,11 @@ public class VehicleLoginData implements PacketData {
     public String iccid;
 
     //可充电储能子系统数
-    @F_num(type = NumType.uint8, numVar = 'n')
+    @F_num(type = NumType.uint8, var = 'n')
     public short subSystemNum;
 
     //可充电储能系统编码长度
-    @F_num(type = NumType.uint8, numVar = 'm')
+    @F_num(type = NumType.uint8, var = 'm')
     public short systemCodeLen;
 
     //可充电储能系统编码

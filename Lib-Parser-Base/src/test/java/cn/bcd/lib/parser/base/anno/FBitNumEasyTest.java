@@ -29,11 +29,11 @@ public class FBitNumEasyTest {
 
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(ParserTestSupport.deProcess(processor, bean)));
         processor.process(context.byteBuf, context);
-        assertEquals(1, context.getGlobalNumVar(0));
+        assertEquals(1, context.getGlobalVar(0));
     }
 
     public static class EasyBean {
-        @F_bit_num_easy(bitStart = 15, bitEnd = 15, globalNumVar = 'A')
+        @F_bit_num_easy(bitStart = 15, bitEnd = 15, globalVar = 'A')
         public int flag;
 
         @F_bit_num_easy(bitStart = 14, bitEnd = 10)

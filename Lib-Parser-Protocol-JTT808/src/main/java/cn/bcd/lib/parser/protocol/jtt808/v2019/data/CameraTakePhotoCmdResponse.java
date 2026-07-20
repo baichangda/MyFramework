@@ -13,7 +13,7 @@ public class CameraTakePhotoCmdResponse implements PacketBody {
     @F_num(type = NumType.uint8)
     public byte res;
     //id个数
-    @F_num(type = NumType.uint16, numVar = 'n')
+    @F_num(type = NumType.uint16, var = 'n')
     public int num;
     //id列表
     @F_num_array(singleType = NumType.uint32, lenExpr = "n")

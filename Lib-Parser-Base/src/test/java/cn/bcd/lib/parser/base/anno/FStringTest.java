@@ -67,7 +67,7 @@ public class FStringTest {
     }
 
     public static class ExprBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int len;
 
         @F_string(lenExpr = "a")

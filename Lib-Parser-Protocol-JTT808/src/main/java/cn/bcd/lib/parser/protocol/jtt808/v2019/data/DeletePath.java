@@ -6,7 +6,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 
 public class DeletePath implements PacketBody{
     //路线数
-    @F_num(type = NumType.uint8, numVar = 'n')
+    @F_num(type = NumType.uint8, var = 'n')
     public short num;
     //路线id
     @F_num_array(singleType = NumType.uint32, lenExpr = "n")

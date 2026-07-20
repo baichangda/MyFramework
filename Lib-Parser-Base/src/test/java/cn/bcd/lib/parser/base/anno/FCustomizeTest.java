@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FCustomizeTest {
     @Test
-    public void usesCustomProcessorArgsVariablesGlobalNumVarsAndDeParse() {
+    public void usesCustomProcessorArgsVariablesGlobalVarsAndDeParse() {
         Processor<CustomBean> processor = Parser.getProcessor(CustomBean.class);
         CustomBean bean = new CustomBean();
         bean.value = 12;
@@ -24,11 +24,11 @@ public class FCustomizeTest {
         assertEquals(12, target.value);
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(bytes));
         processor.process(context.byteBuf, context);
-        assertEquals(12, context.getGlobalNumVar(0));
+        assertEquals(12, context.getGlobalVar(0));
     }
 
     public static class CustomBean {
-        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", numVar = 'a', globalNumVar = 'A')
+        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", var = 'a', globalVar = 'A')
         public int value;
     }
 
