@@ -33,6 +33,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_num_array {
     /**
+     * Whether to skip this field and preserve its encoded length with zero bytes during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 数组元素个数
      * 与{@link #lenExpr()}互斥
      */

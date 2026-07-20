@@ -26,6 +26,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_bit_num {
     /**
+     * Whether to skip this field and preserve its encoded bit length with zero bits during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 占用bit位
      */
     int len();

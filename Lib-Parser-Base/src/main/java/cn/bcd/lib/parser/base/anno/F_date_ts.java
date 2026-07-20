@@ -26,6 +26,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_date_ts {
     /**
+     * Whether to skip this field and preserve its encoded length with zero bytes during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 1 协议定义uint64、代表时间戳毫秒
      * 2 协议定义uint64、代表时间戳秒
      * 3 协议定义uint32、代表时间戳秒

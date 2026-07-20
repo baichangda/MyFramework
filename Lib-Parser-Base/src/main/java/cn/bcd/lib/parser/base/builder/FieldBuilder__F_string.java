@@ -16,6 +16,10 @@ public class FieldBuilder__F_string extends FieldBuilder {
         final Field field = context.field;
         final Class<?> fieldType = field.getType();
         final F_string anno = field.getAnnotation(F_string.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_parse(anno.len(), anno.lenExpr(), context);
+            return;
+        }
         if (fieldType != String.class) {
             ParseUtil.notSupport_type(context, F_string.class);
         }
@@ -52,6 +56,10 @@ public class FieldBuilder__F_string extends FieldBuilder {
         final StringBuilder body = context.method_body;
         final Field field = context.field;
         final F_string anno = field.getAnnotation(F_string.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_deParse(anno.len(), anno.lenExpr(), context);
+            return;
+        }
         final String fieldName = field.getName();
         final String valCode = varNameInstance + "." + fieldName;
         final String varNameField = ParseUtil.getFieldVarName(context);

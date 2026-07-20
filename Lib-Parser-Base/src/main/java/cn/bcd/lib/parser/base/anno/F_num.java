@@ -25,6 +25,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_num {
+    /**
+     * Whether to skip this field and preserve its encoded length with zero bytes during deParse.
+     */
+    boolean skip() default false;
+
 
     /**
      * 读取原始值的数据类型

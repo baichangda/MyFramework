@@ -22,6 +22,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_date_bcd {
     /**
+     * Whether to skip this field and write six zero bytes during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 用于表示原始值的时区
      * 可以为时区偏移量、或者时区id、例如中国时区
      * 时区偏移量为 +8

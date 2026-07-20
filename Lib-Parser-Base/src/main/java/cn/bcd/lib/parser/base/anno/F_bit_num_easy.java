@@ -43,6 +43,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_bit_num_easy {
     /**
+     * Whether to skip this field value and leave its bits as zero during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * bit开始、bit高位
      * 包含
      * 例如3字节、bit最高位为23、bit最低位为0

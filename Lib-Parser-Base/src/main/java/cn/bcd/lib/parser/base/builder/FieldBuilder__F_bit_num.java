@@ -40,6 +40,10 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final Class<?> fieldTypeClass = field.getType();
         final String fieldTypeName = fieldTypeClass.getName();
         final F_bit_num anno = field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            buildSkip(context, anno, true);
+            return;
+        }
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean unsigned = anno.unsigned();
         int skipBefore = anno.skipBefore();
@@ -115,6 +119,10 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final Class<F_bit_num> annoClass = F_bit_num.class;
         final Field field = context.field;
         final F_bit_num anno = field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            buildSkip(context, anno, false);
+            return;
+        }
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean unsigned = anno.unsigned();
         final String varNameInstance = FieldBuilder.varNameInstance;
@@ -179,5 +187,22 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         }
     }
 
+
+    private boolean buildSkip(BuilderContext context, F_bit_num anno, boolean parse) {
+        if (anno.var() != '0' || anno.globalVar() != '0') {
+            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_bit_num.class.getName());
+        }
+        int len = anno.len();
+        if (len < 1 || len > 64) {
+            throw BaseException.get("class[{}] field[{}] anno[{}] len[{}] must in range [1,64]", context.clazz.getName(), context.field.getName(), F_bit_num.class.getName(), len);
+        }
+        String bitBuf = parse ? context.getBitBuf_parse() : context.getBitBuf_deParse();
+        ParseUtil.append(context.method_body, "{}.skip({});\n", bitBuf, anno.skipBefore() + len + anno.skipAfter());
+        boolean finish = finish(context);
+        if (finish) {
+            ParseUtil.append(context.method_body, "{}.finish();\n", bitBuf);
+        }
+        return finish;
+    }
 
 }

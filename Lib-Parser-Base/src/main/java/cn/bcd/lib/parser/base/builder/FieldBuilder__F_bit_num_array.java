@@ -41,6 +41,10 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         final String arrayElementTypeName = arrayElementType.getName();
         final Class<F_bit_num_array> annoClass = F_bit_num_array.class;
         final F_bit_num_array anno = context.field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            buildSkip(context, anno, true);
+            return;
+        }
 
         final boolean unsigned = anno.singleUnsigned();
         final String varNameBitBuf = context.getBitBuf_parse();
@@ -118,6 +122,10 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         final Field field = context.field;
         final Class<F_bit_num_array> annoClass = F_bit_num_array.class;
         final F_bit_num_array anno = context.field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            buildSkip(context, anno, false);
+            return;
+        }
         final boolean unsigned = anno.singleUnsigned();
         final Class<?> fieldTypeClass = field.getType();
         final int singleLen = anno.singleLen();
@@ -162,6 +170,24 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
         ParseUtil.append(body, "}\n");
+    }
+
+    private void buildSkip(BuilderContext context, F_bit_num_array anno, boolean parse) {
+        final String arrLen;
+        if (anno.len() == 0) {
+            if (anno.lenExpr().isEmpty()) {
+                throw BaseException.get("class[{}] field[{}] anno[{}] must have len or lenExpr", context.clazz.getName(), context.field.getName(), F_bit_num_array.class.getName());
+            }
+            arrLen = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
+        } else {
+            arrLen = Integer.toString(anno.len());
+        }
+        String bitBuf = parse ? context.getBitBuf_parse() : context.getBitBuf_deParse();
+        String bitLen = anno.skipBefore() + "+(" + arrLen + ")*" + (anno.singleLen() + anno.singleSkip()) + "+" + anno.skipAfter();
+        ParseUtil.append(context.method_body, "{}.skip({});\n", bitBuf, bitLen);
+        if (finish(context)) {
+            ParseUtil.append(context.method_body, "{}.finish();\n", bitBuf);
+        }
     }
 
 }

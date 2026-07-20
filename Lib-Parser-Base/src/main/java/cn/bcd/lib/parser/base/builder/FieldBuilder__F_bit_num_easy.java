@@ -90,6 +90,10 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
             }
             ParseUtil.append(context.method_body, "final int {}={}.{}();\n", varNameNum, FieldBuilder.varNameByteBuf, funcName);
         }
+        if (anno.skip()) {
+            checkSkipVar(context, anno);
+            return;
+        }
 
         StringBuilder body = context.method_body;
         final String sourceValTypeName;
@@ -141,6 +145,11 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         final Class<F_bit_num_easy> annoClass = F_bit_num_easy.class;
         final Field field = context.field;
         final F_bit_num_easy anno = field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            checkSkipVar(context, anno);
+            buildSkipDeParse(context);
+            return;
+        }
         final String varNameInstance = FieldBuilder.varNameInstance;
         final StringBuilder body = context.method_body;
         final String fieldName = field.getName();
@@ -205,6 +214,34 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
                 ParseUtil.append(body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else {
                 throw BaseException.get("class[{}] field[{}] anno[{}] maxBit[{}] not support", context.clazz.getName(), field.getName(), annoClass.getName(), maxBitEnd);
+            }
+        }
+    }
+
+    private static void checkSkipVar(BuilderContext context, F_bit_num_easy anno) {
+        if (anno.var() != '0' || anno.globalVar() != '0') {
+            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_bit_num_easy.class.getName());
+        }
+    }
+
+    private void buildSkipDeParse(BuilderContext context) {
+        Info info = getInfo(context);
+        String varNameNum = info.varNameNum();
+        if (info.startFieldIndex() == context.fieldIndex) {
+            ParseUtil.append(context.method_body, "int {}=0;\n", varNameNum);
+        }
+        if (info.endFieldIndex() == context.fieldIndex) {
+            int maxBit = info.maxBit();
+            if (maxBit > 0 && maxBit <= 8) {
+                ParseUtil.append(context.method_body, "{}.writeByte({});\n", FieldBuilder.varNameByteBuf, varNameNum);
+            } else if (maxBit <= 16) {
+                ParseUtil.append(context.method_body, "{}.writeShort({});\n", FieldBuilder.varNameByteBuf, varNameNum);
+            } else if (maxBit <= 24) {
+                ParseUtil.append(context.method_body, "{}.writeMedium({});\n", FieldBuilder.varNameByteBuf, varNameNum);
+            } else if (maxBit <= 32) {
+                ParseUtil.append(context.method_body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
+            } else {
+                throw BaseException.get("class[{}] field[{}] anno[{}] maxBit[{}] not support", context.clazz.getName(), context.field.getName(), F_bit_num_easy.class.getName(), maxBit);
             }
         }
     }

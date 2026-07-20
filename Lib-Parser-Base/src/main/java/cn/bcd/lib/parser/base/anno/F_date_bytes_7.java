@@ -23,6 +23,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_date_bytes_7 {
+    /**
+     * Whether to skip this field and write seven zero bytes during deParse.
+     */
+    boolean skip() default false;
+
 
     /**
      * 用于表示原始值的时区

@@ -20,6 +20,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_string_bcd {
     /**
+     * Whether to skip this field and preserve its encoded length with zero bytes during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 占用字节数
      * 1-8
      * 与{@link #lenExpr()}互斥

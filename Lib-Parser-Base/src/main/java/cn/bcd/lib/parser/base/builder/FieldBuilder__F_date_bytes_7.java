@@ -13,6 +13,10 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
     public void buildParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
         final F_date_bytes_7 anno = context.field.getAnnotation(F_date_bytes_7.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_parse(7, "", context);
+            return;
+        }
         final Field field = context.field;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final Class<?> fieldTypeClass = field.getType();
@@ -67,6 +71,10 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
     public void buildDeParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
         final F_date_bytes_7 anno = context.field.getAnnotation(F_date_bytes_7.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_deParse(7, "", context);
+            return;
+        }
         final Field field = context.field;
         final Class<?> fieldTypeClass = field.getType();
         final String valCode = varNameInstance + "." + field.getName();

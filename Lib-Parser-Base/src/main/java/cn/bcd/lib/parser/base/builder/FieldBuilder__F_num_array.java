@@ -11,6 +11,11 @@ import java.lang.reflect.Field;
 public class FieldBuilder__F_num_array extends FieldBuilder {
     @Override
     public void buildParse(BuilderContext context) {
+        final F_num_array skipAnno = context.field.getAnnotation(F_num_array.class);
+        if (skipAnno.skip()) {
+            buildSkip(context, skipAnno, true);
+            return;
+        }
         if (buildParse_checkVal(context)) {
             return;
         }
@@ -392,6 +397,11 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
     @Override
     public void buildDeParse(BuilderContext context) {
+        final F_num_array skipAnno = context.field.getAnnotation(F_num_array.class);
+        if (skipAnno.skip()) {
+            buildSkip(context, skipAnno, false);
+            return;
+        }
         if (buildDeParse_checkVal(context)) {
             return;
         }
@@ -542,5 +552,16 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         return true;
     }
 
+
+    private static void buildSkip(BuilderContext context, F_num_array anno, boolean parse) {
+        int singleByteLen = FieldBuilder__F_num.getByteLen(anno.singleType()) + anno.singleSkip();
+        int len = anno.len() == 0 ? 0 : anno.len() * singleByteLen;
+        String lenExpr = anno.lenExpr().isEmpty() ? "" : "(" + anno.lenExpr() + ")*" + singleByteLen;
+        if (parse) {
+            ParseUtil.appendSkip_parse(len, lenExpr, context);
+        } else {
+            ParseUtil.appendSkip_deParse(len, lenExpr, context);
+        }
+    }
 
 }

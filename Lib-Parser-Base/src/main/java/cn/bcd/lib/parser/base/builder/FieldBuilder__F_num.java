@@ -12,12 +12,17 @@ import java.lang.reflect.Field;
 public class FieldBuilder__F_num extends FieldBuilder {
     @Override
     public void buildParse(BuilderContext context) {
-        if (buildParse_checkVal(context)) {
-            return;
-        }
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
         final F_num anno = field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            checkSkipVar(context, anno);
+            ParseUtil.appendSkip_parse(getByteLen(anno.type()), "", context);
+            return;
+        }
+        if (buildParse_checkVal(context)) {
+            return;
+        }
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final Class<?> fieldTypeClass = field.getType();
         final String sourceValTypeName;
@@ -362,12 +367,17 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
     @Override
     public void buildDeParse(BuilderContext context) {
-        if (buildDeParse_checkVal(context)) {
-            return;
-        }
         final Class<F_num> annoClass = F_num.class;
         final Field field = context.field;
         final F_num anno = context.field.getAnnotation(annoClass);
+        if (anno.skip()) {
+            checkSkipVar(context, anno);
+            ParseUtil.appendSkip_deParse(getByteLen(anno.type()), "", context);
+            return;
+        }
+        if (buildDeParse_checkVal(context)) {
+            return;
+        }
         ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
         final String varNameInstance = FieldBuilder.varNameInstance;
@@ -509,6 +519,25 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         ParseUtil.append(body, "}\n");
         return true;
+    }
+
+    private static void checkSkipVar(BuilderContext context, F_num anno) {
+        if (anno.var() != '0' || anno.globalVar() != '0') {
+            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_num.class.getName());
+        }
+    }
+
+    public static int getByteLen(NumType type) {
+        return switch (type) {
+            case uint8, int8 -> 1;
+            case uint16, int16 -> 2;
+            case uint24, int24 -> 3;
+            case uint32, int32, float32 -> 4;
+            case uint40, int40 -> 5;
+            case uint48, int48 -> 6;
+            case uint56, int56 -> 7;
+            case uint64, int64, float64 -> 8;
+        };
     }
 
     public static String getWriteCode(NumType type, boolean bigEndian, String valCode) {

@@ -31,6 +31,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface F_bit_num_array {
     /**
+     * Whether to skip this field and preserve its encoded bit length with zero bits during deParse.
+     */
+    boolean skip() default false;
+
+    /**
      * 数组元素个数
      * 与{@link #lenExpr()}互斥
      */

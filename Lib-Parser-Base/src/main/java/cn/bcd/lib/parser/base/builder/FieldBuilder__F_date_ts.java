@@ -13,6 +13,10 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
     public void buildParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
         final F_date_ts anno = context.field.getAnnotation(F_date_ts.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_parse(getByteLen(anno), "", context);
+            return;
+        }
         final Field field = context.field;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final Class<?> fieldTypeClass = field.getType();
@@ -82,6 +86,10 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
     public void buildDeParse(BuilderContext context) {
         final StringBuilder body = context.method_body;
         final F_date_ts anno = context.field.getAnnotation(F_date_ts.class);
+        if (anno.skip()) {
+            ParseUtil.appendSkip_deParse(getByteLen(anno), "", context);
+            return;
+        }
         final Field field = context.field;
         final Class<?> fieldTypeClass = field.getType();
         final String valCode = varNameInstance + "." + field.getName();
@@ -136,6 +144,13 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
                 ParseUtil.append(body, "{}.{}((double){}/1000d);\n", varNameByteBuf, writeFuncName, varNameLongField);
             }
         }
+    }
+
+    private static int getByteLen(F_date_ts anno) {
+        return switch (anno.mode()) {
+            case uint32_s -> 4;
+            case uint64_ms, uint64_s, float64_ms, float64_s -> 8;
+        };
     }
 
 }
