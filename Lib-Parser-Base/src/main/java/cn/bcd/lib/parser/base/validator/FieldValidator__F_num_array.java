@@ -6,11 +6,15 @@ import cn.bcd.lib.parser.base.data.NumValGetter;
 
 import java.lang.reflect.Field;
 
-public final class F_num_arrayValidator {
-    private F_num_arrayValidator() {
+public final class FieldValidator__F_num_array {
+    private FieldValidator__F_num_array() {
     }
 
     public static void validate(Field field, F_num_array annotation, NumValGetter numValGetter) {
+        ValidatorUtil.validateNumericArrayField(field, "@F_num_array");
+        if (annotation.singleCheckVal()) {
+            ValidatorUtil.validateCompanionField(field, "@F_num_array singleCheckVal", byte[].class);
+        }
         NumType singleType = annotation.singleType();
         if (annotation.singleCheckVal() && (singleType == NumType.float32 || singleType == NumType.float64)) {
             ValidatorUtil.fail("{} does not support value checking for NumType {}",
@@ -20,7 +24,6 @@ public final class F_num_arrayValidator {
             ValidatorUtil.fail("{} requires NumValGetter because value checking is enabled",
                     ValidatorUtil.fieldDescription(field));
         }
-        ValidatorUtil.validateArrayField(field, "@F_num_array");
         ValidatorUtil.validateRequiredLengthPair(ValidatorUtil.fieldDescription(field), "@F_num_array",
                 annotation.len(), annotation.lenExpr());
         ValidatorUtil.validateNonNegative(field, "@F_num_array singleSkip", annotation.singleSkip());

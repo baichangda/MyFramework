@@ -37,32 +37,6 @@ public class ParseUtil {
         }
     }
 
-    public static void check_var(BuilderContext context, Class<?> annoClass, char var, char globalVar) {
-        if (var != '0' && (var < 'a' || var > 'z')) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] var[{}] not in [a-z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), var);
-        }
-        if (globalVar != '0' && (globalVar < 'A' || globalVar > 'Z')) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] globalVar[{}] not in [A-Z]", context.clazz.getName(), context.field.getName(), annoClass.getName(), globalVar);
-        }
-    }
-
-    public static void notSupport_type(BuilderContext context, Class<?> annoClass) {
-        throw BaseException.get("class[{}] field[{}] anno[{}] type not support", context.clazz.getName(), context.field.getName(), annoClass.getName());
-    }
-
-    public static void notSupport_fieldType(BuilderContext context, Class<?> annoClass) {
-        throw BaseException.get("class[{}] field[{}] anno[{}] not support", context.clazz.getName(), context.field.getName(), annoClass.getName());
-    }
-
-    public static void notSupport(BuilderContext context, String msg, Object... params) {
-        Object[] args = new Object[params.length + 2];
-        args[0] = context.clazz.getName();
-        args[1] = context.field.getName();
-        System.arraycopy(params, 0, args, 2, params.length);
-        throw BaseException.get("class[{}] field[{}] " + msg, args);
-    }
-
-
     public static boolean bigEndian(ByteOrder order, ByteOrder parentOrder) {
         if (parentOrder == null) {
             if (order == ByteOrder.Default) {
@@ -821,12 +795,7 @@ public class ParseUtil {
                 || fieldType == long.class || fieldType == float.class || fieldType == double.class) {
             valType = fieldType;
         } else {
-            if (fieldType.isEnum()) {
-                valType = int.class;
-            } else {
-                notSupport(context, "fieldType[{}] not support", fieldType.getName());
-                valType = null;
-            }
+            valType = int.class;
         }
         return valType;
     }

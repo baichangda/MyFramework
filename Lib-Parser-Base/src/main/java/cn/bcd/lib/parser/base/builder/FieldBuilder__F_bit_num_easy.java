@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.util.RpnUtil;
@@ -83,15 +82,12 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
                 funcName = "readShort";
             } else if (maxBit <= 24) {
                 funcName = "readMedium";
-            } else if (maxBit <= 32) {
-                funcName = "readInt";
             } else {
-                throw BaseException.get("class[{}] field[{}] anno[{}] maxBit[{}] not support", context.clazz.getName(), field.getName(), F_bit_num_easy.class, maxBit);
+                funcName = "readInt";
             }
             ParseUtil.append(context.method_body, "final int {}={}.{}();\n", varNameNum, FieldBuilder.varNameByteBuf, funcName);
         }
         if (anno.skip()) {
-            checkSkipVar(context, anno);
             return;
         }
 
@@ -101,14 +97,7 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
             case "byte", "short", "int", "long", "float", "double" -> {
                 sourceValTypeName = fieldTypeName;
             }
-            default -> {
-                if (fieldTypeClass.isEnum()) {
-                    sourceValTypeName = "int";
-                } else {
-                    ParseUtil.notSupport_fieldType(context, annoClass);
-                    sourceValTypeName = null;
-                }
-            }
+            default -> sourceValTypeName = "int";
         }
 
         ParseUtil.append(body, "final {} {}=({})({});\n", sourceValTypeName, varNameField, sourceValTypeName, getBitNumCode_read(varNameNum, anno.bitStart(), anno.bitEnd()));
@@ -146,7 +135,6 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         final Field field = context.field;
         final F_bit_num_easy anno = field.getAnnotation(annoClass);
         if (anno.skip()) {
-            checkSkipVar(context, anno);
             buildSkipDeParse(context);
             return;
         }
@@ -210,17 +198,9 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
                 ParseUtil.append(body, "{}.writeShort({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else if (maxBitEnd <= 24) {
                 ParseUtil.append(body, "{}.writeMedium({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBitEnd <= 32) {
-                ParseUtil.append(body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else {
-                throw BaseException.get("class[{}] field[{}] anno[{}] maxBit[{}] not support", context.clazz.getName(), field.getName(), annoClass.getName(), maxBitEnd);
+                ParseUtil.append(body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             }
-        }
-    }
-
-    private static void checkSkipVar(BuilderContext context, F_bit_num_easy anno) {
-        if (anno.var() != '0' || anno.globalVar() != '0') {
-            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_bit_num_easy.class.getName());
         }
     }
 
@@ -238,10 +218,8 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
                 ParseUtil.append(context.method_body, "{}.writeShort({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else if (maxBit <= 24) {
                 ParseUtil.append(context.method_body, "{}.writeMedium({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBit <= 32) {
-                ParseUtil.append(context.method_body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else {
-                throw BaseException.get("class[{}] field[{}] anno[{}] maxBit[{}] not support", context.clazz.getName(), context.field.getName(), F_bit_num_easy.class.getName(), maxBit);
+                ParseUtil.append(context.method_body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             }
         }
     }

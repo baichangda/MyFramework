@@ -7,8 +7,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 
-public final class F_bean_listValidator {
-    private F_bean_listValidator() {
+public final class FieldValidator__F_bean_list {
+    private FieldValidator__F_bean_list() {
     }
 
     public static void validate(Field field, F_bean_list annotation) {

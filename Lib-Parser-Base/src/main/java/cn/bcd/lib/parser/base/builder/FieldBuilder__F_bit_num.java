@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
@@ -44,7 +43,6 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             buildSkip(context, anno, true);
             return;
         }
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean unsigned = anno.unsigned();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
@@ -61,22 +59,11 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             case "byte", "short", "int", "long", "float", "double" -> {
                 sourceValTypeName = fieldTypeName;
             }
-            default -> {
-                if (fieldTypeClass.isEnum()) {
-                    sourceValTypeName = "int";
-                } else {
-                    ParseUtil.notSupport_fieldType(context, annoClass);
-                    sourceValTypeName = null;
-                }
-            }
+            default -> sourceValTypeName = "int";
         }
 
 
         final int len = anno.len();
-        if (len < 1 || len > 64) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] len[{}] must in range [1,64]", field.getDeclaringClass().getName(), field.getName(), annoClass.getName(), len);
-        }
-
         ParseUtil.append(body, "final {} {}=({}){}.read({},{});\n", sourceValTypeName, varNameField, sourceValTypeName, varNameBitBuf, len, unsigned);
 
         String valCode = ParseUtil.replaceValExprToCode(anno.valExpr(), varNameField);
@@ -123,7 +110,6 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             buildSkip(context, anno, false);
             return;
         }
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean unsigned = anno.unsigned();
         final String varNameInstance = FieldBuilder.varNameInstance;
         final StringBuilder body = context.method_body;
@@ -173,10 +159,6 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         }
 
         final int len = anno.len();
-        if (len < 1 || len > 64) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] len[{}] must in range [1,64]", field.getDeclaringClass().getName(), field.getName(), annoClass.getName(), len);
-        }
-
         ParseUtil.append(body, "{}.write((long)({}),{});\n", varNameBitBuf, valCode, len);
 
         if (skipAfter > 0) {
@@ -189,13 +171,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
 
 
     private boolean buildSkip(BuilderContext context, F_bit_num anno, boolean parse) {
-        if (anno.var() != '0' || anno.globalVar() != '0') {
-            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_bit_num.class.getName());
-        }
         int len = anno.len();
-        if (len < 1 || len > 64) {
-            throw BaseException.get("class[{}] field[{}] anno[{}] len[{}] must in range [1,64]", context.clazz.getName(), context.field.getName(), F_bit_num.class.getName(), len);
-        }
         String bitBuf = parse ? context.getBitBuf_parse() : context.getBitBuf_deParse();
         ParseUtil.append(context.method_body, "{}.skip({});\n", bitBuf, anno.skipBefore() + len + anno.skipAfter());
         boolean finish = finish(context);

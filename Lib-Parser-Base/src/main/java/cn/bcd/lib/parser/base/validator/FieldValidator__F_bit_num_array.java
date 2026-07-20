@@ -4,12 +4,12 @@ import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 import java.lang.reflect.Field;
 
-public final class F_bit_num_arrayValidator {
-    private F_bit_num_arrayValidator() {
+public final class FieldValidator__F_bit_num_array {
+    private FieldValidator__F_bit_num_array() {
     }
 
     public static void validate(Field field, F_bit_num_array annotation) {
-        ValidatorUtil.validateArrayField(field, "@F_bit_num_array");
+        ValidatorUtil.validateNumericArrayField(field, "@F_bit_num_array");
         ValidatorUtil.validateRequiredLengthPair(ValidatorUtil.fieldDescription(field), "@F_bit_num_array",
                 annotation.len(), annotation.lenExpr());
         ValidatorUtil.validateRange(field, "@F_bit_num_array singleLen", annotation.singleLen(), 1, 64);

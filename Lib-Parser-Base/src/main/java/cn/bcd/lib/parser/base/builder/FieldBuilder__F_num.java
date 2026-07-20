@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.util.ParseUtil;
@@ -16,14 +15,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final Field field = context.field;
         final F_num anno = field.getAnnotation(annoClass);
         if (anno.skip()) {
-            checkSkipVar(context, anno);
             ParseUtil.appendSkip_parse(getByteLen(anno.type()), "", context);
             return;
         }
         if (buildParse_checkVal(context)) {
             return;
         }
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final Class<?> fieldTypeClass = field.getType();
         final String sourceValTypeName;
         final String fieldTypeName = fieldTypeClass.getName();
@@ -32,14 +29,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
             case "byte", "short", "int", "long", "float", "double" -> {
                 sourceValTypeName = fieldTypeName;
             }
-            default -> {
-                if (fieldTypeClass.isEnum()) {
-                    sourceValTypeName = "int";
-                } else {
-                    ParseUtil.notSupport_fieldType(context, annoClass);
-                    sourceValTypeName = null;
-                }
-            }
+            default -> sourceValTypeName = "int";
         }
 
 
@@ -155,18 +145,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         if (!anno.checkVal()) {
             return false;
         }
-        //检查值类型的伴生字段
         String fieldName__v = field.getName() + "__v";
-        try {
-            final Field field__v = context.clazz.getField(fieldName__v);
-            Class<?> field__vType = field__v.getType();
-            if (field__vType != byte.class) {
-                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v, field__vType);
-            }
-        } catch (NoSuchFieldException e) {
-            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v);
-        }
-
         final Class<?> fieldTypeClass = field.getType();
         final String fieldTypeName = fieldTypeClass.getName();
         final StringBuilder body = context.method_body;
@@ -371,14 +350,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final Field field = context.field;
         final F_num anno = context.field.getAnnotation(annoClass);
         if (anno.skip()) {
-            checkSkipVar(context, anno);
             ParseUtil.appendSkip_deParse(getByteLen(anno.type()), "", context);
             return;
         }
         if (buildDeParse_checkVal(context)) {
             return;
         }
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
         final String varNameInstance = FieldBuilder.varNameInstance;
         final StringBuilder body = context.method_body;
@@ -433,7 +410,6 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         String fieldName__v = field.getName() + "__v";
 
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
         final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
         final StringBuilder body = context.method_body;
         final String fieldName = field.getName();
@@ -519,12 +495,6 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         ParseUtil.append(body, "}\n");
         return true;
-    }
-
-    private static void checkSkipVar(BuilderContext context, F_num anno) {
-        if (anno.var() != '0' || anno.globalVar() != '0') {
-            throw BaseException.get("class[{}] field[{}] anno[{}] skip cannot be used with var or globalVar", context.clazz.getName(), context.field.getName(), F_num.class.getName());
-        }
     }
 
     public static int getByteLen(NumType type) {

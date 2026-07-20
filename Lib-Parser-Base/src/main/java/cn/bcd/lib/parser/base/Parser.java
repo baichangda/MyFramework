@@ -114,11 +114,11 @@ public class Parser {
         ModelClassValidator.validate(clazz);
         C_impl cImpl = clazz.getAnnotation(C_impl.class);
         if (cImpl != null) {
-            C_implValidator.validate(clazz, cImpl);
+            ClassValidator__C_impl.validate(clazz, cImpl);
         }
         C_skip cSkip = clazz.getAnnotation(C_skip.class);
         if (cSkip != null) {
-            C_skipValidator.validate(clazz, cSkip);
+            ClassValidator__C_skip.validate(clazz, cSkip);
         }
         for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
@@ -132,21 +132,21 @@ public class Parser {
 
     private static void validateAnnotation(Field field, Annotation parserAnnotation, NumValGetter numValGetter) {
         switch (parserAnnotation) {
-            case F_bean annotation -> F_beanValidator.validate(field, annotation);
-            case F_bean_list annotation -> F_bean_listValidator.validate(field, annotation);
-            case F_bit_num annotation -> F_bit_numValidator.validate(field, annotation);
-            case F_bit_num_array annotation -> F_bit_num_arrayValidator.validate(field, annotation);
-            case F_bit_num_easy annotation -> F_bit_num_easyValidator.validate(field, annotation);
-            case F_customize annotation -> F_customizeValidator.validate(field, annotation);
-            case F_date_bcd annotation -> F_date_bcdValidator.validate(field, annotation);
-            case F_date_bytes_6 annotation -> F_date_bytes_6Validator.validate(field, annotation);
-            case F_date_bytes_7 annotation -> F_date_bytes_7Validator.validate(field, annotation);
-            case F_date_ts annotation -> F_date_tsValidator.validate(field, annotation);
-            case F_num annotation -> F_numValidator.validate(field, annotation, numValGetter);
-            case F_num_array annotation -> F_num_arrayValidator.validate(field, annotation, numValGetter);
-            case F_skip annotation -> F_skipValidator.validate(field, annotation);
-            case F_string annotation -> F_stringValidator.validate(field, annotation);
-            case F_string_bcd annotation -> F_string_bcdValidator.validate(field, annotation);
+            case F_bean annotation -> FieldValidator__F_bean.validate(field, annotation);
+            case F_bean_list annotation -> FieldValidator__F_bean_list.validate(field, annotation);
+            case F_bit_num annotation -> FieldValidator__F_bit_num.validate(field, annotation);
+            case F_bit_num_array annotation -> FieldValidator__F_bit_num_array.validate(field, annotation);
+            case F_bit_num_easy annotation -> FieldValidator__F_bit_num_easy.validate(field, annotation);
+            case F_customize annotation -> FieldValidator__F_customize.validate(field, annotation);
+            case F_date_bcd annotation -> FieldValidator__F_date_bcd.validate(field, annotation);
+            case F_date_bytes_6 annotation -> FieldValidator__F_date_bytes_6.validate(field, annotation);
+            case F_date_bytes_7 annotation -> FieldValidator__F_date_bytes_7.validate(field, annotation);
+            case F_date_ts annotation -> FieldValidator__F_date_ts.validate(field, annotation);
+            case F_num annotation -> FieldValidator__F_num.validate(field, annotation, numValGetter);
+            case F_num_array annotation -> FieldValidator__F_num_array.validate(field, annotation, numValGetter);
+            case F_skip annotation -> FieldValidator__F_skip.validate(field, annotation);
+            case F_string annotation -> FieldValidator__F_string.validate(field, annotation);
+            case F_string_bcd annotation -> FieldValidator__F_string_bcd.validate(field, annotation);
             default -> throw BaseException.get("unsupported parser annotation[{}] on class[{}] field[{}]",
                     parserAnnotation.annotationType().getName(), field.getDeclaringClass().getName(), field.getName());
         }

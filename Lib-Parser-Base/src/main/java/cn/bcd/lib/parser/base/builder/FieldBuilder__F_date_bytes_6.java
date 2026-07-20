@@ -45,7 +45,7 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameLongField);
         } else if (int.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "{}.{}=(int)({}/1000);\n", varNameInstance, field.getName(), varNameLongField);
-        } else if (String.class.isAssignableFrom(fieldTypeClass)) {
+        } else {
             final String zoneDateTimeClassName = ZonedDateTime.class.getName();
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
             final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
@@ -57,8 +57,6 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
                     varNameLongField,
                     varNameValueZoneId,
                     dateTimeFormatterVarName);
-        } else {
-            ParseUtil.notSupport_fieldType(context, F_date_bytes_6.class);
         }
     }
 
@@ -93,12 +91,10 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
         } else if (int.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "final long {}=(long)({})*1000L;\n", varNameLongField, valCode);
-        } else if (String.class.isAssignableFrom(fieldTypeClass)) {
+        } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
             final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
-        } else {
-            ParseUtil.notSupport_fieldType(context, F_date_bytes_6.class);
         }
 
         ParseUtil.append(body, "{}.write({},{},{},{});\n", FieldBuilder__F_date_bytes_6.class.getName(), varNameByteBuf, varNameLongField, varNameZoneId, anno.baseYear());

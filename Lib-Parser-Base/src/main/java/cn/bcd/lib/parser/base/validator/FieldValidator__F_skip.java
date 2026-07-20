@@ -4,8 +4,8 @@ import cn.bcd.lib.parser.base.anno.F_skip;
 
 import java.lang.reflect.Field;
 
-public final class F_skipValidator {
-    private F_skipValidator() {
+public final class FieldValidator__F_skip {
+    private FieldValidator__F_skip() {
     }
 
     public static void validate(Field field, F_skip annotation) {

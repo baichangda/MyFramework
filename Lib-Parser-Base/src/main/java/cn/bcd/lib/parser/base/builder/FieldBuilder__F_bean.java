@@ -25,9 +25,6 @@ public class FieldBuilder__F_bean extends FieldBuilder {
         String fieldTypeName = fieldType.getName();
         if (fieldType.isInterface()) {
             String implClassExpr = anno.implClassExpr();
-            if (implClassExpr.isEmpty()) {
-                throw BaseException.get("class[{}] interface field[{}] anno[{}] implClassExpr must not be empty", field.getDeclaringClass().getName(), field.getName(), F_bean.class.getName());
-            }
             String implClassValCode = ParseUtil.replaceExprToCode(implClassExpr, context);
             String varNameField_implClassVal = varNameField + "_implClassVal";
             ParseUtil.append(body, "int {}={};\n", varNameField_implClassVal, implClassValCode);
@@ -125,9 +122,6 @@ public class FieldBuilder__F_bean extends FieldBuilder {
         String processContextVarName = context.getProcessContextVarName();
         if (fieldType.isInterface()) {
             String implClassExpr = anno.implClassExpr();
-            if (implClassExpr.isEmpty()) {
-                throw BaseException.get("class[{}] interface field[{}] anno[{}] implClassExpr must not be empty", field.getDeclaringClass().getName(), field.getName(), F_bean.class.getName());
-            }
             String implClassValCode = ParseUtil.replaceExprToCode(implClassExpr, context);
             String varNameField_implClassVal = varNameField + "_implClassVal";
             ParseUtil.append(body, "int {}={};\n", varNameField_implClassVal, implClassValCode);

@@ -20,13 +20,9 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
         if (fieldType.isArray()) {
             fieldTypeFlag = 1;
             typeClass = fieldType.getComponentType();
-        } else if (List.class.isAssignableFrom(fieldType)) {
+        } else {
             fieldTypeFlag = 2;
             typeClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-        } else {
-            ParseUtil.notSupport_type(context, F_bean_list.class);
-            fieldTypeFlag = 0;
-            typeClass = null;
         }
 
         final String varNameField = ParseUtil.getFieldVarName(context);
@@ -80,13 +76,9 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
         if (fieldType.isArray()) {
             fieldTypeFlag = 1;
             typeClass = fieldType.getComponentType();
-        } else if (List.class.isAssignableFrom(fieldType)) {
+        } else {
             fieldTypeFlag = 2;
             typeClass = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
-        } else {
-            ParseUtil.notSupport_type(context, F_bean_list.class);
-            fieldTypeFlag = 0;
-            typeClass = null;
         }
         final String typeClassName = typeClass.getName();
         final String processorVarName = context.getProcessorVarName(typeClass);

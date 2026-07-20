@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.data.BitRemainingMode;
@@ -58,23 +57,9 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         if (skipBefore > 0) {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, skipBefore);
         }
-        switch (arrayElementTypeName) {
-            case "byte", "short", "int", "long", "float", "double" -> {
-            }
-            default -> {
-                if (!arrayElementType.isEnum()) {
-                    ParseUtil.notSupport_fieldType(context, annoClass);
-                }
-            }
-        }
-
         final String arrLenRes;
         if (anno.len() == 0) {
-            if (anno.lenExpr().isEmpty()) {
-                throw BaseException.get("class[{}] field[{}] anno[] must have len or lenExpr", field.getDeclaringClass().getName(), field.getName(), F_bit_num_array.class.getName());
-            } else {
-                arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
-            }
+            arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
         } else {
             arrLenRes = anno.len() + "";
         }
@@ -175,9 +160,6 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
     private void buildSkip(BuilderContext context, F_bit_num_array anno, boolean parse) {
         final String arrLen;
         if (anno.len() == 0) {
-            if (anno.lenExpr().isEmpty()) {
-                throw BaseException.get("class[{}] field[{}] anno[{}] must have len or lenExpr", context.clazz.getName(), context.field.getName(), F_bit_num_array.class.getName());
-            }
             arrLen = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
         } else {
             arrLen = Integer.toString(anno.len());

@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.util.ParseUtil;
@@ -31,23 +30,12 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
             case "byte", "short", "int", "long", "float", "double" -> {
                 sourceValTypeName = arrayElementTypeName;
             }
-            default -> {
-                if (arrayElementType.isEnum()) {
-                    sourceValTypeName = "int";
-                } else {
-                    ParseUtil.notSupport_fieldType(context, annoClass);
-                    sourceValTypeName = null;
-                }
-            }
+            default -> sourceValTypeName = "int";
         }
 
         final String arrLenRes;
         if (anno.len() == 0) {
-            if (anno.lenExpr().isEmpty()) {
-                throw BaseException.get("class[{}] field[{}] anno[] must have len or lenExpr", field.getDeclaringClass().getName(), field.getName(), F_num_array.class.getName());
-            } else {
-                arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
-            }
+            arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
         } else {
             arrLenRes = String.valueOf(anno.len());
         }
@@ -176,31 +164,16 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
             return false;
         }
         final Field field = context.field;
+        String fieldName__v = field.getName() + "__v";
         final Class<?> fieldTypeClass = field.getType();
         final Class<?> arrEleType = fieldTypeClass.componentType();
         final String arrEleTypeName = arrEleType.getName();
         final String arrEleValTypeName = ParseUtil.getNumFieldValType(context).getName();
         final String arrLenRes;
         if (anno.len() == 0) {
-            if (anno.lenExpr().isEmpty()) {
-                throw BaseException.get("class[{}] field[{}] anno[] must have len or lenExpr", field.getDeclaringClass().getName(), field.getName(), F_num_array.class.getName());
-            } else {
-                arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
-            }
+            arrLenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
         } else {
             arrLenRes = String.valueOf(anno.len());
-        }
-
-        //检查值类型的伴生字段
-        String fieldName__v = field.getName() + "__v";
-        try {
-            final Field field__v = context.clazz.getField(fieldName__v);
-            Class<?> field__vType = field__v.getType();
-            if (field__vType != byte[].class) {
-                throw BaseException.get("class[{}] field[{}] valType field[{}] type[{}] must be byte[]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v, field__vType);
-            }
-        } catch (NoSuchFieldException e) {
-            throw BaseException.get("class[{}] field[{}] has no valType field[{}]", context.clazz.getName(), context.field.getName(), annoClass.getName(), fieldName__v);
         }
 
 

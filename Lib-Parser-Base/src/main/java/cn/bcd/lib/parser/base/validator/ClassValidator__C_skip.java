@@ -3,8 +3,8 @@ package cn.bcd.lib.parser.base.validator;
 import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 
-public final class C_skipValidator {
-    private C_skipValidator() {
+public final class ClassValidator__C_skip {
+    private ClassValidator__C_skip() {
     }
 
     public static void validate(Class<?> clazz, C_skip annotation) {
