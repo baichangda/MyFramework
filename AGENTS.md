@@ -1,27 +1,33 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-本仓库是 Gradle 多模块 Java/Spring 项目。`App-*` 模块是可独立部署启动的服务，通常包含 `src/main/java`、`src/main/resources` 和可选的 `src/test/java`。`Lib-*` 模块是共享依赖库，不直接启动。根目录的 `settings.gradle` 管理模块列表，`build.gradle` 统一配置构建逻辑，`gradle/libs.versions.toml` 管理依赖版本。服务配置、SQL、日志配置和静态资源放在各模块的 `src/main/resources`。
+
+This repository is a Gradle multi-module Java/Spring project. Deployable services use the `App-*` prefix; shared libraries use `Lib-*`. Each module follows the standard layout: production code in `src/main/java`, configuration and assets in `src/main/resources`, and tests in `src/test/java`. The root `settings.gradle` lists all modules, `build.gradle` provides shared build rules, and `gradle/libs.versions.toml` centralizes dependency versions. Keep SQL, logging configuration, static files, and environment-specific application configuration in the owning module's resources directory.
 
 ## Build, Test, and Development Commands
-在仓库根目录使用全局安装的 JDK、Gradle 和 Git。
 
-- `gradle clean build`: 编译所有模块、运行测试并生成构建产物。
-- `gradle test`: 运行全部 JUnit 5 测试。
-- `gradle :Lib-Base:test`: 只运行指定模块测试。
-- `gradle :App-BusinessProcess-Backend:bootRun`: 本地启动指定 Spring Boot 服务。
-- `gradle :App-BusinessProcess-Backend:bootJar`: 打包指定可部署服务 jar。
+Run commands from the repository root with the globally installed JDK and Gradle.
 
-`Lib-*` 默认生成普通 jar，`App-*` 默认生成 Spring Boot jar。`application-local.yml` 会从 boot jar 中排除。
+- `gradle clean build` compiles every module, runs tests, and creates artifacts.
+- `gradle test` runs the complete JUnit test suite.
+- `gradle :Lib-Base:test` tests one module during focused development.
+- `gradle :App-BusinessProcess-Backend:bootRun` starts a Spring Boot service locally.
+- `gradle :App-BusinessProcess-Backend:bootJar` creates its deployable boot jar.
+
+Library modules produce regular jars; application modules produce Spring Boot jars. `application-local.yml` is intentionally excluded from boot jars.
 
 ## Coding Style & Naming Conventions
-Java 目标版本为 Java 25，包名根路径使用 `cn.bcd`。模块命名遵循现有模式，例如 `App-Domain-Name` 和 `Lib-Technology-Name`。代码使用 4 空格缩进，类名使用 PascalCase，字段和方法使用 camelCase，常量使用 UPPER_SNAKE_CASE。优先沿用项目中已有的 Spring、Lombok、MapStruct 写法。除非确有必要，不要在模块 `build.gradle` 中硬编码依赖版本，应维护 `gradle/libs.versions.toml`。
+
+Target Java 25 and use the `cn.bcd` package root. Indent Java and Gradle code with four spaces. Use PascalCase for classes, camelCase for methods and fields, and UPPER_SNAKE_CASE for constants. Follow existing Spring, Lombok, and MapStruct patterns. Name modules consistently, for example `App-Domain-Name` or `Lib-Technology-Name`. Add dependency versions to `gradle/libs.versions.toml` instead of hard-coding them in module builds. No repository-wide formatter is configured, so preserve nearby style.
 
 ## Testing Guidelines
-测试使用 JUnit Jupiter，并通过 Gradle 的 `useJUnitPlatform()` 执行。测试代码放在对应模块的 `src/test/java`，测试类命名为 `*Test`，例如 `DateUtilTest`、`LocalRateControlUnitTest`。库逻辑优先补充聚焦的单元测试；只有服务配置或外部行为变化时再增加集成类测试。提交前至少运行受影响模块的测试任务。
+
+Tests use JUnit Jupiter through Gradle's `useJUnitPlatform()`. Place tests under the corresponding module's `src/test/java` tree and name classes `*Test`, such as `DateUtilTest`. Add focused unit tests for library changes and integration tests only when service wiring or external behavior requires them. No coverage threshold is enforced; test changed paths and edge cases. Before submission, run at least the affected module's test task.
 
 ## Commit & Pull Request Guidelines
-当前 Git 历史中提交信息较短，例如 `c`，没有形成有效约定。后续提交建议使用简洁、明确的描述，例如 `fix executor shutdown race` 或 `add parser boundary tests`。Pull Request 应说明影响的模块、已运行的验证命令、配置或数据库变更，并关联相关 issue。只有涉及 Web 界面变化时才需要截图。
+
+Recent history mainly contains terse messages such as `c` and revert commits; do not copy that ambiguity. Use a concise imperative summary, for example `fix executor shutdown race`. Pull requests should identify affected modules, summarize behavior and configuration or database changes, list verification commands, and link relevant issues. Include screenshots only for web UI changes.
 
 ## Agent-Specific Instructions
-当前 Windows 工作区磁盘处于加密状态，查看和操作文件时使用 `cmd` 指令。避免使用 PowerShell 专用的文件系统命令。
+
+Because the Windows workspace disk is encrypted, use `cmd` commands for file inspection and manipulation; avoid PowerShell-specific filesystem commands.
