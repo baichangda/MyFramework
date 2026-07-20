@@ -42,7 +42,7 @@ public class FBitNumArrayTest {
     }
 
     public static class VariableBitArrayBean {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int len;
 
         @F_bit_num_array(lenExpr = "a", singleLen = 8)

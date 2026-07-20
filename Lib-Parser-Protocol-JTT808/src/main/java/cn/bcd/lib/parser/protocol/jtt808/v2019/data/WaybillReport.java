@@ -6,7 +6,7 @@ import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
 
 public class WaybillReport implements PacketBody{
-    @F_num(type = NumType.uint32, var = 'n')
+    @F_num(type = NumType.uint32, numVar = 'n')
     public long len;
     @F_num_array(singleType = NumType.uint8, lenExpr = "n")
     public byte[] content;

@@ -34,134 +34,142 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
     @Override
     public VehicleRunData process(ByteBuf data, ProcessContext processContext) {
         VehicleRunData instance = new VehicleRunData();
-        ProcessContext parentContext = new ProcessContext(instance, processContext);
-        instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-        final Packet packet = (Packet) processContext.instance;
-        int allLen = packet.contentLength - 6;
-        int beginLeave = data.readableBytes();
-        while ((beginLeave - data.readableBytes()) < allLen) {
-            short flag = data.readUnsignedByte();
-            switch (flag) {
-                case 1 -> {
-                    //整车数据
-                    instance.vehicleBaseData = processor_vehicleBaseData.process(data, parentContext);
-                }
-                case 2 -> {
-                    //驱动电机数据
-                    instance.vehicleMotorData = processor_vehicleMotorData.process(data, parentContext);
-                }
-                case 3 -> {
-                    //燃料电池发动机及车载氢系统数据
-                    instance.vehicleFuelBatteryData = processor_vehicleFuelBatteryData.process(data, parentContext);
-                }
-                case 4 -> {
-                    //发动机数据
-                    instance.vehicleEngineData = processor_vehicleEngineData.process(data, parentContext);
-                }
-                case 5 -> {
-                    //车辆位置数据
-                    instance.vehiclePositionData = processor_vehiclePositionData.process(data, parentContext);
-                }
-                case 6 -> {
-                    //报警数据
-                    instance.vehicleAlarmData = processor_vehicleAlarmData.process(data, parentContext);
-                }
-                case 7 -> {
-                    //动力蓄电池最小并联单元电压数据\
-                    instance.vehicleBatteryMinVoltageData = processor_vehicleBatteryMinVoltageData.process(data, parentContext);
-                }
-                case 8 -> {
-                    //动力蓄电池温度数据
-                    instance.vehicleBatteryTemperatureData = processor_vehicleBatteryTemperatureData.process(data, parentContext);
-                }
-                case 0x30 -> {
-                    //燃料电池电堆数据
-                    instance.vehicleFuelBatteryHeapData = processor_vehicleFuelBatteryHeapData.process(data, parentContext);
-                }
-                case 0x31 -> {
-                    //超级电容器数据
-                    instance.vehicleSupercapacitorData = processor_vehicleSupercapacitorData.process(data, parentContext);
-                }
-                case 0x32 -> {
-                    //超级电容器极值数据
-                    instance.vehicleSupercapacitorLimitValueData = processor_vehicleSupercapacitorLimitValueData.process(data, parentContext);
-                }
-                case 0xFF -> {
-                    //车端数字签名
-                    instance.vehicleSignatureData = processor_vehicleSignatureData.process(data, parentContext);
-                }
-                default -> {
-                    if (flag >= 0x80 && flag <= 0xFE) {
-                        //自定义数据
-                        if (instance.vehicleCustomDatas == null) {
-                            instance.vehicleCustomDatas = new ArrayList<>();
+        final Packet packet = (Packet) processContext.parent;
+        final Object previousParent = processContext.enter(instance);
+        try {
+            instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
+            int allLen = packet.contentLength - 6;
+            int beginLeave = data.readableBytes();
+            while ((beginLeave - data.readableBytes()) < allLen) {
+                short flag = data.readUnsignedByte();
+                switch (flag) {
+                    case 1 -> {
+                        //整车数据
+                        instance.vehicleBaseData = processor_vehicleBaseData.process(data, processContext);
+                    }
+                    case 2 -> {
+                        //驱动电机数据
+                        instance.vehicleMotorData = processor_vehicleMotorData.process(data, processContext);
+                    }
+                    case 3 -> {
+                        //燃料电池发动机及车载氢系统数据
+                        instance.vehicleFuelBatteryData = processor_vehicleFuelBatteryData.process(data, processContext);
+                    }
+                    case 4 -> {
+                        //发动机数据
+                        instance.vehicleEngineData = processor_vehicleEngineData.process(data, processContext);
+                    }
+                    case 5 -> {
+                        //车辆位置数据
+                        instance.vehiclePositionData = processor_vehiclePositionData.process(data, processContext);
+                    }
+                    case 6 -> {
+                        //报警数据
+                        instance.vehicleAlarmData = processor_vehicleAlarmData.process(data, processContext);
+                    }
+                    case 7 -> {
+                        //动力蓄电池最小并联单元电压数据\
+                        instance.vehicleBatteryMinVoltageData = processor_vehicleBatteryMinVoltageData.process(data, processContext);
+                    }
+                    case 8 -> {
+                        //动力蓄电池温度数据
+                        instance.vehicleBatteryTemperatureData = processor_vehicleBatteryTemperatureData.process(data, processContext);
+                    }
+                    case 0x30 -> {
+                        //燃料电池电堆数据
+                        instance.vehicleFuelBatteryHeapData = processor_vehicleFuelBatteryHeapData.process(data, processContext);
+                    }
+                    case 0x31 -> {
+                        //超级电容器数据
+                        instance.vehicleSupercapacitorData = processor_vehicleSupercapacitorData.process(data, processContext);
+                    }
+                    case 0x32 -> {
+                        //超级电容器极值数据
+                        instance.vehicleSupercapacitorLimitValueData = processor_vehicleSupercapacitorLimitValueData.process(data, processContext);
+                    }
+                    case 0xFF -> {
+                        //车端数字签名
+                        instance.vehicleSignatureData = processor_vehicleSignatureData.process(data, processContext);
+                    }
+                    default -> {
+                        if (flag >= 0x80 && flag <= 0xFE) {
+                            //自定义数据
+                            if (instance.vehicleCustomDatas == null) {
+                                instance.vehicleCustomDatas = new ArrayList<>();
+                            }
+                            instance.vehicleCustomDatas.add(VehicleCustomData.read(flag, data));
+                        } else {
+                            throw BaseException.get("flag[{}] not support", flag);
                         }
-                        instance.vehicleCustomDatas.add(VehicleCustomData.read(flag, data));
-                    } else {
-                        throw BaseException.get("flag[{}] not support", flag);
                     }
                 }
             }
+            return instance;
+        } finally {
+            processContext.exit(previousParent);
         }
-        return instance;
     }
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, VehicleRunData instance) {
-        ProcessContext parentContext = new ProcessContext(instance, processContext);
-        FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
-        if (instance.vehicleBaseData != null) {
-            data.writeByte(1);
-            processor_vehicleBaseData.deProcess(data, parentContext, instance.vehicleBaseData);
-        }
-        if (instance.vehicleMotorData != null) {
-            data.writeByte(2);
-            processor_vehicleMotorData.deProcess(data, parentContext, instance.vehicleMotorData);
-        }
-        if (instance.vehicleFuelBatteryData != null) {
-            data.writeByte(3);
-            processor_vehicleFuelBatteryData.deProcess(data, parentContext, instance.vehicleFuelBatteryData);
-        }
-        if (instance.vehicleEngineData != null) {
-            data.writeByte(4);
-            processor_vehicleEngineData.deProcess(data, parentContext, instance.vehicleEngineData);
-        }
-        if (instance.vehiclePositionData != null) {
-            data.writeByte(5);
-            processor_vehiclePositionData.deProcess(data, parentContext, instance.vehiclePositionData);
-        }
-        if (instance.vehicleAlarmData != null) {
-            data.writeByte(6);
-            processor_vehicleAlarmData.deProcess(data, parentContext, instance.vehicleAlarmData);
-        }
-        if (instance.vehicleBatteryMinVoltageData != null) {
-            data.writeByte(7);
-            processor_vehicleBatteryMinVoltageData.deProcess(data, parentContext, instance.vehicleBatteryMinVoltageData);
-        }
-        if (instance.vehicleBatteryTemperatureData != null) {
-            data.writeByte(8);
-            processor_vehicleBatteryTemperatureData.deProcess(data, parentContext, instance.vehicleBatteryTemperatureData);
-        }
-        if (instance.vehicleFuelBatteryHeapData != null) {
-            data.writeByte(0x30);
-            processor_vehicleFuelBatteryHeapData.deProcess(data, parentContext, instance.vehicleFuelBatteryHeapData);
-        }
-        if (instance.vehicleSupercapacitorData != null) {
-            data.writeByte(0x31);
-            processor_vehicleSupercapacitorData.deProcess(data, parentContext, instance.vehicleSupercapacitorData);
-        }
-        if (instance.vehicleSupercapacitorLimitValueData != null) {
-            data.writeByte(0x32);
-            processor_vehicleSupercapacitorLimitValueData.deProcess(data, parentContext, instance.vehicleSupercapacitorLimitValueData);
-        }
-        if (instance.vehicleCustomDatas != null && !instance.vehicleCustomDatas.isEmpty()) {
-            for (VehicleCustomData vehicleCustomData : instance.vehicleCustomDatas) {
-                vehicleCustomData.write(data, vehicleCustomData);
+        final Object previousParent = processContext.enter(instance);
+        try {
+            FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
+            if (instance.vehicleBaseData != null) {
+                data.writeByte(1);
+                processor_vehicleBaseData.deProcess(data, processContext, instance.vehicleBaseData);
             }
-        }
-        if (instance.vehicleSignatureData != null) {
-            data.writeByte(0xFF);
-            processor_vehicleSignatureData.deProcess(data, parentContext, instance.vehicleSignatureData);
+            if (instance.vehicleMotorData != null) {
+                data.writeByte(2);
+                processor_vehicleMotorData.deProcess(data, processContext, instance.vehicleMotorData);
+            }
+            if (instance.vehicleFuelBatteryData != null) {
+                data.writeByte(3);
+                processor_vehicleFuelBatteryData.deProcess(data, processContext, instance.vehicleFuelBatteryData);
+            }
+            if (instance.vehicleEngineData != null) {
+                data.writeByte(4);
+                processor_vehicleEngineData.deProcess(data, processContext, instance.vehicleEngineData);
+            }
+            if (instance.vehiclePositionData != null) {
+                data.writeByte(5);
+                processor_vehiclePositionData.deProcess(data, processContext, instance.vehiclePositionData);
+            }
+            if (instance.vehicleAlarmData != null) {
+                data.writeByte(6);
+                processor_vehicleAlarmData.deProcess(data, processContext, instance.vehicleAlarmData);
+            }
+            if (instance.vehicleBatteryMinVoltageData != null) {
+                data.writeByte(7);
+                processor_vehicleBatteryMinVoltageData.deProcess(data, processContext, instance.vehicleBatteryMinVoltageData);
+            }
+            if (instance.vehicleBatteryTemperatureData != null) {
+                data.writeByte(8);
+                processor_vehicleBatteryTemperatureData.deProcess(data, processContext, instance.vehicleBatteryTemperatureData);
+            }
+            if (instance.vehicleFuelBatteryHeapData != null) {
+                data.writeByte(0x30);
+                processor_vehicleFuelBatteryHeapData.deProcess(data, processContext, instance.vehicleFuelBatteryHeapData);
+            }
+            if (instance.vehicleSupercapacitorData != null) {
+                data.writeByte(0x31);
+                processor_vehicleSupercapacitorData.deProcess(data, processContext, instance.vehicleSupercapacitorData);
+            }
+            if (instance.vehicleSupercapacitorLimitValueData != null) {
+                data.writeByte(0x32);
+                processor_vehicleSupercapacitorLimitValueData.deProcess(data, processContext, instance.vehicleSupercapacitorLimitValueData);
+            }
+            if (instance.vehicleCustomDatas != null && !instance.vehicleCustomDatas.isEmpty()) {
+                for (VehicleCustomData vehicleCustomData : instance.vehicleCustomDatas) {
+                    vehicleCustomData.write(data, vehicleCustomData);
+                }
+            }
+            if (instance.vehicleSignatureData != null) {
+                data.writeByte(0xFF);
+                processor_vehicleSignatureData.deProcess(data, processContext, instance.vehicleSignatureData);
+            }
+        } finally {
+            processContext.exit(previousParent);
         }
     }
 }

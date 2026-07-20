@@ -10,11 +10,11 @@ import cn.bcd.lib.parser.base.data.NumType;
 public class VehicleSignatureData {
     @F_num(type = NumType.uint8)
     public byte type;
-    @F_num(type = NumType.uint16,var = 'a')
+    @F_num(type = NumType.uint16,numVar = 'a')
     public int rLen;
     @F_num_array(singleType = NumType.uint8, lenExpr = "a")
     public byte[] rVal;
-    @F_num(type = NumType.uint16,var = 'b')
+    @F_num(type = NumType.uint16,numVar = 'b')
     public int sLen;
     @F_num_array(singleType = NumType.uint8, lenExpr = "b")
     public byte[] sVal;

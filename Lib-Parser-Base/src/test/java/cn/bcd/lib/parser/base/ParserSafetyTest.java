@@ -88,11 +88,11 @@ public class ParserSafetyTest {
     }
 
     @Test
-    void reportsMissingAndInvalidGlobalVariables() {
+    void reportsMissingAndInvalidGlobalNumVariables() {
         ProcessContext context = new ProcessContext(Unpooled.buffer());
-        IllegalStateException missing = assertThrows(IllegalStateException.class, () -> context.getGlobalVar(0));
+        IllegalStateException missing = assertThrows(IllegalStateException.class, () -> context.getGlobalNumVar(0));
         assertTrue(missing.getMessage().contains("A"));
-        assertThrows(IllegalArgumentException.class, () -> context.putGlobalVar(26, 1));
+        assertThrows(IllegalArgumentException.class, () -> context.putGlobalNumVar(26, 1));
     }
 
     @Test
@@ -204,7 +204,7 @@ public class ParserSafetyTest {
 
     @C_skip(len = 2, lenExpr = "a")
     public static class InvalidSkipBean {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int value;
     }
 }

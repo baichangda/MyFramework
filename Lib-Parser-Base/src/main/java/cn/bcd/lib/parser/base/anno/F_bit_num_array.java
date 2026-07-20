@@ -37,9 +37,9 @@ public @interface F_bit_num_array {
     int len() default 0;
 
     /**
-     * 数组元素个数表达式,配合var参数使用
+     * 数组元素个数表达式,配合numVar参数使用
      * 与{@link #len()}互斥
-     * 变量取值来源于var、globalVar
+     * 变量取值来源于numVar、globalNumVar
      * 例如:
      * m
      * m*n

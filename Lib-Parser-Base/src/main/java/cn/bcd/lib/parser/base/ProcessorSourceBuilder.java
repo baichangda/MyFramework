@@ -4,6 +4,7 @@ import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.anno.F_skip;
+import cn.bcd.lib.parser.base.anno.F_var;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
@@ -84,6 +85,9 @@ final class ProcessorSourceBuilder {
                     modelClass.getName(), FieldBuilder.varNameInstance, modelClass.getName());
         }
 
+        ParseUtil.append(body, "final Object previousParent={}.enter({});\ntry{\n",
+                FieldBuilder.varNameProcessContext, FieldBuilder.varNameInstance);
+
         BuilderContext context = new BuilderContext(classFields, constructorBody, body, modelClass,
                 classVariableNames, byteOrder, fields, numValGetter);
         C_skip classSkip = modelClass.getAnnotation(C_skip.class);
@@ -95,6 +99,7 @@ final class ProcessorSourceBuilder {
         if (direction == Direction.PARSE) {
             ParseUtil.append(body, "return {};\n", FieldBuilder.varNameInstance);
         }
+        ParseUtil.append(body, "}finally{{}.exit(previousParent);}\n", FieldBuilder.varNameProcessContext);
         return body.append('}').toString();
     }
 
@@ -107,12 +112,25 @@ final class ProcessorSourceBuilder {
             appendFieldSkip(context, skip, true, direction);
             appendFieldLogBefore(context, direction);
             try {
+                appendFieldVar(context, direction, true);
                 direction.build(findFieldBuilder(field), context);
+                appendFieldVar(context, direction, false);
             } finally {
                 appendFieldLogAfter(context, direction);
             }
             appendFieldSkip(context, skip, false, direction);
         }
+    }
+
+    private static void appendFieldVar(BuilderContext context, Direction direction, boolean before) {
+        F_var annotation = context.field.getAnnotation(F_var.class);
+        if (annotation == null || before != (direction == Direction.DE_PARSE)) {
+            return;
+        }
+        String fieldValue = FieldBuilder.varNameInstance + "." + context.field.getName();
+        ParseUtil.append(context.method_body, "{}.putVar({},{});\n",
+                FieldBuilder.varNameProcessContext, annotation.index(),
+                ParseUtil.boxing(fieldValue, context.field.getType()));
     }
 
     private static FieldBuilder findFieldBuilder(Field field) {

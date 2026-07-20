@@ -40,7 +40,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final Class<?> fieldTypeClass = field.getType();
         final String fieldTypeName = fieldTypeClass.getName();
         final F_bit_num anno = field.getAnnotation(annoClass);
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
+        ParseUtil.checkNumVar(context, annoClass, anno.numVar(), anno.globalNumVar());
         final boolean unsigned = anno.unsigned();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
@@ -99,13 +99,13 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
 
-        final char var = anno.var();
+        final char var = anno.numVar();
         if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+            context.method_numVarToFieldName.put(var, varNameField);
         }
-        final char globalVar = anno.globalVar();
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+        final char globalNumVar = anno.globalNumVar();
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalNumVar(context, globalNumVar, varNameField);
         }
 
     }
@@ -115,7 +115,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final Class<F_bit_num> annoClass = F_bit_num.class;
         final Field field = context.field;
         final F_bit_num anno = field.getAnnotation(annoClass);
-        ParseUtil.check_var(context, annoClass, anno.var(), anno.globalVar());
+        ParseUtil.checkNumVar(context, annoClass, anno.numVar(), anno.globalNumVar());
         final boolean unsigned = anno.unsigned();
         final String varNameInstance = FieldBuilder.varNameInstance;
         final StringBuilder body = context.method_body;
@@ -123,7 +123,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldType = field.getType();
         final boolean isFloat = fieldType == float.class || fieldType == double.class;
-        final char var = anno.var();
+        final char var = anno.numVar();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
         final String varNameBitBuf = context.getBitBuf_deParse();
@@ -146,13 +146,13 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         //判断是否用到变量中、如果用到了、需要定义变量
         if (var != '0') {
             ParseUtil.append(body, "final {} {}={};\n", fieldTypeName, varNameField, valCode);
-            context.method_varToFieldName.put(var, varNameField);
+            context.method_numVarToFieldName.put(var, varNameField);
             valCode = varNameField;
         }
 
         //判断是否用到全局变量中、如果用到了、添加进去
-        if (anno.globalVar() != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), valCode);
+        if (anno.globalNumVar() != '0') {
+            ParseUtil.appendPutGlobalNumVar(context, anno.globalNumVar(), valCode);
         }
 
         //最后判断是否用了值表达式、如果用了、进行表达式处理
