@@ -1,11 +1,12 @@
 package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.parser.base.anno.C_skip;
-import cn.bcd.lib.parser.base.anno.F_bit_num;
-import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 import cn.bcd.lib.parser.base.anno.F_skip;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
+import cn.bcd.lib.parser.base.log.ClassLog__C_skip;
+import cn.bcd.lib.parser.base.log.FieldLog;
+import cn.bcd.lib.parser.base.log.FieldLogRegistry;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
@@ -104,15 +105,26 @@ final class ProcessorSourceBuilder {
             context.field = field;
             context.fieldIndex = i;
             F_skip skip = field.getAnnotation(F_skip.class);
+            FieldLog<?> fieldLog = findFieldLog(field);
+            FieldLog<?> skipLog = skip == null ? null : FieldLogRegistry.get(F_skip.class);
+            appendFieldLogBefore(context, direction, skipLog);
             appendFieldSkip(context, skip, true, direction);
-            appendFieldLogBefore(context, direction);
-            try {
-                direction.build(findFieldBuilder(field), context);
-            } finally {
-                appendFieldLogAfter(context, direction);
-            }
+            appendFieldLogBefore(context, direction, fieldLog);
+            direction.build(findFieldBuilder(field), context);
+            appendFieldLogAfter(context, direction, fieldLog);
             appendFieldSkip(context, skip, false, direction);
+            appendFieldLogAfter(context, direction, skipLog);
         }
+    }
+
+    private static FieldLog<?> findFieldLog(Field field) {
+        for (Annotation annotation : field.getAnnotations()) {
+            FieldLog<?> fieldLog = FieldLogRegistry.get(annotation.annotationType());
+            if (fieldLog != null && annotation.annotationType() != F_skip.class) {
+                return fieldLog;
+            }
+        }
+        throw new IllegalStateException("No field log for " + field);
     }
 
     private static FieldBuilder findFieldBuilder(Field field) {
@@ -141,41 +153,30 @@ final class ProcessorSourceBuilder {
         }
     }
 
-    private void appendFieldLogBefore(BuilderContext context, Direction direction) {
-        if (loggingDisable(direction) || isBitField(context.field)) {
+    private void appendFieldLogBefore(BuilderContext context, Direction direction, FieldLog<?> fieldLog) {
+        if (fieldLog == null || loggingDisable(direction)) {
             return;
         }
         if (direction == Direction.PARSE) {
-            ParseUtil.prependLogCode_parse(context);
+            fieldLog.buildParseBefore(context);
         } else {
-            ParseUtil.prependLogCode_deParse(context);
+            fieldLog.buildDeParseBefore(context);
         }
     }
 
-    private void appendFieldLogAfter(BuilderContext context, Direction direction) {
-        if (loggingDisable(direction)) {
+    private void appendFieldLogAfter(BuilderContext context, Direction direction, FieldLog<?> fieldLog) {
+        if (fieldLog == null || loggingDisable(direction)) {
             return;
         }
-        boolean bitField = isBitField(context.field);
         if (direction == Direction.PARSE) {
-            if (bitField) {
-                ParseUtil.appendBitLogCode_parse(context);
-            } else {
-                ParseUtil.appendLogCode_parse(context);
-            }
-        } else if (bitField) {
-            ParseUtil.appendBitLogCode_deParse(context);
+            fieldLog.buildParseAfter(context);
         } else {
-            ParseUtil.appendLogCode_deParse(context);
+            fieldLog.buildDeParseAfter(context);
         }
     }
 
     private boolean loggingDisable(Direction direction) {
         return direction == Direction.PARSE ? !parseLogging : !deParseLogging;
-    }
-
-    private static boolean isBitField(Field field) {
-        return field.isAnnotationPresent(F_bit_num.class) || field.isAnnotationPresent(F_bit_num_array.class);
     }
 
     private void buildFieldsWithClassSkip(BuilderContext context, C_skip skip, Direction direction) {
@@ -201,7 +202,7 @@ final class ProcessorSourceBuilder {
                 indexMethod, FieldBuilder.varNameStartIndex);
         ParseUtil.append(context.method_body, "if({}>0){\n", FieldBuilder.varNameShouldSkip);
         appendPadding(context.method_body, FieldBuilder.varNameShouldSkip, direction);
-        appendClassSkipLog(context.method_body, FieldBuilder.varNameShouldSkip, true, direction);
+        appendClassSkipLog(context.method_body, FieldBuilder.varNameShouldSkip, direction);
         context.method_body.append("}\n");
     }
 
@@ -212,14 +213,14 @@ final class ProcessorSourceBuilder {
                     : ParseUtil.replaceExprToCode_class(skip.lenExpr(), context);
             String paddingCode = "(" + lengthCode + "-" + modelLength + ")";
             appendPadding(context.method_body, paddingCode, direction);
-            appendClassSkipLog(context.method_body, paddingCode, true, direction);
+            appendClassSkipLog(context.method_body, paddingCode, direction);
             return;
         }
         int padding = skip.len() - modelLength;
         if (padding > 0) {
             String paddingCode = Integer.toString(padding);
             appendPadding(context.method_body, paddingCode, direction);
-            appendClassSkipLog(context.method_body, paddingCode, false, direction);
+            appendClassSkipLog(context.method_body, paddingCode, direction);
         }
     }
 
@@ -228,19 +229,13 @@ final class ProcessorSourceBuilder {
         ParseUtil.append(body, "{}.{}({});\n", FieldBuilder.varNameByteBuf, method, lengthCode);
     }
 
-    private void appendClassSkipLog(StringBuilder body, String lengthCode, boolean expression, Direction direction) {
+    private void appendClassSkipLog(StringBuilder body, String lengthCode, Direction direction) {
         if (loggingDisable(direction)) {
             return;
         }
-        String collector = direction == Direction.PARSE ? "parseLogCollector" : "deParseLogCollector";
-        String action = direction == Direction.PARSE ? "skip" : "append";
-        if (expression) {
-            ParseUtil.append(body, "{}.{}().collect_class({}.class,1,new Object[]{\"@C_skip {}[\"+{}+\"]\"});\n",
-                    Parser.class.getName(), collector, modelClass.getName(), action, lengthCode);
-        } else {
-            ParseUtil.append(body, "{}.{}().collect_class({}.class,1,new Object[]{\"@C_skip {}[{}]\"});\n",
-                    Parser.class.getName(), collector, modelClass.getName(), action, lengthCode);
-        }
+        ParseUtil.append(body, "{}.{}({}.class,{});\n",
+                ClassLog__C_skip.class.getName(), direction == Direction.PARSE ? "parse" : "deParse",
+                modelClass.getName(), lengthCode);
     }
 
     private String buildSource(String packageName, String simpleClassName, String processBody, String deProcessBody) {

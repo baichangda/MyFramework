@@ -1,9 +1,9 @@
 package cn.bcd.lib.parser.base.processor;
 
 import cn.bcd.lib.parser.base.util.BitBuf_reader;
-import cn.bcd.lib.parser.base.util.BitBuf_reader_log;
+import cn.bcd.lib.parser.base.log.BitBuf_reader_log;
 import cn.bcd.lib.parser.base.util.BitBuf_writer;
-import cn.bcd.lib.parser.base.util.BitBuf_writer_log;
+import cn.bcd.lib.parser.base.log.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
 import java.util.Objects;
 import cn.bcd.lib.parser.base.anno.F_bit_num;

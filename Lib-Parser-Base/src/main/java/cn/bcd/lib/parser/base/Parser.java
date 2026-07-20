@@ -6,8 +6,6 @@ import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
-import cn.bcd.lib.parser.base.log.LogCollector_deParse;
-import cn.bcd.lib.parser.base.log.LogCollector_parse;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.base.validator.*;
@@ -35,8 +33,8 @@ public class Parser {
     private static final Object PROCESSOR_BUILD_LOCK = new Object();
 
     private static volatile boolean configurationFrozen;
-    private static volatile LogCollector_parse logCollector_parse;
-    private static volatile LogCollector_deParse logCollector_deParse;
+    private static volatile boolean parseLogEnabled;
+    private static volatile boolean deParseLogEnabled;
     private static volatile boolean generateClassFile;
     private static volatile boolean printBuildLog;
 
@@ -49,11 +47,11 @@ public class Parser {
     }
 
     public static void enableParseLog() {
-        configure(() -> logCollector_parse = LogCollector_parse.defaultInstance);
+        configure(() -> parseLogEnabled = true);
     }
 
     public static void enableDeParseLog() {
-        configure(() -> logCollector_deParse = LogCollector_deParse.defaultInstance);
+        configure(() -> deParseLogEnabled = true);
     }
 
     public static void enablePrintBuildLog() {
@@ -77,12 +75,12 @@ public class Parser {
         return configurationFrozen;
     }
 
-    public static LogCollector_parse parseLogCollector() {
-        return logCollector_parse;
+    public static boolean isParseLogEnabled() {
+        return parseLogEnabled;
     }
 
-    public static LogCollector_deParse deParseLogCollector() {
-        return logCollector_deParse;
+    public static boolean isDeParseLogEnabled() {
+        return deParseLogEnabled;
     }
 
     private static void freezeConfiguration() {
@@ -104,8 +102,8 @@ public class Parser {
     private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         validateModel(clazz, numValGetter);
         return (Class<T>) ProcessorSourceBuilder.build(clazz, byteOrder, numValGetter,
-                logCollector_parse != null,
-                logCollector_deParse != null,
+                parseLogEnabled,
+                deParseLogEnabled,
                 printBuildLog,
                 generateClassFile);
     }

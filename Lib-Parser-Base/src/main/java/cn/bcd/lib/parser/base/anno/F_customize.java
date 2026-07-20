@@ -15,8 +15,7 @@ import java.lang.annotation.Target;
  * 反解析中
  * 值可以为null、null的含义由定制逻辑自己实现
  *
- * 注意:
- * 如果自定义解析逻辑、即时开启了解析和反解析日志、也不会有此注解标注字段的解析日志、需要自己实现日志
+ * 开启解析或反解析日志后、会统一记录此字段消费或写入的字节和字段值
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)

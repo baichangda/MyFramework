@@ -3,6 +3,8 @@ package cn.bcd.lib.parser.base.builder;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.data.ByteOrder;
 import cn.bcd.lib.parser.base.data.NumValGetter;
+import cn.bcd.lib.parser.base.log.BitBuf_reader_log;
+import cn.bcd.lib.parser.base.log.BitBuf_writer_log;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.*;
@@ -155,8 +157,8 @@ public class BuilderContext {
 
     public final String getBitBuf_parse() {
         if (!method_cache.containsKey("hasBitBuf")) {
-            final String bitBuf_reader_className = Parser.parseLogCollector() == null ? BitBuf_reader.class.getName() : BitBuf_reader_log.class.getName();
-            final String funcName = Parser.parseLogCollector() == null ? "getBitBuf_reader" : "getBitBuf_reader_log";
+            final String bitBuf_reader_className = !Parser.isParseLogEnabled() ? BitBuf_reader.class.getName() : BitBuf_reader_log.class.getName();
+            final String funcName = !Parser.isParseLogEnabled() ? "getBitBuf_reader" : "getBitBuf_reader_log";
             ParseUtil.append(method_body, "final {} {}={}.{}();\n", bitBuf_reader_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
             method_cache.put("hasBitBuf", true);
         }
@@ -165,8 +167,8 @@ public class BuilderContext {
 
     public final String getBitBuf_deParse() {
         if (!method_cache.containsKey("hasBitBuf")) {
-            final String bitBuf_writer_className = Parser.deParseLogCollector() == null ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
-            final String funcName = Parser.deParseLogCollector() == null ? "getBitBuf_writer" : "getBitBuf_writer_log";
+            final String bitBuf_writer_className = !Parser.isDeParseLogEnabled() ? BitBuf_writer.class.getName() : BitBuf_writer_log.class.getName();
+            final String funcName = !Parser.isDeParseLogEnabled() ? "getBitBuf_writer" : "getBitBuf_writer_log";
             ParseUtil.append(method_body, "final {} {}={}.{}();\n", bitBuf_writer_className, FieldBuilder.varNameBitBuf, FieldBuilder.varNameProcessContext, funcName);
             method_cache.put("hasBitBuf", true);
         }
