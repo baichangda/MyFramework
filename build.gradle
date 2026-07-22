@@ -70,6 +70,7 @@ subprojects {
         testImplementation libs.junit.jupiter.engine
         testRuntimeOnly libs.junit.platform.launcher
         testImplementation libs.log4j.slf4j2.impl
+        testImplementation libs.jmh.generator.annprocess
     }
 
     //下载源码和文档

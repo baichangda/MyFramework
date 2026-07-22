@@ -36,6 +36,7 @@ jctools="4.0.6"
 influxdb3 = "1.10.0"
 fesod="2.0.2-incubating"
 javassist = "3.30.2-GA"
+jmh="1.37"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -139,6 +140,8 @@ influxdb3-java = { module = "com.influxdb:influxdb3-java", version.ref = "influx
 
 fesod-bom = { module = "org.apache.fesod:fesod-bom", version.ref = "fesod" }
 fesod-sheet = { module = "org.apache.fesod:fesod-sheet", version.ref = "fesod"}
+
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh"}
 
 [plugins]
 jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
