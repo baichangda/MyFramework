@@ -3,6 +3,17 @@ apply plugin: 'maven-publish'
 dependencies {
     api project(":Lib-Parser-Base")
     api project(":Lib-Base-Json")
+
+    testAnnotationProcessor libs.jmh.generator.annprocess
+}
+
+tasks.register('jmh', JavaExec) {
+    group = 'verification'
+    description = 'Runs the GB32960 JMH benchmarks.'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.openjdk.jmh.Main'
+    args 'cn.bcd.lib.parser.protocol.gb32960.v2016.PacketReadBenchmark'
 }
 
 version='1.0-SNAPSHOT'
