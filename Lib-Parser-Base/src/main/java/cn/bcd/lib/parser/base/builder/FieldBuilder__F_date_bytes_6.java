@@ -43,8 +43,6 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={}.ofInstant({}.ofEpochMilli({}),{});\n", varNameInstance, field.getName(), ZonedDateTime.class.getName(), Instant.class.getName(), varNameLongField, varNameValueZoneId);
         } else if (long.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameLongField);
-        } else if (int.class.isAssignableFrom(fieldTypeClass)) {
-            ParseUtil.append(body, "{}.{}=(int)({}/1000);\n", varNameInstance, field.getName(), varNameLongField);
         } else {
             final String zoneDateTimeClassName = ZonedDateTime.class.getName();
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
@@ -89,8 +87,6 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             ParseUtil.append(body, "final long {}={}.toInstant().toEpochMilli();\n", varNameLongField, valCode);
         } else if (long.class.isAssignableFrom(fieldTypeClass)) {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
-        } else if (int.class.isAssignableFrom(fieldTypeClass)) {
-            ParseUtil.append(body, "final long {}=(long)({})*1000L;\n", varNameLongField, valCode);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
             final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);

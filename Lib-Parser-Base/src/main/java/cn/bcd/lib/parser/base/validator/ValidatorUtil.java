@@ -102,7 +102,7 @@ final class ValidatorUtil {
         if (!Date.class.isAssignableFrom(type) && !Instant.class.isAssignableFrom(type)
                 && !LocalDateTime.class.isAssignableFrom(type) && !OffsetDateTime.class.isAssignableFrom(type)
                 && !ZonedDateTime.class.isAssignableFrom(type) && type != long.class
-                && type != int.class && !String.class.isAssignableFrom(type)) {
+                && !String.class.isAssignableFrom(type)) {
             fail("{} {} does not support field type[{}]", fieldDescription(field), annotation, type.getName());
         }
     }

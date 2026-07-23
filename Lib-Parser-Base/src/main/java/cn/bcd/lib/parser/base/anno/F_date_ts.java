@@ -18,7 +18,6 @@ import java.lang.annotation.Target;
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}
  * {@link java.time.ZonedDateTime}
- * int 此时代表时间戳秒
  * long 此时代表时间戳毫秒
  * {@link String} 此时使用{@link #stringFormat()}、{@link #valueZoneId()}格式化
  */
