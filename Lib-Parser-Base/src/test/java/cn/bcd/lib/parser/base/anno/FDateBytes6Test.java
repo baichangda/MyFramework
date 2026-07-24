@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FDateBytes6Test {
@@ -22,8 +23,26 @@ public class FDateBytes6Test {
         assertEquals(bean.value, target.value);
     }
 
+    @Test
+    public void intArrayRoundTrip() {
+        Processor<Bytes6ArrayBean> processor = Parser.getProcessor(Bytes6ArrayBean.class);
+        Bytes6ArrayBean bean = new Bytes6ArrayBean();
+        bean.value = new int[]{2025, 6, 1, 12, 30, 45};
+
+        byte[] bytes = ParserTestSupport.deProcess(processor, bean);
+        assertArrayEquals(new byte[]{125, 6, 1, 12, 30, 45}, bytes);
+
+        Bytes6ArrayBean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(bytes));
+        assertArrayEquals(bean.value, target.value);
+    }
+
     public static class Bytes6Bean {
         @F_date_bytes_6(valueZoneId = "+8")
         public LocalDateTime value;
+    }
+
+    public static class Bytes6ArrayBean {
+        @F_date_bytes_6(baseYear = 1900)
+        public int[] value;
     }
 }
