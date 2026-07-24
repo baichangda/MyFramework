@@ -24,7 +24,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
         final String varNameLongField = varNameField + "_long";
         final String zoneDateTimeClassName = ZonedDateTime.class.getName();
         final String varNameZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.zoneId());
-        final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
+        final boolean bigEndian = ParseUtil.bigEndian(anno.yearByteOrder(), context.byteOrder);
         //先转换为毫秒
         final String readFuncName = bigEndian ? "readUnsignedShort" : "readUnsignedShortLE";
         ParseUtil.append(body, "final long {}={}.of({}.{}(),{}.readByte(),{}.readByte(),{}.readByte(),{}.readByte(),{}.readByte(),0,{}).toInstant().toEpochMilli();\n",
@@ -98,7 +98,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
         }
 
-        final boolean bigEndian = ParseUtil.bigEndian(anno.order(), context.byteOrder);
+        final boolean bigEndian = ParseUtil.bigEndian(anno.yearByteOrder(), context.byteOrder);
         final String writeFuncName = bigEndian ? "writeShort" : "writeShortLE";
         final String varNameZoneDateTimeField = varNameField + "zoneDateTime";
         ParseUtil.append(body, "{} {}={}.ofInstant({}.ofEpochMilli({}),{});\n",

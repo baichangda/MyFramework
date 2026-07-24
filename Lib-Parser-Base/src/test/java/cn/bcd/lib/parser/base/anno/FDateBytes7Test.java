@@ -26,7 +26,7 @@ public class FDateBytes7Test {
     }
 
     public static class Bytes7Bean {
-        @F_date_bytes_7(order = ByteOrder.smallEndian, valueZoneId = "+8")
+        @F_date_bytes_7(yearByteOrder = ByteOrder.smallEndian, valueZoneId = "+8")
         public LocalDateTime value;
 
         @F_date_bytes_7(stringFormat = "yyyyMMddHHmmss", valueZoneId = "+8")

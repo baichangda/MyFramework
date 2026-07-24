@@ -11,12 +11,13 @@ import java.lang.annotation.Target;
  * 用于原始数据是7个字节分别表示 年(2字节)、月、日、时、分、秒
  *
  * 适用于如下类型
+ * int[6] 此时分别代表(年、月、日、时、分、秒)
+ * long 此时代表时间戳毫秒
  * {@link java.util.Date}
  * {@link java.time.Instant}
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}
  * {@link java.time.ZonedDateTime}
- * long 此时代表时间戳毫秒
  * {@link String} 此时使用{@link #stringFormat()}、{@link #valueZoneId()}格式化
  */
 @Target({ElementType.FIELD})
@@ -40,8 +41,9 @@ public @interface F_date_bytes_7 {
 
     /**
      * 字节序模式
+     * 用于年份的读取
      */
-    ByteOrder order() default ByteOrder.Default;
+    ByteOrder yearByteOrder() default ByteOrder.Default;
 
     /**
      * 转换日期为字符串的格式

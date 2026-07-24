@@ -13,12 +13,12 @@ import java.lang.annotation.Target;
  * 毫秒、秒都可以
  *
  * 适用于如下类型
+ * long 此时代表时间戳毫秒
  * {@link java.util.Date}
  * {@link java.time.Instant}
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}
  * {@link java.time.ZonedDateTime}
- * long 此时代表时间戳毫秒
  * {@link String} 此时使用{@link #stringFormat()}、{@link #valueZoneId()}格式化
  */
 @Target({ElementType.FIELD})
