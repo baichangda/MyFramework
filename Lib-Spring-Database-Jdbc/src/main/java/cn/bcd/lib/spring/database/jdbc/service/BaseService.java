@@ -61,9 +61,6 @@ public class BaseService<T extends SuperBaseBean> {
         return beanInfo;
     }
 
-    @Autowired(required = false)
-    UserGetter userGetter;
-
     @Autowired
     public void init(JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
         this.jdbcTemplate = jdbcTemplate;
