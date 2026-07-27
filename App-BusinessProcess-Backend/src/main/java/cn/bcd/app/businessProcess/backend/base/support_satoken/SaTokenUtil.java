@@ -8,7 +8,6 @@ import cn.bcd.app.businessProcess.backend.sys.service.CacheService;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
 import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.stp.StpUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
