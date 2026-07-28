@@ -61,7 +61,7 @@ public class FNumArrayTest {
     }
 
     public static class CheckedArrayBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int len;
 
         @F_num_array(lenExpr = "a", singleType = NumType.uint8, singleCheckVal = true)
@@ -75,7 +75,7 @@ public class FNumArrayTest {
     }
 
     public static class ExpressionArrayBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int len;
 
         @F_num_array(lenExpr = "a", singleType = NumType.uint16, singleOrder = ByteOrder.smallEndian,

@@ -41,19 +41,8 @@ public @interface F_customize {
     String processorArgs() default "";
 
     /**
-     * 变量名称、仅作用于当前类
-     * 要求标注字段必须为数字类型
-     * 取值a-z、0表示不作为变量
-     * 标注此标记的会在解析时候将值缓存,供其他注解长度表达式使用
+     * 当前类内数值变量，取值范围为 {@code a-z}，{@code 0} 表示不定义。
      */
-    char numVar() default '0';
+    char var() default '0';
 
-    /**
-     * 全局变量名称、作用于一个对象解析的生命周期中
-     * 要求标注字段必须为数字类型
-     * 此变量值会在{@link ProcessContext#globalVars}中、跟随解析参数传递
-     * 取值A-Z、0表示不作为变量
-     * 标注此标记的会在解析时候将值缓存,仅供其他注解长度表达式使用
-     */
-    char globalNumVar() default '0';
 }

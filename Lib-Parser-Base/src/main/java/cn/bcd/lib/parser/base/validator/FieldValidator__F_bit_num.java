@@ -10,8 +10,7 @@ public final class FieldValidator__F_bit_num {
 
     public static void validate(Field field, F_bit_num annotation) {
         ValidatorUtil.validateNumericField(field, "@F_bit_num");
-        ValidatorUtil.validateVariable(field, "@F_bit_num", annotation.numVar(), annotation.globalNumVar());
-        ValidatorUtil.validateSkipVariable(field, "@F_bit_num", annotation.skip(), annotation.numVar(), annotation.globalNumVar());
+        ValidatorUtil.validateLocalVariable(field, "@F_bit_num", annotation.var(), annotation.skip());
         ValidatorUtil.validateRange(field, "@F_bit_num len", annotation.len(), 1, 64);
         ValidatorUtil.validateNonNegative(field, "@F_bit_num skipBefore", annotation.skipBefore());
         ValidatorUtil.validateNonNegative(field, "@F_bit_num skipAfter", annotation.skipAfter());

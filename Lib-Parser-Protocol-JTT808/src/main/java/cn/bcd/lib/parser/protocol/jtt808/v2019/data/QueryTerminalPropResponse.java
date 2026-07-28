@@ -1,6 +1,7 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
 
+
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.anno.F_string;
@@ -24,13 +25,13 @@ public class QueryTerminalPropResponse implements PacketBody {
     @F_string(len = 10, appendMode = StringAppendMode.lowAddressAppend)
     public String iccid;
     //终端硬件版本号长度
-    @F_num(type = NumType.uint8, numVar = 'a')
+    @F_num(type = NumType.uint8, var = 'a')
     public short terminalHardwareVersionLen;
     //终端硬件版本号
     @F_string(lenExpr = "a", charset = "GBK")
     public String terminalHardwareVersion;
     //终端固件版本号长度
-    @F_num(type = NumType.uint8, numVar = 'b')
+    @F_num(type = NumType.uint8, var = 'b')
     public short terminalFirmwareVersionLen;
     //终端固件版本号
     @F_string(lenExpr = "b", charset = "GBK")

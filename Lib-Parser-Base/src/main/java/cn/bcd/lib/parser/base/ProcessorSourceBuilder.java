@@ -1,8 +1,12 @@
 package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.parser.base.anno.C_skip;
+import cn.bcd.lib.parser.base.anno.F_bit_num;
+import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
+import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_skip;
-import cn.bcd.lib.parser.base.anno.F_var;
+import cn.bcd.lib.parser.base.anno.F_global_var;
+import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.log.ClassLog__C_skip;
@@ -85,11 +89,6 @@ final class ProcessorSourceBuilder {
             ParseUtil.append(body, "final {} {}=({})$3;\n",
                     modelClass.getName(), FieldBuilder.varNameInstance, modelClass.getName());
         }
-        ParseUtil.append(body, "final Object _previousInstance={}.instance;\n",
-                FieldBuilder.varNameProcessContext);
-        ParseUtil.append(body, "{}.instance={};\ntry{\n",
-                FieldBuilder.varNameProcessContext, FieldBuilder.varNameInstance);
-
         BuilderContext context = new BuilderContext(classFields, constructorBody, body, modelClass,
                 classVariableNames, byteOrder, fields, numValGetter);
         C_skip classSkip = modelClass.getAnnotation(C_skip.class);
@@ -101,8 +100,6 @@ final class ProcessorSourceBuilder {
         if (direction == Direction.PARSE) {
             ParseUtil.append(body, "return {};\n", FieldBuilder.varNameInstance);
         }
-        ParseUtil.append(body, "}finally{\n{}.instance=_previousInstance;\n}\n",
-                FieldBuilder.varNameProcessContext);
         return body.append('}').toString();
     }
 
@@ -118,26 +115,65 @@ final class ProcessorSourceBuilder {
             appendFieldSkip(context, skip, true, direction);
             appendFieldLogBefore(context, direction, fieldLog);
             direction.build(findFieldBuilder(field), context);
-            appendFieldVar(context, field);
+            appendFieldVar(context, field, direction);
             appendFieldLogAfter(context, direction, fieldLog);
             appendFieldSkip(context, skip, false, direction);
             appendFieldLogAfter(context, direction, skipLog);
         }
     }
 
-    private static void appendFieldVar(BuilderContext context, Field field) {
-        F_var var = field.getAnnotation(F_var.class);
-        if (var == null) {
-            return;
+    private static void appendFieldVar(BuilderContext context, Field field, Direction direction) {
+        F_global_var annotation = field.getAnnotation(F_global_var.class);
+        Annotation parserAnnotation = findFieldBuilderAnnotation(field);
+        char var = switch (parserAnnotation) {
+            case F_num value -> value.var();
+            case F_bit_num value -> value.var();
+            case F_bit_num_easy value -> value.var();
+            case F_customize value -> value.var();
+            default -> '0';
+        };
+        String fieldValueCode = FieldBuilder.varNameInstance + "." + field.getName();
+        String numericValueCode = fieldValueCode;
+        if (direction == Direction.PARSE) {
+            numericValueCode = switch (parserAnnotation) {
+                case F_num value when !value.checkVal() -> ParseUtil.getFieldVarName(context);
+                case F_bit_num ignored -> ParseUtil.getFieldVarName(context);
+                case F_bit_num_easy ignored -> ParseUtil.getFieldVarName(context);
+                case F_customize ignored -> ParseUtil.getFieldVarName(context);
+                default -> fieldValueCode;
+            };
+        } else if (field.getType().isEnum()) {
+            numericValueCode = fieldValueCode + ".toInteger()";
         }
-        if (var.index() < 0) {
-            throw new IllegalArgumentException("F_var index must not be negative: " + field);
+        if (var != '0') {
+            context.method_varToFieldName.put(var, numericValueCode);
         }
-        String valueCode = ParseUtil.boxing(
-                FieldBuilder.varNameInstance + "." + field.getName(),
-                field.getType());
-        ParseUtil.append(context.method_body, "{}.putVar({},{});\n",
-                FieldBuilder.varNameProcessContext, var.index(), valueCode);
+        if (annotation != null) {
+            String globalVar = annotation.var()
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"");
+            boolean numericVariable = globalVar.length() == 1
+                    && Character.isUpperCase(globalVar.charAt(0))
+                    && (parserAnnotation instanceof F_num
+                    || parserAnnotation instanceof F_bit_num
+                    || parserAnnotation instanceof F_bit_num_easy
+                    || parserAnnotation instanceof F_customize
+                    && (field.getType().isPrimitive() || field.getType().isEnum()));
+            String valueCode = numericVariable
+                    ? "Integer.valueOf((int)(" + numericValueCode + "))"
+                    : ParseUtil.boxing(fieldValueCode, field.getType());
+            ParseUtil.append(context.method_body, "{}.putGlobalVar(\"{}\",{});\n",
+                    FieldBuilder.varNameProcessContext, globalVar, valueCode);
+        }
+    }
+
+    private static Annotation findFieldBuilderAnnotation(Field field) {
+        for (Annotation annotation : field.getAnnotations()) {
+            if (Parser.anno_fieldBuilder.containsKey(annotation.annotationType())) {
+                return annotation;
+            }
+        }
+        throw new IllegalStateException("No parser annotation for " + field);
     }
 
     private static FieldLog<?> findFieldLog(Field field) {

@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.base.validator;
 
+
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.F_date_bcd;
 import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
@@ -7,6 +8,7 @@ import cn.bcd.lib.parser.base.anno.F_date_bytes_7;
 import cn.bcd.lib.parser.base.anno.F_date_ts;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
+import cn.bcd.lib.parser.base.anno.F_global_var;
 import cn.bcd.lib.parser.base.anno.F_string;
 import cn.bcd.lib.parser.base.data.DateTsMode;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -30,6 +32,8 @@ public class FieldValidatorTest {
     @Test
     void rejectsInvalidVariablesAndCompanionFields() {
         assertFailure(InvalidVariableField.class, "must be in [a-z]");
+        assertFailure(LowercaseGlobalVariableField.class, "single lowercase letter");
+        assertFailure(NumericGlobalVariableField.class, "must not contain only digits");
         assertFailure(MissingCompanionField.class, "requires companion field");
         assertFailure(InvalidCompanionField.class, "must have type[byte]");
     }
@@ -84,7 +88,19 @@ public class FieldValidatorTest {
     }
 
     public static class InvalidVariableField {
-        @F_num(type = NumType.uint8, numVar = 'A')
+        @F_num(type = NumType.uint8, var = 'A')
+        public int value;
+    }
+
+    public static class LowercaseGlobalVariableField {
+        @F_num(type = NumType.uint8)
+        @F_global_var(var = "a")
+        public int value;
+    }
+
+    public static class NumericGlobalVariableField {
+        @F_num(type = NumType.uint8)
+        @F_global_var(var = "123")
         public int value;
     }
 

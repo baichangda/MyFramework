@@ -6,11 +6,11 @@ import cn.bcd.lib.parser.base.util.BitBuf_writer;
 import cn.bcd.lib.parser.base.log.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
 import java.util.Objects;
+import java.util.HashMap;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 public class ProcessContext {
-    public Object instance;
     public final ByteBuf byteBuf;
 
     /**
@@ -23,14 +23,9 @@ public class ProcessContext {
     public BitBuf_writer bitBuf_writer;
 
     /**
-     * 全局变量定义
+     * 解析过程中的全局变量。
      */
-    public int[] globalVars;
-
-    /**
-     * 解析过程中的对象变量。
-     */
-    public Object[] vars;
+    public HashMap<String, Object> globalVars;
 
     /**
      * 创建一个解析环境
@@ -39,8 +34,7 @@ public class ProcessContext {
      * @param byteBuf
      */
     public ProcessContext(ByteBuf byteBuf) {
-        this.instance = null;
-        this.byteBuf = Objects.requireNonNull(byteBuf, "byteBuf");
+        this.byteBuf = byteBuf;
     }
 
     public final BitBuf_reader getBitBuf_reader() {
@@ -71,49 +65,25 @@ public class ProcessContext {
         return (BitBuf_writer_log) bitBuf_writer;
     }
 
-    public final void putGlobalVar(int varIndex, int v) {
-        checkGlobalVarIndex(varIndex);
+    public final void putGlobalVar(String name, Object value) {
         if (globalVars == null) {
-            globalVars = new int[26];
+            globalVars = new HashMap<>();
         }
-        globalVars[varIndex] = v;
+        globalVars.put(name, value);
     }
 
-    public final int getGlobalVar(int varIndex) {
-        checkGlobalVarIndex(varIndex);
-        if (globalVars == null) {
-            throw new IllegalStateException("global variable has not been initialized: " + (char) ('A' + varIndex));
-        }
-        return globalVars[varIndex];
+    public final Object getGlobalVar(String name) {
+        return globalVars.get(name);
     }
 
-    public final void putVar(int index, Object value) {
-        checkVarIndex(index);
-        if (vars == null) {
-            vars = new Object[index + 1];
-        } else if (index >= vars.length) {
-            vars = java.util.Arrays.copyOf(vars, index + 1);
-        }
-        vars[index] = value;
-    }
-
-    public final Object getVar(int index) {
-        checkVarIndex(index);
-        if (vars == null || index >= vars.length) {
-            throw new IllegalStateException("variable has not been initialized: " + index);
-        }
-        return vars[index];
-    }
-
-    private static void checkVarIndex(int index) {
-        if (index < 0) {
-            throw new IllegalArgumentException("variable index must not be negative: " + index);
-        }
-    }
-
-    private static void checkGlobalVarIndex(int varIndex) {
-        if (varIndex < 0 || varIndex >= 26) {
-            throw new IllegalArgumentException("global variable index must be between 0 and 25: " + varIndex);
-        }
+    /**
+     * 获取数值类型的全局变量并转换为 {@code int}。
+     *
+     * @param name 全局变量名称
+     * @return 全局变量的整数值
+     */
+    public final int getGlobalVarInt(String name) {
+        Number number = (Number) getGlobalVar(name);
+        return number.intValue();
     }
 }

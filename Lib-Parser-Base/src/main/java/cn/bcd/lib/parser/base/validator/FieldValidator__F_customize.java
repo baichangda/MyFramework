@@ -9,6 +9,9 @@ public final class FieldValidator__F_customize {
     }
 
     public static void validate(Field field, F_customize annotation) {
-        ValidatorUtil.validateVariable(field, "@F_customize", annotation.numVar(), annotation.globalNumVar());
+        if (annotation.var() != '0') {
+            ValidatorUtil.validateNumericField(field, "@F_customize");
+        }
+        ValidatorUtil.validateLocalVariable(field, "@F_customize", annotation.var(), false);
     }
 }

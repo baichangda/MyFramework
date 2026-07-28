@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
+
 import cn.bcd.lib.parser.base.anno.F_bean_list;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -9,7 +10,7 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleStorageTemperatureData {
     //可充电储能子系统个数
-    @F_num(type = NumType.uint8, numVar = 'a', checkVal = true)
+    @F_num(type = NumType.uint8, checkVal = true, var = 'a')
     public short num;
     public byte num__v;
 

@@ -1,5 +1,7 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
+import cn.bcd.lib.parser.base.anno.F_global_var;
+
 
 import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
 import cn.bcd.lib.parser.base.anno.F_customize;
@@ -18,6 +20,7 @@ public class PacketHeader {
     public byte versionFlag;
     //消息体属性-分包
     @F_bit_num_easy(bitStart = 13, bitEnd = 13)
+    @F_global_var(var = "subPacketFlag")
     public byte subPacketFlag;
     //消息体属性-数据加密方式
     @F_bit_num_easy(bitStart = 12, bitEnd = 10)

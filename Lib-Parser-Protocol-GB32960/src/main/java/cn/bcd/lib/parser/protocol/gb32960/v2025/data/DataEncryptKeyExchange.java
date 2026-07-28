@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
+
 import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
@@ -16,7 +17,7 @@ public class DataEncryptKeyExchange implements PacketData{
     public byte type;
 
     //密钥长度
-    @F_num(type = NumType.uint16, numVar = 'n')
+    @F_num(type = NumType.uint16, var = 'n')
     public int len;
 
     //密钥

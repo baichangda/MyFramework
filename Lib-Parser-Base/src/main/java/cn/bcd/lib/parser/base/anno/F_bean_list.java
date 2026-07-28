@@ -32,7 +32,7 @@ public @interface F_bean_list {
      * 用于对象集合字段不定长度的解析,配合var参数使用,代表的是当前集合元素的个数
      * 适用于 List<TestBean> 字段类型
      * 与{@link #listLen()}互斥
-     * 变量取值来源于numVar、globalNumVar
+     * 小写字母取值来源于数字注解的var属性，大写字母取值来源于F_global_var注解
      * 例如:
      * m
      * m*n

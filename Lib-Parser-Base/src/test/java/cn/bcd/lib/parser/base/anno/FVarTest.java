@@ -9,7 +9,6 @@ import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class FVarTest {
@@ -23,15 +22,14 @@ public class FVarTest {
         assertEquals(7, root.head);
         assertEquals(8, root.child.value);
         assertEquals(9, root.tail);
-        assertEquals(7, context.getVar(2));
-        assertSame(root.child, context.getVar(5));
+        assertEquals(7, context.getGlobalVar("head"));
+        assertSame(root.child, context.getGlobalVar("child"));
         assertSame(context, ChildValueProcessor.context);
         assertSame(context, RootTailProcessor.context);
-        assertNull(context.instance);
     }
 
     @Test
-    public void storesValuesDuringDeProcessAndRestoresContextInstance() {
+    public void storesValuesDuringDeProcess() {
         Processor<RootBean> processor = Parser.getProcessor(RootBean.class);
         RootBean root = new RootBean();
         root.head = 10;
@@ -40,25 +38,22 @@ public class FVarTest {
         root.tail = 12;
         ByteBuf byteBuf = Unpooled.buffer();
         ProcessContext context = new ProcessContext(byteBuf);
-        Object originalInstance = new Object();
-        context.instance = originalInstance;
 
         processor.deProcess(byteBuf, context, root);
 
-        assertEquals(10, context.getVar(2));
-        assertSame(root.child, context.getVar(5));
+        assertEquals(10, context.getGlobalVar("head"));
+        assertSame(root.child, context.getGlobalVar("child"));
         assertSame(context, ChildValueProcessor.context);
         assertSame(context, RootTailProcessor.context);
-        assertSame(originalInstance, context.instance);
     }
 
     public static class RootBean {
         @F_num(type = NumType.uint8)
-        @F_var(index = 2)
+        @F_global_var(var = "head")
         public int head;
 
         @F_bean
-        @F_var(index = 5)
+        @F_global_var(var = "child")
         public ChildBean child;
 
         @F_customize(processorClass = RootTailProcessor.class)
@@ -75,18 +70,14 @@ public class FVarTest {
 
         @Override
         public Integer process(ByteBuf data, ProcessContext processContext) {
-            if (!(processContext.instance instanceof ChildBean)) {
-                throw new IllegalStateException("current instance is not ChildBean");
-            }
+            assertEquals(7, processContext.getGlobalVar("head"));
             context = processContext;
             return (int) data.readUnsignedByte();
         }
 
         @Override
         public void deProcess(ByteBuf data, ProcessContext processContext, Integer instance) {
-            if (!(processContext.instance instanceof ChildBean)) {
-                throw new IllegalStateException("current instance is not ChildBean");
-            }
+            assertEquals(10, processContext.getGlobalVar("head"));
             context = processContext;
             data.writeByte(instance);
         }
@@ -97,18 +88,14 @@ public class FVarTest {
 
         @Override
         public Integer process(ByteBuf data, ProcessContext processContext) {
-            if (!(processContext.instance instanceof RootBean)) {
-                throw new IllegalStateException("current instance is not RootBean");
-            }
+            assertEquals(7, processContext.getGlobalVar("head"));
             context = processContext;
             return (int) data.readUnsignedByte();
         }
 
         @Override
         public void deProcess(ByteBuf data, ProcessContext processContext, Integer instance) {
-            if (!(processContext.instance instanceof RootBean)) {
-                throw new IllegalStateException("current instance is not RootBean");
-            }
+            assertEquals(10, processContext.getGlobalVar("head"));
             context = processContext;
             data.writeByte(instance);
         }

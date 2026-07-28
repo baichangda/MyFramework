@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
+
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -21,7 +22,7 @@ public class BatteryMinVoltageData {
     public byte current__v;
 
     //最小并联单元总数
-    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, checkVal = true, var = 'n')
     public int total;
     public byte total__v;
 

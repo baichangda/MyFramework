@@ -90,15 +90,6 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
 
-        final char numVar = anno.numVar();
-        if (numVar != '0') {
-            context.method_varToFieldName.put(numVar, varNameField);
-        }
-        final char globalNumVar = anno.globalNumVar();
-        if (globalNumVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameField);
-        }
-
     }
 
     @Override
@@ -117,7 +108,6 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldType = field.getType();
         final boolean isFloat = fieldType == float.class || fieldType == double.class;
-        final char numVar = anno.numVar();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
         final String varNameBitBuf = context.getBitBuf_deParse();
@@ -126,27 +116,12 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, skipBefore);
         }
 
-        final String fieldTypeName;
         String valCode;
         //先判断是否是枚举类型、如果是枚举转换为int
         if (fieldType.isEnum()) {
             valCode = ParseUtil.format("{}.toInteger()", varNameInstance + "." + fieldName);
-            fieldTypeName = "int";
         } else {
             valCode = varNameInstance + "." + fieldName;
-            fieldTypeName = fieldType.getName();
-        }
-
-        //判断是否用到变量中、如果用到了、需要定义变量
-        if (numVar != '0') {
-            ParseUtil.append(body, "final {} {}={};\n", fieldTypeName, varNameField, valCode);
-            context.method_varToFieldName.put(numVar, varNameField);
-            valCode = varNameField;
-        }
-
-        //判断是否用到全局变量中、如果用到了、添加进去
-        if (anno.globalNumVar() != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), valCode);
         }
 
         //最后判断是否用了值表达式、如果用了、进行表达式处理
