@@ -31,7 +31,8 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
     public VehicleRunData process(ByteBuf data, ProcessContext processContext) {
         VehicleRunData instance = new VehicleRunData();
         instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-        int allLen = processContext.getGlobalVarInt("contentLength") - 6;
+        final Packet packet = (Packet) processContext.instance;
+        int allLen = packet.contentLength - 6;
         int beginLeave = data.readableBytes();
         while ((beginLeave - data.readableBytes()) < allLen) {
             short flag = data.readUnsignedByte();

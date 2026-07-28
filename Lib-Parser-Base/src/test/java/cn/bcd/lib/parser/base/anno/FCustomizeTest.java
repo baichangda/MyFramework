@@ -24,12 +24,11 @@ public class FCustomizeTest {
         assertEquals(12, target.value);
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(bytes));
         processor.process(context.byteBuf, context);
-        assertEquals(12, context.getGlobalVar("A"));
+        assertEquals(12, context.getGlobalVar(0));
     }
 
     public static class CustomBean {
-        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", var = 'a')
-        @F_global_var(var = "A")
+        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", numVar = 'a', globalNumVar = 'A')
         public int value;
     }
 

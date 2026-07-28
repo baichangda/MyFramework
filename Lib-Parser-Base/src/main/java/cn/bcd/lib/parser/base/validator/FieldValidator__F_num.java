@@ -12,7 +12,8 @@ public final class FieldValidator__F_num {
 
     public static void validate(Field field, F_num annotation, NumValGetter numValGetter) {
         ValidatorUtil.validateNumericField(field, "@F_num");
-        ValidatorUtil.validateLocalVariable(field, "@F_num", annotation.var(), annotation.skip());
+        ValidatorUtil.validateVariable(field, "@F_num", annotation.numVar(), annotation.globalNumVar());
+        ValidatorUtil.validateSkipVariable(field, "@F_num", annotation.skip(), annotation.numVar(), annotation.globalNumVar());
         if (annotation.checkVal()) {
             ValidatorUtil.validateCompanionField(field, "@F_num checkVal", byte.class);
         }

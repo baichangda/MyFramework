@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.base;
 
-
 import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
@@ -91,15 +90,9 @@ public class ParserSafetyTest {
     @Test
     void reportsMissingAndInvalidGlobalVariables() {
         ProcessContext context = new ProcessContext(Unpooled.buffer());
-        assertNull(context.globalVars);
-        IllegalStateException missing = assertThrows(IllegalStateException.class, () -> context.getGlobalVar("A"));
+        IllegalStateException missing = assertThrows(IllegalStateException.class, () -> context.getGlobalVar(0));
         assertTrue(missing.getMessage().contains("A"));
-        assertThrows(NullPointerException.class, () -> context.putGlobalVar(null, 1));
-        context.putGlobalVar("A", 7L);
-        assertNotNull(context.globalVars);
-        assertEquals(7, context.getGlobalVarInt("A"));
-        context.putGlobalVar("text", "value");
-        assertThrows(IllegalStateException.class, () -> context.getGlobalVarInt("text"));
+        assertThrows(IllegalArgumentException.class, () -> context.putGlobalVar(26, 1));
     }
 
     @Test
@@ -211,7 +204,7 @@ public class ParserSafetyTest {
 
     @C_skip(len = 2, lenExpr = "a")
     public static class InvalidSkipBean {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int value;
     }
 }

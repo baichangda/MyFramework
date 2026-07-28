@@ -45,7 +45,7 @@ public @interface F_bit_num_array {
     /**
      * 数组元素个数表达式,配合var参数使用
      * 与{@link #len()}互斥
-     * 小写字母取值来源于数字注解的var属性，大写字母取值来源于F_global_var注解
+     * 变量取值来源于numVar、globalNumVar
      * 例如:
      * m
      * m*n

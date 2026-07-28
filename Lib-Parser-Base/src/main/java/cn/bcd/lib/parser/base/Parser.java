@@ -123,10 +123,6 @@ public class Parser {
                 Annotation annotation = ModelFieldValidator.validate(field, anno_fieldBuilder);
                 if (annotation != null) {
                     validateAnnotation(field, annotation, numValGetter);
-                    F_global_var variable = field.getAnnotation(F_global_var.class);
-                    if (variable != null) {
-                        FieldValidator__F_global_var.validate(field, variable);
-                    }
                 }
             }
         }

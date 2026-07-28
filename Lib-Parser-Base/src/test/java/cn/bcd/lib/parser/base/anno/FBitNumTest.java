@@ -27,7 +27,7 @@ public class FBitNumTest {
     }
 
     public static class BitBean {
-        @F_bit_num(len = 3, bitRemainingMode = BitRemainingMode.not_ignore, var = 'a')
+        @F_bit_num(len = 3, numVar = 'a', bitRemainingMode = BitRemainingMode.not_ignore)
         public int a;
 
         @F_bit_num(len = 3, unsigned = false, bitRemainingMode = BitRemainingMode.not_ignore)

@@ -86,7 +86,7 @@ public class FFieldSkipTest {
     }
 
     public static class ByteSkipBean {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int length;
 
         @F_num(type = NumType.uint16, skip = true)
@@ -138,7 +138,7 @@ public class FFieldSkipTest {
     }
 
     public static class InvalidSkippedVariableBean {
-        @F_num(type = NumType.uint8, skip = true, var = 'a')
+        @F_num(type = NumType.uint8, skip = true, numVar = 'a')
         public int value;
     }
 }

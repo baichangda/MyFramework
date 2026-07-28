@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -37,7 +36,7 @@ public class FuelBatteryHeapData {
     public byte airTemperature__v;
 
     //冷却水出水口温度探针总数
-    @F_num(type = NumType.uint16, checkVal = true, var = 'n')
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int num;
     public byte num__v;
 

@@ -1,10 +1,13 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.processor;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.ParamData;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.ParamQueryResponse;
+import cn.bcd.lib.parser.protocol.gb32960.v2016.data.ParamSetRequest;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
@@ -15,7 +18,23 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext processContext) {
-        int num = processContext.getGlobalVarInt("paramNum");
+        Object obj = processContext.instance;
+        int num;
+        if (obj instanceof ParamQueryResponse paramQueryResponse) {
+            if (paramQueryResponse.num__v == 0) {
+                num = paramQueryResponse.num;
+            } else {
+                num = 0;
+            }
+        } else if (obj instanceof ParamSetRequest paramSetRequest) {
+            if (paramSetRequest.num__v == 0) {
+                num = paramSetRequest.num;
+            } else {
+                num = 0;
+            }
+        } else {
+            throw BaseException.get("instance[{}] not support", obj.getClass().getName());
+        }
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();

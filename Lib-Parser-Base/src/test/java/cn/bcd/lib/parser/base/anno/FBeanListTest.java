@@ -48,7 +48,7 @@ public class FBeanListTest {
     }
 
     public static class VariableContainer {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int len;
 
         @F_bean_list(listLenExpr = "a")
@@ -65,7 +65,7 @@ public class FBeanListTest {
     }
 
     public static class Container {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int len;
 
         @F_bean_list(listLenExpr = "a")

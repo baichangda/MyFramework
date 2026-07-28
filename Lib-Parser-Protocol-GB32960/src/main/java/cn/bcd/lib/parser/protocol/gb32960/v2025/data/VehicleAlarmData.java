@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -19,7 +18,7 @@ public class VehicleAlarmData {
     public int alarmFlag;
 
     //可充电储能装置故障总数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'a')
+    @F_num(type = NumType.uint8, numVar = 'a', checkVal = true)
     public short chargeBadNum;
     public byte chargeBadNum__v;
 
@@ -28,7 +27,7 @@ public class VehicleAlarmData {
     public long[] chargeBadCodes;
 
     //驱动电机故障总数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'b')
+    @F_num(type = NumType.uint8, numVar = 'b', checkVal = true)
     public short driverBadNum;
     public byte driverBadNum__v;
 
@@ -37,7 +36,7 @@ public class VehicleAlarmData {
     public long[] driverBadCodes;
 
     //发动机故障总数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'c')
+    @F_num(type = NumType.uint8, numVar = 'c', checkVal = true)
     public short engineBadNum;
     public byte engineBadNum__v;
 
@@ -46,7 +45,7 @@ public class VehicleAlarmData {
     public long[] engineBadCodes;
 
     //其他故障总数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'd')
+    @F_num(type = NumType.uint8, numVar = 'd', checkVal = true)
     public short otherBadNum;
     public byte otherBadNum__v;
 
@@ -55,7 +54,7 @@ public class VehicleAlarmData {
     public long[] otherBadCodes;
 
     //通用故障总数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'e')
+    @F_num(type = NumType.uint8, numVar = 'e', checkVal = true)
     public short commonBadNum;
     public byte commonBadNum__v;
 

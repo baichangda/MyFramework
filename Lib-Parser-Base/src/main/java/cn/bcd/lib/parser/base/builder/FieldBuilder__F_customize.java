@@ -22,6 +22,16 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final String unBoxing = ParseUtil.unBoxing(ParseUtil.format("{}.process({},{})", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName), fieldType);
         ParseUtil.append(body, "final {} {}={};\n", fieldTypeClassName, varNameField, unBoxing);
         ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
+        if (anno.numVar() != '0') {
+            ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
+            context.method_varToFieldName.put(anno.numVar(), varNameField);
+        }
+
+        final char globalNumVar = anno.globalNumVar();
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameField);
+        }
+
     }
 
     @Override
@@ -30,8 +40,21 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final F_customize anno = field.getAnnotation(F_customize.class);
         final Class<?> processorClass = anno.processorClass();
         final StringBuilder body = context.method_body;
+        final String varNameField = ParseUtil.getFieldVarName(context);
         final String varInstanceName = FieldBuilder.varNameInstance;
-        final String valCode = varInstanceName + "." + field.getName();
+        char numVar = anno.numVar();
+        final String valCode;
+        if (numVar == '0') {
+            valCode = varInstanceName + "." + field.getName();
+        } else {
+            ParseUtil.append(body, "final {} {}={};\n", field.getType().getName(), varNameField, varInstanceName + "." + field.getName());
+            valCode = varNameField;
+        }
+
+        //判断是否用到全局变量中、如果用到了、添加进去
+        if (anno.globalNumVar() != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), valCode);
+        }
 
         final String processContextVarName = context.getProcessContextVarName();
         final String processorClassVarName = context.getCustomizeProcessorVarName(processorClass, anno.processorArgs());

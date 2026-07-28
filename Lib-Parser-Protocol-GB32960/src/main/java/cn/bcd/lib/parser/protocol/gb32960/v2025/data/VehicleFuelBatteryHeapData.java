@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_bean_list;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -11,7 +10,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 public class VehicleFuelBatteryHeapData {
 
     //燃料电池电堆个数
-    @F_num(type = NumType.uint8, checkVal = true, var = 'n')
+    @F_num(type = NumType.uint8, numVar = 'n', checkVal = true)
     public short num;
     public byte num__v;
 

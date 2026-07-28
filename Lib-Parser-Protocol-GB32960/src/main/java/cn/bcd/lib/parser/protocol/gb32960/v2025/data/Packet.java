@@ -1,7 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
-import cn.bcd.lib.parser.base.anno.F_global_var;
-
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_num;
@@ -21,11 +19,9 @@ public class Packet {
     public byte[] header;
     //命令标识 2-3
     @F_num(type = NumType.uint8)
-    @F_global_var(var = "flag")
     public PacketFlag flag;
     //应答标识 3-4
     @F_num(type = NumType.uint8)
-    @F_global_var(var = "replyFlag")
     public short replyFlag;
     //唯一识别码 4-21
     @F_string(len = 17)
@@ -37,7 +33,6 @@ public class Packet {
 
     //数据单元长度 22-24
     @F_num(type = NumType.uint16)
-    @F_global_var(var = "contentLength")
     public int contentLength;
     @F_customize(processorClass = PacketDataProcessor.class)
     public PacketData data;

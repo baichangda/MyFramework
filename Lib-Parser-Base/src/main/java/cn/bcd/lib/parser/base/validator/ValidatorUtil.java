@@ -107,15 +107,18 @@ final class ValidatorUtil {
         }
     }
 
-    static void validateLocalVariable(Field field, String annotation, char var, boolean skip) {
-        if (var == '0') {
-            return;
+    static void validateVariable(Field field, String annotation, char numVar, char globalNumVar) {
+        if (numVar != '0' && (numVar < 'a' || numVar > 'z')) {
+            fail("{} {} numVar[{}] must be in [a-z]", fieldDescription(field), annotation, numVar);
         }
-        if (var < 'a' || var > 'z') {
-            fail("{} {} var[{}] must be in [a-z]", fieldDescription(field), annotation, var);
+        if (globalNumVar != '0' && (globalNumVar < 'A' || globalNumVar > 'Z')) {
+            fail("{} {} globalNumVar[{}] must be in [A-Z]", fieldDescription(field), annotation, globalNumVar);
         }
-        if (skip) {
-            fail("{} skipped field cannot define {} var", fieldDescription(field), annotation);
+    }
+
+    static void validateSkipVariable(Field field, String annotation, boolean skip, char numVar, char globalNumVar) {
+        if (skip && (numVar != '0' || globalNumVar != '0')) {
+            fail("{} {} skip cannot be used with numVar or globalNumVar", fieldDescription(field), annotation);
         }
     }
 

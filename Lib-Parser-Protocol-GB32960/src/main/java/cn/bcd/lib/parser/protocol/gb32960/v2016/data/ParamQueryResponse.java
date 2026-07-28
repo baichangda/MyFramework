@@ -1,7 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
-import cn.bcd.lib.parser.base.anno.F_global_var;
-
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 import cn.bcd.lib.parser.base.anno.F_num;
@@ -15,7 +13,6 @@ public class ParamQueryResponse implements PacketData {
     public Date queryTime;
 
     @F_num(type = NumType.uint8, checkVal = true)
-    @F_global_var(var = "paramNum")
     public short num;
     public byte num__v;
 

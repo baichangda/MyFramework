@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -14,7 +13,7 @@ public class StorageTemperatureData {
     public short no;
 
     //可充电储能温度探针个数
-    @F_num(type = NumType.uint16, checkVal = true, var = 'n')
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int num;
     public byte num__v;
 

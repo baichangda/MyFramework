@@ -1,7 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
 
-
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.F_date_bytes_6;
 import cn.bcd.lib.parser.base.anno.F_num;
@@ -27,11 +26,11 @@ public class VehicleLoginData implements PacketData {
     public String iccid;
 
     //可充电储能子系统数
-    @F_num(type = NumType.uint8, var = 'n')
+    @F_num(type = NumType.uint8, numVar = 'n')
     public short subSystemNum;
 
     //可充电储能系统编码长度
-    @F_num(type = NumType.uint8, var = 'm')
+    @F_num(type = NumType.uint8, numVar = 'm')
     public short systemCodeLen;
 
     //可充电储能系统编码

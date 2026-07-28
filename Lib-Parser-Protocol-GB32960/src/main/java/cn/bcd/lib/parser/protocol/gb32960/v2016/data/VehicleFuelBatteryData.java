@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.*;
@@ -25,7 +24,7 @@ public class VehicleFuelBatteryData {
     public byte consumptionRate__v;
 
     //燃料电池温度探针总数
-    @F_num(type = NumType.uint16, checkVal = true, var = 'a')
+    @F_num(type = NumType.uint16, numVar = 'a', checkVal = true)
     public int num;
     public byte num__v;
 

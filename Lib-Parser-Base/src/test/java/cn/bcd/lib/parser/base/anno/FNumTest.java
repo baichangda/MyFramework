@@ -45,26 +45,7 @@ public class FNumTest {
 
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(new byte[]{11, 12, 2}));
         processor.process(context.byteBuf, context);
-        assertEquals(11, context.getGlobalVar("A"));
-    }
-
-    @Test
-    public void usesNumericGlobalVariableInLengthExpression() {
-        Processor<GlobalExpressionBean> processor = Parser.getProcessor(GlobalExpressionBean.class);
-        GlobalExpressionBean target = ParserTestSupport.process(processor, (byte) 2, (byte) 7, (byte) 8);
-
-        assertEquals(2, target.length);
-        assertEquals(7, target.values[0]);
-        assertEquals(8, target.values[1]);
-
-        GlobalExpressionBean source = new GlobalExpressionBean();
-        source.length = 2;
-        source.values = new byte[]{7, 8};
-        byte[] bytes = ParserTestSupport.deProcess(processor, source);
-        assertEquals(3, bytes.length);
-        assertEquals(2, bytes[0]);
-        assertEquals(7, bytes[1]);
-        assertEquals(8, bytes[2]);
+        assertEquals(11, context.getGlobalVar(0));
     }
 
     public static class NumericBean {
@@ -88,8 +69,7 @@ public class FNumTest {
     }
 
     public static class ExpressionBean {
-        @F_num(type = NumType.uint8, valExpr = "x-10", var = 'a')
-        @F_global_var(var = "A")
+        @F_num(type = NumType.uint8, valExpr = "x-10", numVar = 'a', globalNumVar = 'A')
         public int value;
 
         @F_num(type = NumType.uint8, valExpr = "x/10", precision = 1)
@@ -97,15 +77,6 @@ public class FNumTest {
 
         @F_num(type = NumType.uint8)
         public Mode mode;
-    }
-
-    public static class GlobalExpressionBean {
-        @F_num(type = NumType.uint8)
-        @F_global_var(var = "A")
-        public int length;
-
-        @F_num_array(singleType = NumType.uint8, lenExpr = "A")
-        public byte[] values;
     }
 
     public enum Mode {

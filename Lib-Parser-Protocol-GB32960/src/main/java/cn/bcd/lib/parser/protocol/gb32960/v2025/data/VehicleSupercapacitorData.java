@@ -1,6 +1,5 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
-
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_num_array;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -25,7 +24,7 @@ public class VehicleSupercapacitorData {
     public byte current__v;
 
     //超级电容单体总数
-    @F_num(type = NumType.uint16, checkVal = true, var = 'm')
+    @F_num(type = NumType.uint16, numVar = 'm', checkVal = true)
     public int voltageNum;
     public byte voltageNum__v;
 
@@ -35,7 +34,7 @@ public class VehicleSupercapacitorData {
     public byte[] voltages__v;
 
     //超级电容温度探针总数
-    @F_num(type = NumType.uint16, checkVal = true, var = 'n')
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int temperatureNum;
     public byte temperatureNum__v;
 

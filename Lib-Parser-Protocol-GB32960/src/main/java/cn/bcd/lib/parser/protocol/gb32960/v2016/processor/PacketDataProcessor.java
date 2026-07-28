@@ -25,8 +25,9 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext processContext) {
-        boolean cmd = ((Number) processContext.getGlobalVar("replyFlag")).shortValue() == 0xfe;
-        PacketFlag flag = ((PacketFlag) processContext.getGlobalVar("flag"));
+        Packet packet = (Packet) processContext.instance;
+        boolean cmd = packet.replyFlag == 0xfe;
+        PacketFlag flag = packet.flag;
         switch (flag) {
             case vehicle_login_data -> {
                 if (cmd) {
@@ -88,8 +89,9 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, PacketData instance) {
-        PacketFlag flag = ((PacketFlag) processContext.getGlobalVar("flag"));
-        boolean cmd = ((Number) processContext.getGlobalVar("replyFlag")).shortValue() == 0xfe;
+        Packet packet = (Packet) processContext.instance;
+        PacketFlag flag = packet.flag;
+        boolean cmd = packet.replyFlag == 0xfe;
         switch (flag) {
             case vehicle_login_data -> {
                 if (cmd) {
