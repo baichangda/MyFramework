@@ -28,7 +28,7 @@ public @interface F_skip {
     /**
      * 解析前跳过字节表达式
      * 和{@link #lenBefore()}互斥
-     * 变量取值来源于numVar、globalNumVar
+     * 变量取值来源于var、globalVar
      * 例如:
      * m
      * m*n
@@ -48,7 +48,7 @@ public @interface F_skip {
     /**
      * 解析前跳过字节表达式
      * 和{@link #lenAfter()}互斥
-     * 变量取值来源于numVar、globalNumVar
+     * 变量取值来源于var、globalVar
      * 例如:
      * m
      * m*n

@@ -30,7 +30,7 @@ public class CImplTest {
     }
 
     public static class InterfaceContainer {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int kind;
 
         @F_bean(implClassExpr = "a")

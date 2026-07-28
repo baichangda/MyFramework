@@ -61,7 +61,7 @@ public class DriverIdentityReportResponse implements PacketBody {
             FieldBuilder__F_string.write_highAddressAppend(data, code, 20, StandardCharsets.UTF_8);
             data.writeByte(orgLen);
             data.writeCharSequence(org, StandardCharsets.UTF_8);
-            FieldBuilder__F_string_bcd.write_noAppend(data, expired, 4);
+            FieldBuilder__F_string_bcd.write_noAppend(data, expired);
             FieldBuilder__F_string.write_highAddressAppend(data, id, 20, StandardCharsets.UTF_8);
         }
     }

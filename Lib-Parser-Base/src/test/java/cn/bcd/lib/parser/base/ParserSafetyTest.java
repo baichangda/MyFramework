@@ -204,7 +204,7 @@ public class ParserSafetyTest {
 
     @C_skip(len = 2, lenExpr = "a")
     public static class InvalidSkipBean {
-        @F_num(type = NumType.uint8, numVar = 'a')
+        @F_num(type = NumType.uint8, var = 'a')
         public int value;
     }
 }

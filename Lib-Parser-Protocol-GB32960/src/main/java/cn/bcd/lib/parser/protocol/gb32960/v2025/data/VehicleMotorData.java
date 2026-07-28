@@ -10,7 +10,7 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleMotorData {
     //驱动电机个数
-    @F_num(type = NumType.uint8, numVar = 'a', checkVal = true)
+    @F_num(type = NumType.uint8, var = 'a', checkVal = true)
     public short num;
     public byte num__v;
 

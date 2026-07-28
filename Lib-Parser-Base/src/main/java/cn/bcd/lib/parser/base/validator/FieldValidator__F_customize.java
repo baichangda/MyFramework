@@ -9,6 +9,6 @@ public final class FieldValidator__F_customize {
     }
 
     public static void validate(Field field, F_customize annotation) {
-        ValidatorUtil.validateVariable(field, "@F_customize", annotation.numVar(), annotation.globalNumVar());
+        ValidatorUtil.validateVariable(field, "@F_customize", annotation.var(), annotation.globalVar());
     }
 }

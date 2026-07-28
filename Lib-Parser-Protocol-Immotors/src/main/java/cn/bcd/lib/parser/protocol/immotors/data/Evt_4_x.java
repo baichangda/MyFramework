@@ -6,6 +6,6 @@ import cn.bcd.lib.parser.base.data.NumType;
 
 @C_skip(lenExpr = "4+z")
 public class Evt_4_x extends Evt {
-    @F_num(type = NumType.uint16, numVar = 'z')
+    @F_num(type = NumType.uint16, var = 'z')
     public int evtLen;
 }

@@ -33,7 +33,7 @@ public class FBitNumEasyTest {
     }
 
     public static class EasyBean {
-        @F_bit_num_easy(bitStart = 15, bitEnd = 15, globalNumVar = 'A')
+        @F_bit_num_easy(bitStart = 15, bitEnd = 15, globalVar = 'A')
         public int flag;
 
         @F_bit_num_easy(bitStart = 14, bitEnd = 10)

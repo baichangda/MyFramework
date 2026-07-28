@@ -16,7 +16,7 @@ public class DataEncryptKeyExchange implements PacketData{
     public byte type;
 
     //密钥长度
-    @F_num(type = NumType.uint16, numVar = 'n')
+    @F_num(type = NumType.uint16, var = 'n')
     public int len;
 
     //密钥

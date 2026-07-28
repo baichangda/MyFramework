@@ -22,14 +22,14 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final String unBoxing = ParseUtil.unBoxing(ParseUtil.format("{}.process({},{})", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName), fieldType);
         ParseUtil.append(body, "final {} {}={};\n", fieldTypeClassName, varNameField, unBoxing);
         ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
-        if (anno.numVar() != '0') {
+        if (anno.var() != '0') {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
-            context.method_varToFieldName.put(anno.numVar(), varNameField);
+            context.method_varToFieldName.put(anno.var(), varNameField);
         }
 
-        final char globalNumVar = anno.globalNumVar();
-        if (globalNumVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameField);
+        final char globalVar = anno.globalVar();
+        if (globalVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
         }
 
     }
@@ -42,9 +42,9 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final StringBuilder body = context.method_body;
         final String varNameField = ParseUtil.getFieldVarName(context);
         final String varInstanceName = FieldBuilder.varNameInstance;
-        char numVar = anno.numVar();
+        char var = anno.var();
         final String valCode;
-        if (numVar == '0') {
+        if (var == '0') {
             valCode = varInstanceName + "." + field.getName();
         } else {
             ParseUtil.append(body, "final {} {}={};\n", field.getType().getName(), varNameField, varInstanceName + "." + field.getName());
@@ -52,8 +52,8 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         }
 
         //判断是否用到全局变量中、如果用到了、添加进去
-        if (anno.globalNumVar() != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), valCode);
+        if (anno.globalVar() != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), valCode);
         }
 
         final String processContextVarName = context.getProcessContextVarName();

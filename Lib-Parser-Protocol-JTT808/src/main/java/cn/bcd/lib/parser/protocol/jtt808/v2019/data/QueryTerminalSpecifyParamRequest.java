@@ -7,7 +7,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 
 public class QueryTerminalSpecifyParamRequest implements PacketBody {
     //参数总数
-    @F_num(type = NumType.uint8, numVar = 'n')
+    @F_num(type = NumType.uint8, var = 'n')
     public short total;
     //参数id列表
     @F_num_array(singleType = NumType.uint32, lenExpr = "n")

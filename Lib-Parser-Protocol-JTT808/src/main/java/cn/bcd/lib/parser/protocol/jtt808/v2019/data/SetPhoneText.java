@@ -9,7 +9,7 @@ public class SetPhoneText implements PacketBody {
     @F_num(type = NumType.uint8)
     public byte type;
     //联系人总数
-    @F_num(type = NumType.uint8, numVar = 'n')
+    @F_num(type = NumType.uint8, var = 'n')
     public short total;
     //联系人项
     @F_bean_list(listLenExpr = "n")

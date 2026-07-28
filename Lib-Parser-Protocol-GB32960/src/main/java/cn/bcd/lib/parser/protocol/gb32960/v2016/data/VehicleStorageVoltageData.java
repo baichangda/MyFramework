@@ -9,7 +9,7 @@ import cn.bcd.lib.parser.base.data.NumType;
  */
 public class VehicleStorageVoltageData {
     //可充电储能子系统个数
-    @F_num(type = NumType.uint8, numVar = 'a', checkVal = true)
+    @F_num(type = NumType.uint8, var = 'a', checkVal = true)
     public short num;
     public byte num__v;
 

@@ -28,7 +28,7 @@ public class FCustomizeTest {
     }
 
     public static class CustomBean {
-        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", numVar = 'a', globalNumVar = 'A')
+        @F_customize(processorClass = OffsetProcessor.class, processorArgs = "2", var = 'a', globalVar = 'A')
         public int value;
     }
 

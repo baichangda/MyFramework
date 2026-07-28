@@ -10,7 +10,8 @@ import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 public class ProcessContext {
-    public Object instance;
+    public final Object instance;
+    public final ProcessContext parentContext;
     public final ByteBuf byteBuf;
 
     /**
@@ -27,10 +28,14 @@ public class ProcessContext {
      */
     public int[] globalVars;
 
-    /**
-     * 解析过程中的对象变量。
-     */
-    public Object[] vars;
+    public ProcessContext(Object instance, ProcessContext parentContext) {
+        this.instance = instance;
+        this.parentContext = Objects.requireNonNull(parentContext, "parentContext");
+        this.byteBuf = parentContext.byteBuf;
+        this.bitBuf_reader = parentContext.bitBuf_reader;
+        this.bitBuf_writer = parentContext.bitBuf_writer;
+        this.globalVars = parentContext.globalVars;
+    }
 
     /**
      * 创建一个解析环境
@@ -40,6 +45,7 @@ public class ProcessContext {
      */
     public ProcessContext(ByteBuf byteBuf) {
         this.instance = null;
+        this.parentContext = null;
         this.byteBuf = Objects.requireNonNull(byteBuf, "byteBuf");
     }
 
@@ -85,30 +91,6 @@ public class ProcessContext {
             throw new IllegalStateException("global variable has not been initialized: " + (char) ('A' + varIndex));
         }
         return globalVars[varIndex];
-    }
-
-    public final void putVar(int index, Object value) {
-        checkVarIndex(index);
-        if (vars == null) {
-            vars = new Object[index + 1];
-        } else if (index >= vars.length) {
-            vars = java.util.Arrays.copyOf(vars, index + 1);
-        }
-        vars[index] = value;
-    }
-
-    public final Object getVar(int index) {
-        checkVarIndex(index);
-        if (vars == null || index >= vars.length) {
-            throw new IllegalStateException("variable has not been initialized: " + index);
-        }
-        return vars[index];
-    }
-
-    private static void checkVarIndex(int index) {
-        if (index < 0) {
-            throw new IllegalArgumentException("variable index must not be negative: " + index);
-        }
     }
 
     private static void checkGlobalVarIndex(int varIndex) {

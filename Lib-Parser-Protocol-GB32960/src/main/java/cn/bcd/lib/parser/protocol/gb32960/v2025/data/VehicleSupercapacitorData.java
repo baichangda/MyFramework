@@ -24,7 +24,7 @@ public class VehicleSupercapacitorData {
     public byte current__v;
 
     //超级电容单体总数
-    @F_num(type = NumType.uint16, numVar = 'm', checkVal = true)
+    @F_num(type = NumType.uint16, var = 'm', checkVal = true)
     public int voltageNum;
     public byte voltageNum__v;
 
@@ -34,7 +34,7 @@ public class VehicleSupercapacitorData {
     public byte[] voltages__v;
 
     //超级电容温度探针总数
-    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
     public int temperatureNum;
     public byte temperatureNum__v;
 

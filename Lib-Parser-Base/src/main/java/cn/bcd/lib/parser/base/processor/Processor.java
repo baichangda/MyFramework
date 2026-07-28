@@ -53,10 +53,10 @@ public interface Processor<T> {
      *
      *                       2、用于获取父类中的全局变量
      *                       当父类中某个数字字段、使用如下注解切属性有效时
-     *                       {@link F_num#globalNumVar()}
-     *                       {@link F_bit_num#globalNumVar()}
-     *                       {@link F_customize#globalNumVar()}
-     *                       {@link F_bit_num_easy#globalNumVar()}
+     *                       {@link F_num#globalVar()}
+     *                       {@link F_bit_num#globalVar()}
+     *                       {@link F_customize#globalVar()}
+     *                       {@link F_bit_num_easy#globalVar()}
      *
      * @return
      */
