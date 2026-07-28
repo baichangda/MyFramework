@@ -22,7 +22,7 @@ public @interface F_bean {
 
     /**
      * 当字段类型为接口类型时候、此属性才会生效
-     * 变量取值来源于var、globalVar
+     * 变量取值来源于numVar、globalNumVar
      * 使用globalVar时候必须在变量前面带上@
      * 例如:
      * m

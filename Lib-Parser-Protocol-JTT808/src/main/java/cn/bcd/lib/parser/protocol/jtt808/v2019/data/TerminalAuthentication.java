@@ -8,7 +8,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 
 public class TerminalAuthentication implements PacketBody {
     //鉴权码长度
-    @F_num(type = NumType.uint8, var = 'n')
+    @F_num(type = NumType.uint8, numVar = 'n')
     public short codeLen;
     //鉴权码内容
     @F_string(lenExpr = "n", charset = "GBK")

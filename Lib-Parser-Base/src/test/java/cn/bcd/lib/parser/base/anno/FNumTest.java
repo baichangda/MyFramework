@@ -69,7 +69,7 @@ public class FNumTest {
     }
 
     public static class ExpressionBean {
-        @F_num(type = NumType.uint8, valExpr = "x-10", var = 'a', globalVar = 'A')
+        @F_num(type = NumType.uint8, valExpr = "x-10", numVar = 'a', globalNumVar = 'A')
         public int value;
 
         @F_num(type = NumType.uint8, valExpr = "x/10", precision = 1)

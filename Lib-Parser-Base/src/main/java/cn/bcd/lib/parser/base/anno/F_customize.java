@@ -46,7 +46,7 @@ public @interface F_customize {
      * 取值a-z、0表示不作为变量
      * 标注此标记的会在解析时候将值缓存,供其他注解长度表达式使用
      */
-    char var() default '0';
+    char numVar() default '0';
 
     /**
      * 全局变量名称、作用于一个对象解析的生命周期中
@@ -55,5 +55,5 @@ public @interface F_customize {
      * 取值A-Z、0表示不作为变量
      * 标注此标记的会在解析时候将值缓存,仅供其他注解长度表达式使用
      */
-    char globalVar() default '0';
+    char globalNumVar() default '0';
 }

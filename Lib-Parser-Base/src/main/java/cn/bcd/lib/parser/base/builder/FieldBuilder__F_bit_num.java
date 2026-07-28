@@ -90,13 +90,13 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
 
-        final char var = anno.var();
-        if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+        final char numVar = anno.numVar();
+        if (numVar != '0') {
+            context.method_varToFieldName.put(numVar, varNameField);
         }
-        final char globalVar = anno.globalVar();
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+        final char globalNumVar = anno.globalNumVar();
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameField);
         }
 
     }
@@ -117,7 +117,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldType = field.getType();
         final boolean isFloat = fieldType == float.class || fieldType == double.class;
-        final char var = anno.var();
+        final char numVar = anno.numVar();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
         final String varNameBitBuf = context.getBitBuf_deParse();
@@ -138,15 +138,15 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         }
 
         //判断是否用到变量中、如果用到了、需要定义变量
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "final {} {}={};\n", fieldTypeName, varNameField, valCode);
-            context.method_varToFieldName.put(var, varNameField);
+            context.method_varToFieldName.put(numVar, varNameField);
             valCode = varNameField;
         }
 
         //判断是否用到全局变量中、如果用到了、添加进去
-        if (anno.globalVar() != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), valCode);
+        if (anno.globalNumVar() != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), valCode);
         }
 
         //最后判断是否用了值表达式、如果用了、进行表达式处理

@@ -24,7 +24,7 @@ public class VehicleFuelBatteryData {
     public byte consumptionRate__v;
 
     //燃料电池温度探针总数
-    @F_num(type = NumType.uint16, var = 'a', checkVal = true)
+    @F_num(type = NumType.uint16, numVar = 'a', checkVal = true)
     public int num;
     public byte num__v;
 

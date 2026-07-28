@@ -36,7 +36,7 @@ public class FuelBatteryHeapData {
     public byte airTemperature__v;
 
     //冷却水出水口温度探针总数
-    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int num;
     public byte num__v;
 

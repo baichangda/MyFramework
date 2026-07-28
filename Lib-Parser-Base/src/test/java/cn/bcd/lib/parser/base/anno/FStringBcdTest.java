@@ -45,7 +45,7 @@ public class FStringBcdTest {
     }
 
     public static class ExprAppendBean {
-        @F_num(type = NumType.uint8, var = 'a')
+        @F_num(type = NumType.uint8, numVar = 'a')
         public int len;
 
         @F_string_bcd(lenExpr = "a", appendMode = StringAppendMode.lowAddressAppend)

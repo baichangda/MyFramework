@@ -128,13 +128,13 @@ public class FieldBuilder__F_num extends FieldBuilder {
             }
             ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
         }
-        final char var = anno.var();
-        if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+        final char numVar = anno.numVar();
+        if (numVar != '0') {
+            context.method_varToFieldName.put(numVar, varNameField);
         }
-        final char globalVar = anno.globalVar();
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+        final char globalNumVar = anno.globalNumVar();
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameField);
         }
     }
 
@@ -248,8 +248,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
                 rawValTypeName = null;
             }
         }
-        final char var = anno.var();
-        final char globalVar = anno.globalVar();
+        final char numVar = anno.numVar();
+        final char globalNumVar = anno.globalNumVar();
 
         //读取原始数据
         String varNameRawVal = varNameField + "_rawVal";
@@ -273,7 +273,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         String varNameExprVal = varNameField + "_exprVal";
         String varExprValDefineInIfCode;
         //如果定义了变量、则定义在if外面
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "final {} {};\n", fieldTypeName, varNameExprVal);
             varExprValDefineInIfCode = varNameExprVal;
         } else {
@@ -314,12 +314,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
 
         //添加变量
-        if (var != '0') {
-            context.method_varToFieldName.put(var, varNameExprVal);
+        if (numVar != '0') {
+            context.method_varToFieldName.put(numVar, varNameExprVal);
         }
         //添加全局变量
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameExprVal);
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalNumVar, varNameExprVal);
         }
 
         //设置值
@@ -327,13 +327,13 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         ParseUtil.append(body, "}else{\n");
 
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldTypeName);
         }
 
         //添加全局变量
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, "0");
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, globalNumVar, "0");
         }
 
         //设置值类型
@@ -363,7 +363,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldType = field.getType();
         final boolean isFloat = fieldType == float.class || fieldType == double.class;
-        final char var = anno.var();
+        final char numVar = anno.numVar();
         String valCode;
         final String fieldTypeName;
         //先判断是否是枚举类型、如果是枚举转换为int
@@ -376,15 +376,15 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
 
         //判断是否用到变量中、如果用到了、需要定义变量
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "final {} {}={};\n", fieldTypeName, varNameField, valCode);
-            context.method_varToFieldName.put(var, varNameField);
+            context.method_varToFieldName.put(numVar, varNameField);
             valCode = varNameField;
         }
 
         //判断是否用到全局变量中、如果用到了、添加进去
-        if (anno.globalVar() != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), valCode);
+        if (anno.globalNumVar() != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), valCode);
         }
 
         //最后判断是否用了值表达式、如果用了、进行表达式处理
@@ -417,8 +417,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final Class<?> fieldTypeClass = field.getType();
         String fieldTypeName = fieldTypeClass.getName();
 
-        final char var = anno.var();
-        final char globalVar = anno.globalVar();
+        final char numVar = anno.numVar();
+        final char globalNumVar = anno.globalNumVar();
 
         //获取值类型
         String varNameNumValType = varNameField + "_numValType";
@@ -426,7 +426,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final boolean isFloat = fieldTypeName.equals("float") || fieldTypeName.equals("double");
         String varNameRawVal = varNameField + "_rawVal";
         String varExprValDefineInIfCode;
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "final {} {};\n", fieldTypeName, varNameRawVal);
             varExprValDefineInIfCode = varNameRawVal;
         } else {
@@ -441,12 +441,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, "{}={}.{};\n", varExprValDefineInIfCode, FieldBuilder.varNameInstance, fieldName);
 
         //设置变量
-        if (var != '0') {
-            context.method_varToFieldName.put(var, varNameRawVal);
+        if (numVar != '0') {
+            context.method_varToFieldName.put(numVar, varNameRawVal);
         }
         //设置全局变量
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), varNameRawVal);
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), varNameRawVal);
         }
 
         //判断最后write的类型
@@ -484,13 +484,13 @@ public class FieldBuilder__F_num extends FieldBuilder {
         String valCode = ParseUtil.format("{}.getVal_{}{}({})", varNameNumValGetter, funcSuffix, typeWidth, varNameNumValType);
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
 
-        if (var != '0') {
+        if (numVar != '0') {
             ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldTypeName);
         }
 
         //设置全局变量
-        if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, anno.globalVar(), "0");
+        if (globalNumVar != '0') {
+            ParseUtil.appendPutGlobalVar(context, anno.globalNumVar(), "0");
         }
 
         ParseUtil.append(body, "}\n");

@@ -2,6 +2,7 @@ package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.parser.base.anno.C_skip;
 import cn.bcd.lib.parser.base.anno.F_skip;
+import cn.bcd.lib.parser.base.anno.F_var;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
 import cn.bcd.lib.parser.base.log.ClassLog__C_skip;
@@ -84,6 +85,10 @@ final class ProcessorSourceBuilder {
             ParseUtil.append(body, "final {} {}=({})$3;\n",
                     modelClass.getName(), FieldBuilder.varNameInstance, modelClass.getName());
         }
+        ParseUtil.append(body, "final Object _previousInstance={}.instance;\n",
+                FieldBuilder.varNameProcessContext);
+        ParseUtil.append(body, "{}.instance={};\ntry{\n",
+                FieldBuilder.varNameProcessContext, FieldBuilder.varNameInstance);
 
         BuilderContext context = new BuilderContext(classFields, constructorBody, body, modelClass,
                 classVariableNames, byteOrder, fields, numValGetter);
@@ -96,6 +101,8 @@ final class ProcessorSourceBuilder {
         if (direction == Direction.PARSE) {
             ParseUtil.append(body, "return {};\n", FieldBuilder.varNameInstance);
         }
+        ParseUtil.append(body, "}finally{\n{}.instance=_previousInstance;\n}\n",
+                FieldBuilder.varNameProcessContext);
         return body.append('}').toString();
     }
 
@@ -111,10 +118,26 @@ final class ProcessorSourceBuilder {
             appendFieldSkip(context, skip, true, direction);
             appendFieldLogBefore(context, direction, fieldLog);
             direction.build(findFieldBuilder(field), context);
+            appendFieldVar(context, field);
             appendFieldLogAfter(context, direction, fieldLog);
             appendFieldSkip(context, skip, false, direction);
             appendFieldLogAfter(context, direction, skipLog);
         }
+    }
+
+    private static void appendFieldVar(BuilderContext context, Field field) {
+        F_var var = field.getAnnotation(F_var.class);
+        if (var == null) {
+            return;
+        }
+        if (var.index() < 0) {
+            throw new IllegalArgumentException("F_var index must not be negative: " + field);
+        }
+        String valueCode = ParseUtil.boxing(
+                FieldBuilder.varNameInstance + "." + field.getName(),
+                field.getType());
+        ParseUtil.append(context.method_body, "{}.putVar({},{});\n",
+                FieldBuilder.varNameProcessContext, var.index(), valueCode);
     }
 
     private static FieldLog<?> findFieldLog(Field field) {

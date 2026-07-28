@@ -10,7 +10,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 public class VehicleFuelBatteryHeapData {
 
     //燃料电池电堆个数
-    @F_num(type = NumType.uint8, var = 'n', checkVal = true)
+    @F_num(type = NumType.uint8, numVar = 'n', checkVal = true)
     public short num;
     public byte num__v;
 

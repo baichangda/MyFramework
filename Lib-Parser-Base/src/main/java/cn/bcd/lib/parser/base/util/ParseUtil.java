@@ -141,6 +141,10 @@ public class ParseUtil {
             return "Float.valueOf(" + num + ")";
         } else if (clazz == double.class) {
             return "Double.valueOf(" + num + ")";
+        } else if (clazz == boolean.class) {
+            return "Boolean.valueOf(" + num + ")";
+        } else if (clazz == char.class) {
+            return "Character.valueOf(" + num + ")";
         } else {
             return num;
         }

@@ -84,7 +84,7 @@ public class FieldValidatorTest {
     }
 
     public static class InvalidVariableField {
-        @F_num(type = NumType.uint8, var = 'A')
+        @F_num(type = NumType.uint8, numVar = 'A')
         public int value;
     }
 

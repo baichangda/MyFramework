@@ -6,7 +6,7 @@ import cn.bcd.lib.parser.base.data.NumType;
 
 public class SetTerminalParam implements PacketBody {
     //参数总数
-    @F_num(type = NumType.uint8, var = 'n')
+    @F_num(type = NumType.uint8, numVar = 'n')
     public short total;
     //参数项列表
     @F_bean_list(listLenExpr = "n")

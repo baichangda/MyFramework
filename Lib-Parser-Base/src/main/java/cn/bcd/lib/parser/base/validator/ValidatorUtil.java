@@ -107,18 +107,18 @@ final class ValidatorUtil {
         }
     }
 
-    static void validateVariable(Field field, String annotation, char var, char globalVar) {
-        if (var != '0' && (var < 'a' || var > 'z')) {
-            fail("{} {} var[{}] must be in [a-z]", fieldDescription(field), annotation, var);
+    static void validateVariable(Field field, String annotation, char numVar, char globalNumVar) {
+        if (numVar != '0' && (numVar < 'a' || numVar > 'z')) {
+            fail("{} {} numVar[{}] must be in [a-z]", fieldDescription(field), annotation, numVar);
         }
-        if (globalVar != '0' && (globalVar < 'A' || globalVar > 'Z')) {
-            fail("{} {} globalVar[{}] must be in [A-Z]", fieldDescription(field), annotation, globalVar);
+        if (globalNumVar != '0' && (globalNumVar < 'A' || globalNumVar > 'Z')) {
+            fail("{} {} globalNumVar[{}] must be in [A-Z]", fieldDescription(field), annotation, globalNumVar);
         }
     }
 
-    static void validateSkipVariable(Field field, String annotation, boolean skip, char var, char globalVar) {
-        if (skip && (var != '0' || globalVar != '0')) {
-            fail("{} {} skip cannot be used with var or globalVar", fieldDescription(field), annotation);
+    static void validateSkipVariable(Field field, String annotation, boolean skip, char numVar, char globalNumVar) {
+        if (skip && (numVar != '0' || globalNumVar != '0')) {
+            fail("{} {} skip cannot be used with numVar or globalNumVar", fieldDescription(field), annotation);
         }
     }
 

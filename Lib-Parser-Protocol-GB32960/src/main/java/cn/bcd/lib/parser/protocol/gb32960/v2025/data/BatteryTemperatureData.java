@@ -11,7 +11,7 @@ public class BatteryTemperatureData {
     public byte no__v;
 
     //动力蓄电池包温度探针个数
-    @F_num(type = NumType.uint16, var = 'n', checkVal = true)
+    @F_num(type = NumType.uint16, numVar = 'n', checkVal = true)
     public int num;
     public byte num__v;
 
