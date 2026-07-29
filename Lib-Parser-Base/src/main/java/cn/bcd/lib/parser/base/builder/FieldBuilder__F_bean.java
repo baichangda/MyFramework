@@ -65,7 +65,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                     implProcessorVarName = context.getCustomizeProcessorVarName(c_impl.processorClass(), c_impl.processorArgs());
                 }
                 for (int i = 0; i < filterValue.size() - 1; i++) {
-                    ParseUtil.append(body, "case {}:{}\n", value[i]);
+                    ParseUtil.append(body, "case {}:{}\n", filterValue.get(i));
                 }
                 ParseUtil.append(body, "case {}:{\n{}.{}=({}){}.process({},{});\nbreak;\n}\n",
                         filterValue.get(filterValue.size()-1),
@@ -161,7 +161,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                     implProcessorVarName = context.getCustomizeProcessorVarName(c_impl.processorClass(), c_impl.processorArgs());
                 }
                 for (int i = 0; i < filterValue.size() - 1; i++) {
-                    ParseUtil.append(body, "case {}:{}\n", value[i]);
+                    ParseUtil.append(body, "case {}:{}\n", filterValue.get(i));
                 }
                 ParseUtil.append(body, "case {}:{\n{}.deProcess({},{},({})({}));\nbreak;\n}\n",
                         filterValue.get(filterValue.size()-1),

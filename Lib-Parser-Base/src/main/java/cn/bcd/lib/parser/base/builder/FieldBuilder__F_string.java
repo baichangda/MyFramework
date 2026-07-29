@@ -5,6 +5,7 @@ import cn.bcd.lib.parser.base.anno.F_string;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ByteProcessor;
 
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
@@ -83,35 +84,27 @@ public class FieldBuilder__F_string extends FieldBuilder {
     }
 
     public static String read_lowAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
-        final byte[] bytes = new byte[len];
-        byteBuf.readBytes(bytes);
-        int startIndex = -1;
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] != 0) {
-                startIndex = i;
-                break;
-            }
-        }
-        if (startIndex == -1) {
+        final int readerIndex = byteBuf.readerIndex();
+        byteBuf.skipBytes(len);
+        int valueStartIndex = byteBuf.forEachByte(
+                readerIndex, len, ByteProcessor.FIND_NON_NUL);
+        if (valueStartIndex == -1) {
             return "";
         }
-        return new String(bytes, startIndex, len - startIndex, charset);
+        return byteBuf.toString(valueStartIndex,
+                readerIndex + len - valueStartIndex, charset);
     }
 
     public static String read_highAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
-        final byte[] bytes = new byte[len];
-        byteBuf.readBytes(bytes);
-        int endIndex = -1;
-        for (int i = bytes.length - 1; i >= 0; i--) {
-            if (bytes[i] != 0) {
-                endIndex = i;
-                break;
-            }
-        }
-        if (endIndex == -1) {
+        final int readerIndex = byteBuf.readerIndex();
+        byteBuf.skipBytes(len);
+        int valueEndIndex = byteBuf.forEachByteDesc(
+                readerIndex, len, ByteProcessor.FIND_NON_NUL);
+        if (valueEndIndex == -1) {
             return "";
         }
-        return new String(bytes, 0, endIndex + 1, charset);
+        return byteBuf.toString(readerIndex,
+                valueEndIndex - readerIndex + 1, charset);
     }
 
     public static void write_noAppend(ByteBuf byteBuf, String str, int len, Charset charset) {

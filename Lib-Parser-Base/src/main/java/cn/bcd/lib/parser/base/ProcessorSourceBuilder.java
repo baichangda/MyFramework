@@ -84,6 +84,9 @@ final class ProcessorSourceBuilder {
             ParseUtil.append(body, "final {} {}=({})$3;\n",
                     modelClass.getName(), FieldBuilder.varNameInstance, modelClass.getName());
         }
+        ParseUtil.append(body, "{}.enter({});\n",
+                FieldBuilder.varNameProcessContext, FieldBuilder.varNameInstance);
+        body.append("try{\n");
 
         BuilderContext context = new BuilderContext(classFields, constructorBody, body, modelClass,
                 classVariableNames, byteOrder, fields, numValGetter);
@@ -96,6 +99,9 @@ final class ProcessorSourceBuilder {
         if (direction == Direction.PARSE) {
             ParseUtil.append(body, "return {};\n", FieldBuilder.varNameInstance);
         }
+        body.append("}finally{\n");
+        ParseUtil.append(body, "{}.exit();\n", FieldBuilder.varNameProcessContext);
+        body.append("}\n");
         return body.append('}').toString();
     }
 

@@ -10,9 +10,10 @@ import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 public class ProcessContext {
-    public final Object instance;
-    public final ProcessContext parentContext;
     public final ByteBuf byteBuf;
+    private Object parent;
+    private Object[] ancestorStack;
+    private int depth;
 
     /**
      * 在解析过程中如果用到如下注解
@@ -28,24 +29,12 @@ public class ProcessContext {
      */
     public int[] globalVars;
 
-    public ProcessContext(Object instance, ProcessContext parentContext) {
-        this.instance = instance;
-        this.parentContext = Objects.requireNonNull(parentContext, "parentContext");
-        this.byteBuf = parentContext.byteBuf;
-        this.bitBuf_reader = parentContext.bitBuf_reader;
-        this.bitBuf_writer = parentContext.bitBuf_writer;
-        this.globalVars = parentContext.globalVars;
-    }
-
     /**
      * 创建一个解析环境
-     * 此解析环境是root环境、没有父环境
      *
      * @param byteBuf
      */
     public ProcessContext(ByteBuf byteBuf) {
-        this.instance = null;
-        this.parentContext = null;
         this.byteBuf = Objects.requireNonNull(byteBuf, "byteBuf");
     }
 
@@ -75,6 +64,87 @@ public class ProcessContext {
             bitBuf_writer = new BitBuf_writer_log(byteBuf);
         }
         return (BitBuf_writer_log) bitBuf_writer;
+    }
+
+    /**
+     * 进入一个Bean作用域。当前Bean会成为其字段处理器的直接父对象。
+     */
+    public final void enter(Object bean) {
+        Objects.requireNonNull(bean, "bean");
+        int currentDepth = depth;
+        if (currentDepth != 0) {
+            ensureAncestorCapacity(currentDepth);
+            ancestorStack[currentDepth - 1] = parent;
+        }
+        parent = bean;
+        depth = currentDepth + 1;
+    }
+
+    /**
+     * 退出当前Bean作用域并恢复上一级父对象。
+     */
+    public final void exit() {
+        int currentDepth = depth;
+        if (currentDepth == 0) {
+            throw new IllegalStateException("no bean scope to exit");
+        }
+        if (currentDepth == 1) {
+            parent = null;
+            depth = 0;
+            return;
+        }
+        int parentIndex = currentDepth - 2;
+        parent = ancestorStack[parentIndex];
+        ancestorStack[parentIndex] = null;
+        depth = currentDepth - 1;
+    }
+
+    /**
+     * 获取当前字段处理器的直接父Bean。
+     */
+    public final Object getParent() {
+        return getParent(0);
+    }
+
+    /**
+     * 获取指定层级的父Bean，level=0代表直接父Bean。
+     */
+    public final Object getParent(int level) {
+        int currentDepth = depth;
+        if (currentDepth == 0) {
+            throw new IllegalStateException("no parent bean is available");
+        }
+        if (level < 0 || level >= currentDepth) {
+            throw new IllegalArgumentException(
+                    "parent level must be between 0 and " + (currentDepth - 1) + ": " + level);
+        }
+        return level == 0 ? parent : ancestorStack[currentDepth - level - 1];
+    }
+
+    /**
+     * 从直接父Bean开始向根节点查找最近的指定类型对象。
+     */
+    public final <T> T findParent(Class<T> type) {
+        Objects.requireNonNull(type, "type");
+        if (type.isInstance(parent)) {
+            return type.cast(parent);
+        }
+        for (int i = depth - 2; i >= 0; i--) {
+            Object ancestor = ancestorStack[i];
+            if (type.isInstance(ancestor)) {
+                return type.cast(ancestor);
+            }
+        }
+        return null;
+    }
+
+    private void ensureAncestorCapacity(int requiredCapacity) {
+        if (ancestorStack == null) {
+            ancestorStack = new Object[Math.max(8, requiredCapacity)];
+        } else if (requiredCapacity > ancestorStack.length) {
+            ancestorStack = java.util.Arrays.copyOf(
+                    ancestorStack, Math.max(requiredCapacity, ancestorStack.length << 1));
+        }
     }
 
     public final void putGlobalVar(int varIndex, int v) {

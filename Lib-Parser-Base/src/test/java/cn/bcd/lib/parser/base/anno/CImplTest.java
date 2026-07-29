@@ -29,6 +29,18 @@ public class CImplTest {
         assertEquals(10, ((DefaultImpl) fallback.item).value);
     }
 
+    @Test
+    public void supportsMultipleValuesWhenDefaultMarkerIsInterleaved() {
+        Processor<MultiValueContainer> processor = Parser.getProcessor(MultiValueContainer.class);
+
+        for (int kind : new int[]{1, 2, 9}) {
+            MultiValueContainer target = ParserTestSupport.process(
+                    processor, (byte) kind, (byte) (kind + 10));
+            assertInstanceOf(MultiValueImpl.class, target.item);
+            assertEquals(kind + 10, ((MultiValueImpl) target.item).value);
+        }
+    }
+
     public static class InterfaceContainer {
         @F_num(type = NumType.uint8, var = 'a')
         public int kind;
@@ -48,6 +60,23 @@ public class CImplTest {
 
     @C_impl(C_impl.Default)
     public static class DefaultImpl implements Item {
+        @F_num(type = NumType.uint8)
+        public int value;
+    }
+
+    public static class MultiValueContainer {
+        @F_num(type = NumType.uint8, var = 'a')
+        public int kind;
+
+        @F_bean(implClassExpr = "a")
+        public MultiValueItem item;
+    }
+
+    public interface MultiValueItem {
+    }
+
+    @C_impl({1, C_impl.Default, 2})
+    public static class MultiValueImpl implements MultiValueItem {
         @F_num(type = NumType.uint8)
         public int value;
     }
