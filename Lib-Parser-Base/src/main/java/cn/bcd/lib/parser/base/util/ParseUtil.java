@@ -611,30 +611,4 @@ public class ParseUtil {
         }
         return valType;
     }
-
-    private final static ConcurrentHashMap<Class<?>, Map<String, Field>> field_classFields = new ConcurrentHashMap<>();
-
-    public static Field getField__v(Class<?> clazz, String field) {
-        Map<String, Field> map = field_classFields.computeIfAbsent(clazz, k -> {
-            HashMap<String, Field> m = new HashMap<>();
-            for (Field f : clazz.getFields()) {
-                m.put(f.getName(), f);
-            }
-            return Map.copyOf(m);
-        });
-        return map.get(field + "__v");
-    }
-
-    public static Byte getFieldVal__v(Class<?> clazz, String field, Object obj) {
-        Field f = getField__v(clazz, field);
-        if (f == null) {
-            return null;
-        } else {
-            try {
-                return (Byte) f.get(obj);
-            } catch (IllegalAccessException e) {
-                throw BaseException.get(e);
-            }
-        }
-    }
 }
