@@ -24,7 +24,7 @@ public class FCustomizeTest {
         assertEquals(12, target.value);
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(bytes));
         processor.process(context.byteBuf, context);
-        assertEquals(12, context.getGlobalVar(0));
+        assertEquals(12, context.getGlobalVar('A'));
     }
 
     public static class CustomBean {

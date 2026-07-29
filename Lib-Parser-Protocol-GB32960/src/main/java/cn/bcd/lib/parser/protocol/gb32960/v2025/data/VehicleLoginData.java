@@ -25,6 +25,7 @@ public class VehicleLoginData implements PacketData {
 
     //电池管理系统对应动力蓄电池包个数
     @F_num_array(singleType = NumType.uint8, lenExpr = "n")
+    @F_cache(index = 4)
     public byte[] packNums;
 
     //可充电储能系统编码

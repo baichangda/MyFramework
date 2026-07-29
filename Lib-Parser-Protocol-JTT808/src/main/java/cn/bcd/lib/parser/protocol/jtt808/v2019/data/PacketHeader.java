@@ -2,6 +2,7 @@ package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
 
 import cn.bcd.lib.parser.base.anno.F_bit_num_easy;
+import cn.bcd.lib.parser.base.anno.F_cache;
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.anno.F_string_bcd;
@@ -19,6 +20,7 @@ public class PacketHeader {
     //消息体属性-分包
     @F_bit_num_easy(bitStart = 13, bitEnd = 13)
     public byte subPacketFlag;
+    @F_cache(index = 1)
     //消息体属性-数据加密方式
     @F_bit_num_easy(bitStart = 12, bitEnd = 10)
     public byte encryptType;

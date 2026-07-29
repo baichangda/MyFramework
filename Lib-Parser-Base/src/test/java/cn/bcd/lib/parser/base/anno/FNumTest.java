@@ -45,7 +45,7 @@ public class FNumTest {
 
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(new byte[]{11, 12, 2}));
         processor.process(context.byteBuf, context);
-        assertEquals(11, context.getGlobalVar(0));
+        assertEquals(11, context.getGlobalVar('A'));
     }
 
     public static class NumericBean {

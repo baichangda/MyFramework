@@ -5,15 +5,17 @@ import cn.bcd.lib.parser.base.log.BitBuf_reader_log;
 import cn.bcd.lib.parser.base.util.BitBuf_writer;
 import cn.bcd.lib.parser.base.log.BitBuf_writer_log;
 import io.netty.buffer.ByteBuf;
+
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Objects;
 import cn.bcd.lib.parser.base.anno.F_bit_num;
 import cn.bcd.lib.parser.base.anno.F_bit_num_array;
 
 public class ProcessContext {
     public final ByteBuf byteBuf;
-    private Object parent;
-    private Object[] ancestorStack;
-    private int depth;
+    private Object[] indexCache;
+    private HashMap<String, Object> keyCache;
 
     /**
      * 在解析过程中如果用到如下注解
@@ -67,105 +69,60 @@ public class ProcessContext {
     }
 
     /**
-     * 进入一个Bean作用域。当前Bean会成为其字段处理器的直接父对象。
+     * 使用数字索引缓存解析过程中产生的字段值。首次写入至少初始化4个元素。
      */
-    public final void enter(Object bean) {
-        Objects.requireNonNull(bean, "bean");
-        int currentDepth = depth;
-        if (currentDepth != 0) {
-            ensureAncestorCapacity(currentDepth);
-            ancestorStack[currentDepth - 1] = parent;
+    public final void putCache(int index, Object value) {
+        Object[] values = indexCache;
+        if (values == null) {
+            values = new Object[Math.max(4, index + 1)];
+            indexCache = values;
+        } else if (index >= values.length) {
+            values = Arrays.copyOf(values, Math.max(index + 1, values.length << 1));
+            indexCache = values;
         }
-        parent = bean;
-        depth = currentDepth + 1;
+        values[index] = value;
+    }
+
+    public final Object getCache(int index) {
+        return indexCache[index];
     }
 
     /**
-     * 退出当前Bean作用域并恢复上一级父对象。
+     * 使用字符串键缓存解析过程中产生的字段值。
      */
-    public final void exit() {
-        int currentDepth = depth;
-        if (currentDepth == 0) {
-            throw new IllegalStateException("no bean scope to exit");
+    public final void putCache(String key, Object value) {
+        if (keyCache == null) {
+            keyCache = new HashMap<>();
         }
-        if (currentDepth == 1) {
-            parent = null;
-            depth = 0;
-            return;
-        }
-        int parentIndex = currentDepth - 2;
-        parent = ancestorStack[parentIndex];
-        ancestorStack[parentIndex] = null;
-        depth = currentDepth - 1;
+        keyCache.put(key, value);
+    }
+
+    public final Object getCache(String key) {
+        HashMap<String, Object> values = keyCache;
+        return values.get(key);
     }
 
     /**
-     * 获取当前字段处理器的直接父Bean。
+     * 使用'A'到'Z'之间的字符保存全局数字变量。
      */
-    public final Object getParent() {
-        return getParent(0);
-    }
-
-    /**
-     * 获取指定层级的父Bean，level=0代表直接父Bean。
-     */
-    public final Object getParent(int level) {
-        int currentDepth = depth;
-        if (currentDepth == 0) {
-            throw new IllegalStateException("no parent bean is available");
-        }
-        if (level < 0 || level >= currentDepth) {
-            throw new IllegalArgumentException(
-                    "parent level must be between 0 and " + (currentDepth - 1) + ": " + level);
-        }
-        return level == 0 ? parent : ancestorStack[currentDepth - level - 1];
-    }
-
-    /**
-     * 从直接父Bean开始向根节点查找最近的指定类型对象。
-     */
-    public final <T> T findParent(Class<T> type) {
-        Objects.requireNonNull(type, "type");
-        if (type.isInstance(parent)) {
-            return type.cast(parent);
-        }
-        for (int i = depth - 2; i >= 0; i--) {
-            Object ancestor = ancestorStack[i];
-            if (type.isInstance(ancestor)) {
-                return type.cast(ancestor);
-            }
-        }
-        return null;
-    }
-
-    private void ensureAncestorCapacity(int requiredCapacity) {
-        if (ancestorStack == null) {
-            ancestorStack = new Object[Math.max(8, requiredCapacity)];
-        } else if (requiredCapacity > ancestorStack.length) {
-            ancestorStack = java.util.Arrays.copyOf(
-                    ancestorStack, Math.max(requiredCapacity, ancestorStack.length << 1));
-        }
-    }
-
-    public final void putGlobalVar(int varIndex, int v) {
-        checkGlobalVarIndex(varIndex);
+    public final void putGlobalVar(char var, int value) {
+        int index = getGlobalVarIndex(var);
         if (globalVars == null) {
             globalVars = new int[26];
         }
-        globalVars[varIndex] = v;
+        globalVars[index] = value;
     }
 
-    public final int getGlobalVar(int varIndex) {
-        checkGlobalVarIndex(varIndex);
-        if (globalVars == null) {
-            throw new IllegalStateException("global variable has not been initialized: " + (char) ('A' + varIndex));
-        }
-        return globalVars[varIndex];
+    /**
+     * 获取使用'A'到'Z'字符标识的全局数字变量。
+     */
+    public final int getGlobalVar(char var) {
+        int index = getGlobalVarIndex(var);
+        return globalVars[index];
     }
 
-    private static void checkGlobalVarIndex(int varIndex) {
-        if (varIndex < 0 || varIndex >= 26) {
-            throw new IllegalArgumentException("global variable index must be between 0 and 25: " + varIndex);
-        }
+    private static int getGlobalVarIndex(char var) {
+        return var - 'A';
     }
+
 }

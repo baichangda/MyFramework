@@ -120,7 +120,22 @@ public class Parser {
         }
         for (Class<?> current = clazz; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
+                F_cache cache = field.getAnnotation(F_cache.class);
+                if (cache != null) {
+                    boolean hasIndex = cache.index() >= 0;
+                    boolean hasKey = !cache.key().isEmpty();
+                    if (hasIndex == hasKey) {
+                        throw BaseException.get(
+                                "F_cache must specify exactly one of index or key on class[{}] field[{}]",
+                                field.getDeclaringClass().getName(), field.getName());
+                    }
+                }
                 Annotation annotation = ModelFieldValidator.validate(field, anno_fieldBuilder);
+                if (cache != null && annotation == null) {
+                    throw BaseException.get(
+                            "F_cache requires a parser field annotation on class[{}] field[{}]",
+                            field.getDeclaringClass().getName(), field.getName());
+                }
                 if (annotation != null) {
                     validateAnnotation(field, annotation, numValGetter);
                 }

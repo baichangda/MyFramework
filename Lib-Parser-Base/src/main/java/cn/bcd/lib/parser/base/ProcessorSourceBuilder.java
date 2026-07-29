@@ -1,6 +1,7 @@
 package cn.bcd.lib.parser.base;
 
 import cn.bcd.lib.parser.base.anno.C_skip;
+import cn.bcd.lib.parser.base.anno.F_cache;
 import cn.bcd.lib.parser.base.anno.F_skip;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
 import cn.bcd.lib.parser.base.builder.FieldBuilder;
@@ -84,10 +85,6 @@ final class ProcessorSourceBuilder {
             ParseUtil.append(body, "final {} {}=({})$3;\n",
                     modelClass.getName(), FieldBuilder.varNameInstance, modelClass.getName());
         }
-        ParseUtil.append(body, "{}.enter({});\n",
-                FieldBuilder.varNameProcessContext, FieldBuilder.varNameInstance);
-        body.append("try{\n");
-
         BuilderContext context = new BuilderContext(classFields, constructorBody, body, modelClass,
                 classVariableNames, byteOrder, fields, numValGetter);
         C_skip classSkip = modelClass.getAnnotation(C_skip.class);
@@ -99,9 +96,6 @@ final class ProcessorSourceBuilder {
         if (direction == Direction.PARSE) {
             ParseUtil.append(body, "return {};\n", FieldBuilder.varNameInstance);
         }
-        body.append("}finally{\n");
-        ParseUtil.append(body, "{}.exit();\n", FieldBuilder.varNameProcessContext);
-        body.append("}\n");
         return body.append('}').toString();
     }
 
@@ -117,6 +111,7 @@ final class ProcessorSourceBuilder {
             appendFieldSkip(context, skip, true, direction);
             appendFieldLogBefore(context, direction, fieldLog);
             direction.build(findFieldBuilder(field), context);
+            appendFieldCache(context, field.getAnnotation(F_cache.class));
             appendFieldLogAfter(context, direction, fieldLog);
             appendFieldSkip(context, skip, false, direction);
             appendFieldLogAfter(context, direction, skipLog);
@@ -131,6 +126,35 @@ final class ProcessorSourceBuilder {
             }
         }
         throw new IllegalStateException("No field log for " + field);
+    }
+
+    private static void appendFieldCache(BuilderContext context, F_cache cache) {
+        if (cache == null) {
+            return;
+        }
+        String fieldValue = FieldBuilder.varNameInstance + "." + context.field.getName();
+        Class<?> fieldType = context.field.getType();
+        if (fieldType.isPrimitive()) {
+            String wrapperType = switch (fieldType.getName()) {
+                case "boolean" -> Boolean.class.getName();
+                case "byte" -> Byte.class.getName();
+                case "short" -> Short.class.getName();
+                case "char" -> Character.class.getName();
+                case "int" -> Integer.class.getName();
+                case "long" -> Long.class.getName();
+                case "float" -> Float.class.getName();
+                case "double" -> Double.class.getName();
+                default -> throw new IllegalStateException("unsupported primitive type: " + fieldType.getName());
+            };
+            fieldValue = wrapperType + ".valueOf(" + fieldValue + ")";
+        }
+        if (cache.index() >= 0) {
+            ParseUtil.append(context.method_body, "{}.putCache({},{});\n",
+                    FieldBuilder.varNameProcessContext, cache.index(), fieldValue);
+        } else {
+            ParseUtil.append(context.method_body, "{}.putCache(\"{}\",{});\n",
+                    FieldBuilder.varNameProcessContext, cache.key(), fieldValue);
+        }
     }
 
     private static FieldBuilder findFieldBuilder(Field field) {

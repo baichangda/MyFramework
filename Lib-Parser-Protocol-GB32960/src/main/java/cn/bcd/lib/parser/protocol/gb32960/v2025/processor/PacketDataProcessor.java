@@ -28,9 +28,8 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public PacketData process(ByteBuf data, ProcessContext processContext) {
-        Packet packet = (Packet) processContext.getParent();
-        boolean cmd = packet.replyFlag == 0xfe;
-        PacketFlag flag = packet.flag;
+        PacketFlag flag = (PacketFlag) processContext.getCache(0);
+        boolean cmd = (Short) processContext.getCache(1) == 0xfe;
         switch (flag) {
             case vehicle_login_data -> {
                 if (cmd) {
@@ -97,7 +96,7 @@ public class PacketDataProcessor implements Processor<PacketData> {
             }
             case terminal_control_command -> {
                 if (cmd) {
-                    return TerminalControlCommand.read(packet.contentLength, data);
+                    return TerminalControlCommand.read((Integer) processContext.getCache(2), data);
                 } else {
                     return processor_timeData.process(data, processContext);
                 }
@@ -113,9 +112,8 @@ public class PacketDataProcessor implements Processor<PacketData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, PacketData instance) {
-        Packet packet = (Packet) processContext.getParent();
-        PacketFlag flag = packet.flag;
-        boolean cmd = packet.replyFlag == 0xfe;
+        PacketFlag flag = (PacketFlag) processContext.getCache(0);
+        boolean cmd = (Short) processContext.getCache(1) == 0xfe;
         switch (flag) {
             case vehicle_login_data -> {
                 if (cmd) {

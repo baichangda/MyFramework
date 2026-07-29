@@ -29,12 +29,10 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public VehicleRunData process(ByteBuf data, ProcessContext processContext) {
-        final Packet packet = (Packet) processContext.getParent();
+        final int contentLength = (Integer) processContext.getCache(2);
         VehicleRunData instance = new VehicleRunData();
-        processContext.enter(instance);
-        try {
             instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-            int allLen = packet.contentLength - 6;
+            int allLen = contentLength - 6;
             int beginLeave = data.readableBytes();
             while ((beginLeave - data.readableBytes()) < allLen) {
                 short flag = data.readUnsignedByte();
@@ -81,15 +79,10 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
                 }
             }
             return instance;
-        } finally {
-            processContext.exit();
-        }
     }
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, VehicleRunData instance) {
-        processContext.enter(instance);
-        try {
             FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
             if (instance.vehicleBaseData != null) {
                 data.writeByte(1);
@@ -127,8 +120,5 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
                 data.writeByte(9);
                 processor_vehicleStorageTemperatureData.deProcess(data, processContext, instance.vehicleStorageTemperatureData);
             }
-        } finally {
-            processContext.exit();
-        }
     }
 }

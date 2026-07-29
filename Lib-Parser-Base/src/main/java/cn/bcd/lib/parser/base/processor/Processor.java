@@ -30,13 +30,10 @@ public interface Processor<T> {
 
     /**
      * @param data
-     * @param processContext 一次完整编解码过程共享的上下文。字段处理器可通过
-     *                       {@link ProcessContext#getParent()}获取字段所属Bean，
-     *                       通过{@link ProcessContext#getParent(int)}访问更上层Bean。
-     *                       生成的Bean处理器会自动维护父对象作用域；手写且继续调用
-     *                       子处理器的Bean处理器必须使用
-     *                       {@link ProcessContext#enter(Object)}和
-     *                       {@link ProcessContext#exit()}成对维护作用域。
+     * @param processContext 一次完整编解码过程共享的上下文。使用
+     *                       {@link cn.bcd.lib.parser.base.anno.F_cache}缓存需要跨字段处理器
+     *                       访问的字段值，并通过{@link ProcessContext#getCache(int)}或
+     *                       {@link ProcessContext#getCache(String)}读取。
      *
      * @return
      */

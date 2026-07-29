@@ -88,14 +88,6 @@ public class ParserSafetyTest {
     }
 
     @Test
-    void reportsMissingAndInvalidGlobalVariables() {
-        ProcessContext context = new ProcessContext(Unpooled.buffer());
-        IllegalStateException missing = assertThrows(IllegalStateException.class, () -> context.getGlobalVar(0));
-        assertTrue(missing.getMessage().contains("A"));
-        assertThrows(IllegalArgumentException.class, () -> context.putGlobalVar(26, 1));
-    }
-
-    @Test
     void freezesConfigurationAfterFirstProcessorLookup() {
         Parser.getProcessor(SimpleBean.class);
         assertTrue(Parser.isConfigurationFrozen());

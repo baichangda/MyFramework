@@ -15,8 +15,7 @@ public class VehicleLoginPackCodeProcessor implements Processor<String> {
 
     @Override
     public String process(ByteBuf data, ProcessContext processContext) {
-        VehicleLoginData vehicleLoginData = (VehicleLoginData) processContext.getParent();
-        byte[] packNums = vehicleLoginData.packNums;
+        byte[] packNums = (byte[]) processContext.getCache(4);
         int sum = 0;
         for (byte packNum : packNums) {
             sum += packNum & 0xFF;

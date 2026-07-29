@@ -18,23 +18,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext processContext) {
-        Object obj = processContext.getParent();
-        int num;
-        if (obj instanceof ParamQueryResponse paramQueryResponse) {
-            if (paramQueryResponse.num__v == 0) {
-                num = paramQueryResponse.num;
-            } else {
-                num = 0;
-            }
-        } else if (obj instanceof ParamSetRequest paramSetRequest) {
-            if (paramSetRequest.num__v == 0) {
-                num = paramSetRequest.num;
-            } else {
-                num = 0;
-            }
-        } else {
-            throw BaseException.get("instance[{}] not support", obj.getClass().getName());
-        }
+        int num = (Short) processContext.getCache(3);
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();

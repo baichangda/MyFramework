@@ -29,7 +29,7 @@ public class FBitNumEasyTest {
 
         ProcessContext context = new ProcessContext(Unpooled.wrappedBuffer(ParserTestSupport.deProcess(processor, bean)));
         processor.process(context.byteBuf, context);
-        assertEquals(1, context.getGlobalVar(0));
+        assertEquals(1, context.getGlobalVar('A'));
     }
 
     public static class EasyBean {

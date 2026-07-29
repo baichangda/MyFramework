@@ -583,16 +583,12 @@ public class ParseUtil {
         append(context.method_body, "{}.writeZero({});\n", FieldBuilder.varNameByteBuf, lenValCode);
     }
     public static void appendPutGlobalVar(BuilderContext context, char var, String val) {
-        append(context.method_body, "{}.putGlobalVar({},(int)({}));\n", FieldBuilder.varNameProcessContext, getGlobalVarIndex(var), val);
+        append(context.method_body, "{}.putGlobalVar('{}',(int)({}));\n", FieldBuilder.varNameProcessContext, var, val);
     }
 
     public static void appendGetGlobalVar(BuilderContext context, char var) {
         String globalVarName = getGlobalVarName(var);
-        append(context.method_body, "final int {} = {}.getGlobalVar({});\n", globalVarName, FieldBuilder.varNameProcessContext, getGlobalVarIndex(var));
-    }
-
-    private static int getGlobalVarIndex(char var) {
-        return var - 'A';
+        append(context.method_body, "final int {} = {}.getGlobalVar('{}');\n", globalVarName, FieldBuilder.varNameProcessContext, var);
     }
 
     public static String getGlobalVarName(char var) {

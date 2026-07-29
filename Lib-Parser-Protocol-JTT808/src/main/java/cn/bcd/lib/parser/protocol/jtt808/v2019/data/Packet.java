@@ -1,6 +1,7 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
 import cn.bcd.lib.parser.base.anno.F_bean;
+import cn.bcd.lib.parser.base.anno.F_cache;
 import cn.bcd.lib.parser.base.anno.F_customize;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
@@ -18,6 +19,7 @@ public class Packet {
     public byte startFlag;
     //消息头
     @F_bean
+    @F_cache(index = 0)
     public PacketHeader header;
     //消息体
     @F_customize(processorClass = PacketBodyProcessor.class)

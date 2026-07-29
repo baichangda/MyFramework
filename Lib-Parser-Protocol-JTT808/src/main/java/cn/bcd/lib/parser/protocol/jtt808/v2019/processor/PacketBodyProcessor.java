@@ -42,9 +42,9 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
 
     @Override
     public PacketBody process(ByteBuf data, ProcessContext processContext) {
-        Packet packet = (Packet) processContext.getParent();
+        PacketHeader header = (PacketHeader) processContext.getCache(0);
         PacketBody packetBody;
-        switch (packet.header.msgId) {
+        switch (header.msgId) {
             case terminal_common_response, platform_common_response -> {
                 packetBody = processor_commonResponse.process(data, processContext);
             }
@@ -65,10 +65,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_serverSubPacketRequest.process(data, processContext);
             }
             case terminal_register_request -> {
-                packetBody = TerminalRegisterRequest.read(data, packet.header.msgLen);
+                packetBody = TerminalRegisterRequest.read(data, header.msgLen);
             }
             case terminal_register_response -> {
-                packetBody = TerminalRegisterResponse.read(data, packet.header.msgLen);
+                packetBody = TerminalRegisterResponse.read(data, header.msgLen);
             }
             case terminal_authentication -> {
                 packetBody = processor_terminalAuthentication.process(data, processContext);
@@ -83,7 +83,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_queryTerminalParamResponse.process(data, processContext);
             }
             case terminal_control -> {
-                packetBody = TerminalControl.read(data, packet.header.msgLen);
+                packetBody = TerminalControl.read(data, header.msgLen);
             }
             case query_terminal_prop_response -> {
                 packetBody = processor_queryTerminalPropResponse.process(data, processContext);
@@ -95,10 +95,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_terminalUpgradeResResponse.process(data, processContext);
             }
             case position_data_upload -> {
-                packetBody = Position.read(data, packet.header.msgLen);
+                packetBody = Position.read(data, header.msgLen);
             }
             case query_position_response -> {
-                packetBody = QueryPositionResponse.read(data, packet.header.msgLen);
+                packetBody = QueryPositionResponse.read(data, header.msgLen);
             }
             case temp_position_follow -> {
                 packetBody = processor_tempPositionFollow.process(data, processContext);
@@ -107,10 +107,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_confirmAlarmMsg.process(data, processContext);
             }
             case text_info_issued -> {
-                packetBody = TextInfoIssued.read(data, packet.header.msgLen);
+                packetBody = TextInfoIssued.read(data, header.msgLen);
             }
             case phone_callback -> {
-                packetBody = PhoneCallback.read(data, packet.header.msgLen);
+                packetBody = PhoneCallback.read(data, header.msgLen);
             }
             case set_phone_text -> {
                 packetBody = processor_setPhoneText.process(data, processContext);
@@ -119,7 +119,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = VehicleControlRequest.read(data);
             }
             case vehicle_control_response -> {
-                packetBody = VehicleControlResponse.read(data, packet.header.msgLen);
+                packetBody = VehicleControlResponse.read(data, header.msgLen);
             }
             case set_circle_area -> {
                 packetBody = SetCircleArea.read(data);
@@ -152,10 +152,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = QueryAreaOrPathResponse.read(data);
             }
             case driving_recorder_collect_command, driving_recorder_download_command -> {
-                packetBody = DrivingRecorderCollectCommand.read(data, packet.header.msgLen);
+                packetBody = DrivingRecorderCollectCommand.read(data, header.msgLen);
             }
             case driving_recorder_upload -> {
-                packetBody = DrivingRecorderUpload.read(data, packet.header.msgLen);
+                packetBody = DrivingRecorderUpload.read(data, header.msgLen);
             }
             case waybill_report -> {
                 packetBody = processor_waybillReport.process(data, processContext);
@@ -173,10 +173,10 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_multiMediaEventUpload.process(data, processContext);
             }
             case multimedia_data_upload_request -> {
-                packetBody = MultimediaDataUploadRequest.read(data, packet.header.msgLen);
+                packetBody = MultimediaDataUploadRequest.read(data, header.msgLen);
             }
             case multimedia_data_upload_response -> {
-                packetBody = MultimediaDataUploadResponse.read(data, packet.header.msgLen);
+                packetBody = MultimediaDataUploadResponse.read(data, header.msgLen);
             }
             case camera_take_photo_cmd_request -> {
                 packetBody = processor_cameraTakePhotoCmdRequest.process(data, processContext);
@@ -188,7 +188,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_storageMultiMediaDataFetchRequest.process(data, processContext);
             }
             case storage_multimedia_data_fetch_response -> {
-                packetBody = StorageMultimediaDataFetchResponse.read(data, packet.header.msgLen);
+                packetBody = StorageMultimediaDataFetchResponse.read(data, header.msgLen);
             }
             case storage_multimedia_data_upload_cmd -> {
                 packetBody = processor_storageMultiMediaDataUploadCmd.process(data, processContext);
@@ -200,13 +200,13 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
                 packetBody = processor_singleMultiMediaDataFetchUploadCmd.process(data, processContext);
             }
             case data_down_stream -> {
-                packetBody = DataDownStream.read(data, packet.header.msgLen);
+                packetBody = DataDownStream.read(data, header.msgLen);
             }
             case data_up_stream -> {
-                packetBody = DataUpStream.read(data, packet.header.msgLen);
+                packetBody = DataUpStream.read(data, header.msgLen);
             }
             case data_compress_report -> {
-                packetBody = DataCompressReport.read(data, packet.header.msgLen);
+                packetBody = DataCompressReport.read(data, header.msgLen);
             }
             case platform_rsa -> {
                 packetBody = processor_platformRsa.process(data, processContext);
@@ -214,15 +214,15 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
             case terminal_rsa -> {
                 packetBody = processor_terminalRsa.process(data, processContext);
             }
-            default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);
+            default -> throw BaseException.get("msgId[{}] not support", header.msgId);
         }
         return packetBody;
     }
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, PacketBody instance) {
-        Packet packet = (Packet) processContext.getParent();
-        switch (packet.header.msgId) {
+        PacketHeader header = (PacketHeader) processContext.getCache(0);
+        switch (header.msgId) {
             case terminal_common_response, platform_common_response -> {
                 processor_commonResponse.deProcess(data, processContext, (CommonResponse) instance);
             }
@@ -392,7 +392,7 @@ public class PacketBodyProcessor implements Processor<PacketBody> {
             case terminal_rsa -> {
                 processor_terminalRsa.process(data, processContext);
             }
-            default -> throw BaseException.get("msgId[{}] not support", packet.header.msgId);
+            default -> throw BaseException.get("msgId[{}] not support", header.msgId);
         }
     }
 
