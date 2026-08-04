@@ -38,12 +38,12 @@ public class DispatchHandler extends ByteToMessageDecoder {
             ctx.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
             ctx.pipeline().addLast(new DataInboundHandler_v2016(handlers_v2016));
             ctx.pipeline().remove(this);
-            out.add(in.readRetainedSlice(in.readableBytes()));
+//            out.add(in.readRetainedSlice(in.readableBytes()));
         } else if (b0 == 0x24 && b1 == 0x24) {
             ctx.pipeline().addLast(new LengthFieldBasedFrameDecoder(10 * 1024, 22, 2, 1, 0));
             ctx.pipeline().addLast(new DataInboundHandler_v2025(handlers_v2025));
             ctx.pipeline().remove(this);
-            out.add(in.readRetainedSlice(in.readableBytes()));
+//            out.add(in.readRetainedSlice(in.readableBytes()));
         } else {
             logger.info("receive unknown header[0x{}]、close channel", ByteBufUtil.hexDump(new byte[]{b0, b1}));
             in.skipBytes(in.readableBytes());
