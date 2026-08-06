@@ -4,12 +4,16 @@ import org.apache.fesod.sheet.ExcelReader;
 import org.apache.fesod.sheet.FesodSheet;
 import org.apache.fesod.sheet.read.metadata.ReadSheet;
 
-import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,6 +23,7 @@ import java.util.Objects;
  * 第 0-5 列为报文属性，第 6-29 列为信号属性，第 34 列起为各 ECU 节点的 Tx/Rx 收发方向。</p>
  */
 public final class CANUtil_cornex {
+    private static final String SIGNAL_SHEET_NAME = "CAN Signals";
     private static final int MESSAGE_NAME = 0;
     private static final int MESSAGE_TYPE = 1;
     private static final int MESSAGE_ID = 2;
@@ -61,29 +66,29 @@ public final class CANUtil_cornex {
     /**
      * 解析工作簿中所有表头符合 CAN 通信矩阵结构的工作表。
      */
-    public static CanWorkbook parse(File file) {
-        requireReadableFile(file);
-        List<String> sheetNames = findSheetNames(file);
+    public static CanWorkbook parse(Path path) {
+        requireReadableFile(path);
+        List<String> sheetNames = findSheetNames(path);
         List<CanSheet> sheets = new ArrayList<>();
         for (String sheetName : sheetNames) {
-            List<Map<Integer, String>> rows = readRows(file, sheetName);
+            List<Map<Integer, String>> rows = readRows(path, sheetName);
             int headerIndex = findHeaderIndex(rows);
             if (headerIndex >= 0) {
                 sheets.add(parseRows(sheetName, rows, headerIndex));
             }
         }
         if (sheets.isEmpty()) {
-            throw new IllegalArgumentException("No CAN communication matrix sheet found in: " + file);
+            throw new IllegalArgumentException("No CAN communication matrix sheet found in: " + path);
         }
-        return new CanWorkbook(file.getName(), sheets);
+        return new CanWorkbook(path.getFileName().toString(), sheets);
     }
 
     /**
      * 按工作表名称解析一个 CAN 通信矩阵。
      */
-    public static CanSheet parse(File file, String sheetName) {
-        requireReadableFile(file);
-        return parseRows(sheetName, readRows(file, requireSheetName(sheetName)));
+    public static CanSheet parse(Path path, String sheetName) {
+        requireReadableFile(path);
+        return parseRows(sheetName, readRows(path, requireSheetName(sheetName)));
     }
 
     /**
@@ -100,16 +105,102 @@ public final class CANUtil_cornex {
         return parseRows(actualSheetName, rows);
     }
 
-    private static List<String> findSheetNames(File file) {
-        try (ExcelReader reader = FesodSheet.read(file).headRowNumber(0).build()) {
+    /**
+     * 将信号集合写入 Excel 文件。固定列依次对应 {@link CanSignal} 的字段，
+     * 所有信号中出现过的 ECU 节点会作为动态收发关系列追加到表格末尾。
+     */
+    public static void writeSignals(Path path, Collection<CanSignal> signals) {
+        Objects.requireNonNull(path, "path");
+        SignalExportData exportData = buildSignalExportData(signals);
+        FesodSheet.write(path.toFile())
+                .head(exportData.head)
+                .sheet(SIGNAL_SHEET_NAME)
+                .doWrite(exportData.rows);
+    }
+
+    /**
+     * 将信号集合写入输出流，写入完成后不会关闭调用方传入的输出流。
+     */
+    public static void writeSignals(OutputStream outputStream, Collection<CanSignal> signals) {
+        Objects.requireNonNull(outputStream, "outputStream");
+        SignalExportData exportData = buildSignalExportData(signals);
+        FesodSheet.write(outputStream)
+                .autoCloseStream(false)
+                .head(exportData.head)
+                .sheet(SIGNAL_SHEET_NAME)
+                .doWrite(exportData.rows);
+    }
+
+    private static SignalExportData buildSignalExportData(Collection<CanSignal> signals) {
+        Objects.requireNonNull(signals, "signals");
+        List<CanSignal> signalList = List.copyOf(signals);
+        LinkedHashSet<String> nodes = new LinkedHashSet<>();
+        for (CanSignal signal : signalList) {
+            Objects.requireNonNull(signal, "signals must not contain null");
+            nodes.addAll(signal.nodeDirections.keySet());
+        }
+
+        List<String> headerNames = new ArrayList<>(List.of(
+                "name\n信号名称",
+                "multiplexingValue\n复用值",
+                "groupName\n信号组名称",
+                "e2eProfile\nE2E保护配置",
+                "e2eDataId\nE2E Data ID",
+                "asil\n功能安全等级",
+                "description\n信号描述",
+                "byteOrder\n字节序",
+                "startByte\n起始字节",
+                "startBit\n起始位",
+                "sendType\n信号发送类型",
+                "lengthBits\n信号长度(Bit)",
+                "dataType\n数据类型",
+                "resolution\n精度",
+                "offset\n偏移量",
+                "physicalMin\n物理最小值",
+                "physicalMax\n物理最大值",
+                "hexMin\n总线最小值",
+                "hexMax\n总线最大值",
+                "initialValue\n初始值",
+                "invalidValue\n无效值",
+                "inactiveValue\n非使能值",
+                "unit\n单位",
+                "valueDescription\n信号值描述",
+                "remark\n备注"));
+        for (String node : nodes) {
+            headerNames.add("nodeDirections." + node + "\n" + node + "收发方向");
+        }
+        List<List<String>> head = headerNames.stream().map(List::of).toList();
+
+        List<List<Object>> rows = new ArrayList<>(signalList.size());
+        for (CanSignal signal : signalList) {
+            List<Object> row = new ArrayList<>(headerNames.size());
+            Collections.addAll(row,
+                    signal.name, signal.multiplexingValue, signal.groupName, signal.e2eProfile,
+                    signal.e2eDataId, signal.asil, signal.description, signal.byteOrder,
+                    signal.startByte, signal.startBit, signal.sendType, signal.lengthBits,
+                    signal.dataType, signal.resolution, signal.offset, signal.physicalMin,
+                    signal.physicalMax, signal.hexMin, signal.hexMax, signal.initialValue,
+                    signal.invalidValue, signal.inactiveValue, signal.unit,
+                    signal.valueDescription, signal.remark);
+            for (String node : nodes) {
+                NodeDirection direction = signal.nodeDirections.get(node);
+                row.add(direction == null ? null : direction.excelValue);
+            }
+            rows.add(row);
+        }
+        return new SignalExportData(head, rows);
+    }
+
+    private static List<String> findSheetNames(Path path) {
+        try (ExcelReader reader = FesodSheet.read(path.toFile()).headRowNumber(0).build()) {
             return reader.excelExecutor().sheetList().stream()
                     .map(ReadSheet::getSheetName)
                     .toList();
         }
     }
 
-    private static List<Map<Integer, String>> readRows(File file, String sheetName) {
-        return FesodSheet.read(file)
+    private static List<Map<Integer, String>> readRows(Path path, String sheetName) {
+        return FesodSheet.read(path.toFile())
                 .headRowNumber(0)
                 .sheet(sheetName)
                 .doReadSync();
@@ -305,10 +396,10 @@ public final class CANUtil_cornex {
         return sheetName.trim();
     }
 
-    private static void requireReadableFile(File file) {
-        Objects.requireNonNull(file, "file");
-        if (!file.isFile() || !file.canRead()) {
-            throw new IllegalArgumentException("Excel file is not readable: " + file);
+    private static void requireReadableFile(Path path) {
+        Objects.requireNonNull(path, "path");
+        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+            throw new IllegalArgumentException("Excel file is not readable: " + path);
         }
     }
 
@@ -317,13 +408,21 @@ public final class CANUtil_cornex {
      */
     public enum NodeDirection {
         /** 发送。 */
-        TX,
+        TX("Tx"),
         /** 接收。 */
-        RX;
+        RX("Rx");
+
+        /** Excel 中使用的文本值。 */
+        public final String excelValue;
+
+        NodeDirection(String excelValue) {
+            this.excelValue = excelValue;
+        }
 
         private static NodeDirection fromExcelValue(String value) {
             for (NodeDirection direction : values()) {
-                if (direction.name().equalsIgnoreCase(value)) {
+                if (direction.name().equalsIgnoreCase(value)
+                        || direction.excelValue.equalsIgnoreCase(value)) {
                     return direction;
                 }
             }
@@ -439,13 +538,13 @@ public final class CANUtil_cornex {
         /** ECU 节点名称与 Tx/Rx 收发方向的对应关系。 */
         public final Map<String, NodeDirection> nodeDirections;
 
-        private CanSignal(String name, String multiplexingValue, String groupName, String e2eProfile,
-                          String e2eDataId, String asil, String description, String byteOrder,
-                          Integer startByte, Integer startBit, String sendType, Integer lengthBits,
-                          String dataType, BigDecimal resolution, BigDecimal offset,
-                          BigDecimal physicalMin, BigDecimal physicalMax, String hexMin, String hexMax,
-                          String initialValue, String invalidValue, String inactiveValue, String unit,
-                          String valueDescription, String remark, Map<String, NodeDirection> nodeDirections) {
+        public CanSignal(String name, String multiplexingValue, String groupName, String e2eProfile,
+                         String e2eDataId, String asil, String description, String byteOrder,
+                         Integer startByte, Integer startBit, String sendType, Integer lengthBits,
+                         String dataType, BigDecimal resolution, BigDecimal offset,
+                         BigDecimal physicalMin, BigDecimal physicalMax, String hexMin, String hexMax,
+                         String initialValue, String invalidValue, String inactiveValue, String unit,
+                         String valueDescription, String remark, Map<String, NodeDirection> nodeDirections) {
             this.name = name;
             this.multiplexingValue = multiplexingValue;
             this.groupName = groupName;
@@ -471,7 +570,9 @@ public final class CANUtil_cornex {
             this.unit = unit;
             this.valueDescription = valueDescription;
             this.remark = remark;
-            this.nodeDirections = nodeDirections;
+            this.nodeDirections = nodeDirections == null
+                    ? Map.of()
+                    : Collections.unmodifiableMap(new LinkedHashMap<>(nodeDirections));
         }
     }
 
@@ -493,5 +594,8 @@ public final class CANUtil_cornex {
         private CanMessage build() {
             return new CanMessage(this);
         }
+    }
+
+    private record SignalExportData(List<List<String>> head, List<List<Object>> rows) {
     }
 }
