@@ -16,9 +16,7 @@ import java.util.Objects;
 
 /**
  * CAN/CAN FD 通信矩阵读取工具。
- *
- * <p>支持 {@code test.xlsx} 所采用的表格结构：第 0-5 列为报文属性，
- * 第 6-29 列为信号属性，第 34 列起为各 ECU 节点的 Tx/Rx 收发方向。</p>
+ * 第 0-5 列为报文属性，第 6-29 列为信号属性，第 34 列起为各 ECU 节点的 Tx/Rx 收发方向。</p>
  */
 public final class CANUtil_cornex {
     private static final int MESSAGE_NAME = 0;
