@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RedisRateControlUnit implements AutoCloseable {
     static final String REDIS_KEY_PRE_COUNT = "rc:count";
+    private static final long ADD_SUCCEED = 0;
 
     static final DefaultRedisScript<Long> TRY_ADD_SCRIPT = new DefaultRedisScript<>(
             """
@@ -24,16 +25,16 @@ public class RedisRateControlUnit implements AutoCloseable {
                     local windowMillis = tonumber(ARGV[3]) * 1000
                     if current + increment > max then
                         local ttl = redis.call('PTTL', KEYS[1])
-                        return -(math.max(ttl, 0) + 1)
+                        return -math.max(ttl, 1)
                     end
-                    local next = redis.call('INCRBY', KEYS[1], increment)
+                    redis.call('INCRBY', KEYS[1], increment)
                     if current == 0 then
                         local now = redis.call('TIME')
                         local nowMillis = tonumber(now[1]) * 1000 + math.floor(tonumber(now[2]) / 1000)
                         local ttl = windowMillis - (nowMillis % windowMillis)
                         redis.call('PEXPIRE', KEYS[1], ttl)
                     end
-                    return next
+                    return 0
                     """,
             Long.class
     );
@@ -77,9 +78,12 @@ public class RedisRateControlUnit implements AutoCloseable {
 
     public boolean tryAdd(int i) {
         validateIncrement(i);
-        return tryAddInternal(i) >= 0;
+        return tryAddInternal(i) == ADD_SUCCEED;
     }
 
+    /**
+     * @return 0 表示成功，负数的绝对值表示失败后需要等待的毫秒数
+     */
     private long tryAddInternal(int i) {
         if (!available) {
             throw BaseException.get("rate control unit closed");
@@ -97,15 +101,11 @@ public class RedisRateControlUnit implements AutoCloseable {
         validateIncrement(i);
         while (true) {
             long result = tryAddInternal(i);
-            if (result >= 0) {
+            if (result == ADD_SUCCEED) {
                 return;
             }
-            TimeUnit.MILLISECONDS.sleep(retryDelayMillis(result));
+            TimeUnit.MILLISECONDS.sleep(-result);
         }
-    }
-
-    static long retryDelayMillis(long rejectedResult) {
-        return Math.max(-rejectedResult - 1, 1);
     }
 
     private void validateIncrement(int i) {

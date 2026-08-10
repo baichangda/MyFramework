@@ -6,7 +6,6 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import java.lang.reflect.Proxy;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RedisRateControlUnitTest {
@@ -29,12 +28,6 @@ class RedisRateControlUnitTest {
             assertThrows(IllegalArgumentException.class, () -> unit.tryAdd(2));
             assertThrows(IllegalArgumentException.class, () -> unit.add(2));
         }
-    }
-
-    @Test
-    void usesWindowTtlAsRetryDelay() {
-        assertEquals(5_000, RedisRateControlUnit.retryDelayMillis(-5_001));
-        assertEquals(1, RedisRateControlUnit.retryDelayMillis(-1));
     }
 
     @Test
