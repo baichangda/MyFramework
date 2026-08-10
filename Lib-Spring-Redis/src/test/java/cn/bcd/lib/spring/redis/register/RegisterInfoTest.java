@@ -1,9 +1,8 @@
 package cn.bcd.lib.spring.redis.register;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 
-import java.lang.reflect.Proxy;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -40,28 +39,11 @@ class RegisterInfoTest {
     }
 
     private static RegisterInfo registerInfoWithHosts(String... hosts) {
-        RegisterInfo registerInfo = new RegisterInfo(RegisterServer.test1, connectionFactoryStub());
+        RegisterInfo registerInfo = new RegisterInfo(RegisterServer.test1, new RedisTemplate<>());
         registerInfo.info = new RegisterInfo.Info(
                 hosts,
                 System.nanoTime() + TimeUnit.MINUTES.toNanos(1));
         return registerInfo;
     }
 
-    private static RedisConnectionFactory connectionFactoryStub() {
-        return (RedisConnectionFactory) Proxy.newProxyInstance(
-                RedisConnectionFactory.class.getClassLoader(),
-                new Class<?>[]{RedisConnectionFactory.class},
-                (proxy, method, args) -> {
-                    if (method.getName().equals("toString")) {
-                        return "RedisConnectionFactoryStub";
-                    }
-                    if (method.getReturnType() == boolean.class) {
-                        return false;
-                    }
-                    if (method.getReturnType() == int.class) {
-                        return 0;
-                    }
-                    return null;
-                });
-    }
 }
