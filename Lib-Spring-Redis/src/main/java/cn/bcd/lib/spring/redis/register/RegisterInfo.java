@@ -1,8 +1,6 @@
 package cn.bcd.lib.spring.redis.register;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.redis.RedisUtil;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
@@ -13,8 +11,8 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class RegisterInfo {
-    static final DefaultRedisScript<List> DISCOVER_SCRIPT = new DefaultRedisScript<>(
+final class RegisterInfo {
+    private static final DefaultRedisScript<List> DISCOVER_SCRIPT = new DefaultRedisScript<>(
             """
                     local time = redis.call('TIME')
                     local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
@@ -25,7 +23,7 @@ public final class RegisterInfo {
             List.class
     );
 
-    public final RegisterServer server;
+    private final RegisterServer server;
     private final RedisTemplate<String, String> redisTemplate;
     private final String redisKey;
 
@@ -35,22 +33,17 @@ public final class RegisterInfo {
     volatile Info info;
     final AtomicLong index = new AtomicLong();
 
-    public RegisterInfo(RegisterServer server, RedisConnectionFactory redisConnectionFactory) {
-        this(server, RedisUtil.newRedisTemplate_string_string(
-                Objects.requireNonNull(redisConnectionFactory, "redisConnectionFactory")));
-    }
-
     RegisterInfo(RegisterServer server, RedisTemplate<String, String> redisTemplate) {
         this.server = Objects.requireNonNull(server, "server");
         this.redisTemplate = Objects.requireNonNull(redisTemplate, "redisTemplate");
         this.redisKey = RegisterUtil.redisKeyPre + server.name();
     }
 
-    public String[] hosts() {
+    String[] hosts() {
         return cachedHosts().clone();
     }
 
-    public String host() {
+    String host() {
         String[] hosts = cachedHosts();
         if (hosts.length == 0) {
             return null;
@@ -58,7 +51,7 @@ public final class RegisterInfo {
         return hosts[Math.floorMod(index.getAndIncrement(), hosts.length)];
     }
 
-    public void clearCache() {
+    void clearCache() {
         info = null;
     }
 
