@@ -1,85 +1,95 @@
 package cn.bcd.lib.spring.redis.register;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.redis.RedisUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.BoundHashOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class RegisterInfo {
+    static final DefaultRedisScript<List> DISCOVER_SCRIPT = new DefaultRedisScript<>(
+            """
+                    local time = redis.call('TIME')
+                    local now = tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)
+                    local expiredBefore = now - tonumber(ARGV[1])
+                    redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', expiredBefore)
+                    return redis.call('ZRANGE', KEYS[1], 0, -1)
+                    """,
+            List.class
+    );
+
     public final RegisterServer server;
-    final BoundHashOperations<String, String, String> boundHashOperations;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final String redisKey;
 
-    record Info(String[] hosts, long lastUpdateTs) {
-
+    record Info(String[] hosts, long expireAtNanos) {
     }
 
     volatile Info info;
-    AtomicLong index = new AtomicLong(0);
+    final AtomicLong index = new AtomicLong();
 
     public RegisterInfo(RegisterServer server, RedisConnectionFactory redisConnectionFactory) {
-        this.server = server;
-        this.boundHashOperations = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory).boundHashOps(RegisterUtil.redisKeyPre + server.name());
+        this(server, RedisUtil.newRedisTemplate_string_string(
+                Objects.requireNonNull(redisConnectionFactory, "redisConnectionFactory")));
+    }
+
+    RegisterInfo(RegisterServer server, RedisTemplate<String, String> redisTemplate) {
+        this.server = Objects.requireNonNull(server, "server");
+        this.redisTemplate = Objects.requireNonNull(redisTemplate, "redisTemplate");
+        this.redisKey = RegisterUtil.redisKeyPre + server.name();
     }
 
     public String[] hosts() {
-        Info temp = this.info;
-        long curTs = System.currentTimeMillis();
-        long localExpireTs = curTs - server.consumer_localCacheExpired_ms;
-        if (temp == null || temp.lastUpdateTs < localExpireTs) {
-            synchronized (this) {
-                temp = this.info;
-                curTs = System.currentTimeMillis();
-                localExpireTs = curTs - server.consumer_localCacheExpired_ms;
-                if (temp == null || temp.lastUpdateTs < localExpireTs) {
-                    //从redis中加载
-                    final Map<String, String> entries = boundHashOperations.entries();
-                    final String[] hosts;
-                    if (entries == null || entries.isEmpty()) {
-                        hosts = new String[0];
-                    } else {
-                        List<String> hostList = new ArrayList<>();
-                        for (Map.Entry<String, String> entry : entries.entrySet()) {
-                            long heartbeatTs = DateZoneUtil.strToDate_yyyyMMddHHmmss(entry.getValue()).getTime();
-                            long currentTs = System.currentTimeMillis();
-                            if (currentTs - heartbeatTs <= server.consumer_providerInfoExpired_ms) {
-                                hostList.add(entry.getKey());
-                            }
-                        }
-                        if (hostList.isEmpty()) {
-                            hosts = new String[0];
-                        } else {
-                            hosts = hostList.toArray(new String[0]);
-                            Arrays.sort(hosts);
-                        }
-                    }
-                    this.info = new Info(hosts, curTs);
-                    return hosts;
-                } else {
-                    return temp.hosts;
-                }
-            }
-        } else {
-            return temp.hosts;
-        }
+        return cachedHosts().clone();
     }
 
     public String host() {
-        String[] hosts = hosts();
+        String[] hosts = cachedHosts();
         if (hosts.length == 0) {
             return null;
         }
-        return hosts[(int) (index.getAndIncrement() % hosts.length)];
+        return hosts[Math.floorMod(index.getAndIncrement(), hosts.length)];
     }
 
     public void clearCache() {
-        synchronized (this) {
-            info = null;
+        info = null;
+    }
+
+    private String[] cachedHosts() {
+        long now = System.nanoTime();
+        Info current = info;
+        if (current == null || now - current.expireAtNanos >= 0) {
+            synchronized (this) {
+                now = System.nanoTime();
+                current = info;
+                if (current == null || now - current.expireAtNanos >= 0) {
+                    String[] hosts = loadHosts();
+                    long cacheNanos = TimeUnit.MILLISECONDS.toNanos(server.consumer_localCacheExpired_ms);
+                    info = new Info(hosts, now + cacheNanos);
+                    return hosts;
+                }
+            }
         }
+        return current.hosts;
+    }
+
+    private String[] loadHosts() {
+        List<?> result = redisTemplate.execute(
+                DISCOVER_SCRIPT,
+                Collections.singletonList(redisKey),
+                String.valueOf(server.consumer_providerInfoExpired_ms));
+        if (result == null) {
+            throw BaseException.get("redis register discover script returned null, server[{}]", server.name());
+        }
+        String[] hosts = result.stream().map(String::valueOf).toArray(String[]::new);
+        Arrays.sort(hosts);
+        return hosts;
     }
 }

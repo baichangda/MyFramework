@@ -22,4 +22,17 @@ spring:
 
 `RedisTopicMQ` 用于广播，`RedisQueueMQ` 用于队列消费；创建后调用 `init()`，关闭时调用 `close()`。使用 `@SingleFailedSchedule` 前需启用 AOP 和调度。服务注册功能通过 `register.host` 启用。
 
+服务注册配置示例：
+
+```yaml
+register:
+  host: 10.0.0.1:8080
+  servers:
+    - test1
+```
+
+注册信息使用 `register:v2:{service}` Sorted Set 保存，并以 Redis 服务器时间作为心跳分值。应用只消费服务时可将 `register.host` 配置为空字符串。注册心跳随 Spring 生命周期自动启动和停止，无需手动初始化或关闭。
+
+旧版 `register:{service}` Hash 与新版数据结构不兼容；升级时应协调同一服务的提供者和消费者，避免新旧版本互相不可见。
+
 Redis key、序列化类型和消息版本必须在生产者与消费者之间保持一致。
