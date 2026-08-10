@@ -1,187 +1,119 @@
 package cn.bcd.lib.spring.redis.rateControl;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.util.Collections;
-import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 基于 Redis 的分布式固定窗口流量控制单元。
+ */
 public class RedisRateControlUnit implements AutoCloseable {
-    static Logger logger = LoggerFactory.getLogger(RedisRateControlUnit.class);
-
     static final String REDIS_KEY_PRE_COUNT = "rc:count";
-    static final String REDIS_KEY_PRE_RESET = "rc:reset";
-    static final int REDIS_KEY_TIMEOUT_SECOND_RESET = 10;
-
-    static final int RESET_EXECUTOR_NUM = Runtime.getRuntime().availableProcessors();
-    static final ScheduledExecutorService[] resetPool = new ScheduledExecutorService[RESET_EXECUTOR_NUM];
 
     static final DefaultRedisScript<Long> TRY_ADD_SCRIPT = new DefaultRedisScript<>(
             """
                     local current = tonumber(redis.call('GET', KEYS[1]) or '0')
-                    local i = tonumber(ARGV[1])
+                    local increment = tonumber(ARGV[1])
                     local max = tonumber(ARGV[2])
-                    if current + i > max then return -1 end
-                    redis.call('INCRBY', KEYS[1], ARGV[1])
-                    redis.call('EXPIRE', KEYS[1], ARGV[3])
-                    return redis.call('GET', KEYS[1])
+                    local windowMillis = tonumber(ARGV[3]) * 1000
+                    if current + increment > max then
+                        local ttl = redis.call('PTTL', KEYS[1])
+                        return -(math.max(ttl, 0) + 1)
+                    end
+                    local next = redis.call('INCRBY', KEYS[1], increment)
+                    if current == 0 then
+                        local now = redis.call('TIME')
+                        local nowMillis = tonumber(now[1]) * 1000 + math.floor(tonumber(now[2]) / 1000)
+                        local ttl = windowMillis - (nowMillis % windowMillis)
+                        redis.call('PEXPIRE', KEYS[1], ttl)
+                    end
+                    return next
                     """,
             Long.class
     );
 
-    static {
-        for (int i = 0; i < resetPool.length; i++) {
-            int no = i + 1;
-            resetPool[i] = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "redisRateControl(" + no + "/" + resetPool.length + ")"));
-        }
-    }
-
-    private final String name;
     private final String redisKeyCount;
-    private final String redisKeyReset;
     private final int timeInSecond;
     private final int maxAccessCount;
-    private final int waitTimeWhenExceedInMillis;
     private final RedisTemplate<String, String> redisTemplate;
-    private final ScheduledExecutorService resetExecutor;
-    private volatile boolean reset;
-    private volatile boolean blocking = false;
-
-    private ScheduledFuture<?> managerFuture;
-    private ScheduledFuture<?> resetFuture;
-
-    private volatile boolean available = false;
+    private volatile boolean available = true;
 
     /**
-     * 创建一个流量控制单元
+     * 创建一个流量控制单元。
      *
-     * @param name                       名称、主要用于标识redis key和线程名
-     * @param timeInSecond               限定时间
-     * @param maxAccessCount             限定时间访问次数
-     * @param waitTimeWhenExceedInMillis 当发生超过访问次数的访问时候、线程等待的时间
-     * @param redisConnectionFactory
+     * @param name                       名称，主要用于标识 Redis key
+     * @param timeInSecond               固定窗口秒数
+     * @param maxAccessCount             窗口内允许使用的最大额度
+     * @param redisConnectionFactory     Redis 连接工厂
      */
     public RedisRateControlUnit(String name,
                                 int timeInSecond,
                                 int maxAccessCount,
-                                int waitTimeWhenExceedInMillis,
                                 RedisConnectionFactory redisConnectionFactory) {
-        this.name = name;
+        Objects.requireNonNull(name, "name");
+        Objects.requireNonNull(redisConnectionFactory, "redisConnectionFactory");
+        if (timeInSecond <= 0) {
+            throw new IllegalArgumentException("timeInSecond must be greater than 0");
+        }
+        if (maxAccessCount <= 0) {
+            throw new IllegalArgumentException("maxAccessCount must be greater than 0");
+        }
         this.redisKeyCount = REDIS_KEY_PRE_COUNT + name;
-        this.redisKeyReset = REDIS_KEY_PRE_RESET + name;
         this.timeInSecond = timeInSecond;
         this.maxAccessCount = maxAccessCount;
-        this.waitTimeWhenExceedInMillis = waitTimeWhenExceedInMillis;
         this.redisTemplate = RedisUtil.newRedisTemplate_string_string(redisConnectionFactory);
-        this.resetExecutor = resetPool[Math.floorMod(name.hashCode(), resetPool.length)];
-        this.init();
-    }
-
-
-    private synchronized void init() {
-        if (available) {
-            return;
-        }
-        available = true;
-        int period = (REDIS_KEY_TIMEOUT_SECOND_RESET / 2) + 1;
-        //尝试抢占reset
-        reset = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
-        if (reset) {
-            logger.info("setIfAbsent reset succeed key[{}]", redisKeyReset);
-            //启动周期任务清除redis计数
-            startResetTask();
-        }
-        //启动周期任务 抢占或续期
-        managerFuture = resetExecutor.scheduleAtFixedRate(() -> {
-            if (reset) {
-                //如果抢占成功、则此时为续期模式
-                //尝试续期
-                Boolean b = redisTemplate.opsForValue().setIfPresent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
-                if (!b) {
-                    //正常情况下不可能续期失败、如果失败、则尝试重新抢占
-                    logger.warn("setIfPresent reset in executor failed key[{}]", redisKeyReset);
-                    b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
-                    //如果抢占失败、说明此时被其他服务抢占、转换为抢占模式
-                    if (!b) {
-                        reset = false;
-                        stopResetTask();
-                    }
-                }
-            } else {
-                //如果抢占失败、则此时为抢占模式
-                //尝试抢占
-                Boolean b = redisTemplate.opsForValue().setIfAbsent(redisKeyReset, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), REDIS_KEY_TIMEOUT_SECOND_RESET, TimeUnit.SECONDS);
-                if (b) {
-                    //如果抢占成功、则转换为续期模式
-                    reset = true;
-                    logger.info("setIfAbsent reset in executor succeed key[{}]", redisKeyReset);
-                    startResetTask();
-                }
-            }
-        }, period, period, TimeUnit.SECONDS);
-    }
-
-    private synchronized void startResetTask() {
-        if (resetFuture == null) {
-            resetFuture = resetExecutor.scheduleAtFixedRate(() -> {
-                redisTemplate.delete(redisKeyCount);
-                //释放阻塞
-                blocking = false;
-            }, timeInSecond * 1000L - DateUtil.CacheMillisecond.current() % 1000, timeInSecond * 1000L, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    private synchronized void stopResetTask() {
-        if (resetFuture != null) {
-            resetFuture.cancel(false);
-            resetFuture = null;
-        }
     }
 
     @Override
-    public synchronized void close() throws Exception {
-        if (!available) {
-            return;
-        }
+    public void close() {
         available = false;
-        if (managerFuture != null) {
-            managerFuture.cancel(false);
-            managerFuture = null;
-        }
-        stopResetTask();
     }
 
     public boolean tryAdd(int i) {
+        validateIncrement(i);
+        return tryAddInternal(i) >= 0;
+    }
+
+    private long tryAddInternal(int i) {
         if (!available) {
             throw BaseException.get("rate control unit closed");
         }
-        if (blocking) {
-            return false;
-        }
-        Long c = redisTemplate.execute(TRY_ADD_SCRIPT,
+        Long count = redisTemplate.execute(TRY_ADD_SCRIPT,
                 Collections.singletonList(redisKeyCount),
-                String.valueOf(i), String.valueOf(maxAccessCount), timeInSecond * 2);
-        if (c < 0) {
-            blocking = true;
-            return false;
+                String.valueOf(i), String.valueOf(maxAccessCount), String.valueOf(timeInSecond));
+        if (count == null) {
+            throw BaseException.get("redis rate control script returned null");
         }
-        return true;
+        return count;
     }
 
     public void add(int i) throws InterruptedException {
-        while (!tryAdd(i)) {
-            TimeUnit.MILLISECONDS.sleep(waitTimeWhenExceedInMillis);
+        validateIncrement(i);
+        while (true) {
+            long result = tryAddInternal(i);
+            if (result >= 0) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(retryDelayMillis(result));
+        }
+    }
+
+    static long retryDelayMillis(long rejectedResult) {
+        return Math.max(-rejectedResult - 1, 1);
+    }
+
+    private void validateIncrement(int i) {
+        if (i <= 0) {
+            throw new IllegalArgumentException("i must be greater than 0");
+        }
+        if (i > maxAccessCount) {
+            throw new IllegalArgumentException("i must not be greater than maxAccessCount");
         }
     }
 }
