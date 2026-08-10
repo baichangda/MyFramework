@@ -121,8 +121,8 @@ public class ArrayUtil {
      * 拼接多个数组
      * @param arrConstructor 结果数组的构造器
      * @param arrs
-     * @return
      * @param <T>
+     * @return
      */
     @SafeVarargs
     public static <T> T[] concat(IntFunction<T[]> arrConstructor, T[]... arrs) {
