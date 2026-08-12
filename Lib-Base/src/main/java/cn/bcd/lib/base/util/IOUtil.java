@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 public class IOUtil {
-    private static final int BUFFER_SIZE = 1024 * 4;
+    private static final int BUFFER_SIZE = 1024 * 8;
 
     public static long copy(InputStream in, OutputStream out) throws IOException {
         byte[] buf = new byte[BUFFER_SIZE];
