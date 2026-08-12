@@ -27,9 +27,10 @@ public class MyWebSocketClient implements AutoCloseable {
     private final WebSocketClient webSocketClient;
     private final Handler<Void> closeHandler;
     private WebSocket webSocket;
-    private boolean closed = false;
+    private volatile boolean closed = false;
     private final Runnable connectRunnable;
     private final Context context;
+    private volatile long reconnectTimerId = -1;
 
     public MyWebSocketClient(String url,
                              Duration autoReconnectPeriod,
@@ -79,9 +80,16 @@ public class MyWebSocketClient implements AutoCloseable {
 
         webSocketClient = Const.vertx.createWebSocketClient();
         connectRunnable = () -> {
+            if (closed) {
+                return;
+            }
             logger.info("connecting ws[{}]", url);
             webSocketClient.connect(port, host, uri)
                     .onSuccess(w -> {
+                        if (closed) {
+                            w.close();
+                            return;
+                        }
                         logger.info("connect ws[{}] succeed", url);
                         webSocket = w;
                         w.closeHandler(closeHandler);
@@ -133,7 +141,11 @@ public class MyWebSocketClient implements AutoCloseable {
      */
     public void close() {
         context.runOnContext(v -> {
+            if (closed) {
+                return;
+            }
             closed = true;
+            cancelReconnectTimer();
             //提交关闭任务
             if (webSocket != null) {
                 webSocket.closeHandler(null);
@@ -156,9 +168,21 @@ public class MyWebSocketClient implements AutoCloseable {
         if (connectImmediately) {
             connectRunnable.run();
         } else {
-            context.owner().setTimer(autoReconnectPeriod.toMillis(), l -> {
-                connectRunnable.run();
-            });
+            if (reconnectTimerId == -1) {
+                reconnectTimerId = context.owner().setTimer(autoReconnectPeriod.toMillis(), timerId -> {
+                    reconnectTimerId = -1;
+                    if (!closed) {
+                        connectRunnable.run();
+                    }
+                });
+            }
+        }
+    }
+
+    private void cancelReconnectTimer() {
+        if (reconnectTimerId != -1) {
+            context.owner().cancelTimer(reconnectTimerId);
+            reconnectTimerId = -1;
         }
     }
 }
