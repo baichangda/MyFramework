@@ -134,7 +134,7 @@
 
     function connectWs() {
         let vin = $("#vin").val();
-        ws = new WebSocket(getWsUrl() + "?vin=" + vin);
+        ws = new WebSocket(getWsUrl() + "?vin=" + encodeURIComponent(vin));
         ws.onopen = function () {
             isConnectWs = true
             $("#ws_connect_btn").css("color", "green")
@@ -171,7 +171,7 @@
                     $("#gw_connect_btn").prop("disabled", true)
                     appendToOutput("连接tcp网关成功,开始发送运行数据", 2)
                 } else {
-                    appendToOutput("连接tcp网关失败", 2)
+                    appendToOutput("连接tcp网关失败、原因:\n" + parse.data, 2)
                 }
                 break
             }
@@ -185,6 +185,10 @@
             }
             case 101: {
                 vehicleData = JSON.parse(parse.data)
+                if (!vehicleData || !vehicleData.vehicleRunData) {
+                    appendToOutput("接收到的车辆运行数据为空", 2)
+                    break
+                }
                 editor_vehicleRunData.set(vehicleData.vehicleRunData)
                 appendToOutput("接收到ws服务器运行数据,更新客户端运行信息", 2)
                 break
@@ -224,6 +228,10 @@
     function updateVehicleData() {
         if (!isConnectWs) {
             appendToOutput("请先连接ws服务器", 1)
+            return
+        }
+        if (!vehicleData) {
+            appendToOutput("尚未接收到车辆运行数据", 1)
             return
         }
         vehicleData.vehicleRunData = editor_vehicleRunData.get()
