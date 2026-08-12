@@ -1,5 +1,4 @@
 dependencies {
-    implementation platform(libs.vertx.dependencies)
     implementation platform(libs.spring.boot.dependencies)
     implementation project(":Lib-Parser-Protocol-GB32960")
     implementation project(":Lib-Spring-Storage-Mongo")
@@ -8,5 +7,4 @@ dependencies {
     implementation project(":Lib-Spring-Data-Init")
     implementation project(":Lib-Spring-Data-Notify")
     implementation libs.spring.boot.starter.log4j2
-    implementation libs.vertx.web
 }
