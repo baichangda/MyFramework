@@ -10,9 +10,34 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MyWebSocketClientCloseTest {
+
+    @Test
+    void parsesAndValidatesConfiguration() {
+        MyWebSocketClient client = new MyWebSocketClient(
+                " 127.0.0.1:65535/ws/events?type=text ", Duration.ofSeconds(1), ignored -> {
+        });
+        try {
+            assertEquals("127.0.0.1:65535/ws/events?type=text", client.url);
+            assertEquals("127.0.0.1", client.host);
+            assertEquals(65535, client.port);
+            assertEquals("/ws/events?type=text", client.uri);
+        } finally {
+            client.close();
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> new MyWebSocketClient(
+                "127.0.0.1:8080/ws", Duration.ZERO, ignored -> {
+        }));
+        assertThrows(IllegalArgumentException.class, () -> new MyWebSocketClient(
+                "ws://127.0.0.1:8080/ws", Duration.ofSeconds(1), ignored -> {
+        }));
+        assertThrows(NullPointerException.class, () -> new MyWebSocketClient(
+                "127.0.0.1:8080/ws", Duration.ofSeconds(1), null));
+    }
 
     @Test
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
