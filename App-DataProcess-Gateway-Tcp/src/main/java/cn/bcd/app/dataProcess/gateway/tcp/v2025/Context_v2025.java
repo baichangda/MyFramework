@@ -18,4 +18,5 @@ public class Context_v2025 {
     public Session session;
     //VehicleOnlineHandler
     public long lastTimeTs;
+    public long lastSaveRedisTs;
 }

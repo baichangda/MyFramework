@@ -1,6 +1,7 @@
 package cn.bcd.app.dataProcess.gateway.tcp.v2025;
 
 import cn.bcd.lib.base.common.Const;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.util.PacketUtil;
 import org.slf4j.Logger;
@@ -29,10 +30,15 @@ public class VehicleOnlineHandler_v2025 implements DataHandler_v2025 {
             return;
         }
         context.lastTimeTs = timeTs;
-        try {
-            redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, context.lastTimeTs + "");
-        } catch (Exception e) {
-            logger.error("error", e);
+        long current = DateUtil.CacheMillisecond.current();
+        //30s保存一次
+        if ((current - context.lastSaveRedisTs) > 30_000) {
+            try {
+                redisTemplate.opsForValue().set(Const.redis_key_prefix_vehicle_last_packet_time + vin, context.lastTimeTs + "");
+                context.lastSaveRedisTs = current;
+            } catch (Exception e) {
+                logger.error("error", e);
+            }
         }
     }
 }
