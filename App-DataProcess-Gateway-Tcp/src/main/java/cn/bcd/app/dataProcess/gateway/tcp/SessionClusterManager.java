@@ -26,7 +26,7 @@ public class SessionClusterManager {
 
     @KafkaListener(topics = "${gateway.sessionTopic}")
     public void listen(ConsumerRecord<byte[], byte[]> consumerRecord) {
-        //格式为 session类型,sessionId,网关id,连接的时间戳(毫秒)
+        //格式为 sessionId,网关id,连接的时间戳(毫秒)
         final String value = new String(consumerRecord.value());
         final String[] split = value.split(",");
         final String remoteGatewayId = split[1];
@@ -49,7 +49,7 @@ public class SessionClusterManager {
         String id = gatewayProp.id;
         pool_sendKafka_sessionNotify.execute(() -> {
             String msg = session.id + "," + id + "," + session.createTs;
-            kafkaTemplate.send(new ProducerRecord<>(sessionTopic, msg.getBytes(StandardCharsets.UTF_8)));
+            kafkaTemplate.send(new ProducerRecord<>(sessionTopic, session.id, msg.getBytes(StandardCharsets.UTF_8)));
         });
     }
 }
