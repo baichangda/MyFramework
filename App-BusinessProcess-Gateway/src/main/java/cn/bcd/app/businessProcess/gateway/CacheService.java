@@ -1,95 +1,91 @@
 package cn.bcd.app.businessProcess.gateway;
 
-import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.lib.spring.cloud.common.fegin.user.UserClient;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 @Component
 public class CacheService {
 
-    static Logger logger = LoggerFactory.getLogger(CacheService.class);
+    private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
+    private static final Duration CACHE_TTL = Duration.ofSeconds(5);
+    private static final long MAXIMUM_CACHE_SIZE = 10_000;
 
-    @Autowired
-    UserClient userClient;
+    private final UserClient userClient;
+    private final LoadingCache<String, AuthUser> users;
+    private final LoadingCache<AuthCacheKey, List<String>> roles;
+    private final LoadingCache<AuthCacheKey, List<String>> permissions;
 
-    final Duration expire = Duration.ofSeconds(5);
-
-    private volatile LoadingCache<String, AuthUser> username_user;
-    private volatile LoadingCache<String, List<String>> username_roleList;
-    private volatile LoadingCache<String, List<String>> username_permissionList;
+    public CacheService(UserClient userClient) {
+        this.userClient = userClient;
+        users = Caffeine.newBuilder()
+                .expireAfterWrite(CACHE_TTL)
+                .maximumSize(MAXIMUM_CACHE_SIZE)
+                .build(this::loadUser);
+        roles = Caffeine.newBuilder()
+                .expireAfterWrite(CACHE_TTL)
+                .maximumSize(MAXIMUM_CACHE_SIZE)
+                .build(this::loadRoles);
+        permissions = Caffeine.newBuilder()
+                .expireAfterWrite(CACHE_TTL)
+                .maximumSize(MAXIMUM_CACHE_SIZE)
+                .build(this::loadPermissions);
+    }
 
     public AuthUser getUser(String username) {
-        if (username_user == null) {
-            synchronized (this) {
-                if (username_user == null) {
-                    username_user = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        try {
-                            Result<AuthUser> result = userClient.getAuthUser(k);
-                            return result.code == 0 ? result.data : null;
-                        } catch (Exception e) {
-                            logger.error("getUser error key[{}]", k, e);
-                            return null; // 或返回缓存中的旧值
-                        }
-                    });
-                }
-            }
-        }
-        return username_user.get(username);
+        return users.get(username);
     }
 
     public List<String> getRoleList(String username, String loginType) {
-        if (username_roleList == null) {
-            synchronized (this) {
-                if (username_roleList == null) {
-                    username_roleList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        int i = k.indexOf(",");
-                        String s1 = k.substring(0, i);
-                        String s2 = k.substring(i + 1);
-                        Result<List<String>> result = CompletableFuture.supplyAsync(() -> userClient.getUserRoles(s1, s2)).join();
-                        if (result.code == 0) {
-                            return result.data;
-                        } else {
-                            logger.warn("getRoleList error:\n{}", JsonUtil.toJson(result));
-                            return Collections.emptyList();
-                        }
-                    });
-                }
-            }
-        }
-        return username_roleList.get(username + "," + loginType);
+        return roles.get(new AuthCacheKey(username, loginType));
     }
 
     public List<String> getPermissionList(String username, String loginType) {
-        if (username_permissionList == null) {
-            synchronized (this) {
-                if (username_permissionList == null) {
-                    username_permissionList = Caffeine.newBuilder().expireAfterWrite(expire).build(k -> {
-                        int i = k.indexOf(",");
-                        String s1 = k.substring(0, i);
-                        String s2 = k.substring(i + 1);
-                        Result<List<String>> result = CompletableFuture.supplyAsync(() -> userClient.getUserPermissions(s1, s2)).join();
-                        if (result.code == 0) {
-                            return result.data;
-                        } else {
-                            logger.warn("getPermissionList error:\n{}", JsonUtil.toJson(result));
-                            return Collections.emptyList();
-                        }
-                    });
-                }
-            }
+        return permissions.get(new AuthCacheKey(username, loginType));
+    }
+
+    private AuthUser loadUser(String username) {
+        try {
+            Result<AuthUser> result = userClient.getAuthUser(username);
+            return result.code == 0 ? result.data : null;
+        } catch (Exception ex) {
+            logger.error("getUser error key[{}]", username, ex);
+            return null;
         }
-        return username_permissionList.get(username + "," + loginType);
+    }
+
+    private List<String> loadRoles(AuthCacheKey key) {
+        return loadAuthorities(key, userClient::getUserRoles, "getRoleList");
+    }
+
+    private List<String> loadPermissions(AuthCacheKey key) {
+        return loadAuthorities(key, userClient::getUserPermissions, "getPermissionList");
+    }
+
+    private List<String> loadAuthorities(
+            AuthCacheKey key,
+            BiFunction<String, String, Result<List<String>>> loader,
+            String operation
+    ) {
+        Result<List<String>> result = loader.apply(key.username(), key.loginType());
+        if (result.code == 0) {
+            return result.data;
+        }
+        logger.warn("{} error:\n{}", operation, JsonUtil.toJson(result));
+        return Collections.emptyList();
+    }
+
+    private record AuthCacheKey(String username, String loginType) {
     }
 }
