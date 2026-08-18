@@ -30,7 +30,6 @@ bcprov-jdk18on = "1.84"
 geo = "0.8.1"
 jts = "1.20.0"
 hbase-client = "2.6.6"
-jooq = "3.21.6"
 awssdk = "2.46.17"
 jctools="4.0.6"
 influxdb3 = "1.10.0"
@@ -57,9 +56,6 @@ jctools = { module = "org.jctools:jctools-core", version.ref = "jctools" }
 javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 
 hbase-client = { module = "org.apache.hbase:hbase-client", version.ref = "hbase-client" }
-
-jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
-jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
 
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 netty-common = { module = "io.netty:netty-common"}
