@@ -1,5 +1,9 @@
 package cn.bcd.lib.base.util;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class HexUtil {
@@ -109,10 +113,11 @@ public class HexUtil {
         return HEX2B[c];
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         String s = hexDump(new byte[]{1, 2, 3, 4, 0x12});
         System.out.println(s);
         byte[] bytes = decodeHexDump(s);
         System.out.println(Arrays.toString(bytes));
+        Files.write(Paths.get("C:\\Users\\Cornex\\Downloads\\test1.txt"),HexUtil.hexDump(Files.readAllBytes(Paths.get("C:\\Users\\Cornex\\Downloads\\test.pdf"))).getBytes(StandardCharsets.UTF_8));
     }
 }
