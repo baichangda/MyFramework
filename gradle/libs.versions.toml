@@ -31,11 +31,12 @@ geo = "0.8.1"
 jts = "1.20.0"
 hbase-client = "2.6.6"
 awssdk = "2.46.17"
-jctools="4.0.6"
+jctools = "4.0.6"
 influxdb3 = "1.10.0"
-fesod="2.0.2-incubating"
+fesod = "2.0.2-incubating"
 javassist = "3.30.2-GA"
-jmh="1.37"
+jmh = "1.37"
+redisson = "4.7.0"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -58,15 +59,15 @@ javassist = { module = "org.javassist:javassist", version.ref = "javassist" }
 hbase-client = { module = "org.apache.hbase:hbase-client", version.ref = "hbase-client" }
 
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
-netty-common = { module = "io.netty:netty-common"}
-netty-buffer = { module = "io.netty:netty-buffer"}
-netty-all = { module = "io.netty:netty-all"}
+netty-common = { module = "io.netty:netty-common" }
+netty-buffer = { module = "io.netty:netty-buffer" }
+netty-all = { module = "io.netty:netty-all" }
 
 jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson" }
-jackson-core = { module = "tools.jackson.core:jackson-core"}
-jackson-databind = { module = "tools.jackson.core:jackson-databind"}
-jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml"}
-jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations"}
+jackson-core = { module = "tools.jackson.core:jackson-core" }
+jackson-databind = { module = "tools.jackson.core:jackson-databind" }
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
 
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
@@ -77,13 +78,13 @@ mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
 mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
 
 okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp" }
-okhttp = { module = "com.squareup.okhttp3:okhttp"}
-okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor"}
+okhttp = { module = "com.squareup.okhttp3:okhttp" }
+okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor" }
 
 prometheus-bom = { module = "io.prometheus:prometheus-metrics-bom", version.ref = "prometheus" }
-prometheus-metrics-core = { module = "io.prometheus:prometheus-metrics-core"}
-prometheus-metrics-instrumentation-jvm = { module = "io.prometheus:prometheus-metrics-instrumentation-jvm"}
-prometheus-metrics-exporter-httpserver = { module = "io.prometheus:prometheus-metrics-exporter-httpserver"}
+prometheus-metrics-core = { module = "io.prometheus:prometheus-metrics-core" }
+prometheus-metrics-instrumentation-jvm = { module = "io.prometheus:prometheus-metrics-instrumentation-jvm" }
+prometheus-metrics-exporter-httpserver = { module = "io.prometheus:prometheus-metrics-exporter-httpserver" }
 
 xxl-job-core = { module = "com.xuxueli:xxl-job-core", version.ref = "xxl-job" }
 
@@ -91,13 +92,13 @@ cassandra-java-driver-core = { module = "org.apache.cassandra:java-driver-core",
 cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driver-query-builder", version.ref = "cassandra" }
 
 vertx-dependencies = { module = "io.vertx:vertx-dependencies", version.ref = "vertx" }
-vertx-web = { module = "io.vertx:vertx-web"}
-vertx-web-client = { module = "io.vertx:vertx-web-client"}
+vertx-web = { module = "io.vertx:vertx-web" }
+vertx-web-client = { module = "io.vertx:vertx-web-client" }
 
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq" }
 
 awssdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "awssdk" }
-awssdk-s3 = { module = "software.amazon.awssdk:s3"}
+awssdk-s3 = { module = "software.amazon.awssdk:s3" }
 
 sa-token-spring-boot3-starter = { module = "cn.dev33:sa-token-spring-boot3-starter", version.ref = "sa-token" }
 sa-token-reactor-spring-boot-starter = { module = "cn.dev33:sa-token-reactor-spring-boot-starter", version.ref = "sa-token" }
@@ -105,29 +106,29 @@ sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson", version.r
 
 spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version.ref = "spring-boot" }
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
-spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter"}
-spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2"}
-spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis"}
-spring-boot-starter-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka"}
-spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc"}
-spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb"}
-spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation"}
-spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj"}
-spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web"}
-spring-boot-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket"}
-spring-boot-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache"}
-spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail"}
-spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test"}
-spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux"}
-spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor"}
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
+spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
+spring-boot-starter-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka" }
+spring-boot-starter-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc" }
+spring-boot-starter-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket" }
+spring-boot-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache" }
+spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
 
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
-spring-cloud-gateway-server-webflux = { module = "org.springframework.cloud:spring-cloud-gateway-server-webflux"}
-spring-cloud-loadbalancer = { module = "org.springframework.cloud:spring-cloud-loadbalancer"}
-spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign"}
+spring-cloud-gateway-server-webflux = { module = "org.springframework.cloud:spring-cloud-gateway-server-webflux" }
+spring-cloud-loadbalancer = { module = "org.springframework.cloud:spring-cloud-loadbalancer" }
+spring-cloud-starter-openfeign = { module = "org.springframework.cloud:spring-cloud-starter-openfeign" }
 
 spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-alibaba-dependencies", version.ref = "spring-cloud-alibaba" }
-spring-cloud-starter-alibaba-nacos-discovery = { module = "com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery"}
+spring-cloud-starter-alibaba-nacos-discovery = { module = "com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery" }
 
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-starter-common", version.ref = "springdoc" }
@@ -135,9 +136,9 @@ springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-s
 influxdb3-java = { module = "com.influxdb:influxdb3-java", version.ref = "influxdb3" }
 
 fesod-bom = { module = "org.apache.fesod:fesod-bom", version.ref = "fesod" }
-fesod-sheet = { module = "org.apache.fesod:fesod-sheet", version.ref = "fesod"}
+fesod-sheet = { module = "org.apache.fesod:fesod-sheet", version.ref = "fesod" }
 
-jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh"}
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 
-[plugins]
-jooq-codegen-gradle = { id = "org.jooq.jooq-codegen-gradle", version.ref = "jooq" }
+redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version.ref = "redisson" }
+
