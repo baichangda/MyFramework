@@ -1,5 +1,6 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016;
 
+import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -39,6 +40,7 @@ public class PacketReadBenchmark {
 
     @Setup
     public void setup() {
+        Parser.disableByteBufCheck();
         byte[] packetBytes = ByteBufUtil.decodeHexDump(Const.sample_vehicleRunData);
         packetBuffer = Unpooled.wrappedBuffer(packetBytes);
     }
