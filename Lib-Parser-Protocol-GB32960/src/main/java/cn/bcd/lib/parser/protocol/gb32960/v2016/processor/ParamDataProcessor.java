@@ -18,7 +18,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext processContext) {
-        int num = (Short) processContext.getCache(3);
+        int num = (short) processContext.getCache(3);
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();

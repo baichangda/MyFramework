@@ -22,12 +22,15 @@ class FCacheTest {
         ProcessContext context = new ProcessContext(Unpooled.buffer());
         Object first = new Object();
         Object expanded = new Object();
+        int num = 100;
 
         context.putCache(0, first);
         context.putCache(8, expanded);
+        context.putCache(10, num);
 
         assertSame(first, context.getCache(0));
         assertSame(expanded, context.getCache(8));
+        assertSame(num, context.getCache(10));
         assertNull(context.getCache(7));
     }
 

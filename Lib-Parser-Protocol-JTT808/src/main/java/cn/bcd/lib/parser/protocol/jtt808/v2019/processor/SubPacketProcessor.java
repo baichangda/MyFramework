@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBuf;
 public class SubPacketProcessor implements Processor<SubPacket> {
     @Override
     public SubPacket process(ByteBuf data, ProcessContext processContext) {
-        byte subPacketFlag = (Byte) processContext.getCache(1);
+        byte subPacketFlag = (byte) processContext.getCache(1);
         if (subPacketFlag == 0) {
             return null;
         } else {
@@ -21,7 +21,7 @@ public class SubPacketProcessor implements Processor<SubPacket> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, SubPacket instance) {
-        byte subPacketFlag = (Byte) processContext.getCache(1);
+        byte subPacketFlag = (byte) processContext.getCache(1);
         if (subPacketFlag == 1) {
             data.writeShort(instance.total);
             data.writeShort(instance.no);

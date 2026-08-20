@@ -29,7 +29,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public VehicleRunData process(ByteBuf data, ProcessContext processContext) {
-        final int contentLength = (Integer) processContext.getCache(2);
+        final int contentLength = (int) processContext.getCache(2);
         VehicleRunData instance = new VehicleRunData();
             instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
             int allLen = contentLength - 6;
