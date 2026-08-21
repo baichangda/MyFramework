@@ -7,9 +7,13 @@ import cn.bcd.lib.parser.base.processor.Processor;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FDateBytes6Test {
     @Test
@@ -21,6 +25,17 @@ public class FDateBytes6Test {
         Bytes6Bean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(ParserTestSupport.deProcess(processor, bean)));
 
         assertEquals(bean.value, target.value);
+    }
+
+    @Test
+    public void generatedProcessorUsesSpecializedOffsetType() {
+        Processor<Bytes6Bean> offsetProcessor = Parser.getProcessor(Bytes6Bean.class);
+        Processor<RegionZoneBean> regionProcessor = Parser.getProcessor(RegionZoneBean.class);
+
+        assertTrue(Arrays.stream(offsetProcessor.getClass().getDeclaredFields())
+                .anyMatch(field -> field.getType() == ZoneOffset.class));
+        assertTrue(Arrays.stream(regionProcessor.getClass().getDeclaredFields())
+                .anyMatch(field -> field.getType() == ZoneId.class));
     }
 
     @Test
@@ -39,6 +54,11 @@ public class FDateBytes6Test {
     public static class Bytes6Bean {
         @F_date_bytes_6(valueZoneId = "+8")
         public LocalDateTime value;
+    }
+
+    public static class RegionZoneBean {
+        @F_date_bytes_6(zoneId = "Asia/Shanghai")
+        public long value;
     }
 
     public static class Bytes6ArrayBean {

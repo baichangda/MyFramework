@@ -79,30 +79,25 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
 
 
     public static String read_noAppend(ByteBuf byteBuf, int len) {
-        byte[] bytes = new byte[len];
-        byteBuf.readBytes(bytes);
-        return BcdUtil.bytesToString_8421(bytes);
+        char[] chars = new char[len << 1];
+        for (int i = 0; i < len; i++) {
+            dumpByte(byteBuf.readUnsignedByte(), chars, i << 1);
+        }
+        return new String(chars);
     }
 
     public static String read_lowAddressAppend(ByteBuf byteBuf, int len) {
-        byte[] bytes = new byte[len];
-        byteBuf.readBytes(bytes);
         char[] chars = new char[len << 1];
         int startIndex = -1;
         for (int i = 0; i < len; i++) {
-            byte b = bytes[i];
+            int value = byteBuf.readUnsignedByte();
             if (startIndex == -1) {
-                if (b != 0) {
-                    if (((b >> 4) & 0x0F) == 0) {
-                        startIndex = (i << 1) + 1;
-                    } else {
-                        startIndex = i << 1;
-                    }
-                    System.arraycopy(BcdUtil.BCD_8421_DUMP_TABLE, (b & 0xff) << 1, chars, i << 1, 2);
+                if (value == 0) {
+                    continue;
                 }
-            } else {
-                System.arraycopy(BcdUtil.BCD_8421_DUMP_TABLE, (b & 0xff) << 1, chars, i << 1, 2);
+                startIndex = (i << 1) + ((value >>> 4) == 0 ? 1 : 0);
             }
+            dumpByte(value, chars, i << 1);
         }
         if (startIndex == -1) {
             return "";
@@ -111,72 +106,64 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
     }
 
     public static String read_highAddressAppend(ByteBuf byteBuf, int len) {
-        byte[] bytes = new byte[len];
-        byteBuf.readBytes(bytes);
         char[] chars = new char[len << 1];
         int endIndex = -1;
-        for (int i = len - 1; i >= 0; i--) {
-            byte b = bytes[i];
-            if (endIndex == -1) {
-                if (b != 0) {
-                    if ((b & 0x0F) == 0) {
-                        endIndex = i << 1;
-                    } else {
-                        endIndex = (i << 1) + 1;
-                    }
-                    System.arraycopy(BcdUtil.BCD_8421_DUMP_TABLE, (b & 0xff) << 1, chars, i << 1, 2);
-                }
-            } else {
-                System.arraycopy(BcdUtil.BCD_8421_DUMP_TABLE, (b & 0xff) << 1, chars, i << 1, 2);
+        for (int i = 0; i < len; i++) {
+            int value = byteBuf.readUnsignedByte();
+            dumpByte(value, chars, i << 1);
+            if (value != 0) {
+                endIndex = (i << 1) + ((value & 0x0f) == 0 ? 0 : 1);
             }
         }
         return new String(chars, 0, endIndex + 1);
     }
 
+    private static void dumpByte(int value, char[] chars, int targetIndex) {
+        int sourceIndex = value << 1;
+        chars[targetIndex] = BcdUtil.BCD_8421_DUMP_TABLE[sourceIndex];
+        chars[targetIndex + 1] = BcdUtil.BCD_8421_DUMP_TABLE[sourceIndex + 1];
+    }
+
     public static int write_noAppend(ByteBuf byteBuf, String s, int len) {
-        byte[] bytes = BcdUtil.stringToBytes_8421(s);
-        if (bytes.length != len) {
-            throw BaseException.get("encoded bcd byte length[{}] must equal configured length[{}]", bytes.length, len);
+        int byteLen = (s.length() + 1) >> 1;
+        if (byteLen != len) {
+            throw BaseException.get("encoded bcd byte length[{}] must equal configured length[{}]", byteLen, len);
         }
-        byteBuf.writeBytes(bytes);
-        return bytes.length;
+        int charIndex = 0;
+        if ((s.length() & 1) == 1) {
+            byteBuf.writeByte(s.charAt(charIndex++) - '0');
+        }
+        writePairs(byteBuf, s, charIndex, s.length());
+        return byteLen;
     }
 
     public static void write_lowAddressAppend(ByteBuf byteBuf, String s, int len) {
         checkMaxCharLength(s, len);
-        byte[] res = new byte[len];
-        char[] charArray = s.toCharArray();
-        int sLen = charArray.length;
-        int actualLen = sLen >> 1;
-        int offset = sLen & 1;
-        for (int i = len - 1, j = actualLen - 1; j >= 0; i--, j--) {
-            int index = (j << 1) + offset;
-            int n1 = charArray[index] - '0';
-            int n2 = charArray[index + 1] - '0';
-            res[i] = (byte) (n1 << 4 | n2);
+        int byteLen = (s.length() + 1) >> 1;
+        byteBuf.writeZero(len - byteLen);
+        int charIndex = 0;
+        if ((s.length() & 1) == 1) {
+            byteBuf.writeByte(Character.getNumericValue(s.charAt(charIndex++)));
         }
-        if (offset == 1) {
-            res[len - actualLen - 1] = (byte) Character.getNumericValue(charArray[0]);
-        }
-        byteBuf.writeBytes(res);
+        writePairs(byteBuf, s, charIndex, s.length());
     }
 
     public static void write_highAddressAppend(ByteBuf byteBuf, String s, int len) {
         checkMaxCharLength(s, len);
-        byte[] res = new byte[len];
-        char[] charArray = s.toCharArray();
-        int sLen = charArray.length;
-        int actualLen = charArray.length >> 1;
-        for (int i = 0; i < actualLen; i++) {
-            int charIndex = i << 1;
-            int n1 = charArray[charIndex] - '0';
-            int n2 = charArray[(charIndex) + 1] - '0';
-            res[i] = (byte) (n1 << 4 | n2);
+        int pairEnd = s.length() & ~1;
+        writePairs(byteBuf, s, 0, pairEnd);
+        if (pairEnd != s.length()) {
+            byteBuf.writeByte(Character.getNumericValue(s.charAt(pairEnd)) << 4);
         }
-        if ((sLen & 1) == 1) {
-            res[actualLen] = (byte) (Character.getNumericValue(charArray[actualLen << 1]) << 4);
+        byteBuf.writeZero(len - ((s.length() + 1) >> 1));
+    }
+
+    private static void writePairs(ByteBuf byteBuf, String s, int start, int end) {
+        for (int i = start; i < end; i += 2) {
+            int high = s.charAt(i) - '0';
+            int low = s.charAt(i + 1) - '0';
+            byteBuf.writeByte(high << 4 | low);
         }
-        byteBuf.writeBytes(res);
     }
 
     private static void checkMaxCharLength(String s, int len) {

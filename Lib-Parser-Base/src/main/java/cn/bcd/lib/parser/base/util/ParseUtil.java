@@ -17,6 +17,9 @@ import org.slf4j.helpers.MessageFormatter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +83,19 @@ public class ParseUtil {
             }
             return varName;
         });
+    }
+
+    /**
+     * Define a time-zone field. Fixed offsets use the ZoneOffset type so generated
+     * code selects specialized overloads instead of the general ZoneId path.
+     */
+    public static String defineZoneIdClassVar(final BuilderContext context, String zoneId) {
+        try {
+            ZoneOffset.of(zoneId);
+            return defineClassVar(context, ZoneOffset.class, "{}.of(\"{}\")", ZoneOffset.class.getName(), zoneId);
+        } catch (DateTimeException ignored) {
+            return defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), zoneId);
+        }
     }
 
 

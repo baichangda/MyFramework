@@ -39,9 +39,32 @@ public class FStringBcdTest {
         assertEquals("34", target.high);
     }
 
+    @Test
+    public void oddLengthPaddingModes() {
+        Processor<OddAppendBean> processor = Parser.getProcessor(OddAppendBean.class);
+        OddAppendBean bean = new OddAppendBean();
+        bean.low = "123";
+        bean.high = "456";
+
+        byte[] bytes = ParserTestSupport.deProcess(processor, bean);
+
+        assertArrayEquals(new byte[]{0x01, 0x23, 0x45, 0x60}, bytes);
+        OddAppendBean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(bytes));
+        assertEquals("123", target.low);
+        assertEquals("456", target.high);
+    }
+
     public static class FixedBean {
         @F_string_bcd(len = 2)
         public String value;
+    }
+
+    public static class OddAppendBean {
+        @F_string_bcd(len = 2, appendMode = StringAppendMode.lowAddressAppend)
+        public String low;
+
+        @F_string_bcd(len = 2, appendMode = StringAppendMode.highAddressAppend)
+        public String high;
     }
 
     public static class ExprAppendBean {

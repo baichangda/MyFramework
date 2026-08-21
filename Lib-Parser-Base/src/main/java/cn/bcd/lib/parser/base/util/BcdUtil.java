@@ -19,7 +19,10 @@ public class BcdUtil {
     public static String bytesToString_8421(byte[] bytes) {
         char[] chars = new char[bytes.length << 1];
         for (int i = 0; i < bytes.length; i++) {
-            System.arraycopy(BCD_8421_DUMP_TABLE, (bytes[i] & 0xff) << 1, chars, i << 1, 2);
+            int sourceIndex = (bytes[i] & 0xff) << 1;
+            int targetIndex = i << 1;
+            chars[targetIndex] = BCD_8421_DUMP_TABLE[sourceIndex];
+            chars[targetIndex + 1] = BCD_8421_DUMP_TABLE[sourceIndex + 1];
         }
         return new String(chars);
     }
@@ -34,14 +37,13 @@ public class BcdUtil {
      */
     public static byte[] stringToBytes_8421(String s) {
         int length = s.length();
-        char[] charArray = s.toCharArray();
         if ((length & 1) == 0) {
             //8421编码字符串转字节数组(偶数)
             byte[] bytes = new byte[length >> 1];
             for (int i = 0; i < bytes.length; i++) {
                 int charIndex = i << 1;
-                int n1 = charArray[charIndex] - '0';
-                int n2 = charArray[charIndex + 1] - '0';
+                int n1 = s.charAt(charIndex) - '0';
+                int n2 = s.charAt(charIndex + 1) - '0';
                 bytes[i] = (byte) ((n1 << 4) | n2);
             }
             return bytes;
@@ -50,11 +52,11 @@ public class BcdUtil {
             byte[] bytes = new byte[(length + 1) >> 1];
             for (int i = 1; i < bytes.length; i++) {
                 int charIndex = (i << 1) - 1;
-                int n1 = charArray[charIndex] - '0';
-                int n2 = charArray[charIndex + 1] - '0';
+                int n1 = s.charAt(charIndex) - '0';
+                int n2 = s.charAt(charIndex + 1) - '0';
                 bytes[i] = (byte) ((n1 << 4) | n2);
             }
-            bytes[0] = (byte) (charArray[0] - '0');
+            bytes[0] = (byte) (s.charAt(0) - '0');
             return bytes;
         }
     }

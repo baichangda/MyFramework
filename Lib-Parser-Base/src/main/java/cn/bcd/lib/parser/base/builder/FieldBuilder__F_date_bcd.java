@@ -24,7 +24,7 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final String varNameLongField = varNameField + "_long";
         final String zoneDateTimeClassName = ZonedDateTime.class.getName();
-        final String varNameZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.zoneId());
+        final String varNameZoneId = ParseUtil.defineZoneIdClassVar(context, anno.zoneId());
         ParseUtil.append(body, "final long {}={}.read({},{},{});\n", varNameLongField, FieldBuilder__F_date_bcd.class.getName()
                 , varNameByteBuf, varNameZoneId, anno.baseYear());
         //根据字段类型格式化
@@ -70,7 +70,7 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
         final Class<?> fieldTypeClass = field.getType();
         final String valCode = varNameInstance + "." + field.getName();
         final String varNameField = ParseUtil.getFieldVarName(context);
-        final String varNameZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.zoneId());
+        final String varNameZoneId = ParseUtil.defineZoneIdClassVar(context, anno.zoneId());
         final String varNameLongField = varNameField + "_long";
         final String zoneDateTimeClassName = ZonedDateTime.class.getName();
         //根据字段类型获取long
@@ -97,16 +97,30 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
     }
 
     public static long read(ByteBuf byteBuf, ZoneId zoneId, int baseYear) {
-        byte[] bytes = new byte[6];
-        byteBuf.readBytes(bytes);
-        int year = ((bytes[0] >> 4) & 0x0f) * 10 + (bytes[0] & 0x0f);
-        int month = ((bytes[1] >> 4) & 0x0f) * 10 + (bytes[1] & 0x0f);
-        int day = ((bytes[2] >> 4) & 0x0f) * 10 + (bytes[2] & 0x0f);
-        int hour = ((bytes[3] >> 4) & 0x0f) * 10 + (bytes[3] & 0x0f);
-        int minute = ((bytes[4] >> 4) & 0x0f) * 10 + (bytes[4] & 0x0f);
-        int second = ((bytes[5] >> 4) & 0x0f) * 10 + (bytes[5] & 0x0f);
+        int year = readBcd(byteBuf);
+        int month = readBcd(byteBuf);
+        int day = readBcd(byteBuf);
+        int hour = readBcd(byteBuf);
+        int minute = readBcd(byteBuf);
+        int second = readBcd(byteBuf);
         ZonedDateTime zonedDateTime = ZonedDateTime.of(baseYear + year, month, day, hour, minute, second, 0, zoneId);
         return zonedDateTime.toEpochSecond() * 1000;
+    }
+
+    public static long read(ByteBuf byteBuf, ZoneOffset zoneOffset, int baseYear) {
+        int year = readBcd(byteBuf);
+        int month = readBcd(byteBuf);
+        int day = readBcd(byteBuf);
+        int hour = readBcd(byteBuf);
+        int minute = readBcd(byteBuf);
+        int second = readBcd(byteBuf);
+        return LocalDateTime.of(baseYear + year, month, day, hour, minute, second)
+                .toEpochSecond(zoneOffset) * 1000;
+    }
+
+    private static int readBcd(ByteBuf byteBuf) {
+        int value = byteBuf.readUnsignedByte();
+        return (value >>> 4) * 10 + (value & 0x0f);
     }
 
     public static void write(ByteBuf byteBuf, long ts, ZoneId zoneId, int baseYear) {
@@ -123,7 +137,28 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
         byte b4 = (byte) (((hour / 10) << 4) | (hour % 10));
         byte b5 = (byte) (((minute / 10) << 4) | (minute % 10));
         byte b6 = (byte) (((second / 10) << 4) | (second % 10));
-        byteBuf.writeBytes(new byte[]{b1, b2, b3, b4, b5, b6});
+        byteBuf.writeByte(b1)
+                .writeByte(b2)
+                .writeByte(b3)
+                .writeByte(b4)
+                .writeByte(b5)
+                .writeByte(b6);
+    }
+
+    public static void write(ByteBuf byteBuf, long ts, ZoneOffset zoneOffset, int baseYear) {
+        long seconds = Math.floorDiv(ts, 1000);
+        int nanos = Math.floorMod(ts, 1000) * 1_000_000;
+        LocalDateTime dateTime = LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset);
+        writeBcd(byteBuf, dateTime.getYear() - baseYear);
+        writeBcd(byteBuf, dateTime.getMonthValue());
+        writeBcd(byteBuf, dateTime.getDayOfMonth());
+        writeBcd(byteBuf, dateTime.getHour());
+        writeBcd(byteBuf, dateTime.getMinute());
+        writeBcd(byteBuf, dateTime.getSecond());
+    }
+
+    private static void writeBcd(ByteBuf byteBuf, int value) {
+        byteBuf.writeByte((value / 10 << 4) | value % 10);
     }
 
 

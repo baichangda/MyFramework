@@ -29,7 +29,7 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             return;
         }
         final String varNameLongField = varNameField + "_long";
-        final String varNameZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.zoneId());
+        final String varNameZoneId = ParseUtil.defineZoneIdClassVar(context, anno.zoneId());
         //先转换为毫秒
         ParseUtil.append(body, "final long {}={}.read({},{},{});\n", varNameLongField, FieldBuilder__F_date_bytes_6.class.getName(), varNameByteBuf, varNameZoneId, anno.baseYear());
         //根据字段类型格式化
@@ -82,7 +82,7 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
                     varNameByteBuf, valCode, valCode, valCode, valCode, valCode);
             return;
         }
-        final String varNameZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.zoneId());
+        final String varNameZoneId = ParseUtil.defineZoneIdClassVar(context, anno.zoneId());
         final String varNameLongField = varNameField + "_long";
         final String zoneDateTimeClassName = ZonedDateTime.class.getName();
         //根据字段类型获取long
@@ -118,28 +118,24 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
 
     public static void write(final ByteBuf data, final long ts, final ZoneId zoneId, final int baseYear) {
         ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId);
-        data.writeBytes(new byte[]{
-                (byte) (zdt.getYear() - baseYear),
-                (byte) zdt.getMonthValue(),
-                (byte) zdt.getDayOfMonth(),
-                (byte) zdt.getHour(),
-                (byte) zdt.getMinute(),
-                (byte) zdt.getSecond(),
-        });
+        data.writeByte(zdt.getYear() - baseYear)
+                .writeByte(zdt.getMonthValue())
+                .writeByte(zdt.getDayOfMonth())
+                .writeByte(zdt.getHour())
+                .writeByte(zdt.getMinute())
+                .writeByte(zdt.getSecond());
     }
 
     public static void write(final ByteBuf data, final long ts, final ZoneOffset zoneOffset, final int baseYear) {
         long secs = Math.floorDiv(ts, 1000);
         int mos = Math.floorMod(ts, 1000);
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(secs, mos * 1000_000, zoneOffset);
-        data.writeBytes(new byte[]{
-                (byte) (ldt.getYear() - baseYear),
-                (byte) ldt.getMonthValue(),
-                (byte) ldt.getDayOfMonth(),
-                (byte) ldt.getHour(),
-                (byte) ldt.getMinute(),
-                (byte) ldt.getSecond(),
-        });
+        data.writeByte(ldt.getYear() - baseYear)
+                .writeByte(ldt.getMonthValue())
+                .writeByte(ldt.getDayOfMonth())
+                .writeByte(ldt.getHour())
+                .writeByte(ldt.getMinute())
+                .writeByte(ldt.getSecond());
     }
 
 }

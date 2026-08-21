@@ -123,7 +123,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
                 varNameLongField,
                 varNameZoneId);
         ParseUtil.append(body, "{}.{}((short){}.getYear());\n", varNameByteBuf, writeFuncName, varNameZoneDateTimeField);
-        ParseUtil.append(body, "{}.writeBytes(new byte[]{(byte)({}.getMonthValue()),(byte)({}.getDayOfMonth()),(byte)({}.getHour()),(byte)({}.getMinute()),(byte)({}.getSecond())});\n",
+        ParseUtil.append(body, "{}.writeByte({}.getMonthValue()).writeByte({}.getDayOfMonth()).writeByte({}.getHour()).writeByte({}.getMinute()).writeByte({}.getSecond());\n",
                 varNameByteBuf,
                 varNameZoneDateTimeField,
                 varNameZoneDateTimeField,
