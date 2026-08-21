@@ -125,40 +125,31 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
 
     public static void write(ByteBuf byteBuf, long ts, ZoneId zoneId, int baseYear) {
         ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId);
-        int year = zonedDateTime.getYear() - baseYear;
-        int month = zonedDateTime.getMonthValue();
-        int day = zonedDateTime.getDayOfMonth();
-        int hour = zonedDateTime.getHour();
-        int minute = zonedDateTime.getMinute();
-        int second = zonedDateTime.getSecond();
-        byte b1 = (byte) (((year / 10) << 4) | (year % 10));
-        byte b2 = (byte) (((month / 10) << 4) | (month % 10));
-        byte b3 = (byte) (((day / 10) << 4) | (day % 10));
-        byte b4 = (byte) (((hour / 10) << 4) | (hour % 10));
-        byte b5 = (byte) (((minute / 10) << 4) | (minute % 10));
-        byte b6 = (byte) (((second / 10) << 4) | (second % 10));
-        byteBuf.writeByte(b1)
-                .writeByte(b2)
-                .writeByte(b3)
-                .writeByte(b4)
-                .writeByte(b5)
-                .writeByte(b6);
+        write(byteBuf, zonedDateTime.getYear() - baseYear, zonedDateTime.getMonthValue(),
+                zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(),
+                zonedDateTime.getMinute(), zonedDateTime.getSecond());
     }
 
     public static void write(ByteBuf byteBuf, long ts, ZoneOffset zoneOffset, int baseYear) {
         long seconds = Math.floorDiv(ts, 1000);
         int nanos = Math.floorMod(ts, 1000) * 1_000_000;
         LocalDateTime dateTime = LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset);
-        writeBcd(byteBuf, dateTime.getYear() - baseYear);
-        writeBcd(byteBuf, dateTime.getMonthValue());
-        writeBcd(byteBuf, dateTime.getDayOfMonth());
-        writeBcd(byteBuf, dateTime.getHour());
-        writeBcd(byteBuf, dateTime.getMinute());
-        writeBcd(byteBuf, dateTime.getSecond());
+        write(byteBuf, dateTime.getYear() - baseYear, dateTime.getMonthValue(),
+                dateTime.getDayOfMonth(), dateTime.getHour(),
+                dateTime.getMinute(), dateTime.getSecond());
     }
 
-    private static void writeBcd(ByteBuf byteBuf, int value) {
-        byteBuf.writeByte((value / 10 << 4) | value % 10);
+    private static void write(ByteBuf byteBuf, int year, int month, int day,
+                              int hour, int minute, int second) {
+        byteBuf.writeInt(toBcd(year) << 24
+                        | toBcd(month) << 16
+                        | toBcd(day) << 8
+                        | toBcd(hour))
+                .writeShort(toBcd(minute) << 8 | toBcd(second));
+    }
+
+    private static int toBcd(int value) {
+        return value / 10 << 4 | value % 10;
     }
 
 

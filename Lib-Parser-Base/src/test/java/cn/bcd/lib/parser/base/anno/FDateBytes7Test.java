@@ -20,8 +20,13 @@ public class FDateBytes7Test {
         bean.value = LocalDateTime.of(2025, 6, 1, 12, 30, 45);
         bean.text = "20250601123045";
 
-        Bytes7Bean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(ParserTestSupport.deProcess(processor, bean)));
+        byte[] bytes = ParserTestSupport.deProcess(processor, bean);
+        assertArrayEquals(new byte[]{
+                (byte) 0xe9, 0x07, 6, 1, 12, 30, 45,
+                0x07, (byte) 0xe9, 6, 1, 12, 30, 45
+        }, bytes);
 
+        Bytes7Bean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(bytes));
         assertEquals(bean.value, target.value);
         assertEquals(bean.text, target.text);
     }

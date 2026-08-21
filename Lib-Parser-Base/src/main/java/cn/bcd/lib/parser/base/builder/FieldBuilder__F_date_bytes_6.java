@@ -77,9 +77,8 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
         final String valCode = varNameInstance + "." + field.getName();
         final String varNameField = ParseUtil.getFieldVarName(context);
         if (fieldTypeClass == int[].class) {
-            ParseUtil.append(body, "{}.writeByte({}[0]-{});\n", varNameByteBuf, valCode, anno.baseYear());
-            ParseUtil.append(body, "{}.writeByte({}[1]).writeByte({}[2]).writeByte({}[3]).writeByte({}[4]).writeByte({}[5]);\n",
-                    varNameByteBuf, valCode, valCode, valCode, valCode, valCode);
+            ParseUtil.append(body, "{}.write({},{},{});\n",
+                    FieldBuilder__F_date_bytes_6.class.getName(), varNameByteBuf, valCode, anno.baseYear());
             return;
         }
         final String varNameZoneId = ParseUtil.defineZoneIdClassVar(context, anno.zoneId());
@@ -118,24 +117,30 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
 
     public static void write(final ByteBuf data, final long ts, final ZoneId zoneId, final int baseYear) {
         ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(ts), zoneId);
-        data.writeByte(zdt.getYear() - baseYear)
-                .writeByte(zdt.getMonthValue())
-                .writeByte(zdt.getDayOfMonth())
-                .writeByte(zdt.getHour())
-                .writeByte(zdt.getMinute())
-                .writeByte(zdt.getSecond());
+        write(data, zdt.getYear() - baseYear, zdt.getMonthValue(), zdt.getDayOfMonth(),
+                zdt.getHour(), zdt.getMinute(), zdt.getSecond());
     }
 
     public static void write(final ByteBuf data, final long ts, final ZoneOffset zoneOffset, final int baseYear) {
         long secs = Math.floorDiv(ts, 1000);
         int mos = Math.floorMod(ts, 1000);
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(secs, mos * 1000_000, zoneOffset);
-        data.writeByte(ldt.getYear() - baseYear)
-                .writeByte(ldt.getMonthValue())
-                .writeByte(ldt.getDayOfMonth())
-                .writeByte(ldt.getHour())
-                .writeByte(ldt.getMinute())
-                .writeByte(ldt.getSecond());
+        write(data, ldt.getYear() - baseYear, ldt.getMonthValue(), ldt.getDayOfMonth(),
+                ldt.getHour(), ldt.getMinute(), ldt.getSecond());
+    }
+
+    public static void write(final ByteBuf data, final int[] dateTime, final int baseYear) {
+        write(data, dateTime[0] - baseYear, dateTime[1], dateTime[2],
+                dateTime[3], dateTime[4], dateTime[5]);
+    }
+
+    private static void write(final ByteBuf data, int year, int month, int day,
+                              int hour, int minute, int second) {
+        data.writeInt((year & 0xff) << 24
+                        | (month & 0xff) << 16
+                        | (day & 0xff) << 8
+                        | hour & 0xff)
+                .writeShort((minute & 0xff) << 8 | second & 0xff);
     }
 
 }

@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,8 +23,10 @@ public class FDateBcdTest {
         BcdBean bean = new BcdBean();
         bean.value = LocalDateTime.of(2025, 6, 1, 12, 30, 45);
 
-        BcdBean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(ParserTestSupport.deProcess(processor, bean)));
+        byte[] bytes = ParserTestSupport.deProcess(processor, bean);
+        assertArrayEquals(new byte[]{0x25, 0x06, 0x01, 0x12, 0x30, 0x45}, bytes);
 
+        BcdBean target = processor.process(io.netty.buffer.Unpooled.wrappedBuffer(bytes));
         assertEquals(bean.value, target.value);
     }
 

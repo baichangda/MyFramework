@@ -86,7 +86,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
         if (fieldTypeClass == int[].class) {
             final String writeFuncName = bigEndian ? "writeShort" : "writeShortLE";
             ParseUtil.append(body, "{}.{}({}[0]);\n", varNameByteBuf, writeFuncName, valCode);
-            ParseUtil.append(body, "{}.writeByte({}[1]).writeByte({}[2]).writeByte({}[3]).writeByte({}[4]).writeByte({}[5]);\n",
+            ParseUtil.append(body, "{}.writeInt(({}[1]&255)<<24|({}[2]&255)<<16|({}[3]&255)<<8|{}[4]&255).writeByte({}[5]);\n",
                     varNameByteBuf, valCode, valCode, valCode, valCode, valCode);
             return;
         }
@@ -123,7 +123,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
                 varNameLongField,
                 varNameZoneId);
         ParseUtil.append(body, "{}.{}((short){}.getYear());\n", varNameByteBuf, writeFuncName, varNameZoneDateTimeField);
-        ParseUtil.append(body, "{}.writeByte({}.getMonthValue()).writeByte({}.getDayOfMonth()).writeByte({}.getHour()).writeByte({}.getMinute()).writeByte({}.getSecond());\n",
+        ParseUtil.append(body, "{}.writeInt(({}.getMonthValue()&255)<<24|({}.getDayOfMonth()&255)<<16|({}.getHour()&255)<<8|{}.getMinute()&255).writeByte({}.getSecond());\n",
                 varNameByteBuf,
                 varNameZoneDateTimeField,
                 varNameZoneDateTimeField,
