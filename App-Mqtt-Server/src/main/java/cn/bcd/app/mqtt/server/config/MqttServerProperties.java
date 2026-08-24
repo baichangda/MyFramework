@@ -8,6 +8,8 @@ public class MqttServerProperties {
     private boolean enabled = true;
     private String bindAddress = "0.0.0.0";
     private int port = 1883;
+    private int maxPacketSize = 1024 * 1024;
+    private int maxClientIdLength = 65535;
 
     public boolean isEnabled() {
         return enabled;
@@ -31,5 +33,21 @@ public class MqttServerProperties {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public int getMaxPacketSize() {
+        return maxPacketSize;
+    }
+
+    public void setMaxPacketSize(int maxPacketSize) {
+        this.maxPacketSize = maxPacketSize;
+    }
+
+    public int getMaxClientIdLength() {
+        return maxClientIdLength;
+    }
+
+    public void setMaxClientIdLength(int maxClientIdLength) {
+        this.maxClientIdLength = maxClientIdLength;
     }
 }

@@ -7,3 +7,5 @@ mqtt:
     enabled: true
     bind-address: 0.0.0.0
     port: 1883
+    max-packet-size: 1048576
+    max-client-id-length: 65535

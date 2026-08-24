@@ -1,12 +1,11 @@
 package cn.bcd.app.mqtt.server.lifecycle;
 
 import cn.bcd.app.mqtt.server.config.MqttServerProperties;
+import cn.bcd.app.mqtt.server.netty.MqttServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class MqttServerLifecycle implements SmartLifecycle {
@@ -14,34 +13,37 @@ public class MqttServerLifecycle implements SmartLifecycle {
     private static final Logger logger = LoggerFactory.getLogger(MqttServerLifecycle.class);
 
     private final MqttServerProperties properties;
-    private final AtomicBoolean running = new AtomicBoolean();
+    private final MqttServer mqttServer;
 
-    public MqttServerLifecycle(MqttServerProperties properties) {
+    public MqttServerLifecycle(MqttServerProperties properties, MqttServer mqttServer) {
         this.properties = properties;
+        this.mqttServer = mqttServer;
     }
 
     @Override
     public void start() {
-        if (running.compareAndSet(false, true)) {
-            logger.info("MQTT server lifecycle started, bindAddress[{}] port[{}]",
-                    properties.getBindAddress(), properties.getPort());
-        }
+        mqttServer.start();
+        logger.info("MQTT server started, bindAddress[{}] port[{}]",
+                properties.getBindAddress(), mqttServer.getBoundPort());
     }
 
     @Override
     public void stop() {
-        if (running.compareAndSet(true, false)) {
-            logger.info("MQTT server lifecycle stopped");
-        }
+        mqttServer.stop();
+        logger.info("MQTT server stopped");
     }
 
     @Override
     public boolean isRunning() {
-        return running.get();
+        return mqttServer.isRunning();
     }
 
     @Override
     public boolean isAutoStartup() {
         return properties.isEnabled();
+    }
+
+    public int getBoundPort() {
+        return mqttServer.getBoundPort();
     }
 }

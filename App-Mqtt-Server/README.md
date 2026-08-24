@@ -7,12 +7,12 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | M1 | Module scaffold, configuration binding, Spring lifecycle and test foundation | Complete |
-| M2 | TCP server and Netty MQTT codec pipeline | Pending |
+| M2 | TCP server and Netty MQTT codec pipeline | Complete |
 | M3 | CONNECT and CONNACK | Pending |
 | M4 | PING, DISCONNECT and Keep Alive | Pending |
 | M5+ | MQTT 3.1.1 sessions, subscriptions, routing and QoS semantics | Pending |
 
-The current module does not bind a TCP port and does not yet provide MQTT protocol functionality.
+The current module accepts TCP connections and decodes MQTT packets. Until M3 is complete, incoming MQTT packets are closed without a protocol response.
 
 ## Verification
 

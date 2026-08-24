@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = {
         "mqtt.server.bind-address=127.0.0.1",
-        "mqtt.server.port=18830"
+        "mqtt.server.port=0"
 })
 class ApplicationContextTest {
 
@@ -24,7 +24,8 @@ class ApplicationContextTest {
     @Test
     void shouldBindConfigurationAndStartLifecycle() {
         assertEquals("127.0.0.1", properties.getBindAddress());
-        assertEquals(18830, properties.getPort());
+        assertEquals(0, properties.getPort());
         assertTrue(lifecycle.isRunning());
+        assertTrue(lifecycle.getBoundPort() > 0);
     }
 }

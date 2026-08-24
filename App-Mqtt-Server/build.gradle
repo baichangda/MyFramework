@@ -1,7 +1,10 @@
 dependencies {
     implementation platform(libs.spring.boot.dependencies)
+    implementation platform(libs.netty.bom)
     implementation libs.spring.boot.starter
     implementation libs.spring.boot.starter.log4j2
+    implementation libs.netty.transport
+    implementation libs.netty.codec.mqtt
 
     testImplementation libs.spring.boot.starter.test
 }
