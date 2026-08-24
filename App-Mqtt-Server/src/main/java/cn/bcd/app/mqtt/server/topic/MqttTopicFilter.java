@@ -57,7 +57,7 @@ public final class MqttTopicFilter {
         return topicIndex == topicLevels.length;
     }
 
-    private static boolean isValidTopicName(String topicName) {
+    public static boolean isValidTopicName(String topicName) {
         return topicName != null
                 && !topicName.isEmpty()
                 && topicName.indexOf('\0') < 0

@@ -3,6 +3,7 @@ package cn.bcd.app.mqtt.server.broker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
 import cn.bcd.app.mqtt.server.session.MqttPendingPublish;
 import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
@@ -129,6 +130,17 @@ public class MqttBroker {
             return false;
         }
 
+        publish(message, retained);
+        return true;
+    }
+
+    public void publishWill(MqttWillMessage willMessage) {
+        publish(willMessage.message(), willMessage.retained());
+    }
+
+    private void publish(
+            MqttApplicationMessage message,
+            boolean retained) {
         if (retained) {
             if (message.isEmpty()) {
                 retainedMessageStore.delete(message.topicName());
@@ -146,7 +158,6 @@ public class MqttBroker {
                     .ifPresent(subscriptionQos -> deliver(
                             state, message, subscriptionQos, false));
         }
-        return true;
     }
 
     public boolean deliverRetained(

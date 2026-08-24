@@ -19,9 +19,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M11 | QoS 1 PUBLISH/PUBACK, in-flight state and persistent-session redelivery | Complete |
 | M12 | QoS 2 PUBREC/PUBREL/PUBCOMP and persistent-session state recovery | Complete |
 | M13 | UNSUBSCRIBE/UNSUBACK and persistent-session subscription removal | Complete |
-| M14+ | Will Message and remaining MQTT features | Pending |
+| M14 | Will Message validation, abnormal-disconnect publication, QoS and retain | Complete |
+| M15+ | Authentication, authorization and remaining broker features | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery and retained messages. Will Message and later features stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Authentication, authorization and later features stay unsupported until their milestones are complete.
 
 ## Architecture
 
@@ -30,6 +31,7 @@ The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNEC
 - `MqttConnection` is the single entry point for packets and connection-level state.
 - `MqttBroker` is the single owner of cross-connection client and session state.
 - `MqttSession` holds subscriptions, packet identifiers and QoS 1/2 protocol state that can survive a persistent client disconnect.
+- `MqttWillMessage` belongs to one connection and is routed by `MqttBroker` only after an abnormal disconnect.
 - `MqttRetainedMessageStore` abstracts broker-level retained persistence; SQLite is the default implementation and memory is available as an alternative.
 
 Online packet flow is `Netty -> MqttConnection -> MqttBroker`. Future subscription, publish and QoS milestones should preserve this boundary.

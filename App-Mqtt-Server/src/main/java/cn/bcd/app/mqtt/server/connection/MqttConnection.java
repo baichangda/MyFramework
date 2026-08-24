@@ -4,6 +4,7 @@ import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.broker.MqttSubscribeResult;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
@@ -49,6 +50,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private volatile ChannelHandlerContext nettyContext;
     private volatile MqttConnectionContext context;
     private volatile MqttSession session;
+    private volatile MqttWillMessage pendingWill;
     private volatile MqttConnectionCloseReason closeReason;
     private volatile MqttConnectionState state = MqttConnectionState.NEW;
 
@@ -259,15 +261,23 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             return;
         }
 
+        MqttWillMessage willMessage = willMessage(message);
+        if (!isValidWill(message, willMessage)) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+
         MqttConnectionContext connectionContext = new MqttConnectionContext(
                 clientId,
                 message.variableHeader().isCleanSession(),
                 message.variableHeader().keepAliveTimeSeconds(),
-                message.payload().userName());
+                message.payload().userName(),
+                willMessage);
         MqttConnectResult connectResult = broker.connect(
                 this, connectionContext.clientId(), connectionContext.cleanSession());
         context = connectionContext;
         session = connectResult.session();
+        pendingWill = willMessage;
         state = MqttConnectionState.CONNECTED;
         configureKeepAlive(nettyContext, connectionContext.keepAliveSeconds());
         nettyContext.writeAndFlush(MqttMessageBuilders.connAck()
@@ -284,6 +294,37 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             sendPublish(
                     pending.message(), pending.packetId(), pending.retained(), duplicate);
         });
+    }
+
+    private static MqttWillMessage willMessage(MqttConnectMessage message) {
+        if (!message.variableHeader().isWillFlag()) {
+            return null;
+        }
+        int willQos = message.variableHeader().willQos();
+        if (willQos < 0 || willQos > 2) {
+            return null;
+        }
+        String willTopic = message.payload().willTopic();
+        byte[] willPayload = message.payload().willMessageInBytes();
+        if (!MqttTopicFilter.isValidTopicName(willTopic) || willPayload == null) {
+            return null;
+        }
+        return new MqttWillMessage(
+                new MqttApplicationMessage(
+                        willTopic,
+                        willPayload,
+                        MqttQoS.valueOf(willQos)),
+                message.variableHeader().isWillRetain());
+    }
+
+    private static boolean isValidWill(
+            MqttConnectMessage message,
+            MqttWillMessage willMessage) {
+        if (!message.variableHeader().isWillFlag()) {
+            return message.variableHeader().willQos() == 0
+                    && !message.variableHeader().isWillRetain();
+        }
+        return willMessage != null;
     }
 
     private void configureKeepAlive(ChannelHandlerContext context, int keepAliveSeconds) {
@@ -320,7 +361,17 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         recordCloseReason(MqttConnectionCloseReason.NETWORK_CLOSED);
         state = MqttConnectionState.CLOSED;
         broker.disconnect(this);
+        publishPendingWill();
         super.channelInactive(context);
+    }
+
+    private void publishPendingWill() {
+        MqttWillMessage willMessage = pendingWill;
+        pendingWill = null;
+        if (willMessage != null && closeReason != MqttConnectionCloseReason.NORMAL_DISCONNECT
+                && closeReason != MqttConnectionCloseReason.CONNECTION_REFUSED) {
+            broker.publishWill(willMessage);
+        }
     }
 
     @Override
