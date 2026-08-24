@@ -28,6 +28,7 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -80,6 +81,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         switch (messageType) {
             case PINGREQ -> context.writeAndFlush(MqttMessage.PINGRESP);
             case SUBSCRIBE -> onSubscribe(context, (MqttSubscribeMessage) message);
+            case UNSUBSCRIBE -> onUnsubscribe(context, (MqttUnsubscribeMessage) message);
             case PUBLISH -> onPublish((MqttPublishMessage) message);
             case PUBACK -> onPubAck((MqttPubAckMessage) message);
             case PUBREC -> onPubRec(message);
@@ -219,6 +221,27 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         return qos == MqttQoS.AT_MOST_ONCE
                 || qos == MqttQoS.AT_LEAST_ONCE
                 || qos == MqttQoS.EXACTLY_ONCE;
+    }
+
+    private void onUnsubscribe(
+            ChannelHandlerContext context,
+            MqttUnsubscribeMessage message) {
+        int packetId = message.variableHeader().messageId();
+        List<String> topicFilters = message.payload().topics();
+        if (packetId == 0 || topicFilters.isEmpty()
+                || message.fixedHeader().qosLevel() != MqttQoS.AT_LEAST_ONCE
+                || message.fixedHeader().isRetain()
+                || topicFilters.stream().anyMatch(topicFilter -> !MqttTopicFilter.isValid(topicFilter))) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+        if (!broker.unsubscribe(this, topicFilters)) {
+            close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+            return;
+        }
+        context.writeAndFlush(MqttMessageBuilders.unsubAck()
+                .packetId(packetId)
+                .build());
     }
 
     private void onConnect(ChannelHandlerContext nettyContext, MqttConnectMessage message) {

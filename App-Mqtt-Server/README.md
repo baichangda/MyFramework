@@ -18,9 +18,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M10 | QoS 0 retained messages and pluggable retained persistence | Complete |
 | M11 | QoS 1 PUBLISH/PUBACK, in-flight state and persistent-session redelivery | Complete |
 | M12 | QoS 2 PUBREC/PUBREL/PUBCOMP and persistent-session state recovery | Complete |
-| M13+ | UNSUBSCRIBE and remaining MQTT control packets | Pending |
+| M13 | UNSUBSCRIBE/UNSUBACK and persistent-session subscription removal | Complete |
+| M14+ | Will Message and remaining MQTT features | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscriptions, QoS 0/1/2 publishing, persistent-session redelivery and retained messages. UNSUBSCRIBE and remaining control packets stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery and retained messages. Will Message and later features stay unsupported until their milestones are complete.
 
 ## Architecture
 

@@ -25,12 +25,16 @@ final class MqttSubscriptionIndex {
 
     void remove(MqttSession session) {
         for (MqttSubscription subscription : session.subscriptions()) {
-            ConcurrentMap<String, Set<String>> index = indexFor(subscription.topicFilter());
-            index.computeIfPresent(subscription.topicFilter(), (topicFilter, clientIds) -> {
-                clientIds.remove(session.clientId());
-                return clientIds.isEmpty() ? null : clientIds;
-            });
+            remove(session.clientId(), subscription.topicFilter());
         }
+    }
+
+    void remove(String clientId, String topicFilter) {
+        ConcurrentMap<String, Set<String>> index = indexFor(topicFilter);
+        index.computeIfPresent(topicFilter, (key, clientIds) -> {
+            clientIds.remove(clientId);
+            return clientIds.isEmpty() ? null : clientIds;
+        });
     }
 
     Set<String> findSubscribers(String topicName) {

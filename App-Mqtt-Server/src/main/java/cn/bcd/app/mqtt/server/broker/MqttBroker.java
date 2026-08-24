@@ -95,6 +95,27 @@ public class MqttBroker {
                 : new MqttSubscribeResult(false, List.of());
     }
 
+    public boolean unsubscribe(
+            MqttConnection connection,
+            Collection<String> topicFilters) {
+        MqttSession session = connection.session();
+        if (session == null) {
+            return false;
+        }
+        AtomicBoolean unsubscribed = new AtomicBoolean();
+        clients.computeIfPresent(session.clientId(), (key, current) -> {
+            if (current.connection() == connection) {
+                for (String topicFilter : topicFilters) {
+                    current.session().unsubscribe(topicFilter);
+                    subscriptionIndex.remove(session.clientId(), topicFilter);
+                }
+                unsubscribed.set(true);
+            }
+            return current;
+        });
+        return unsubscribed.get();
+    }
+
     public boolean publish(
             MqttConnection publisher,
             MqttApplicationMessage message,

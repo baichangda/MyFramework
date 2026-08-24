@@ -36,6 +36,10 @@ public final class MqttSession {
         subscriptions.put(subscription.topicFilter(), subscription);
     }
 
+    public void unsubscribe(String topicFilter) {
+        subscriptions.remove(topicFilter);
+    }
+
     public Optional<MqttSubscription> findSubscription(String topicName) {
         return Optional.ofNullable(subscriptions.get(topicName));
     }
