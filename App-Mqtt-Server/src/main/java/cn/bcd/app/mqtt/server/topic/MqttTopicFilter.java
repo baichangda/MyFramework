@@ -57,6 +57,41 @@ public final class MqttTopicFilter {
         return topicIndex == topicLevels.length;
     }
 
+    public static boolean covers(String allowedFilter, String requestedFilter) {
+        if (!isValid(allowedFilter) || !isValid(requestedFilter)) {
+            return false;
+        }
+        if (requestedFilter.charAt(0) == '$'
+                && (allowedFilter.charAt(0) == '#'
+                || allowedFilter.charAt(0) == '+')) {
+            return false;
+        }
+
+        String[] allowedLevels = levels(allowedFilter);
+        String[] requestedLevels = levels(requestedFilter);
+        int index = 0;
+        while (index < allowedLevels.length) {
+            String allowedLevel = allowedLevels[index];
+            if (MULTI_LEVEL_WILDCARD.equals(allowedLevel)) {
+                return true;
+            }
+            if (index >= requestedLevels.length) {
+                return false;
+            }
+            String requestedLevel = requestedLevels[index];
+            if (MULTI_LEVEL_WILDCARD.equals(requestedLevel)) {
+                return false;
+            }
+            if (!SINGLE_LEVEL_WILDCARD.equals(allowedLevel)
+                    && (SINGLE_LEVEL_WILDCARD.equals(requestedLevel)
+                    || !allowedLevel.equals(requestedLevel))) {
+                return false;
+            }
+            index++;
+        }
+        return index == requestedLevels.length;
+    }
+
     public static boolean isValidTopicName(String topicName) {
         return topicName != null
                 && !topicName.isEmpty()

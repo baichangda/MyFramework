@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class MqttSession {
 
     private final String clientId;
+    private final String username;
     private final ConcurrentMap<String, MqttSubscription> subscriptions = new ConcurrentHashMap<>();
     private final Map<Integer, MqttPendingPublish> pendingPublishes = new LinkedHashMap<>();
     private final Map<Integer, MqttInboundQosTwoPublish> inboundQosTwoPublishes =
@@ -25,11 +26,20 @@ public final class MqttSession {
     private int nextPacketId = 1;
 
     public MqttSession(String clientId) {
+        this(clientId, null);
+    }
+
+    public MqttSession(String clientId, String username) {
         this.clientId = Objects.requireNonNull(clientId);
+        this.username = username;
     }
 
     public String clientId() {
         return clientId;
+    }
+
+    public String username() {
+        return username;
     }
 
     public void subscribe(MqttSubscription subscription) {

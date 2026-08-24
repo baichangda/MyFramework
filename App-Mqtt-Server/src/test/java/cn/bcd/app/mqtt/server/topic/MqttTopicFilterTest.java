@@ -34,4 +34,17 @@ class MqttTopicFilterTest {
         assertFalse(MqttTopicFilter.matches("+/broker/uptime", "$SYS/broker/uptime"));
         assertTrue(MqttTopicFilter.matches("$SYS/#", "$SYS/broker/uptime"));
     }
+
+    @Test
+    void shouldDetermineWhetherAllowedFilterCoversRequestedFilter() {
+        assertTrue(MqttTopicFilter.covers("devices/#", "devices/+/status"));
+        assertTrue(MqttTopicFilter.covers("devices/+", "devices/device-a"));
+        assertTrue(MqttTopicFilter.covers("devices/#", "devices"));
+        assertTrue(MqttTopicFilter.covers("#", "+/status"));
+        assertFalse(MqttTopicFilter.covers("devices/+", "devices/#"));
+        assertFalse(MqttTopicFilter.covers("devices/device-a", "devices/+"));
+        assertFalse(MqttTopicFilter.covers("devices/#", "other/#"));
+        assertFalse(MqttTopicFilter.covers("#", "$SYS/#"));
+        assertTrue(MqttTopicFilter.covers("$SYS/#", "$SYS/+/uptime"));
+    }
 }

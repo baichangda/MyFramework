@@ -3,6 +3,10 @@ package cn.bcd.app.mqtt.server.connection;
 import cn.bcd.app.mqtt.server.authentication.AnonymousMqttAuthenticator;
 import cn.bcd.app.mqtt.server.authentication.MqttAuthenticationRequest;
 import cn.bcd.app.mqtt.server.authentication.MqttAuthenticator;
+import cn.bcd.app.mqtt.server.authorization.AllowAllMqttAuthorizer;
+import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationAction;
+import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationRequest;
+import cn.bcd.app.mqtt.server.authorization.MqttAuthorizer;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.broker.MqttSubscribeResult;
@@ -50,6 +54,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
     private final MqttBroker broker;
     private final MqttAuthenticator authenticator;
+    private final MqttAuthorizer authorizer;
 
     private volatile ChannelHandlerContext nettyContext;
     private volatile MqttConnectionContext context;
@@ -59,12 +64,20 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private volatile MqttConnectionState state = MqttConnectionState.NEW;
 
     public MqttConnection(MqttBroker broker) {
-        this(broker, new AnonymousMqttAuthenticator());
+        this(broker, new AnonymousMqttAuthenticator(), new AllowAllMqttAuthorizer());
     }
 
     public MqttConnection(MqttBroker broker, MqttAuthenticator authenticator) {
+        this(broker, authenticator, new AllowAllMqttAuthorizer());
+    }
+
+    public MqttConnection(
+            MqttBroker broker,
+            MqttAuthenticator authenticator,
+            MqttAuthorizer authorizer) {
         this.broker = Objects.requireNonNull(broker);
         this.authenticator = Objects.requireNonNull(authenticator);
+        this.authorizer = Objects.requireNonNull(authorizer);
     }
 
     @Override
@@ -115,9 +128,12 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             return;
         }
         String topicName = message.variableHeader().topicName();
-        if (topicName == null || topicName.isEmpty()
-                || topicName.indexOf('+') >= 0 || topicName.indexOf('#') >= 0) {
+        if (!MqttTopicFilter.isValidTopicName(topicName)) {
             close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+        if (!authorize(MqttAuthorizationAction.PUBLISH, topicName)) {
+            close(MqttConnectionCloseReason.AUTHORIZATION_FAILED);
             return;
         }
 
@@ -209,6 +225,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 close(MqttConnectionCloseReason.PROTOCOL_ERROR);
                 return;
             }
+        }
+        for (MqttTopicSubscription request : requests) {
+            String topicFilter = request.topicFilter();
+            MqttQoS requestedQos = request.qualityOfService();
+            if (!authorize(MqttAuthorizationAction.SUBSCRIBE, topicFilter)) {
+                subAck.addGrantedQos(MqttQoS.FAILURE);
+                continue;
+            }
             MqttSubscribeResult result = broker.subscribe(
                     this, new MqttSubscription(topicFilter, requestedQos));
             if (!result.subscribed()) {
@@ -289,6 +313,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD);
             return;
         }
+        if (willMessage != null && !authorize(
+                clientId,
+                message.payload().userName(),
+                MqttAuthorizationAction.PUBLISH,
+                willMessage.message().topicName())) {
+            refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
+            return;
+        }
 
         MqttConnectionContext connectionContext = new MqttConnectionContext(
                 clientId,
@@ -297,7 +329,10 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 message.payload().userName(),
                 willMessage);
         MqttConnectResult connectResult = broker.connect(
-                this, connectionContext.clientId(), connectionContext.cleanSession());
+                this,
+                connectionContext.clientId(),
+                connectionContext.username(),
+                connectionContext.cleanSession());
         context = connectionContext;
         session = connectResult.session();
         pendingWill = willMessage;
@@ -317,6 +352,24 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             sendPublish(
                     pending.message(), pending.packetId(), pending.retained(), duplicate);
         });
+    }
+
+    private boolean authorize(MqttAuthorizationAction action, String topic) {
+        MqttConnectionContext connectionContext = context;
+        return connectionContext != null && authorize(
+                connectionContext.clientId(),
+                connectionContext.username(),
+                action,
+                topic);
+    }
+
+    private boolean authorize(
+            String clientId,
+            String username,
+            MqttAuthorizationAction action,
+            String topic) {
+        return authorizer.authorize(new MqttAuthorizationRequest(
+                action, clientId, username, topic));
     }
 
     private static MqttWillMessage willMessage(MqttConnectMessage message) {

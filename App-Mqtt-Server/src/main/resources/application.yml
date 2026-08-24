@@ -11,6 +11,8 @@ mqtt:
     max-client-id-length: 65535
     authentication:
       type: anonymous
+    authorization:
+      type: allow-all
     persistence:
       retained-message:
         type: sqlite

@@ -21,9 +21,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M13 | UNSUBSCRIBE/UNSUBACK and persistent-session subscription removal | Complete |
 | M14 | Will Message validation, abnormal-disconnect publication, QoS and retain | Complete |
 | M15 | Pluggable CONNECT authentication and simple username/password implementation | Complete |
-| M16+ | Topic authorization and remaining broker features | Pending |
+| M16 | Pluggable publish/subscribe authorization and simple topic ACL rules | Complete |
+| M17+ | Session persistence and remaining broker features | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, pluggable authentication, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Topic authorization and later features stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, pluggable authentication and topic authorization, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Session persistence across broker restarts and later features stay unsupported until their milestones are complete.
 
 ## Architecture
 
@@ -31,6 +32,7 @@ The current module supports MQTT 3.1.1 connection establishment, pluggable authe
 - `MqttChannelInitializer` installs the MQTT codec and one `MqttConnection` per channel.
 - `MqttConnection` is the single entry point for packets and connection-level state.
 - `MqttAuthenticator` verifies CONNECT credentials before a broker session is created.
+- `MqttAuthorizer` verifies Will, publish and subscription topics before broker state changes.
 - `MqttBroker` is the single owner of cross-connection client and session state.
 - `MqttSession` holds subscriptions, packet identifiers and QoS 1/2 protocol state that can survive a persistent client disconnect.
 - `MqttWillMessage` belongs to one connection and is routed by `MqttBroker` only after an abnormal disconnect.
@@ -53,6 +55,27 @@ mqtt:
 ```
 
 The simple implementation reads users once at startup. Keep passwords in environment-backed configuration rather than committing them to the repository. A custom Spring `MqttAuthenticator` bean can replace the default implementation.
+
+## Topic authorization
+
+Authorization defaults to `allow-all`. The built-in `simple` implementation uses allow rules and denies unmatched operations:
+
+```yaml
+mqtt:
+  server:
+    authorization:
+      type: simple
+      simple:
+        rules:
+          - username: device
+            client-id: device-a
+            publish-topic-filters:
+              - devices/device-a/telemetry/#
+            subscribe-topic-filters:
+              - devices/device-a/commands/#
+```
+
+Either identity field can be omitted; specified fields must match. Publish filters match concrete topic names, while subscribe filters define the maximum filter scope a client may request. A custom Spring `MqttAuthorizer` bean can replace the default implementation.
 
 ## Retained persistence
 

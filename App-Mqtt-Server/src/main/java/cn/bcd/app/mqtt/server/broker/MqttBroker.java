@@ -35,16 +35,22 @@ public class MqttBroker {
     public MqttConnectResult connect(
             MqttConnection connection,
             String clientId,
+            String username,
             boolean cleanSession) {
         AtomicReference<MqttConnection> previousConnection = new AtomicReference<>();
         AtomicReference<MqttConnectResult> resultReference = new AtomicReference<>();
 
         clients.compute(clientId, (key, current) -> {
-            boolean sessionPresent = !cleanSession && current != null && current.persistent();
+            boolean sameIdentity = current != null
+                    && Objects.equals(current.session().username(), username);
+            boolean sessionPresent = !cleanSession && current != null
+                    && current.persistent() && sameIdentity;
             if (!sessionPresent && current != null) {
                 subscriptionIndex.remove(current.session());
             }
-            MqttSession session = sessionPresent ? current.session() : new MqttSession(clientId);
+            MqttSession session = sessionPresent
+                    ? current.session()
+                    : new MqttSession(clientId, username);
             previousConnection.set(current == null ? null : current.connection());
             resultReference.set(new MqttConnectResult(session, sessionPresent));
             return new MqttClientState(session, connection, !cleanSession);
