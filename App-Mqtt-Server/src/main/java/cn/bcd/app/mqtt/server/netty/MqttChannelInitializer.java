@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.netty;
 
 import cn.bcd.app.mqtt.server.config.MqttServerProperties;
+import cn.bcd.app.mqtt.server.protocol.MqttPacketDispatcher;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
@@ -11,9 +12,11 @@ import org.springframework.stereotype.Component;
 public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     private final MqttServerProperties properties;
+    private final MqttPacketDispatcher packetDispatcher;
 
-    public MqttChannelInitializer(MqttServerProperties properties) {
+    public MqttChannelInitializer(MqttServerProperties properties, MqttPacketDispatcher packetDispatcher) {
         this.properties = properties;
+        this.packetDispatcher = packetDispatcher;
     }
 
     @Override
@@ -23,6 +26,6 @@ public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
                 properties.getMaxClientIdLength(),
                 true));
         channel.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
-        channel.pipeline().addLast("mqttPacketSink", UnsupportedMqttPacketHandler.INSTANCE);
+        channel.pipeline().addLast("mqttPacketDispatcher", packetDispatcher);
     }
 }
