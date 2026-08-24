@@ -9,6 +9,8 @@ mqtt:
     port: 1883
     max-packet-size: 1048576
     max-client-id-length: 65535
+    authentication:
+      type: anonymous
     persistence:
       retained-message:
         type: sqlite

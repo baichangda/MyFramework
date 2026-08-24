@@ -20,21 +20,39 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M12 | QoS 2 PUBREC/PUBREL/PUBCOMP and persistent-session state recovery | Complete |
 | M13 | UNSUBSCRIBE/UNSUBACK and persistent-session subscription removal | Complete |
 | M14 | Will Message validation, abnormal-disconnect publication, QoS and retain | Complete |
-| M15+ | Authentication, authorization and remaining broker features | Pending |
+| M15 | Pluggable CONNECT authentication and simple username/password implementation | Complete |
+| M16+ | Topic authorization and remaining broker features | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Authentication, authorization and later features stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, pluggable authentication, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Topic authorization and later features stay unsupported until their milestones are complete.
 
 ## Architecture
 
 - `MqttServer` owns the Netty server lifecycle.
 - `MqttChannelInitializer` installs the MQTT codec and one `MqttConnection` per channel.
 - `MqttConnection` is the single entry point for packets and connection-level state.
+- `MqttAuthenticator` verifies CONNECT credentials before a broker session is created.
 - `MqttBroker` is the single owner of cross-connection client and session state.
 - `MqttSession` holds subscriptions, packet identifiers and QoS 1/2 protocol state that can survive a persistent client disconnect.
 - `MqttWillMessage` belongs to one connection and is routed by `MqttBroker` only after an abnormal disconnect.
 - `MqttRetainedMessageStore` abstracts broker-level retained persistence; SQLite is the default implementation and memory is available as an alternative.
 
 Online packet flow is `Netty -> MqttConnection -> MqttBroker`. Future subscription, publish and QoS milestones should preserve this boundary.
+
+## Authentication
+
+Authentication defaults to `anonymous` for backward compatibility. Select the built-in username/password implementation with:
+
+```yaml
+mqtt:
+  server:
+    authentication:
+      type: simple
+      simple:
+        users:
+          device-a: ${MQTT_DEVICE_A_PASSWORD}
+```
+
+The simple implementation reads users once at startup. Keep passwords in environment-backed configuration rather than committing them to the repository. A custom Spring `MqttAuthenticator` bean can replace the default implementation.
 
 ## Retained persistence
 

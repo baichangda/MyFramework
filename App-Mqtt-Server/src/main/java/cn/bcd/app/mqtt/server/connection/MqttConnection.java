@@ -1,5 +1,8 @@
 package cn.bcd.app.mqtt.server.connection;
 
+import cn.bcd.app.mqtt.server.authentication.AnonymousMqttAuthenticator;
+import cn.bcd.app.mqtt.server.authentication.MqttAuthenticationRequest;
+import cn.bcd.app.mqtt.server.authentication.MqttAuthenticator;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.broker.MqttSubscribeResult;
@@ -46,6 +49,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     static final String IDLE_STATE_HANDLER_NAME = "mqttIdleStateHandler";
 
     private final MqttBroker broker;
+    private final MqttAuthenticator authenticator;
 
     private volatile ChannelHandlerContext nettyContext;
     private volatile MqttConnectionContext context;
@@ -55,7 +59,12 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private volatile MqttConnectionState state = MqttConnectionState.NEW;
 
     public MqttConnection(MqttBroker broker) {
+        this(broker, new AnonymousMqttAuthenticator());
+    }
+
+    public MqttConnection(MqttBroker broker, MqttAuthenticator authenticator) {
         this.broker = Objects.requireNonNull(broker);
+        this.authenticator = Objects.requireNonNull(authenticator);
     }
 
     @Override
@@ -260,10 +269,24 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
             return;
         }
+        if (message.variableHeader().hasPassword()
+                && !message.variableHeader().hasUserName()) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
 
         MqttWillMessage willMessage = willMessage(message);
         if (!isValidWill(message, willMessage)) {
             close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+
+        MqttAuthenticationRequest authenticationRequest = new MqttAuthenticationRequest(
+                clientId,
+                message.payload().userName(),
+                message.payload().passwordInBytes());
+        if (!authenticator.authenticate(authenticationRequest)) {
+            refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD);
             return;
         }
 
