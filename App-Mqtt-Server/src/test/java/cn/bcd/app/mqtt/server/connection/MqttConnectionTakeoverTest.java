@@ -1,9 +1,6 @@
 package cn.bcd.app.mqtt.server.connection;
 
-import cn.bcd.app.mqtt.server.handler.MqttConnectHandler;
-import cn.bcd.app.mqtt.server.handler.MqttDisconnectHandler;
-import cn.bcd.app.mqtt.server.handler.MqttPingHandler;
-import cn.bcd.app.mqtt.server.protocol.MqttPacketDispatcher;
+import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -27,59 +24,48 @@ class MqttConnectionTakeoverTest {
 
     @Test
     void shouldTakeOverExistingConnectionWithSameClientId() {
-        MqttConnectionRegistry registry = new MqttConnectionRegistry();
-        TestClient first = connect(registry);
-        MqttConnectionRegistration firstRegistration = first.connection().registration();
-
-        TestClient second = connect(registry);
+        MqttBroker broker = new MqttBroker();
+        TestClient first = connect(broker);
+        TestClient second = connect(broker);
         first.channel().runPendingTasks();
-        MqttConnectionRegistration secondRegistration = second.connection().registration();
 
         assertFalse(first.channel().isActive());
         assertEquals(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER,
                 first.connection().closeReason());
         assertTrue(second.channel().isActive());
-        assertTrue(secondRegistration.generation() > firstRegistration.generation());
-        assertSame(second.connection(), registry.findConnection("cid").orElseThrow());
-        assertEquals(1, registry.size());
+        assertSame(second.connection(), broker.findConnection("cid").orElseThrow());
+        assertEquals(1, broker.size());
 
         second.channel().close().syncUninterruptibly();
-        assertTrue(registry.findConnection("cid").isEmpty());
-        assertEquals(0, registry.size());
+        assertTrue(broker.findConnection("cid").isEmpty());
+        assertEquals(0, broker.size());
         first.channel().finishAndReleaseAll();
         second.channel().finishAndReleaseAll();
     }
 
     @Test
-    void shouldNotRemoveNewRegistrationWhenOldConnectionUnregistersLate() {
-        MqttConnectionRegistry registry = new MqttConnectionRegistry();
-        MqttConnection first = new MqttConnection(new EmbeddedChannel());
-        MqttConnection second = new MqttConnection(new EmbeddedChannel());
+    void shouldNotRemoveNewConnectionWhenOldConnectionClosesLate() {
+        MqttBroker broker = new MqttBroker();
+        TestClient first = connect(broker);
+        TestClient second = connect(broker);
 
-        registry.register("cid", first);
-        registry.register("cid", second);
-        ((EmbeddedChannel) first.channel()).runPendingTasks();
-        registry.unregister(first);
+        broker.disconnect(first.connection());
 
-        assertSame(second, registry.findConnection("cid").orElseThrow());
-        assertEquals(1, registry.size());
+        assertSame(second.connection(), broker.findConnection("cid").orElseThrow());
+        assertEquals(1, broker.size());
 
-        registry.unregister(second);
-        first.channel().close().syncUninterruptibly();
+        first.channel().runPendingTasks();
         second.channel().close().syncUninterruptibly();
+        first.channel().finishAndReleaseAll();
+        second.channel().finishAndReleaseAll();
     }
 
-    private static TestClient connect(MqttConnectionRegistry registry) {
+    private static TestClient connect(MqttBroker broker) {
         EmbeddedChannel channel = new EmbeddedChannel();
-        MqttConnection connection = new MqttConnection(channel);
+        MqttConnection connection = new MqttConnection(broker);
         channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
         channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(new MqttPacketDispatcher(
-                connection,
-                registry,
-                new MqttConnectHandler(new MqttKeepAliveManager(), registry),
-                new MqttPingHandler(),
-                new MqttDisconnectHandler()));
+        channel.pipeline().addLast(connection);
         channel.writeInbound(Unpooled.wrappedBuffer(CONNECT));
         ByteBuf connAck = channel.readOutbound();
         connAck.release();

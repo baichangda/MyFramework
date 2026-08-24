@@ -1,12 +1,8 @@
 package cn.bcd.app.mqtt.server.protocol;
 
+import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
-import cn.bcd.app.mqtt.server.connection.MqttConnectionRegistry;
-import cn.bcd.app.mqtt.server.connection.MqttKeepAliveManager;
-import cn.bcd.app.mqtt.server.handler.MqttConnectHandler;
-import cn.bcd.app.mqtt.server.handler.MqttDisconnectHandler;
-import cn.bcd.app.mqtt.server.handler.MqttPingHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -122,22 +118,15 @@ class MqttConnectTest {
     }
 
     private static EmbeddedChannel newChannel() {
-        MqttConnectionRegistry connectionRegistry = new MqttConnectionRegistry();
         EmbeddedChannel channel = new EmbeddedChannel();
-        MqttConnection connection = new MqttConnection(channel);
         channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
         channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(new MqttPacketDispatcher(
-                connection,
-                connectionRegistry,
-                new MqttConnectHandler(new MqttKeepAliveManager(), connectionRegistry),
-                new MqttPingHandler(),
-                new MqttDisconnectHandler()));
+        channel.pipeline().addLast(new MqttConnection(new MqttBroker()));
         return channel;
     }
 
     private static MqttConnection connection(EmbeddedChannel channel) {
-        return channel.pipeline().get(MqttPacketDispatcher.class).connection();
+        return channel.pipeline().get(MqttConnection.class);
     }
 
     private static byte[] readOutbound(EmbeddedChannel channel) {
