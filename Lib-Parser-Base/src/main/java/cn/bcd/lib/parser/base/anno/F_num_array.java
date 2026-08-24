@@ -108,7 +108,7 @@ public @interface F_num_array {
     /**
      * 检查数值元素值是否有效
      * 注意对于{@link NumType#float32}和{@link NumType#float64}不支持
-     * 此属性为true时候、必须指定一个伴生字段public byte[] {field}__v
+     * 此属性为true时候、必须定义一个伴生字段public byte[] {field}__v
      * 伴生字段值来源于方法
      * 主数组长度为0时主数组和伴生数组都为null
      * 主数组非null时仅在出现非正常值时创建伴生数组、此时伴生数组为null代表所有元素都是正常值
