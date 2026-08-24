@@ -106,6 +106,7 @@ public @interface F_num_array {
     int singlePrecision() default -1;
 
     /**
+     *
      * 检查数值元素值是否有效
      * 注意对于{@link NumType#float32}和{@link NumType#float64}不支持
      * 此属性为true时候、必须定义一个伴生字段public byte[] {field}__v
