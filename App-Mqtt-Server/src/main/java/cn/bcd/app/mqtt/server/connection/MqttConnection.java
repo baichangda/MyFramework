@@ -348,7 +348,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 return;
             }
             boolean duplicate = pending.sent();
-            pending.markSent();
+            broker.markPendingPublishSent(this, pending.packetId());
             sendPublish(
                     pending.message(), pending.packetId(), pending.retained(), duplicate);
         });

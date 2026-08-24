@@ -14,6 +14,10 @@ mqtt:
     authorization:
       type: allow-all
     persistence:
+      session:
+        type: sqlite
+        sqlite:
+          database-path: data/mqtt-session.db
       retained-message:
         type: sqlite
         sqlite:

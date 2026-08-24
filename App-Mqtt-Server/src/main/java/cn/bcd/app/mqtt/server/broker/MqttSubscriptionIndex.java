@@ -23,6 +23,12 @@ final class MqttSubscriptionIndex {
         });
     }
 
+    void add(MqttSession session) {
+        for (MqttSubscription subscription : session.subscriptions()) {
+            add(session.clientId(), subscription);
+        }
+    }
+
     void remove(MqttSession session) {
         for (MqttSubscription subscription : session.subscriptions()) {
             remove(session.clientId(), subscription.topicFilter());

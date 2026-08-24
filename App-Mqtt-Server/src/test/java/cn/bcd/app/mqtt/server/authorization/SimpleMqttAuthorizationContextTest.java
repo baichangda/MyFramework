@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "mqtt.server.authorization.simple.rules[0].username=device",
         "mqtt.server.authorization.simple.rules[0].publish-topic-filters[0]=devices/+/telemetry/#",
         "mqtt.server.authorization.simple.rules[0].subscribe-topic-filters[0]=devices/+/commands/#",
+        "mqtt.server.persistence.session.sqlite.database-path=:memory:",
         "mqtt.server.persistence.retained-message.sqlite.database-path=:memory:"
 })
 class SimpleMqttAuthorizationContextTest {

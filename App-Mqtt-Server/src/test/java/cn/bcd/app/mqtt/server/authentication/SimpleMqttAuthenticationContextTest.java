@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "mqtt.server.enabled=false",
         "mqtt.server.authentication.type=simple",
         "mqtt.server.authentication.simple.users.device=secret",
+        "mqtt.server.persistence.session.sqlite.database-path=:memory:",
         "mqtt.server.persistence.retained-message.sqlite.database-path=:memory:"
 })
 class SimpleMqttAuthenticationContextTest {
