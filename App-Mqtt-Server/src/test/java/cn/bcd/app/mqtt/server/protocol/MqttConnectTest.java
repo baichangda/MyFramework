@@ -1,8 +1,12 @@
 package cn.bcd.app.mqtt.server.protocol;
 
-import cn.bcd.app.mqtt.server.connection.MqttConnectionAttributes;
+import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
+import cn.bcd.app.mqtt.server.connection.MqttConnectionRegistry;
+import cn.bcd.app.mqtt.server.connection.MqttKeepAliveManager;
 import cn.bcd.app.mqtt.server.handler.MqttConnectHandler;
+import cn.bcd.app.mqtt.server.handler.MqttDisconnectHandler;
+import cn.bcd.app.mqtt.server.handler.MqttPingHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -32,7 +36,7 @@ class MqttConnectTest {
         assertFalse(channel.writeInbound(Unpooled.wrappedBuffer(VALID_CONNECT)));
 
         assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00}, readOutbound(channel));
-        MqttConnectionContext context = channel.attr(MqttConnectionAttributes.CONNECTION_CONTEXT).get();
+        MqttConnectionContext context = connection(channel).context();
         assertNotNull(context);
         assertEquals("cid", context.clientId());
         assertTrue(context.cleanSession());
@@ -118,10 +122,22 @@ class MqttConnectTest {
     }
 
     private static EmbeddedChannel newChannel() {
-        return new EmbeddedChannel(
-                new MqttDecoder(1024, 64, true),
-                MqttEncoder.INSTANCE,
-                new MqttPacketDispatcher(new MqttConnectHandler()));
+        MqttConnectionRegistry connectionRegistry = new MqttConnectionRegistry();
+        EmbeddedChannel channel = new EmbeddedChannel();
+        MqttConnection connection = new MqttConnection(channel);
+        channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
+        channel.pipeline().addLast(MqttEncoder.INSTANCE);
+        channel.pipeline().addLast(new MqttPacketDispatcher(
+                connection,
+                connectionRegistry,
+                new MqttConnectHandler(new MqttKeepAliveManager(), connectionRegistry),
+                new MqttPingHandler(),
+                new MqttDisconnectHandler()));
+        return channel;
+    }
+
+    private static MqttConnection connection(EmbeddedChannel channel) {
+        return channel.pipeline().get(MqttPacketDispatcher.class).connection();
     }
 
     private static byte[] readOutbound(EmbeddedChannel channel) {

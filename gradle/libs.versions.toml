@@ -62,6 +62,7 @@ netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 netty-common = { module = "io.netty:netty-common" }
 netty-buffer = { module = "io.netty:netty-buffer" }
 netty-transport = { module = "io.netty:netty-transport" }
+netty-handler = { module = "io.netty:netty-handler" }
 netty-codec-mqtt = { module = "io.netty:netty-codec-mqtt" }
 netty-all = { module = "io.netty:netty-all" }
 

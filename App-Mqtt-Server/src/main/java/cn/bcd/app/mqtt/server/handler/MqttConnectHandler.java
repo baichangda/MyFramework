@@ -1,7 +1,10 @@
 package cn.bcd.app.mqtt.server.handler;
 
-import cn.bcd.app.mqtt.server.connection.MqttConnectionAttributes;
+import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
+import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
+import cn.bcd.app.mqtt.server.connection.MqttConnectionRegistry;
+import cn.bcd.app.mqtt.server.connection.MqttKeepAliveManager;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
@@ -13,10 +16,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class MqttConnectHandler {
 
-    public void handle(ChannelHandlerContext context, MqttConnectMessage message) {
+    private final MqttKeepAliveManager keepAliveManager;
+    private final MqttConnectionRegistry connectionRegistry;
+
+    public MqttConnectHandler(
+            MqttKeepAliveManager keepAliveManager,
+            MqttConnectionRegistry connectionRegistry) {
+        this.keepAliveManager = keepAliveManager;
+        this.connectionRegistry = connectionRegistry;
+    }
+
+    public void handle(
+            ChannelHandlerContext nettyContext,
+            MqttConnection connection,
+            MqttConnectMessage message) {
         int protocolVersion = message.variableHeader().version();
         if (protocolVersion != MqttVersion.MQTT_3_1_1.protocolLevel()) {
-            refuse(context, protocolVersion == MqttVersion.MQTT_5.protocolLevel()
+            refuse(nettyContext, connection, protocolVersion == MqttVersion.MQTT_5.protocolLevel()
                     ? MqttConnectReturnCode.CONNECTION_REFUSED_UNSUPPORTED_PROTOCOL_VERSION
                     : MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
             return;
@@ -24,24 +40,30 @@ public class MqttConnectHandler {
 
         String clientId = message.payload().clientIdentifier();
         if (clientId == null || clientId.isEmpty()) {
-            refuse(context, MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+            refuse(nettyContext, connection, MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
             return;
         }
 
-        MqttConnectionContext connectionContext = new MqttConnectionContext(
+        MqttConnectionContext mqttContext = new MqttConnectionContext(
                 clientId,
                 message.variableHeader().isCleanSession(),
                 message.variableHeader().keepAliveTimeSeconds(),
                 message.payload().userName());
-        context.channel().attr(MqttConnectionAttributes.CONNECTION_CONTEXT).set(connectionContext);
-        context.writeAndFlush(MqttMessageBuilders.connAck()
+        connection.establish(mqttContext);
+        keepAliveManager.configure(nettyContext, mqttContext.keepAliveSeconds());
+        connectionRegistry.register(mqttContext.clientId(), connection);
+        nettyContext.writeAndFlush(MqttMessageBuilders.connAck()
                 .returnCode(MqttConnectReturnCode.CONNECTION_ACCEPTED)
                 .sessionPresent(false)
                 .build());
     }
 
-    private void refuse(ChannelHandlerContext context, MqttConnectReturnCode returnCode) {
-        context.writeAndFlush(MqttMessageBuilders.connAck()
+    private void refuse(
+            ChannelHandlerContext nettyContext,
+            MqttConnection connection,
+            MqttConnectReturnCode returnCode) {
+        connection.recordCloseReason(MqttConnectionCloseReason.CONNECTION_REFUSED);
+        nettyContext.writeAndFlush(MqttMessageBuilders.connAck()
                         .returnCode(returnCode)
                         .sessionPresent(false)
                         .build())

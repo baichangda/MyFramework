@@ -20,6 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 })
 class ApplicationContextTest {
 
+    private static final byte[] CONNECT = {
+            0x10, 0x0f,
+            0x00, 0x04, 'M', 'Q', 'T', 'T',
+            0x04, 0x02, 0x00, 0x3c,
+            0x00, 0x03, 'c', 'i', 'd'
+    };
+
     @Autowired
     MqttServerProperties properties;
 
@@ -36,14 +43,37 @@ class ApplicationContextTest {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress("127.0.0.1", lifecycle.getBoundPort()));
             socket.setSoTimeout(3000);
-            socket.getOutputStream().write(new byte[]{
-                    0x10, 0x0f,
-                    0x00, 0x04, 'M', 'Q', 'T', 'T',
-                    0x04, 0x02, 0x00, 0x3c,
-                    0x00, 0x03, 'c', 'i', 'd'
-            });
+            socket.getOutputStream().write(CONNECT);
             assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00},
                     socket.getInputStream().readNBytes(4));
+            socket.getOutputStream().write(new byte[]{(byte) 0xc0, 0x00});
+            assertArrayEquals(new byte[]{(byte) 0xd0, 0x00},
+                    socket.getInputStream().readNBytes(2));
+            socket.getOutputStream().write(new byte[]{(byte) 0xe0, 0x00});
+            assertEquals(-1, socket.getInputStream().read());
         }
+    }
+
+    @Test
+    void shouldTakeOverExistingTcpConnectionWithSameClientId() throws IOException {
+        try (Socket first = connect(); Socket second = connect()) {
+            first.getOutputStream().write(CONNECT);
+            assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00},
+                    first.getInputStream().readNBytes(4));
+
+            second.getOutputStream().write(CONNECT);
+            assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00},
+                    second.getInputStream().readNBytes(4));
+
+            assertEquals(-1, first.getInputStream().read());
+            assertTrue(second.isConnected());
+        }
+    }
+
+    private Socket connect() throws IOException {
+        Socket socket = new Socket();
+        socket.connect(new InetSocketAddress("127.0.0.1", lifecycle.getBoundPort()));
+        socket.setSoTimeout(3000);
+        return socket;
     }
 }
