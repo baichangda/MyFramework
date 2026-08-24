@@ -70,6 +70,26 @@ public class MqttBroker {
         return subscribed.get();
     }
 
+    public boolean publish(MqttConnection publisher, MqttApplicationMessage message) {
+        MqttSession publisherSession = publisher.session();
+        if (publisherSession == null) {
+            return false;
+        }
+        MqttClientState publisherState = clients.get(publisherSession.clientId());
+        if (publisherState == null || publisherState.connection() != publisher) {
+            return false;
+        }
+
+        clients.forEach((ignored, state) -> {
+            MqttConnection subscriber = state.connection();
+            if (subscriber != null
+                    && state.session().findSubscription(message.topicName()).isPresent()) {
+                subscriber.sendPublish(message);
+            }
+        });
+        return true;
+    }
+
     public Optional<MqttConnection> findConnection(String clientId) {
         MqttClientState state = clients.get(clientId);
         return state == null || state.connection() == null

@@ -1,9 +1,12 @@
 package cn.bcd.app.mqtt.server.connection;
 
+import cn.bcd.app.mqtt.server.broker.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,6 +17,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
@@ -67,8 +71,32 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         switch (messageType) {
             case PINGREQ -> context.writeAndFlush(MqttMessage.PINGRESP);
             case SUBSCRIBE -> onSubscribe(context, (MqttSubscribeMessage) message);
+            case PUBLISH -> onPublish((MqttPublishMessage) message);
             case DISCONNECT -> close(MqttConnectionCloseReason.NORMAL_DISCONNECT);
             default -> close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+        }
+    }
+
+    private void onPublish(MqttPublishMessage message) {
+        if (message.fixedHeader().qosLevel() != MqttQoS.AT_MOST_ONCE
+                || message.fixedHeader().isRetain()) {
+            close(MqttConnectionCloseReason.UNSUPPORTED_FEATURE);
+            return;
+        }
+        if (message.fixedHeader().isDup()) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+        String topicName = message.variableHeader().topicName();
+        if (topicName == null || topicName.isEmpty() || containsWildcard(topicName)) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+
+        MqttApplicationMessage applicationMessage = new MqttApplicationMessage(
+                topicName, ByteBufUtil.getBytes(message.payload()));
+        if (!broker.publish(this, applicationMessage)) {
+            close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
         }
     }
 
@@ -207,6 +235,27 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
     public MqttConnectionState state() {
         return state;
+    }
+
+    public void sendPublish(MqttApplicationMessage message) {
+        Channel channel = channel();
+        if (channel.eventLoop().inEventLoop()) {
+            sendOnEventLoop(message);
+        } else {
+            channel.eventLoop().execute(() -> sendOnEventLoop(message));
+        }
+    }
+
+    private void sendOnEventLoop(MqttApplicationMessage message) {
+        if (state != MqttConnectionState.CONNECTED || !channel().isActive()) {
+            return;
+        }
+        channel().writeAndFlush(MqttMessageBuilders.publish()
+                .topicName(message.topicName())
+                .qos(MqttQoS.AT_MOST_ONCE)
+                .retained(false)
+                .payload(Unpooled.wrappedBuffer(message.payload()))
+                .build());
     }
 
     public void close(MqttConnectionCloseReason reason) {
