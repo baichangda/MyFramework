@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.session;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -18,7 +19,7 @@ class MqttSessionTest {
 
     @Test
     void shouldResumePersistentSessionAndSetSessionPresent() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
 
         TestClient first = connect(false, broker);
         MqttSession firstSession = first.connection().session();
@@ -37,7 +38,7 @@ class MqttSessionTest {
 
     @Test
     void shouldDiscardPreviousSessionWhenCleanSessionIsTrue() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         TestClient persistent = connect(false, broker);
         MqttSession previousSession = persistent.connection().session();
 
@@ -56,7 +57,7 @@ class MqttSessionTest {
 
     @Test
     void shouldRemoveCleanSessionWhenConnectionCloses() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         TestClient client = connect(true, broker);
 
         client.channel().close().syncUninterruptibly();

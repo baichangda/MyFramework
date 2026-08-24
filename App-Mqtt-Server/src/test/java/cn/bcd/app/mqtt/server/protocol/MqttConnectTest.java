@@ -1,8 +1,8 @@
 package cn.bcd.app.mqtt.server.protocol;
 
-import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -121,7 +121,7 @@ class MqttConnectTest {
         EmbeddedChannel channel = new EmbeddedChannel();
         channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
         channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(new MqttConnection(new MqttBroker()));
+        channel.pipeline().addLast(new MqttConnection(MqttTestBroker.create()));
         return channel;
     }
 

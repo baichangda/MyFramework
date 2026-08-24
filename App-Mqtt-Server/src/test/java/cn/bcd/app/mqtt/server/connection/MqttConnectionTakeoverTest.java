@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.connection;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -24,7 +25,7 @@ class MqttConnectionTakeoverTest {
 
     @Test
     void shouldTakeOverExistingConnectionWithSameClientId() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         TestClient first = connect(broker);
         TestClient second = connect(broker);
         first.channel().runPendingTasks();
@@ -45,7 +46,7 @@ class MqttConnectionTakeoverTest {
 
     @Test
     void shouldNotRemoveNewConnectionWhenOldConnectionClosesLate() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         TestClient first = connect(broker);
         TestClient second = connect(broker);
 

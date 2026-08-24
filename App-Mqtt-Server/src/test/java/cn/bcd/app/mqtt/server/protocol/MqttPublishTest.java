@@ -3,6 +3,7 @@ package cn.bcd.app.mqtt.server.protocol;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -11,6 +12,8 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,7 +24,7 @@ class MqttPublishTest {
 
     @Test
     void shouldRouteQosZeroPublishToExactTopicSubscriber() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
         subscribe(subscriber, "sensor/temp");
@@ -37,7 +40,7 @@ class MqttPublishTest {
 
     @Test
     void shouldRouteToAllMatchingOnlineSubscribersOnly() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel first = connectedChannel(broker, "first", true);
         EmbeddedChannel second = connectedChannel(broker, "second", true);
@@ -60,7 +63,7 @@ class MqttPublishTest {
 
     @Test
     void shouldRouteSingleAndMultiLevelWildcardSubscriptions() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel singleLevel = connectedChannel(broker, "single", true);
         EmbeddedChannel multiLevel = connectedChannel(broker, "multi", true);
@@ -79,7 +82,7 @@ class MqttPublishTest {
 
     @Test
     void shouldDeliverOnceWhenMultipleFiltersOfOneClientMatch() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
         subscribe(subscriber, "sensor/+/temperature");
@@ -96,7 +99,7 @@ class MqttPublishTest {
 
     @Test
     void shouldKeepRootWildcardSeparateFromSystemTopics() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel rootWildcard = connectedChannel(broker, "root", true);
         EmbeddedChannel systemWildcard = connectedChannel(broker, "system", true);
@@ -115,7 +118,7 @@ class MqttPublishTest {
 
     @Test
     void shouldNotQueueQosZeroMessageForOfflinePersistentSession() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
         subscribe(subscriber, "sensor/temp");
         subscriber.close().syncUninterruptibly();
@@ -132,7 +135,7 @@ class MqttPublishTest {
 
     @Test
     void shouldSupportEmptyQosZeroPayload() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
         subscribe(subscriber, "event/empty");
@@ -147,7 +150,7 @@ class MqttPublishTest {
 
     @Test
     void shouldCloseUnsupportedQosOnePublish() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
         MqttConnection connection = publisher.pipeline().get(MqttConnection.class);
         byte[] qosOnePublish = {
@@ -165,16 +168,131 @@ class MqttPublishTest {
     }
 
     @Test
-    void shouldCloseRetainedPublishUntilRetainMilestone() {
-        MqttBroker broker = new MqttBroker();
+    void shouldStoreRetainedPublishAndDeliverItToNewSubscriber() {
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
-        MqttConnection connection = publisher.pipeline().get(MqttConnection.class);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "21")));
 
-        publisher.writeInbound(Unpooled.wrappedBuffer(publishPacket(0x31, "sensor/temp", "21")));
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
 
-        assertFalse(publisher.isActive());
-        assertEquals(MqttConnectionCloseReason.UNSUPPORTED_FEATURE, connection.closeReason());
+        assertArrayEquals(publishPacket(0x31, "sensor/temp", "21"), readOutbound(subscriber));
+        assertTrue(subscriber.outboundMessages().isEmpty());
         publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldClearRetainFlagForLiveDelivery() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "21")));
+
+        assertArrayEquals(publishPacket(0x30, "sensor/temp", "21"), readOutbound(subscriber));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldOverwriteRetainedMessageForSameTopic() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "21")));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "22")));
+
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+
+        assertArrayEquals(publishPacket(0x31, "sensor/temp", "22"), readOutbound(subscriber));
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldDeleteRetainedMessageWithEmptyRetainedPublish() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "21")));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "")));
+
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldNotOverwriteRetainedMessageWithNormalPublish() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/temp", "retained")));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x30, "sensor/temp", "live")));
+
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+
+        assertArrayEquals(
+                publishPacket(0x31, "sensor/temp", "retained"), readOutbound(subscriber));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldDeliverAllRetainedMessagesMatchingWildcardSubscription() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/room1/temp", "21")));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/room2/temp", "22")));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "event/status", "online")));
+
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/+/temp");
+
+        Set<String> delivered = Set.of(
+                HexFormat.of().formatHex(readOutbound(subscriber)),
+                HexFormat.of().formatHex(readOutbound(subscriber)));
+        assertEquals(Set.of(
+                HexFormat.of().formatHex(
+                        publishPacket(0x31, "sensor/room1/temp", "21")),
+                HexFormat.of().formatHex(
+                        publishPacket(0x31, "sensor/room2/temp", "22"))), delivered);
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldDeliverRetainedTopicOnceForOverlappingFiltersInOneSubscribe() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                publishPacket(0x31, "sensor/room1/temp", "21")));
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+
+        subscribe(subscriber, "sensor/+/temp", "sensor/#");
+
+        assertArrayEquals(
+                publishPacket(0x31, "sensor/room1/temp", "21"), readOutbound(subscriber));
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
     }
 
     private static EmbeddedChannel connectedChannel(
@@ -200,13 +318,23 @@ class MqttPublishTest {
     }
 
     private static void subscribe(EmbeddedChannel channel, String topicName) {
-        byte[] topicBytes = topicName.getBytes(StandardCharsets.UTF_8);
-        ByteBuf subscribe = Unpooled.buffer(7 + topicBytes.length);
+        subscribe(channel, new String[]{topicName});
+    }
+
+    private static void subscribe(EmbeddedChannel channel, String... topicNames) {
+        int payloadLength = 0;
+        for (String topicName : topicNames) {
+            payloadLength += 3 + topicName.getBytes(StandardCharsets.UTF_8).length;
+        }
+        ByteBuf subscribe = Unpooled.buffer(4 + payloadLength);
         subscribe.writeByte(0x82);
-        subscribe.writeByte(5 + topicBytes.length);
+        subscribe.writeByte(2 + payloadLength);
         subscribe.writeShort(1);
-        subscribe.writeShort(topicBytes.length).writeBytes(topicBytes);
-        subscribe.writeByte(0);
+        for (String topicName : topicNames) {
+            byte[] topicBytes = topicName.getBytes(StandardCharsets.UTF_8);
+            subscribe.writeShort(topicBytes.length).writeBytes(topicBytes);
+            subscribe.writeByte(0);
+        }
         channel.writeInbound(subscribe);
         readOutbound(channel);
     }

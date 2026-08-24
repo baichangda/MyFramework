@@ -1,8 +1,9 @@
 package cn.bcd.app.mqtt.server.connection;
 
-import cn.bcd.app.mqtt.server.broker.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
+import cn.bcd.app.mqtt.server.broker.MqttSubscribeResult;
+import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
@@ -27,7 +28,9 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -79,8 +82,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     }
 
     private void onPublish(MqttPublishMessage message) {
-        if (message.fixedHeader().qosLevel() != MqttQoS.AT_MOST_ONCE
-                || message.fixedHeader().isRetain()) {
+        if (message.fixedHeader().qosLevel() != MqttQoS.AT_MOST_ONCE) {
             close(MqttConnectionCloseReason.UNSUPPORTED_FEATURE);
             return;
         }
@@ -97,7 +99,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
         MqttApplicationMessage applicationMessage = new MqttApplicationMessage(
                 topicName, ByteBufUtil.getBytes(message.payload()));
-        if (!broker.publish(this, applicationMessage)) {
+        if (!broker.publish(this, applicationMessage, message.fixedHeader().isRetain())) {
             close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
         }
     }
@@ -113,6 +115,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
 
         MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck().packetId(packetId);
+        Map<String, MqttApplicationMessage> retainedMessages = new LinkedHashMap<>();
         for (MqttTopicSubscription request : requests) {
             String topicFilter = request.topicFilter();
             MqttQoS requestedQos = request.qualityOfService();
@@ -120,13 +123,18 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 close(MqttConnectionCloseReason.PROTOCOL_ERROR);
                 return;
             }
-            if (!broker.subscribe(this, new MqttSubscription(topicFilter, requestedQos))) {
+            MqttSubscribeResult result = broker.subscribe(
+                    this, new MqttSubscription(topicFilter, requestedQos));
+            if (!result.subscribed()) {
                 close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
                 return;
             }
+            result.retainedMessages().forEach(
+                    retained -> retainedMessages.put(retained.topicName(), retained));
             subAck.addGrantedQos(requestedQos);
         }
         context.writeAndFlush(subAck.build());
+        retainedMessages.values().forEach(retained -> sendPublish(retained, true));
     }
 
     private static boolean isSubscriptionQos(MqttQoS qos) {
@@ -231,23 +239,23 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         return state;
     }
 
-    public void sendPublish(MqttApplicationMessage message) {
+    public void sendPublish(MqttApplicationMessage message, boolean retained) {
         Channel channel = channel();
         if (channel.eventLoop().inEventLoop()) {
-            sendOnEventLoop(message);
+            sendOnEventLoop(message, retained);
         } else {
-            channel.eventLoop().execute(() -> sendOnEventLoop(message));
+            channel.eventLoop().execute(() -> sendOnEventLoop(message, retained));
         }
     }
 
-    private void sendOnEventLoop(MqttApplicationMessage message) {
+    private void sendOnEventLoop(MqttApplicationMessage message, boolean retained) {
         if (state != MqttConnectionState.CONNECTED || !channel().isActive()) {
             return;
         }
         channel().writeAndFlush(MqttMessageBuilders.publish()
                 .topicName(message.topicName())
                 .qos(MqttQoS.AT_MOST_ONCE)
-                .retained(false)
+                .retained(retained)
                 .payload(Unpooled.wrappedBuffer(message.payload()))
                 .build());
     }

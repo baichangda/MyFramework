@@ -1,4 +1,4 @@
-package cn.bcd.app.mqtt.server.broker;
+package cn.bcd.app.mqtt.server.message;
 
 import java.util.Objects;
 
@@ -14,5 +14,9 @@ public record MqttApplicationMessage(
     @Override
     public byte[] payload() {
         return payload.clone();
+    }
+
+    public boolean isEmpty() {
+        return payload.length == 0;
     }
 }

@@ -4,6 +4,7 @@ import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
 import cn.bcd.app.mqtt.server.session.MqttSession;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -29,7 +30,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldStoreExactTopicSubscriptionAndReturnSubAck() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel channel = connectedChannel(broker, true);
 
         assertFalse(channel.writeInbound(Unpooled.wrappedBuffer(EXACT_TOPIC_SUBSCRIBE)));
@@ -45,7 +46,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldAcknowledgeAndStoreExactAndWildcardSubscriptions() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel channel = connectedChannel(broker, true);
         byte[] subscribe = {
                 (byte) 0x82, 0x13,
@@ -67,7 +68,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldReplaceQosWhenSameTopicIsSubscribedAgain() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel channel = connectedChannel(broker, true);
         channel.writeInbound(Unpooled.wrappedBuffer(EXACT_TOPIC_SUBSCRIBE));
         readOutbound(channel);
@@ -87,7 +88,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldKeepSubscriptionsWhenPersistentSessionReconnects() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel first = connectedChannel(broker, false);
         first.writeInbound(Unpooled.wrappedBuffer(EXACT_TOPIC_SUBSCRIBE));
         readOutbound(first);
@@ -104,7 +105,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldDiscardSubscriptionsWhenCleanSessionCloses() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel first = connectedChannel(broker, true);
         first.writeInbound(Unpooled.wrappedBuffer(EXACT_TOPIC_SUBSCRIBE));
         readOutbound(first);
@@ -119,7 +120,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldCloseWhenSubscribePayloadIsEmpty() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel channel = connectedChannel(broker, true);
         MqttConnection connection = channel.pipeline().get(MqttConnection.class);
 
@@ -134,7 +135,7 @@ class MqttSubscribeTest {
 
     @Test
     void shouldCloseWhenWildcardPlacementIsInvalid() {
-        MqttBroker broker = new MqttBroker();
+        MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel channel = connectedChannel(broker, true);
         MqttConnection connection = channel.pipeline().get(MqttConnection.class);
         byte[] invalidSubscribe = {

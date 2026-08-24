@@ -16,7 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = {
         "mqtt.server.bind-address=127.0.0.1",
-        "mqtt.server.port=0"
+        "mqtt.server.port=0",
+        "mqtt.server.persistence.retained-message.sqlite.database-path=:memory:"
 })
 class ApplicationContextTest {
 

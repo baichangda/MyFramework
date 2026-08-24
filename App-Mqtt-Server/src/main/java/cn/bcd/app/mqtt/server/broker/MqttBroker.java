@@ -2,10 +2,14 @@ package cn.bcd.app.mqtt.server.broker;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
+import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,6 +21,11 @@ public class MqttBroker {
 
     private final ConcurrentMap<String, MqttClientState> clients = new ConcurrentHashMap<>();
     private final MqttSubscriptionIndex subscriptionIndex = new MqttSubscriptionIndex();
+    private final MqttRetainedMessageStore retainedMessageStore;
+
+    public MqttBroker(MqttRetainedMessageStore retainedMessageStore) {
+        this.retainedMessageStore = Objects.requireNonNull(retainedMessageStore);
+    }
 
     public MqttConnectResult connect(
             MqttConnection connection,
@@ -60,10 +69,12 @@ public class MqttBroker {
         });
     }
 
-    public boolean subscribe(MqttConnection connection, MqttSubscription subscription) {
+    public MqttSubscribeResult subscribe(
+            MqttConnection connection,
+            MqttSubscription subscription) {
         MqttSession session = connection.session();
         if (session == null) {
-            return false;
+            return new MqttSubscribeResult(false, List.of());
         }
         AtomicBoolean subscribed = new AtomicBoolean();
         clients.computeIfPresent(session.clientId(), (key, current) -> {
@@ -74,10 +85,16 @@ public class MqttBroker {
             }
             return current;
         });
-        return subscribed.get();
+        return subscribed.get()
+                ? new MqttSubscribeResult(
+                        true, retainedMessageStore.findMatching(subscription.topicFilter()))
+                : new MqttSubscribeResult(false, List.of());
     }
 
-    public boolean publish(MqttConnection publisher, MqttApplicationMessage message) {
+    public boolean publish(
+            MqttConnection publisher,
+            MqttApplicationMessage message,
+            boolean retained) {
         MqttSession publisherSession = publisher.session();
         if (publisherSession == null) {
             return false;
@@ -87,6 +104,14 @@ public class MqttBroker {
             return false;
         }
 
+        if (retained) {
+            if (message.isEmpty()) {
+                retainedMessageStore.delete(message.topicName());
+            } else {
+                retainedMessageStore.save(message);
+            }
+        }
+
         for (String clientId : subscriptionIndex.findSubscribers(message.topicName())) {
             MqttClientState state = clients.get(clientId);
             if (state == null || !state.session().hasSubscriptionMatching(message.topicName())) {
@@ -94,7 +119,7 @@ public class MqttBroker {
             }
             MqttConnection subscriber = state.connection();
             if (subscriber != null) {
-                subscriber.sendPublish(message);
+                subscriber.sendPublish(message, false);
             }
         }
         return true;

@@ -15,9 +15,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M7 | Exact-topic SUBSCRIBE/SUBACK and session subscription state | Complete |
 | M8 | Non-retained QoS 0 PUBLISH and exact-topic live routing | Complete |
 | M9 | `+`/`#` wildcard subscriptions and indexed topic matching | Complete |
-| M10+ | Retained messages and QoS 1/2 delivery semantics | Pending |
+| M10 | QoS 0 retained messages and pluggable retained persistence | Complete |
+| M11+ | QoS 1/2 delivery and offline message semantics | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscriptions, and non-retained QoS 0 live publishing. Retained messages, offline delivery and QoS 1/2 publishing remain unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscriptions, QoS 0 live publishing and retained messages. Offline delivery and QoS 1/2 publishing remain unsupported until their milestones are complete.
 
 ## Architecture
 
@@ -26,8 +27,25 @@ The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNEC
 - `MqttConnection` is the single entry point for packets and connection-level state.
 - `MqttBroker` is the single owner of cross-connection client and session state.
 - `MqttSession` holds state that can survive a persistent client disconnect.
+- `MqttRetainedMessageStore` abstracts broker-level retained persistence; SQLite is the default implementation and memory is available as an alternative.
 
 Online packet flow is `Netty -> MqttConnection -> MqttBroker`. Future subscription, publish and QoS milestones should preserve this boundary.
+
+## Retained persistence
+
+Persistence configuration is grouped first by purpose and then by implementation:
+
+```yaml
+mqtt:
+  server:
+    persistence:
+      retained-message:
+        type: sqlite
+        sqlite:
+          database-path: data/mqtt-retained.db
+```
+
+Set `type: memory` to select the in-memory implementation; its state does not survive a broker restart.
 
 ## Verification
 
