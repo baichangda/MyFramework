@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MqttBroker {
 
     private final ConcurrentMap<String, MqttClientState> clients = new ConcurrentHashMap<>();
+    private final MqttSubscriptionIndex subscriptionIndex = new MqttSubscriptionIndex();
 
     public MqttConnectResult connect(
             MqttConnection connection,
@@ -26,6 +27,9 @@ public class MqttBroker {
 
         clients.compute(clientId, (key, current) -> {
             boolean sessionPresent = !cleanSession && current != null && current.persistent();
+            if (!sessionPresent && current != null) {
+                subscriptionIndex.remove(current.session());
+            }
             MqttSession session = sessionPresent ? current.session() : new MqttSession(clientId);
             previousConnection.set(current == null ? null : current.connection());
             resultReference.set(new MqttConnectResult(session, sessionPresent));
@@ -48,9 +52,11 @@ public class MqttBroker {
             if (current.connection() != connection) {
                 return current;
             }
-            return current.persistent()
-                    ? new MqttClientState(current.session(), null, true)
-                    : null;
+            if (current.persistent()) {
+                return new MqttClientState(current.session(), null, true);
+            }
+            subscriptionIndex.remove(current.session());
+            return null;
         });
     }
 
@@ -63,6 +69,7 @@ public class MqttBroker {
         clients.computeIfPresent(session.clientId(), (key, current) -> {
             if (current.connection() == connection) {
                 current.session().subscribe(subscription);
+                subscriptionIndex.add(session.clientId(), subscription);
                 subscribed.set(true);
             }
             return current;
@@ -80,13 +87,16 @@ public class MqttBroker {
             return false;
         }
 
-        clients.forEach((ignored, state) -> {
+        for (String clientId : subscriptionIndex.findSubscribers(message.topicName())) {
+            MqttClientState state = clients.get(clientId);
+            if (state == null || !state.session().hasSubscriptionMatching(message.topicName())) {
+                continue;
+            }
             MqttConnection subscriber = state.connection();
-            if (subscriber != null
-                    && state.session().findSubscription(message.topicName()).isPresent()) {
+            if (subscriber != null) {
                 subscriber.sendPublish(message);
             }
-        });
+        }
         return true;
     }
 

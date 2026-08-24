@@ -5,6 +5,7 @@ import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
+import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -88,7 +89,8 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             return;
         }
         String topicName = message.variableHeader().topicName();
-        if (topicName == null || topicName.isEmpty() || containsWildcard(topicName)) {
+        if (topicName == null || topicName.isEmpty()
+                || topicName.indexOf('+') >= 0 || topicName.indexOf('#') >= 0) {
             close(MqttConnectionCloseReason.PROTOCOL_ERROR);
             return;
         }
@@ -112,17 +114,13 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
         MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck().packetId(packetId);
         for (MqttTopicSubscription request : requests) {
-            String topicName = request.topicFilter();
+            String topicFilter = request.topicFilter();
             MqttQoS requestedQos = request.qualityOfService();
-            if (topicName == null || topicName.isEmpty() || !isSubscriptionQos(requestedQos)) {
+            if (!MqttTopicFilter.isValid(topicFilter) || !isSubscriptionQos(requestedQos)) {
                 close(MqttConnectionCloseReason.PROTOCOL_ERROR);
                 return;
             }
-            if (containsWildcard(topicName)) {
-                subAck.addGrantedQos(MqttQoS.FAILURE);
-                continue;
-            }
-            if (!broker.subscribe(this, new MqttSubscription(topicName, requestedQos))) {
+            if (!broker.subscribe(this, new MqttSubscription(topicFilter, requestedQos))) {
                 close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
                 return;
             }
@@ -135,10 +133,6 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         return qos == MqttQoS.AT_MOST_ONCE
                 || qos == MqttQoS.AT_LEAST_ONCE
                 || qos == MqttQoS.EXACTLY_ONCE;
-    }
-
-    private static boolean containsWildcard(String topicName) {
-        return topicName.indexOf('+') >= 0 || topicName.indexOf('#') >= 0;
     }
 
     private void onConnect(ChannelHandlerContext nettyContext, MqttConnectMessage message) {

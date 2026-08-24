@@ -44,7 +44,7 @@ class MqttSubscribeTest {
     }
 
     @Test
-    void shouldAcknowledgeEachRequestAndRejectWildcardForCurrentMilestone() {
+    void shouldAcknowledgeAndStoreExactAndWildcardSubscriptions() {
         MqttBroker broker = new MqttBroker();
         EmbeddedChannel channel = connectedChannel(broker, true);
         byte[] subscribe = {
@@ -56,11 +56,11 @@ class MqttSubscribeTest {
 
         channel.writeInbound(Unpooled.wrappedBuffer(subscribe));
 
-        assertArrayEquals(new byte[]{(byte) 0x90, 0x04, 0x00, 0x09, 0x00, (byte) 0x80},
+        assertArrayEquals(new byte[]{(byte) 0x90, 0x04, 0x00, 0x09, 0x00, 0x01},
                 readOutbound(channel));
         MqttSession session = broker.findSession("cid").orElseThrow();
         assertTrue(session.findSubscription("a/b").isPresent());
-        assertTrue(session.findSubscription("sensor/+").isEmpty());
+        assertTrue(session.findSubscription("sensor/+").isPresent());
         assertTrue(channel.isActive());
         channel.finishAndReleaseAll();
     }
@@ -129,6 +129,25 @@ class MqttSubscribeTest {
         assertEquals(MqttConnectionCloseReason.PROTOCOL_ERROR,
                 connection.closeReason());
         assertTrue(channel.outboundMessages().isEmpty());
+        channel.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldCloseWhenWildcardPlacementIsInvalid() {
+        MqttBroker broker = new MqttBroker();
+        EmbeddedChannel channel = connectedChannel(broker, true);
+        MqttConnection connection = channel.pipeline().get(MqttConnection.class);
+        byte[] invalidSubscribe = {
+                (byte) 0x82, 0x12,
+                0x00, 0x02,
+                0x00, 0x0d, 's', 'e', 'n', 's', 'o', 'r', '/', '#', '/', 't', 'e', 'm', 'p',
+                0x00
+        };
+
+        channel.writeInbound(Unpooled.wrappedBuffer(invalidSubscribe));
+
+        assertFalse(channel.isActive());
+        assertEquals(MqttConnectionCloseReason.PROTOCOL_ERROR, connection.closeReason());
         channel.finishAndReleaseAll();
     }
 

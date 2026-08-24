@@ -1,5 +1,7 @@
 package cn.bcd.app.mqtt.server.session;
 
+import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +23,7 @@ public final class MqttSession {
     }
 
     public void subscribe(MqttSubscription subscription) {
-        subscriptions.put(subscription.topicName(), subscription);
+        subscriptions.put(subscription.topicFilter(), subscription);
     }
 
     public Optional<MqttSubscription> findSubscription(String topicName) {
@@ -30,5 +32,11 @@ public final class MqttSession {
 
     public Collection<MqttSubscription> subscriptions() {
         return List.copyOf(subscriptions.values());
+    }
+
+    public boolean hasSubscriptionMatching(String topicName) {
+        return subscriptions.values().stream()
+                .anyMatch(subscription -> MqttTopicFilter.matches(
+                        subscription.topicFilter(), topicName));
     }
 }

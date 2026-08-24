@@ -59,6 +59,61 @@ class MqttPublishTest {
     }
 
     @Test
+    void shouldRouteSingleAndMultiLevelWildcardSubscriptions() {
+        MqttBroker broker = new MqttBroker();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel singleLevel = connectedChannel(broker, "single", true);
+        EmbeddedChannel multiLevel = connectedChannel(broker, "multi", true);
+        subscribe(singleLevel, "sensor/+/temperature");
+        subscribe(multiLevel, "sensor/#");
+        byte[] publishPacket = publishPacket(0x30, "sensor/room1/temperature", "21");
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(publishPacket));
+
+        assertArrayEquals(publishPacket, readOutbound(singleLevel));
+        assertArrayEquals(publishPacket, readOutbound(multiLevel));
+        publisher.finishAndReleaseAll();
+        singleLevel.finishAndReleaseAll();
+        multiLevel.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldDeliverOnceWhenMultipleFiltersOfOneClientMatch() {
+        MqttBroker broker = new MqttBroker();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/+/temperature");
+        subscribe(subscriber, "sensor/#");
+        byte[] publishPacket = publishPacket(0x30, "sensor/room1/temperature", "21");
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(publishPacket));
+
+        assertArrayEquals(publishPacket, readOutbound(subscriber));
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldKeepRootWildcardSeparateFromSystemTopics() {
+        MqttBroker broker = new MqttBroker();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel rootWildcard = connectedChannel(broker, "root", true);
+        EmbeddedChannel systemWildcard = connectedChannel(broker, "system", true);
+        subscribe(rootWildcard, "#");
+        subscribe(systemWildcard, "$SYS/#");
+        byte[] publishPacket = publishPacket(0x30, "$SYS/broker/uptime", "10");
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(publishPacket));
+
+        assertTrue(rootWildcard.outboundMessages().isEmpty());
+        assertArrayEquals(publishPacket, readOutbound(systemWildcard));
+        publisher.finishAndReleaseAll();
+        rootWildcard.finishAndReleaseAll();
+        systemWildcard.finishAndReleaseAll();
+    }
+
+    @Test
     void shouldNotQueueQosZeroMessageForOfflinePersistentSession() {
         MqttBroker broker = new MqttBroker();
         EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
