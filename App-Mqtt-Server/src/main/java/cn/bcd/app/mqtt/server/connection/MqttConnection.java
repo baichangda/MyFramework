@@ -3,6 +3,7 @@ package cn.bcd.app.mqtt.server.connection;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.session.MqttSession;
+import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,11 +14,15 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -61,9 +66,51 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
         switch (messageType) {
             case PINGREQ -> context.writeAndFlush(MqttMessage.PINGRESP);
+            case SUBSCRIBE -> onSubscribe(context, (MqttSubscribeMessage) message);
             case DISCONNECT -> close(MqttConnectionCloseReason.NORMAL_DISCONNECT);
             default -> close(MqttConnectionCloseReason.PROTOCOL_ERROR);
         }
+    }
+
+    private void onSubscribe(ChannelHandlerContext context, MqttSubscribeMessage message) {
+        int packetId = message.variableHeader().messageId();
+        List<MqttTopicSubscription> requests = message.payload().topicSubscriptions();
+        if (packetId == 0 || requests.isEmpty()
+                || message.fixedHeader().qosLevel() != MqttQoS.AT_LEAST_ONCE
+                || message.fixedHeader().isRetain()) {
+            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+            return;
+        }
+
+        MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck().packetId(packetId);
+        for (MqttTopicSubscription request : requests) {
+            String topicName = request.topicFilter();
+            MqttQoS requestedQos = request.qualityOfService();
+            if (topicName == null || topicName.isEmpty() || !isSubscriptionQos(requestedQos)) {
+                close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+                return;
+            }
+            if (containsWildcard(topicName)) {
+                subAck.addGrantedQos(MqttQoS.FAILURE);
+                continue;
+            }
+            if (!broker.subscribe(this, new MqttSubscription(topicName, requestedQos))) {
+                close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+                return;
+            }
+            subAck.addGrantedQos(requestedQos);
+        }
+        context.writeAndFlush(subAck.build());
+    }
+
+    private static boolean isSubscriptionQos(MqttQoS qos) {
+        return qos == MqttQoS.AT_MOST_ONCE
+                || qos == MqttQoS.AT_LEAST_ONCE
+                || qos == MqttQoS.EXACTLY_ONCE;
+    }
+
+    private static boolean containsWildcard(String topicName) {
+        return topicName.indexOf('+') >= 0 || topicName.indexOf('#') >= 0;
     }
 
     private void onConnect(ChannelHandlerContext nettyContext, MqttConnectMessage message) {

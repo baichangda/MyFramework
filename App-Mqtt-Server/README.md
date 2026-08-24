@@ -12,9 +12,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M4 | PING, DISCONNECT and Keep Alive | Complete |
 | M5 | Client ID registry and connection takeover | Complete |
 | M6 | In-memory sessions and Clean Session semantics | Complete |
-| M7+ | MQTT 3.1.1 subscriptions, routing and QoS semantics | Pending |
+| M7 | Exact-topic SUBSCRIBE/SUBACK and session subscription state | Complete |
+| M8+ | Topic matching, publish routing and QoS delivery semantics | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover and in-memory session resumption. Other packets remain unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption and exact-topic subscriptions. Wildcard subscriptions and other packets remain unsupported until their milestones are complete.
 
 ## Architecture
 
