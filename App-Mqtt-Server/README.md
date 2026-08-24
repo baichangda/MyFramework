@@ -22,9 +22,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M14 | Will Message validation, abnormal-disconnect publication, QoS and retain | Complete |
 | M15 | Pluggable CONNECT authentication and simple username/password implementation | Complete |
 | M16 | Pluggable publish/subscribe authorization and simple topic ACL rules | Complete |
-| M17+ | Session persistence and remaining broker features | Pending |
+| M17 | Pluggable persistent-session store and SQLite broker-restart recovery | Complete |
+| M18+ | Resource limits, operational hardening and remaining broker features | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, pluggable authentication and topic authorization, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Session persistence across broker restarts and later features stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, pluggable authentication and topic authorization, PING, DISCONNECT, Keep Alive, Client ID takeover, persistent-session recovery across broker restarts, exact and wildcard subscription management, QoS 0/1/2 publishing, persistent-session redelivery, retained messages and Will Message. Resource limits and later operational features stay unsupported until their milestones are complete.
 
 ## Architecture
 
@@ -35,6 +36,7 @@ The current module supports MQTT 3.1.1 connection establishment, pluggable authe
 - `MqttAuthorizer` verifies Will, publish and subscription topics before broker state changes.
 - `MqttBroker` is the single owner of cross-connection client and session state.
 - `MqttSession` holds subscriptions, packet identifiers and QoS 1/2 protocol state that can survive a persistent client disconnect.
+- `MqttSessionStore` persists complete persistent-session snapshots; SQLite is the default and memory is available for tests or ephemeral deployments.
 - `MqttWillMessage` belongs to one connection and is routed by `MqttBroker` only after an abnormal disconnect.
 - `MqttRetainedMessageStore` abstracts broker-level retained persistence; SQLite is the default implementation and memory is available as an alternative.
 
@@ -85,13 +87,17 @@ Persistence configuration is grouped first by purpose and then by implementation
 mqtt:
   server:
     persistence:
+      session:
+        type: sqlite
+        sqlite:
+          database-path: data/mqtt-session.db
       retained-message:
         type: sqlite
         sqlite:
           database-path: data/mqtt-retained.db
 ```
 
-Set `type: memory` to select the in-memory implementation; its state does not survive a broker restart.
+Each persistence purpose selects its implementation independently. Set either purpose's `type` to `memory` for ephemeral state that does not survive a broker restart.
 
 ## Verification
 
