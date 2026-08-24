@@ -278,6 +278,156 @@ class MqttPublishTest {
     }
 
     @Test
+    void shouldCompleteQosTwoHandshakeInBothDirections() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp", 2);
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x34, "sensor/temp", 7, "21")));
+        assertArrayEquals(new byte[]{0x50, 0x02, 0x00, 0x07}, readOutbound(publisher));
+        assertTrue(subscriber.outboundMessages().isEmpty());
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+        assertArrayEquals(new byte[]{0x70, 0x02, 0x00, 0x07}, readOutbound(publisher));
+        assertArrayEquals(
+                qosPublishPacket(0x34, "sensor/temp", 1, "21"), readOutbound(subscriber));
+
+        subscriber.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x50, 0x02, 0x00, 0x01}));
+        assertArrayEquals(new byte[]{0x62, 0x02, 0x00, 0x01}, readOutbound(subscriber));
+        subscriber.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x70, 0x02, 0x00, 0x01}));
+        assertTrue(broker.findSession("subscriber").orElseThrow()
+                .pendingPublishes().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldNotRouteDuplicateQosTwoPublishTwice() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x34, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x3c, "sensor/temp", 7, "21")));
+        assertArrayEquals(new byte[]{0x50, 0x02, 0x00, 0x07}, readOutbound(publisher));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+        readOutbound(publisher);
+
+        assertArrayEquals(publishPacket(0x30, "sensor/temp", "21"), readOutbound(subscriber));
+        assertTrue(subscriber.outboundMessages().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldResumeWithPubRelWhenWaitingForPubComp() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
+        subscribe(subscriber, "sensor/temp", 2);
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x34, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+        readOutbound(publisher);
+        readOutbound(subscriber);
+        subscriber.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x50, 0x02, 0x00, 0x01}));
+        readOutbound(subscriber);
+        subscriber.close().syncUninterruptibly();
+
+        EmbeddedChannel reconnected = connectedChannel(broker, "subscriber", false);
+
+        assertArrayEquals(new byte[]{0x62, 0x02, 0x00, 0x01}, readOutbound(reconnected));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+        reconnected.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldRetransmitQosTwoPublishWithDupWhenWaitingForPubRec() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
+        subscribe(subscriber, "sensor/temp", 2);
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x34, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+        readOutbound(publisher);
+        readOutbound(subscriber);
+        subscriber.close().syncUninterruptibly();
+
+        EmbeddedChannel reconnected = connectedChannel(broker, "subscriber", false);
+
+        assertArrayEquals(
+                qosPublishPacket(0x3c, "sensor/temp", 1, "21"),
+                readOutbound(reconnected));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+        reconnected.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldContinueInboundQosTwoAfterPersistentPublisherReconnects() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", false);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x34, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        publisher.close().syncUninterruptibly();
+
+        EmbeddedChannel reconnected = connectedChannel(broker, "publisher", false);
+        reconnected.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+
+        assertArrayEquals(new byte[]{0x70, 0x02, 0x00, 0x07}, readOutbound(reconnected));
+        assertArrayEquals(publishPacket(0x30, "sensor/temp", "21"), readOutbound(subscriber));
+        publisher.finishAndReleaseAll();
+        reconnected.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldStoreQosTwoRetainedMessageOnlyAfterPubRel() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosPublishPacket(0x35, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        EmbeddedChannel early = connectedChannel(broker, "early", true);
+        subscribe(early, "sensor/temp");
+        assertTrue(early.outboundMessages().isEmpty());
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x62, 0x02, 0x00, 0x07}));
+        readOutbound(publisher);
+        readOutbound(early);
+        EmbeddedChannel late = connectedChannel(broker, "late", true);
+        subscribe(late, "sensor/temp", 2);
+
+        assertArrayEquals(
+                qosPublishPacket(0x35, "sensor/temp", 1, "21"), readOutbound(late));
+        publisher.finishAndReleaseAll();
+        early.finishAndReleaseAll();
+        late.finishAndReleaseAll();
+    }
+
+    @Test
     void shouldClearRetainFlagForLiveDelivery() {
         MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
@@ -476,6 +626,14 @@ class MqttPublishTest {
         publish.readBytes(packet);
         publish.release();
         return packet;
+    }
+
+    private static byte[] qosPublishPacket(
+            int fixedHeader,
+            String topicName,
+            int packetId,
+            String payload) {
+        return qosOnePublishPacket(fixedHeader, topicName, packetId, payload);
     }
 
     private static byte[] readOutbound(EmbeddedChannel channel) {

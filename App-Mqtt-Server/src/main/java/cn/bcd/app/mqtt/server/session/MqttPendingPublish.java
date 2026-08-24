@@ -10,6 +10,7 @@ public final class MqttPendingPublish {
     private final MqttApplicationMessage message;
     private final boolean retained;
     private volatile boolean sent;
+    private volatile MqttOutboundPublishState state;
 
     public MqttPendingPublish(
             int packetId,
@@ -18,6 +19,9 @@ public final class MqttPendingPublish {
         this.packetId = packetId;
         this.message = Objects.requireNonNull(message);
         this.retained = retained;
+        state = message.qos().value() == 1
+                ? MqttOutboundPublishState.WAIT_PUBACK
+                : MqttOutboundPublishState.WAIT_PUBREC;
     }
 
     public int packetId() {
@@ -38,5 +42,13 @@ public final class MqttPendingPublish {
 
     public void markSent() {
         sent = true;
+    }
+
+    public MqttOutboundPublishState state() {
+        return state;
+    }
+
+    public void waitForPubComp() {
+        state = MqttOutboundPublishState.WAIT_PUBCOMP;
     }
 }

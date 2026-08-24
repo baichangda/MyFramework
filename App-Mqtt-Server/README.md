@@ -17,9 +17,10 @@ Netty-based MQTT broker for MyFramework. The implementation follows small, indep
 | M9 | `+`/`#` wildcard subscriptions and indexed topic matching | Complete |
 | M10 | QoS 0 retained messages and pluggable retained persistence | Complete |
 | M11 | QoS 1 PUBLISH/PUBACK, in-flight state and persistent-session redelivery | Complete |
-| M12+ | QoS 2 delivery semantics and remaining MQTT control packets | Pending |
+| M12 | QoS 2 PUBREC/PUBREL/PUBCOMP and persistent-session state recovery | Complete |
+| M13+ | UNSUBSCRIBE and remaining MQTT control packets | Pending |
 
-The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscriptions, QoS 0/1 publishing, QoS 1 persistent-session redelivery and retained messages. QoS 2 publishing and remaining control packets stay unsupported until their milestones are complete.
+The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNECT, Keep Alive, Client ID takeover, in-memory session resumption, exact and wildcard subscriptions, QoS 0/1/2 publishing, persistent-session redelivery and retained messages. UNSUBSCRIBE and remaining control packets stay unsupported until their milestones are complete.
 
 ## Architecture
 
@@ -27,7 +28,7 @@ The current module supports MQTT 3.1.1 connection establishment, PING, DISCONNEC
 - `MqttChannelInitializer` installs the MQTT codec and one `MqttConnection` per channel.
 - `MqttConnection` is the single entry point for packets and connection-level state.
 - `MqttBroker` is the single owner of cross-connection client and session state.
-- `MqttSession` holds subscriptions, packet identifiers and unacknowledged QoS 1 messages that can survive a persistent client disconnect.
+- `MqttSession` holds subscriptions, packet identifiers and QoS 1/2 protocol state that can survive a persistent client disconnect.
 - `MqttRetainedMessageStore` abstracts broker-level retained persistence; SQLite is the default implementation and memory is available as an alternative.
 
 Online packet flow is `Netty -> MqttConnection -> MqttBroker`. Future subscription, publish and QoS milestones should preserve this boundary.

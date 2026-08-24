@@ -20,6 +20,8 @@ public final class MqttSession {
     private final String clientId;
     private final ConcurrentMap<String, MqttSubscription> subscriptions = new ConcurrentHashMap<>();
     private final Map<Integer, MqttPendingPublish> pendingPublishes = new LinkedHashMap<>();
+    private final Map<Integer, MqttInboundQosTwoPublish> inboundQosTwoPublishes =
+            new LinkedHashMap<>();
     private int nextPacketId = 1;
 
     public MqttSession(String clientId) {
@@ -50,15 +52,16 @@ public final class MqttSession {
                 .max(Comparator.comparingInt(MqttQoS::value));
     }
 
-    public synchronized MqttPendingPublish enqueueQosOne(
+    public synchronized MqttPendingPublish enqueue(
             MqttApplicationMessage message,
+            MqttQoS deliveryQos,
             boolean retained) {
         for (int attempts = 0; attempts < 65535; attempts++) {
             int packetId = nextPacketId;
             nextPacketId = nextPacketId == 65535 ? 1 : nextPacketId + 1;
             if (!pendingPublishes.containsKey(packetId)) {
                 MqttPendingPublish pending = new MqttPendingPublish(
-                        packetId, message.withQos(MqttQoS.AT_LEAST_ONCE), retained);
+                        packetId, message.withQos(deliveryQos), retained);
                 pendingPublishes.put(packetId, pending);
                 return pending;
             }
@@ -66,8 +69,46 @@ public final class MqttSession {
         throw BaseException.get("No MQTT packet identifier available for clientId[{}]", clientId);
     }
 
-    public synchronized void acknowledge(int packetId) {
-        pendingPublishes.remove(packetId);
+    public synchronized void acknowledgeQosOne(int packetId) {
+        MqttPendingPublish pending = pendingPublishes.get(packetId);
+        if (pending != null && pending.state() == MqttOutboundPublishState.WAIT_PUBACK) {
+            pendingPublishes.remove(packetId);
+        }
+    }
+
+    public synchronized Optional<MqttPendingPublish> receivePubRec(int packetId) {
+        MqttPendingPublish pending = pendingPublishes.get(packetId);
+        if (pending == null || pending.state() == MqttOutboundPublishState.WAIT_PUBACK) {
+            return Optional.empty();
+        }
+        pending.waitForPubComp();
+        return Optional.of(pending);
+    }
+
+    public synchronized void receivePubComp(int packetId) {
+        MqttPendingPublish pending = pendingPublishes.get(packetId);
+        if (pending != null && pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
+            pendingPublishes.remove(packetId);
+        }
+    }
+
+    public synchronized MqttInboundPublishStatus receiveQosTwo(
+            int packetId,
+            MqttApplicationMessage message,
+            boolean retained,
+            boolean duplicate) {
+        if (inboundQosTwoPublishes.containsKey(packetId)) {
+            return duplicate
+                    ? MqttInboundPublishStatus.DUPLICATE
+                    : MqttInboundPublishStatus.PROTOCOL_ERROR;
+        }
+        inboundQosTwoPublishes.put(packetId,
+                new MqttInboundQosTwoPublish(packetId, message, retained));
+        return MqttInboundPublishStatus.STORED;
+    }
+
+    public synchronized Optional<MqttInboundQosTwoPublish> releaseQosTwo(int packetId) {
+        return Optional.ofNullable(inboundQosTwoPublishes.remove(packetId));
     }
 
     public synchronized Collection<MqttPendingPublish> pendingPublishes() {
