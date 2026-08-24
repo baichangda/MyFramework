@@ -4,6 +4,7 @@ import cn.bcd.app.mqtt.server.config.MqttPersistenceProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
 import cn.bcd.lib.base.exception.BaseException;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -32,19 +33,22 @@ public final class SqliteMqttRetainedMessageStore
     private static final String CREATE_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS mqtt_retained_message (
                 topic_name TEXT PRIMARY KEY,
-                payload BLOB NOT NULL
+                payload BLOB NOT NULL,
+                qos INTEGER NOT NULL DEFAULT 0
             )
             """;
     private static final String SAVE_SQL = """
-            INSERT INTO mqtt_retained_message(topic_name, payload) VALUES (?, ?)
-            ON CONFLICT(topic_name) DO UPDATE SET payload = excluded.payload
+            INSERT INTO mqtt_retained_message(topic_name, payload, qos) VALUES (?, ?, ?)
+            ON CONFLICT(topic_name) DO UPDATE SET
+                payload = excluded.payload,
+                qos = excluded.qos
             """;
     private static final String DELETE_SQL =
             "DELETE FROM mqtt_retained_message WHERE topic_name = ?";
     private static final String FIND_EXACT_SQL =
-            "SELECT topic_name, payload FROM mqtt_retained_message WHERE topic_name = ?";
+            "SELECT topic_name, payload, qos FROM mqtt_retained_message WHERE topic_name = ?";
     private static final String FIND_ALL_SQL =
-            "SELECT topic_name, payload FROM mqtt_retained_message";
+            "SELECT topic_name, payload, qos FROM mqtt_retained_message";
 
     private final Connection connection;
 
@@ -68,6 +72,7 @@ public final class SqliteMqttRetainedMessageStore
         try (PreparedStatement statement = connection.prepareStatement(SAVE_SQL)) {
             statement.setString(1, message.topicName());
             statement.setBytes(2, message.payload());
+            statement.setInt(3, message.qos().value());
             statement.executeUpdate();
         } catch (SQLException exception) {
             throw storeFailure("save", exception);
@@ -98,7 +103,9 @@ public final class SqliteMqttRetainedMessageStore
                     String topicName = resultSet.getString("topic_name");
                     if (exact || MqttTopicFilter.matches(topicFilter, topicName)) {
                         matches.add(new MqttApplicationMessage(
-                                topicName, resultSet.getBytes("payload")));
+                                topicName,
+                                resultSet.getBytes("payload"),
+                                MqttQoS.valueOf(resultSet.getInt("qos"))));
                     }
                 }
                 return List.copyOf(matches);

@@ -149,22 +149,85 @@ class MqttPublishTest {
     }
 
     @Test
-    void shouldCloseUnsupportedQosOnePublish() {
+    void shouldAcknowledgeQosOneAndDowngradeForQosZeroSubscription() {
         MqttBroker broker = MqttTestBroker.create();
         EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
-        MqttConnection connection = publisher.pipeline().get(MqttConnection.class);
-        byte[] qosOnePublish = {
-                0x32, 0x10,
-                0x00, 0x0b, 's', 'e', 'n', 's', 'o', 'r', '/', 't', 'e', 'm', 'p',
-                0x00, 0x01,
-                'x'
-        };
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp");
 
-        publisher.writeInbound(Unpooled.wrappedBuffer(qosOnePublish));
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x32, "sensor/temp", 7, "21")));
 
-        assertFalse(publisher.isActive());
-        assertEquals(MqttConnectionCloseReason.UNSUPPORTED_FEATURE, connection.closeReason());
+        assertArrayEquals(new byte[]{0x40, 0x02, 0x00, 0x07}, readOutbound(publisher));
+        assertArrayEquals(publishPacket(0x30, "sensor/temp", "21"), readOutbound(subscriber));
         publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldTrackQosOneUntilSubscriberPubAck() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp", 1);
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x32, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+
+        assertArrayEquals(
+                qosOnePublishPacket(0x32, "sensor/temp", 1, "21"), readOutbound(subscriber));
+        assertEquals(1, broker.findSession("subscriber").orElseThrow()
+                .pendingPublishes().size());
+        subscriber.writeInbound(Unpooled.wrappedBuffer(
+                new byte[]{0x40, 0x02, 0x00, 0x01}));
+        assertTrue(broker.findSession("subscriber").orElseThrow()
+                .pendingPublishes().isEmpty());
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldRetransmitUnacknowledgedPublishWithDupAfterPersistentReconnect() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
+        subscribe(subscriber, "sensor/temp", 1);
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x32, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+        readOutbound(subscriber);
+        subscriber.close().syncUninterruptibly();
+
+        EmbeddedChannel reconnected = connectedChannel(broker, "subscriber", false);
+
+        assertArrayEquals(
+                qosOnePublishPacket(0x3a, "sensor/temp", 1, "21"),
+                readOutbound(reconnected));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+        reconnected.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldSendOfflineQueuedQosOneWithoutDupOnFirstDelivery() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", false);
+        subscribe(subscriber, "sensor/temp", 1);
+        subscriber.close().syncUninterruptibly();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x32, "sensor/temp", 7, "21")));
+        readOutbound(publisher);
+
+        EmbeddedChannel reconnected = connectedChannel(broker, "subscriber", false);
+
+        assertArrayEquals(
+                qosOnePublishPacket(0x32, "sensor/temp", 1, "21"),
+                readOutbound(reconnected));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+        reconnected.finishAndReleaseAll();
     }
 
     @Test
@@ -181,6 +244,37 @@ class MqttPublishTest {
         assertTrue(subscriber.outboundMessages().isEmpty());
         publisher.finishAndReleaseAll();
         subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldStoreAndDeliverQosOneRetainedPublish() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x33, "sensor/temp", 7, "21")));
+        assertArrayEquals(new byte[]{0x40, 0x02, 0x00, 0x07}, readOutbound(publisher));
+
+        EmbeddedChannel subscriber = connectedChannel(broker, "subscriber", true);
+        subscribe(subscriber, "sensor/temp", 1);
+
+        assertArrayEquals(
+                qosOnePublishPacket(0x33, "sensor/temp", 1, "21"),
+                readOutbound(subscriber));
+        publisher.finishAndReleaseAll();
+        subscriber.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldAcknowledgeDuplicateQosOnePublish() {
+        MqttBroker broker = MqttTestBroker.create();
+        EmbeddedChannel publisher = connectedChannel(broker, "publisher", true);
+
+        publisher.writeInbound(Unpooled.wrappedBuffer(
+                qosOnePublishPacket(0x3a, "sensor/temp", 7, "21")));
+
+        assertArrayEquals(new byte[]{0x40, 0x02, 0x00, 0x07}, readOutbound(publisher));
+        assertTrue(publisher.isActive());
+        publisher.finishAndReleaseAll();
     }
 
     @Test
@@ -321,6 +415,18 @@ class MqttPublishTest {
         subscribe(channel, new String[]{topicName});
     }
 
+    private static void subscribe(EmbeddedChannel channel, String topicName, int qos) {
+        byte[] topicBytes = topicName.getBytes(StandardCharsets.UTF_8);
+        ByteBuf subscribe = Unpooled.buffer(7 + topicBytes.length);
+        subscribe.writeByte(0x82);
+        subscribe.writeByte(5 + topicBytes.length);
+        subscribe.writeShort(1);
+        subscribe.writeShort(topicBytes.length).writeBytes(topicBytes);
+        subscribe.writeByte(qos);
+        channel.writeInbound(subscribe);
+        readOutbound(channel);
+    }
+
     private static void subscribe(EmbeddedChannel channel, String... topicNames) {
         int payloadLength = 0;
         for (String topicName : topicNames) {
@@ -346,6 +452,25 @@ class MqttPublishTest {
         publish.writeByte(fixedHeader);
         publish.writeByte(2 + topicBytes.length + payloadBytes.length);
         publish.writeShort(topicBytes.length).writeBytes(topicBytes);
+        publish.writeBytes(payloadBytes);
+        byte[] packet = new byte[publish.readableBytes()];
+        publish.readBytes(packet);
+        publish.release();
+        return packet;
+    }
+
+    private static byte[] qosOnePublishPacket(
+            int fixedHeader,
+            String topicName,
+            int packetId,
+            String payload) {
+        byte[] topicBytes = topicName.getBytes(StandardCharsets.UTF_8);
+        byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
+        ByteBuf publish = Unpooled.buffer(6 + topicBytes.length + payloadBytes.length);
+        publish.writeByte(fixedHeader);
+        publish.writeByte(4 + topicBytes.length + payloadBytes.length);
+        publish.writeShort(topicBytes.length).writeBytes(topicBytes);
+        publish.writeShort(packetId);
         publish.writeBytes(payloadBytes);
         byte[] packet = new byte[publish.readableBytes()];
         publish.readBytes(packet);

@@ -4,10 +4,13 @@ import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
+import cn.bcd.app.mqtt.server.session.MqttPendingPublish;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -114,15 +117,77 @@ public class MqttBroker {
 
         for (String clientId : subscriptionIndex.findSubscribers(message.topicName())) {
             MqttClientState state = clients.get(clientId);
-            if (state == null || !state.session().hasSubscriptionMatching(message.topicName())) {
+            if (state == null) {
                 continue;
             }
-            MqttConnection subscriber = state.connection();
-            if (subscriber != null) {
-                subscriber.sendPublish(message, false);
-            }
+            state.session().maximumQosMatching(message.topicName())
+                    .ifPresent(subscriptionQos -> deliver(
+                            state, message, subscriptionQos, false));
         }
         return true;
+    }
+
+    public boolean deliverRetained(
+            MqttConnection connection,
+            MqttApplicationMessage message) {
+        MqttSession session = connection.session();
+        if (session == null) {
+            return false;
+        }
+        MqttClientState state = clients.get(session.clientId());
+        if (state == null || state.connection() != connection) {
+            return false;
+        }
+        session.maximumQosMatching(message.topicName())
+                .ifPresent(subscriptionQos -> deliver(
+                        state, message, subscriptionQos, true));
+        return true;
+    }
+
+    public void acknowledge(MqttConnection connection, int packetId) {
+        MqttSession session = connection.session();
+        if (session == null) {
+            return;
+        }
+        MqttClientState state = clients.get(session.clientId());
+        if (state != null && state.connection() == connection) {
+            session.acknowledge(packetId);
+        }
+    }
+
+    public Collection<MqttPendingPublish> pendingPublishes(
+            MqttConnection connection) {
+        MqttSession session = connection.session();
+        if (session == null) {
+            return List.of();
+        }
+        MqttClientState state = clients.get(session.clientId());
+        return state != null && state.connection() == connection
+                ? session.pendingPublishes()
+                : List.of();
+    }
+
+    private void deliver(
+            MqttClientState state,
+            MqttApplicationMessage message,
+            MqttQoS subscriptionQos,
+            boolean retained) {
+        MqttQoS deliveryQos = message.qos().value() == 0 || subscriptionQos.value() == 0
+                ? MqttQoS.AT_MOST_ONCE
+                : MqttQoS.AT_LEAST_ONCE;
+        MqttConnection subscriber = state.connection();
+        if (deliveryQos == MqttQoS.AT_MOST_ONCE) {
+            if (subscriber != null) {
+                subscriber.sendPublish(message.withQos(deliveryQos), 0, retained, false);
+            }
+            return;
+        }
+        MqttPendingPublish pending = state.session().enqueueQosOne(message, retained);
+        if (subscriber != null) {
+            pending.markSent();
+            subscriber.sendPublish(
+                    pending.message(), pending.packetId(), pending.retained(), false);
+        }
     }
 
     public Optional<MqttConnection> findConnection(String clientId) {

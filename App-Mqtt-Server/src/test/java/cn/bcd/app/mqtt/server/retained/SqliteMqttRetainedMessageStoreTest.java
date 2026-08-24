@@ -2,6 +2,7 @@ package cn.bcd.app.mqtt.server.retained;
 
 import cn.bcd.app.mqtt.server.config.MqttPersistenceProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ class SqliteMqttRetainedMessageStoreTest {
                 + UUID.randomUUID() + ".db");
         MqttPersistenceProperties properties = properties(databasePath);
         MqttApplicationMessage message = new MqttApplicationMessage(
-                "sensor/room1/temperature", new byte[]{0x15});
+                "sensor/room1/temperature", new byte[]{0x15}, MqttQoS.AT_LEAST_ONCE);
 
         try {
             try (SqliteMqttRetainedMessageStore first =
@@ -37,6 +38,7 @@ class SqliteMqttRetainedMessageStoreTest {
                         .orElseThrow();
                 assertEquals(message.topicName(), restored.topicName());
                 assertArrayEquals(message.payload(), restored.payload());
+                assertEquals(MqttQoS.AT_LEAST_ONCE, restored.qos());
                 second.delete(message.topicName());
             }
 
