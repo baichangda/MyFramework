@@ -13,9 +13,9 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -134,16 +134,17 @@ final class MqttClientRegistry {
         return session != null && current(connection, session) != null;
     }
 
-    Set<String> findSubscribers(String topicName) {
+    Map<String, MqttQoS> findSubscribers(String topicName) {
         return subscriptionIndex.findSubscribers(topicName);
     }
 
     Optional<Delivery> prepareDelivery(
             String clientId,
             MqttApplicationMessage message,
+            MqttQoS subscriptionQos,
             boolean retained) {
         return withClientLock(clientId, () -> prepareDelivery(
-                clients.get(clientId), message, retained));
+                clients.get(clientId), message, subscriptionQos, retained));
     }
 
     Optional<Delivery> prepareDelivery(
@@ -154,9 +155,15 @@ final class MqttClientRegistry {
         if (session == null) {
             return Optional.empty();
         }
+        MqttQoS subscriptionQos = subscriptionIndex
+                .findSubscribers(message.topicName())
+                .get(session.clientId());
+        if (subscriptionQos == null) {
+            return Optional.empty();
+        }
         return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
-            return prepareDelivery(current, message, retained);
+            return prepareDelivery(current, message, subscriptionQos, retained);
         });
     }
 
@@ -277,17 +284,13 @@ final class MqttClientRegistry {
     private Optional<Delivery> prepareDelivery(
             MqttClientState state,
             MqttApplicationMessage message,
+            MqttQoS subscriptionQos,
             boolean retained) {
         if (state == null) {
             return Optional.empty();
         }
-        Optional<MqttQoS> subscriptionQos = state.session()
-                .maximumQosMatching(message.topicName());
-        if (subscriptionQos.isEmpty()) {
-            return Optional.empty();
-        }
         MqttQoS deliveryQos = MqttQoS.valueOf(
-                Math.min(message.qos().value(), subscriptionQos.orElseThrow().value()));
+                Math.min(message.qos().value(), subscriptionQos.value()));
         if (deliveryQos == MqttQoS.AT_MOST_ONCE) {
             return state.connection() == null
                     ? Optional.empty()

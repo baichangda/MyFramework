@@ -1,7 +1,6 @@
 package cn.bcd.app.mqtt.server.session;
 
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
-import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
 import cn.bcd.lib.base.exception.BaseException;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
@@ -55,18 +54,6 @@ public final class MqttSession {
 
     public synchronized Collection<MqttSubscription> subscriptions() {
         return List.copyOf(subscriptions.values());
-    }
-
-    public synchronized Optional<MqttQoS> maximumQosMatching(String topicName) {
-        MqttQoS maximumQos = null;
-        for (MqttSubscription subscription : subscriptions.values()) {
-            if (MqttTopicFilter.matches(subscription.topicFilter(), topicName)
-                    && (maximumQos == null
-                    || subscription.qos().value() > maximumQos.value())) {
-                maximumQos = subscription.qos();
-            }
-        }
-        return Optional.ofNullable(maximumQos);
     }
 
     public synchronized MqttPendingPublish enqueue(

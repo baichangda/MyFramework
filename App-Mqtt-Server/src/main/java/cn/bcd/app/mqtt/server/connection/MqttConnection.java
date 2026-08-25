@@ -1,23 +1,14 @@
 package cn.bcd.app.mqtt.server.connection;
 
 import cn.bcd.app.mqtt.server.authentication.AnonymousMqttAuthenticator;
-import cn.bcd.app.mqtt.server.authentication.MqttAuthenticationRequest;
 import cn.bcd.app.mqtt.server.authentication.MqttAuthenticator;
 import cn.bcd.app.mqtt.server.authorization.AllowAllMqttAuthorizer;
-import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationAction;
-import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationRequest;
 import cn.bcd.app.mqtt.server.authorization.MqttAuthorizer;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
-import cn.bcd.app.mqtt.server.broker.MqttSubscribeResult;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.session.MqttSession;
-import cn.bcd.app.mqtt.server.session.MqttSubscription;
-import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
-import cn.bcd.app.mqtt.server.session.MqttOutboundPublishState;
-import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -29,22 +20,17 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
-import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -53,8 +39,9 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     static final String IDLE_STATE_HANDLER_NAME = "mqttIdleStateHandler";
 
     private final MqttBroker broker;
-    private final MqttAuthenticator authenticator;
-    private final MqttAuthorizer authorizer;
+    private final MqttConnectFlow connectFlow;
+    private final MqttSubscriptionFlow subscriptionFlow;
+    private final MqttPublishFlow publishFlow;
 
     private volatile ChannelHandlerContext nettyContext;
     private volatile MqttConnectionContext context;
@@ -76,8 +63,9 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             MqttAuthenticator authenticator,
             MqttAuthorizer authorizer) {
         this.broker = Objects.requireNonNull(broker);
-        this.authenticator = Objects.requireNonNull(authenticator);
-        this.authorizer = Objects.requireNonNull(authorizer);
+        connectFlow = new MqttConnectFlow(broker, authenticator, authorizer);
+        subscriptionFlow = new MqttSubscriptionFlow(broker, authorizer);
+        publishFlow = new MqttPublishFlow(broker, authorizer);
     }
 
     @Override
@@ -94,7 +82,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
         MqttMessageType messageType = message.fixedHeader().messageType();
         if (state == MqttConnectionState.NEW && messageType == MqttMessageType.CONNECT) {
-            onConnect(context, (MqttConnectMessage) message);
+            connectFlow.handle(this, (MqttConnectMessage) message);
             return;
         }
         if (state != MqttConnectionState.CONNECTED) {
@@ -104,100 +92,47 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
         switch (messageType) {
             case PINGREQ -> context.writeAndFlush(MqttMessage.PINGRESP);
-            case SUBSCRIBE -> onSubscribe(context, (MqttSubscribeMessage) message);
-            case UNSUBSCRIBE -> onUnsubscribe(context, (MqttUnsubscribeMessage) message);
-            case PUBLISH -> onPublish((MqttPublishMessage) message);
-            case PUBACK -> onPubAck((MqttPubAckMessage) message);
-            case PUBREC -> onPubRec(message);
-            case PUBREL -> onPubRel(message);
-            case PUBCOMP -> onPubComp(message);
+            case SUBSCRIBE -> subscriptionFlow.subscribe(
+                    this, (MqttSubscribeMessage) message);
+            case UNSUBSCRIBE -> subscriptionFlow.unsubscribe(
+                    this, (MqttUnsubscribeMessage) message);
+            case PUBLISH -> publishFlow.publish(
+                    this, (MqttPublishMessage) message);
+            case PUBACK -> publishFlow.pubAck(this, (MqttPubAckMessage) message);
+            case PUBREC -> publishFlow.pubRec(this, message);
+            case PUBREL -> publishFlow.pubRel(this, message);
+            case PUBCOMP -> publishFlow.pubComp(this, message);
             case DISCONNECT -> close(MqttConnectionCloseReason.NORMAL_DISCONNECT);
             default -> close(MqttConnectionCloseReason.PROTOCOL_ERROR);
         }
     }
 
-    private void onPublish(MqttPublishMessage message) {
-        MqttQoS qos = message.fixedHeader().qosLevel();
-        if (qos == MqttQoS.AT_MOST_ONCE && message.fixedHeader().isDup()) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-        int packetId = message.variableHeader().packetId();
-        if (qos != MqttQoS.AT_MOST_ONCE && packetId == 0) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-        String topicName = message.variableHeader().topicName();
-        if (!MqttTopicFilter.isValidTopicName(topicName)) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-        if (!authorize(MqttAuthorizationAction.PUBLISH, topicName)) {
-            close(MqttConnectionCloseReason.AUTHORIZATION_FAILED);
-            return;
-        }
-
-        MqttApplicationMessage applicationMessage = new MqttApplicationMessage(
-                topicName, ByteBufUtil.getBytes(message.payload()), qos);
-        if (qos == MqttQoS.EXACTLY_ONCE) {
-            MqttInboundPublishStatus status = broker.receiveQosTwo(
-                    this,
-                    packetId,
-                    applicationMessage,
-                    message.fixedHeader().isRetain(),
-                    message.fixedHeader().isDup());
-            if (status == MqttInboundPublishStatus.PROTOCOL_ERROR) {
-                close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-                return;
-            }
-            writeQosControlPacket(MqttMessageType.PUBREC, packetId);
-            return;
-        }
-        if (!broker.publish(this, applicationMessage, message.fixedHeader().isRetain())) {
-            close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        if (qos == MqttQoS.AT_LEAST_ONCE) {
-            requiredNettyContext().writeAndFlush(MqttMessageBuilders.pubAck()
-                    .packetId(packetId)
-                    .build());
-        }
+    void accept(
+            MqttConnectionContext connectionContext,
+            MqttConnectResult connectResult,
+            MqttWillMessage willMessage) {
+        context = connectionContext;
+        session = connectResult.session();
+        pendingWill = willMessage;
+        state = MqttConnectionState.CONNECTED;
+        configureKeepAlive(connectionContext.keepAliveSeconds());
+        write(MqttMessageBuilders.connAck()
+                .returnCode(MqttConnectReturnCode.CONNECTION_ACCEPTED)
+                .sessionPresent(connectResult.sessionPresent())
+                .build());
     }
 
-    private void onPubAck(MqttPubAckMessage message) {
-        int packetId = message.variableHeader().messageId();
-        if (packetId == 0) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-        broker.acknowledge(this, packetId);
+    void refuse(MqttConnectReturnCode returnCode) {
+        recordCloseReason(MqttConnectionCloseReason.CONNECTION_REFUSED);
+        state = MqttConnectionState.CLOSING;
+        requiredNettyContext().writeAndFlush(MqttMessageBuilders.connAck()
+                        .returnCode(returnCode)
+                        .sessionPresent(false)
+                        .build())
+                .addListener(ChannelFutureListener.CLOSE);
     }
 
-    private void onPubRec(MqttMessage message) {
-        int packetId = packetId(message);
-        broker.receivePubRec(this, packetId)
-                .ifPresent(pending -> writeQosControlPacket(
-                        MqttMessageType.PUBREL, pending.packetId()));
-    }
-
-    private void onPubRel(MqttMessage message) {
-        int packetId = packetId(message);
-        if (!broker.releaseQosTwo(this, packetId)) {
-            close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        writeQosControlPacket(MqttMessageType.PUBCOMP, packetId);
-    }
-
-    private void onPubComp(MqttMessage message) {
-        broker.receivePubComp(this, packetId(message));
-    }
-
-    private static int packetId(MqttMessage message) {
-        return ((MqttMessageIdVariableHeader) message.variableHeader()).messageId();
-    }
-
-    private void writeQosControlPacket(MqttMessageType messageType, int packetId) {
+    void writeQosControlPacket(MqttMessageType messageType, int packetId) {
         MqttQoS headerQos = messageType == MqttMessageType.PUBREL
                 ? MqttQoS.AT_LEAST_ONCE
                 : MqttQoS.AT_MOST_ONCE;
@@ -206,220 +141,18 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 MqttMessageIdVariableHeader.from(packetId)));
     }
 
-    private void onSubscribe(ChannelHandlerContext context, MqttSubscribeMessage message) {
-        int packetId = message.variableHeader().messageId();
-        List<MqttTopicSubscription> requests = message.payload().topicSubscriptions();
-        if (packetId == 0 || requests.isEmpty()
-                || message.fixedHeader().qosLevel() != MqttQoS.AT_LEAST_ONCE
-                || message.fixedHeader().isRetain()) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-
-        MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck().packetId(packetId);
-        Map<String, MqttApplicationMessage> retainedMessages = new LinkedHashMap<>();
-        for (MqttTopicSubscription request : requests) {
-            String topicFilter = request.topicFilter();
-            MqttQoS requestedQos = request.qualityOfService();
-            if (!MqttTopicFilter.isValid(topicFilter) || !isSubscriptionQos(requestedQos)) {
-                close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-                return;
-            }
-        }
-        for (MqttTopicSubscription request : requests) {
-            String topicFilter = request.topicFilter();
-            MqttQoS requestedQos = request.qualityOfService();
-            if (!authorize(MqttAuthorizationAction.SUBSCRIBE, topicFilter)) {
-                subAck.addGrantedQos(MqttQoS.FAILURE);
-                continue;
-            }
-            MqttSubscribeResult result = broker.subscribe(
-                    this, new MqttSubscription(topicFilter, requestedQos));
-            if (!result.subscribed()) {
-                close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-                return;
-            }
-            result.retainedMessages().forEach(
-                    retained -> retainedMessages.put(retained.topicName(), retained));
-            subAck.addGrantedQos(requestedQos);
-        }
-        context.writeAndFlush(subAck.build());
-        for (MqttApplicationMessage retained : retainedMessages.values()) {
-            if (!broker.deliverRetained(this, retained)) {
-                close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-                return;
-            }
-        }
+    void write(MqttMessage message) {
+        requiredNettyContext().writeAndFlush(message);
     }
 
-    private static boolean isSubscriptionQos(MqttQoS qos) {
-        return qos == MqttQoS.AT_MOST_ONCE
-                || qos == MqttQoS.AT_LEAST_ONCE
-                || qos == MqttQoS.EXACTLY_ONCE;
-    }
-
-    private void onUnsubscribe(
-            ChannelHandlerContext context,
-            MqttUnsubscribeMessage message) {
-        int packetId = message.variableHeader().messageId();
-        List<String> topicFilters = message.payload().topics();
-        if (packetId == 0 || topicFilters.isEmpty()
-                || message.fixedHeader().qosLevel() != MqttQoS.AT_LEAST_ONCE
-                || message.fixedHeader().isRetain()
-                || topicFilters.stream().anyMatch(topicFilter -> !MqttTopicFilter.isValid(topicFilter))) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-        if (!broker.unsubscribe(this, topicFilters)) {
-            close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        context.writeAndFlush(MqttMessageBuilders.unsubAck()
-                .packetId(packetId)
-                .build());
-    }
-
-    private void onConnect(ChannelHandlerContext nettyContext, MqttConnectMessage message) {
-        int protocolVersion = message.variableHeader().version();
-        if (protocolVersion != MqttVersion.MQTT_3_1_1.protocolLevel()) {
-            refuse(nettyContext, protocolVersion == MqttVersion.MQTT_5.protocolLevel()
-                    ? MqttConnectReturnCode.CONNECTION_REFUSED_UNSUPPORTED_PROTOCOL_VERSION
-                    : MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION);
-            return;
-        }
-
-        String clientId = message.payload().clientIdentifier();
-        if (clientId == null || clientId.isEmpty()) {
-            refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
-            return;
-        }
-        if (message.variableHeader().hasPassword()
-                && !message.variableHeader().hasUserName()) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-
-        MqttWillMessage willMessage = willMessage(message);
-        if (!isValidWill(message, willMessage)) {
-            close(MqttConnectionCloseReason.PROTOCOL_ERROR);
-            return;
-        }
-
-        MqttAuthenticationRequest authenticationRequest = new MqttAuthenticationRequest(
-                clientId,
-                message.payload().userName(),
-                message.payload().passwordInBytes());
-        if (!authenticator.authenticate(authenticationRequest)) {
-            refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD);
-            return;
-        }
-        if (willMessage != null && !authorize(
-                clientId,
-                message.payload().userName(),
-                MqttAuthorizationAction.PUBLISH,
-                willMessage.message().topicName())) {
-            refuse(nettyContext, MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED);
-            return;
-        }
-
-        MqttConnectionContext connectionContext = new MqttConnectionContext(
-                clientId,
-                message.variableHeader().isCleanSession(),
-                message.variableHeader().keepAliveTimeSeconds(),
-                message.payload().userName(),
-                willMessage);
-        MqttConnectResult connectResult = broker.connect(
-                this,
-                connectionContext.clientId(),
-                connectionContext.username(),
-                connectionContext.cleanSession());
-        context = connectionContext;
-        session = connectResult.session();
-        pendingWill = willMessage;
-        state = MqttConnectionState.CONNECTED;
-        configureKeepAlive(nettyContext, connectionContext.keepAliveSeconds());
-        nettyContext.writeAndFlush(MqttMessageBuilders.connAck()
-                .returnCode(MqttConnectReturnCode.CONNECTION_ACCEPTED)
-                .sessionPresent(connectResult.sessionPresent())
-                .build());
-        broker.pendingPublishes(this).forEach(pending -> {
-            if (pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
-                writeQosControlPacket(MqttMessageType.PUBREL, pending.packetId());
-                return;
-            }
-            boolean duplicate = pending.sent();
-            broker.markPendingPublishSent(this, pending.packetId());
-            sendPublish(
-                    pending.message(), pending.packetId(), pending.retained(), duplicate);
-        });
-    }
-
-    private boolean authorize(MqttAuthorizationAction action, String topic) {
-        MqttConnectionContext connectionContext = context;
-        return connectionContext != null && authorize(
-                connectionContext.clientId(),
-                connectionContext.username(),
-                action,
-                topic);
-    }
-
-    private boolean authorize(
-            String clientId,
-            String username,
-            MqttAuthorizationAction action,
-            String topic) {
-        return authorizer.authorize(new MqttAuthorizationRequest(
-                action, clientId, username, topic));
-    }
-
-    private static MqttWillMessage willMessage(MqttConnectMessage message) {
-        if (!message.variableHeader().isWillFlag()) {
-            return null;
-        }
-        int willQos = message.variableHeader().willQos();
-        if (willQos < 0 || willQos > 2) {
-            return null;
-        }
-        String willTopic = message.payload().willTopic();
-        byte[] willPayload = message.payload().willMessageInBytes();
-        if (!MqttTopicFilter.isValidTopicName(willTopic) || willPayload == null) {
-            return null;
-        }
-        return new MqttWillMessage(
-                new MqttApplicationMessage(
-                        willTopic,
-                        willPayload,
-                        MqttQoS.valueOf(willQos)),
-                message.variableHeader().isWillRetain());
-    }
-
-    private static boolean isValidWill(
-            MqttConnectMessage message,
-            MqttWillMessage willMessage) {
-        if (!message.variableHeader().isWillFlag()) {
-            return message.variableHeader().willQos() == 0
-                    && !message.variableHeader().isWillRetain();
-        }
-        return willMessage != null;
-    }
-
-    private void configureKeepAlive(ChannelHandlerContext context, int keepAliveSeconds) {
+    private void configureKeepAlive(int keepAliveSeconds) {
         if (keepAliveSeconds == 0) {
             return;
         }
         long readerIdleMillis = keepAliveSeconds * 1500L;
+        ChannelHandlerContext context = requiredNettyContext();
         context.pipeline().addBefore(context.name(), IDLE_STATE_HANDLER_NAME,
                 new IdleStateHandler(readerIdleMillis, 0, 0, TimeUnit.MILLISECONDS));
-    }
-
-    private void refuse(ChannelHandlerContext context, MqttConnectReturnCode returnCode) {
-        recordCloseReason(MqttConnectionCloseReason.CONNECTION_REFUSED);
-        state = MqttConnectionState.CLOSING;
-        context.writeAndFlush(MqttMessageBuilders.connAck()
-                        .returnCode(returnCode)
-                        .sessionPresent(false)
-                        .build())
-                .addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override
@@ -444,7 +177,8 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private void publishPendingWill() {
         MqttWillMessage willMessage = pendingWill;
         pendingWill = null;
-        if (willMessage != null && closeReason != MqttConnectionCloseReason.NORMAL_DISCONNECT
+        if (willMessage != null
+                && closeReason != MqttConnectionCloseReason.NORMAL_DISCONNECT
                 && closeReason != MqttConnectionCloseReason.CONNECTION_REFUSED) {
             broker.publishWill(willMessage);
         }
@@ -546,6 +280,8 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     }
 
     private ChannelHandlerContext requiredNettyContext() {
-        return Objects.requireNonNull(nettyContext, "MQTT connection has not been added to a pipeline");
+        return Objects.requireNonNull(
+                nettyContext,
+                "MQTT connection has not been added to a pipeline");
     }
 }

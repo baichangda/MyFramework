@@ -27,7 +27,7 @@ class MqttClientRegistryTest {
 
         assertEquals(session.clientId(), registry.findSession("cid").orElseThrow().clientId());
         assertTrue(registry.findConnection("cid").isEmpty());
-        assertTrue(registry.findSubscribers("sensor/temp").contains("cid"));
+        assertTrue(registry.findSubscribers("sensor/temp").containsKey("cid"));
     }
 
     @Test

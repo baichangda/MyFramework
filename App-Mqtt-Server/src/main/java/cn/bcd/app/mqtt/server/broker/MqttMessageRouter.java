@@ -29,10 +29,10 @@ final class MqttMessageRouter {
             }
         }
 
-        for (String clientId : clients.findSubscribers(message.topicName())) {
-            clients.prepareDelivery(clientId, message, false)
-                    .ifPresent(this::send);
-        }
+        clients.findSubscribers(message.topicName())
+                .forEach((clientId, subscriptionQos) -> clients
+                        .prepareDelivery(clientId, message, subscriptionQos, false)
+                        .ifPresent(this::send));
     }
 
     void publishWill(MqttWillMessage willMessage) {
