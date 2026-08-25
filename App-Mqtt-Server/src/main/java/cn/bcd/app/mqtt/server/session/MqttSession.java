@@ -6,20 +6,18 @@ import cn.bcd.lib.base.exception.BaseException;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public final class MqttSession {
 
     private final String clientId;
     private final String username;
-    private final ConcurrentMap<String, MqttSubscription> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, MqttSubscription> subscriptions = new HashMap<>();
     private final Map<Integer, MqttPendingPublish> pendingPublishes = new LinkedHashMap<>();
     private final Map<Integer, MqttInboundQosTwoPublish> inboundQosTwoPublishes =
             new LinkedHashMap<>();
@@ -42,28 +40,33 @@ public final class MqttSession {
         return username;
     }
 
-    public synchronized void subscribe(MqttSubscription subscription) {
-        subscriptions.put(subscription.topicFilter(), subscription);
+    public synchronized boolean subscribe(MqttSubscription subscription) {
+        return !subscription.equals(
+                subscriptions.put(subscription.topicFilter(), subscription));
     }
 
-    public synchronized void unsubscribe(String topicFilter) {
-        subscriptions.remove(topicFilter);
+    public synchronized boolean unsubscribe(String topicFilter) {
+        return subscriptions.remove(topicFilter) != null;
     }
 
-    public Optional<MqttSubscription> findSubscription(String topicName) {
+    public synchronized Optional<MqttSubscription> findSubscription(String topicName) {
         return Optional.ofNullable(subscriptions.get(topicName));
     }
 
-    public Collection<MqttSubscription> subscriptions() {
+    public synchronized Collection<MqttSubscription> subscriptions() {
         return List.copyOf(subscriptions.values());
     }
 
-    public Optional<MqttQoS> maximumQosMatching(String topicName) {
-        return subscriptions.values().stream()
-                .filter(subscription -> MqttTopicFilter.matches(
-                        subscription.topicFilter(), topicName))
-                .map(MqttSubscription::qos)
-                .max(Comparator.comparingInt(MqttQoS::value));
+    public synchronized Optional<MqttQoS> maximumQosMatching(String topicName) {
+        MqttQoS maximumQos = null;
+        for (MqttSubscription subscription : subscriptions.values()) {
+            if (MqttTopicFilter.matches(subscription.topicFilter(), topicName)
+                    && (maximumQos == null
+                    || subscription.qos().value() > maximumQos.value())) {
+                maximumQos = subscription.qos();
+            }
+        }
+        return Optional.ofNullable(maximumQos);
     }
 
     public synchronized MqttPendingPublish enqueue(
@@ -83,11 +86,13 @@ public final class MqttSession {
         throw BaseException.get("No MQTT packet identifier available for clientId[{}]", clientId);
     }
 
-    public synchronized void acknowledgeQosOne(int packetId) {
+    public synchronized boolean acknowledgeQosOne(int packetId) {
         MqttPendingPublish pending = pendingPublishes.get(packetId);
         if (pending != null && pending.state() == MqttOutboundPublishState.WAIT_PUBACK) {
             pendingPublishes.remove(packetId);
+            return true;
         }
+        return false;
     }
 
     public synchronized Optional<MqttPendingPublish> receivePubRec(int packetId) {
@@ -95,15 +100,18 @@ public final class MqttSession {
         if (pending == null || pending.state() == MqttOutboundPublishState.WAIT_PUBACK) {
             return Optional.empty();
         }
-        pending.waitForPubComp();
-        return Optional.of(pending);
+        MqttPendingPublish waitingForPubComp = pending.waitingForPubComp();
+        pendingPublishes.put(packetId, waitingForPubComp);
+        return Optional.of(waitingForPubComp);
     }
 
-    public synchronized void receivePubComp(int packetId) {
+    public synchronized boolean receivePubComp(int packetId) {
         MqttPendingPublish pending = pendingPublishes.get(packetId);
         if (pending != null && pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
             pendingPublishes.remove(packetId);
+            return true;
         }
+        return false;
     }
 
     public synchronized MqttInboundPublishStatus receiveQosTwo(
@@ -129,11 +137,13 @@ public final class MqttSession {
         return List.copyOf(pendingPublishes.values());
     }
 
-    public synchronized void markPendingPublishSent(int packetId) {
+    public synchronized boolean markPendingPublishSent(int packetId) {
         MqttPendingPublish pending = pendingPublishes.get(packetId);
-        if (pending != null) {
-            pending.markSent();
+        if (pending == null || pending.sent()) {
+            return false;
         }
+        pendingPublishes.put(packetId, pending.asSent());
+        return true;
     }
 
     public synchronized MqttSessionSnapshot snapshot() {
@@ -142,9 +152,7 @@ public final class MqttSession {
                 username,
                 nextPacketId,
                 List.copyOf(subscriptions.values()),
-                pendingPublishes.values().stream()
-                        .map(MqttPendingPublish::snapshot)
-                        .toList(),
+                List.copyOf(pendingPublishes.values()),
                 List.copyOf(inboundQosTwoPublishes.values()));
     }
 
@@ -154,13 +162,8 @@ public final class MqttSession {
         for (MqttSubscription subscription : snapshot.subscriptions()) {
             session.subscriptions.put(subscription.topicFilter(), subscription);
         }
-        for (MqttPendingPublishSnapshot pending : snapshot.pendingPublishes()) {
-            session.pendingPublishes.put(pending.packetId(), new MqttPendingPublish(
-                    pending.packetId(),
-                    pending.message(),
-                    pending.retained(),
-                    pending.sent(),
-                    pending.state()));
+        for (MqttPendingPublish pending : snapshot.pendingPublishes()) {
+            session.pendingPublishes.put(pending.packetId(), pending);
         }
         for (MqttInboundQosTwoPublish inbound : snapshot.inboundQosTwoPublishes()) {
             session.inboundQosTwoPublishes.put(inbound.packetId(), inbound);

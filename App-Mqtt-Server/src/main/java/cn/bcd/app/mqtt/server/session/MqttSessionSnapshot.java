@@ -8,7 +8,7 @@ public record MqttSessionSnapshot(
         String username,
         int nextPacketId,
         List<MqttSubscription> subscriptions,
-        List<MqttPendingPublishSnapshot> pendingPublishes,
+        List<MqttPendingPublish> pendingPublishes,
         List<MqttInboundQosTwoPublish> inboundQosTwoPublishes
 ) {
 

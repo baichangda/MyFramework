@@ -1,21 +1,65 @@
 package cn.bcd.app.mqtt.server.session;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
+import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.support.MqttTestBroker;
+import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MqttSessionTest {
+
+    @Test
+    void shouldKeepPendingPublishStateInsideSession() {
+        MqttSession session = new MqttSession("cid");
+        MqttPendingPublish enqueued = session.enqueue(
+                new MqttApplicationMessage(
+                        "sensor/temp",
+                        new byte[]{0x01},
+                        MqttQoS.AT_LEAST_ONCE),
+                MqttQoS.AT_LEAST_ONCE,
+                false);
+
+        assertTrue(session.markPendingPublishSent(enqueued.packetId()));
+
+        assertFalse(enqueued.sent());
+        assertTrue(session.pendingPublishes().stream()
+                .findFirst()
+                .orElseThrow()
+                .sent());
+        assertFalse(session.markPendingPublishSent(enqueued.packetId()));
+    }
+
+    @Test
+    void shouldOnlyAcknowledgeExpectedOutboundState() {
+        MqttSession session = new MqttSession("cid");
+        MqttPendingPublish qosOne = session.enqueue(
+                new MqttApplicationMessage(
+                        "sensor/temp", new byte[0], MqttQoS.AT_LEAST_ONCE),
+                MqttQoS.AT_LEAST_ONCE,
+                false);
+        MqttPendingPublish qosTwo = session.enqueue(
+                new MqttApplicationMessage(
+                        "sensor/temp", new byte[0], MqttQoS.EXACTLY_ONCE),
+                MqttQoS.EXACTLY_ONCE,
+                false);
+
+        assertFalse(session.acknowledgeQosOne(qosTwo.packetId()));
+        assertFalse(session.receivePubComp(qosTwo.packetId()));
+        assertTrue(session.receivePubRec(qosTwo.packetId()).isPresent());
+        assertTrue(session.receivePubComp(qosTwo.packetId()));
+        assertTrue(session.acknowledgeQosOne(qosOne.packetId()));
+        assertTrue(session.pendingPublishes().isEmpty());
+    }
 
     @Test
     void shouldResumePersistentSessionAndSetSessionPresent() {
@@ -69,30 +113,14 @@ class MqttSessionTest {
     private static TestClient connect(
             boolean cleanSession,
             MqttBroker broker) {
-        EmbeddedChannel channel = new EmbeddedChannel();
-        MqttConnection connection = new MqttConnection(broker);
-        channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
-        channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(connection);
-        channel.writeInbound(Unpooled.wrappedBuffer(connectPacket(cleanSession)));
-        return new TestClient(channel, connection, readOutbound(channel));
-    }
-
-    private static byte[] connectPacket(boolean cleanSession) {
-        return new byte[]{
-                0x10, 0x0f,
-                0x00, 0x04, 'M', 'Q', 'T', 'T',
-                0x04, cleanSession ? (byte) 0x02 : 0x00, 0x00, 0x3c,
-                0x00, 0x03, 'c', 'i', 'd'
-        };
-    }
-
-    private static byte[] readOutbound(EmbeddedChannel channel) {
-        ByteBuf buffer = channel.readOutbound();
-        byte[] bytes = new byte[buffer.readableBytes()];
-        buffer.readBytes(bytes);
-        buffer.release();
-        return bytes;
+        EmbeddedChannel channel = MqttTestChannel.open(broker);
+        MqttConnection connection = MqttTestChannel.connection(channel);
+        channel.writeInbound(Unpooled.wrappedBuffer(
+                MqttTestChannel.connectPacket("cid", cleanSession)));
+        return new TestClient(
+                channel,
+                connection,
+                MqttTestChannel.readOutbound(channel));
     }
 
     private record TestClient(

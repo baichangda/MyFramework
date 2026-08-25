@@ -1,13 +1,9 @@
 package cn.bcd.app.mqtt.server.protocol;
 
-import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
-import cn.bcd.app.mqtt.server.support.MqttTestBroker;
-import io.netty.buffer.ByteBuf;
+import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -32,7 +28,7 @@ class MqttConnectTest {
         assertFalse(channel.writeInbound(Unpooled.wrappedBuffer(VALID_CONNECT)));
 
         assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00}, readOutbound(channel));
-        MqttConnectionContext context = connection(channel).context();
+        MqttConnectionContext context = MqttTestChannel.connection(channel).context();
         assertNotNull(context);
         assertEquals("cid", context.clientId());
         assertTrue(context.cleanSession());
@@ -118,22 +114,10 @@ class MqttConnectTest {
     }
 
     private static EmbeddedChannel newChannel() {
-        EmbeddedChannel channel = new EmbeddedChannel();
-        channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
-        channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(new MqttConnection(MqttTestBroker.create()));
-        return channel;
-    }
-
-    private static MqttConnection connection(EmbeddedChannel channel) {
-        return channel.pipeline().get(MqttConnection.class);
+        return MqttTestChannel.open();
     }
 
     private static byte[] readOutbound(EmbeddedChannel channel) {
-        ByteBuf buffer = channel.readOutbound();
-        byte[] bytes = new byte[buffer.readableBytes()];
-        buffer.readBytes(bytes);
-        buffer.release();
-        return bytes;
+        return MqttTestChannel.readOutbound(channel);
     }
 }

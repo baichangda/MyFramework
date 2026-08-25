@@ -113,9 +113,11 @@ public class MqttBroker {
         AtomicBoolean subscribed = new AtomicBoolean();
         clients.computeIfPresent(session.clientId(), (key, current) -> {
             if (current.connection() == connection) {
-                current.session().subscribe(subscription);
+                boolean changed = current.session().subscribe(subscription);
                 subscriptionIndex.add(session.clientId(), subscription);
-                persist(current);
+                if (changed) {
+                    persist(current);
+                }
                 subscribed.set(true);
             }
             return current;
@@ -136,11 +138,14 @@ public class MqttBroker {
         AtomicBoolean unsubscribed = new AtomicBoolean();
         clients.computeIfPresent(session.clientId(), (key, current) -> {
             if (current.connection() == connection) {
+                boolean changed = false;
                 for (String topicFilter : topicFilters) {
-                    current.session().unsubscribe(topicFilter);
+                    changed |= current.session().unsubscribe(topicFilter);
                     subscriptionIndex.remove(session.clientId(), topicFilter);
                 }
-                persist(current);
+                if (changed) {
+                    persist(current);
+                }
                 unsubscribed.set(true);
             }
             return current;
@@ -215,8 +220,9 @@ public class MqttBroker {
         }
         MqttClientState state = clients.get(session.clientId());
         if (state != null && state.connection() == connection) {
-            session.acknowledgeQosOne(packetId);
-            persist(state);
+            if (session.acknowledgeQosOne(packetId)) {
+                persist(state);
+            }
         }
     }
 
@@ -232,7 +238,9 @@ public class MqttBroker {
         }
         MqttInboundPublishStatus status = session.receiveQosTwo(
                 packetId, message, retained, duplicate);
-        persist(clients.get(session.clientId()));
+        if (status == MqttInboundPublishStatus.STORED) {
+            persist(clients.get(session.clientId()));
+        }
         return status;
     }
 
@@ -242,7 +250,9 @@ public class MqttBroker {
             return false;
         }
         Optional<MqttInboundQosTwoPublish> pending = session.releaseQosTwo(packetId);
-        persist(clients.get(session.clientId()));
+        if (pending.isPresent()) {
+            persist(clients.get(session.clientId()));
+        }
         pending.ifPresent(message -> publish(
                 connection, message.message(), message.retained()));
         return true;
@@ -263,8 +273,9 @@ public class MqttBroker {
     public void receivePubComp(MqttConnection connection, int packetId) {
         MqttSession session = connection.session();
         if (isCurrentConnection(connection, session)) {
-            session.receivePubComp(packetId);
-            persist(clients.get(session.clientId()));
+            if (session.receivePubComp(packetId)) {
+                persist(clients.get(session.clientId()));
+            }
         }
     }
 
@@ -287,8 +298,9 @@ public class MqttBroker {
         if (!isCurrentConnection(connection, session)) {
             return;
         }
-        session.markPendingPublishSent(packetId);
-        persist(clients.get(session.clientId()));
+        if (session.markPendingPublishSent(packetId)) {
+            persist(clients.get(session.clientId()));
+        }
     }
 
     private void deliver(

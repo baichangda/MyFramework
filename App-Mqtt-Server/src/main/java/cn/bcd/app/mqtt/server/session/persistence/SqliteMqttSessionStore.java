@@ -4,7 +4,7 @@ import cn.bcd.app.mqtt.server.config.MqttPersistenceProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.session.MqttInboundQosTwoPublish;
 import cn.bcd.app.mqtt.server.session.MqttOutboundPublishState;
-import cn.bcd.app.mqtt.server.session.MqttPendingPublishSnapshot;
+import cn.bcd.app.mqtt.server.session.MqttPendingPublish;
 import cn.bcd.app.mqtt.server.session.MqttSessionSnapshot;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import cn.bcd.lib.base.exception.BaseException;
@@ -195,7 +195,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
             while (result.next()) {
                 SnapshotBuilder builder = builders.get(result.getString("client_id"));
                 if (builder != null) {
-                    builder.pendingPublishes.add(new MqttPendingPublishSnapshot(
+                    builder.pendingPublishes.add(new MqttPendingPublish(
                             result.getInt("packet_id"),
                             new MqttApplicationMessage(
                                     result.getString("topic_name"),
@@ -279,7 +279,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
                     client_id, packet_id, topic_name, payload, qos, retained, sent, state
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """)) {
-            for (MqttPendingPublishSnapshot pending : snapshot.pendingPublishes()) {
+            for (MqttPendingPublish pending : snapshot.pendingPublishes()) {
                 statement.setString(1, snapshot.clientId());
                 statement.setInt(2, pending.packetId());
                 statement.setString(3, pending.message().topicName());
@@ -349,7 +349,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         private final String username;
         private final int nextPacketId;
         private final List<MqttSubscription> subscriptions = new ArrayList<>();
-        private final List<MqttPendingPublishSnapshot> pendingPublishes = new ArrayList<>();
+        private final List<MqttPendingPublish> pendingPublishes = new ArrayList<>();
         private final List<MqttInboundQosTwoPublish> inboundQosTwoPublishes =
                 new ArrayList<>();
 
