@@ -17,6 +17,13 @@ public record MqttSubscribeResult(
         boolean granted,
         Collection<MqttApplicationMessage> retainedMessages
 ) {
+    /**
+     * 复制保留消息集合，防止订阅结果在返回后被修改。
+     *
+     * @param subscribed 当前连接是否有效
+     * @param granted 是否授予订阅
+     * @param retainedMessages 匹配的保留消息
+     */
     public MqttSubscribeResult {
         retainedMessages = List.copyOf(retainedMessages);
     }

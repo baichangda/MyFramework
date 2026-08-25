@@ -19,39 +19,80 @@ public interface MqttSessionStore {
     /** 加载全部持久会话快照。 */
     Collection<MqttSessionSnapshot> loadAll();
 
-    /** 新建会话或更新会话元数据。 */
+    /**
+     * 新建会话或更新会话元数据。
+     *
+     * @param clientId 客户端标识
+     * @param username 已认证用户名
+     * @param nextPacketId 下一个报文标识符
+     */
     CompletionStage<Void> upsertSession(
             String clientId,
             String username,
             int nextPacketId);
 
-    /** 删除会话及其关联的订阅和飞行中消息。 */
+    /**
+     * 删除会话及其关联的订阅和飞行中消息。
+     *
+     * @param clientId 客户端标识
+     */
     CompletionStage<Void> deleteSession(String clientId);
 
-    /** 新增订阅或更新已有过滤器的 QoS。 */
+    /**
+     * 新增订阅或更新已有过滤器的 QoS。
+     *
+     * @param clientId 客户端标识
+     * @param subscription 订阅内容
+     */
     CompletionStage<Void> upsertSubscription(
             String clientId,
             MqttSubscription subscription);
 
-    /** 批量删除会话中的订阅。 */
+    /**
+     * 批量删除会话中的订阅。
+     *
+     * @param clientId 客户端标识
+     * @param topicFilters 待删除的主题过滤器
+     */
     CompletionStage<Void> deleteSubscriptions(
             String clientId,
             Collection<String> topicFilters);
 
-    /** 保存出站待确认消息，并同步更新下一个报文标识符。 */
+    /**
+     * 保存出站待确认消息，并同步更新下一个报文标识符。
+     *
+     * @param clientId 客户端标识
+     * @param nextPacketId 下一个报文标识符
+     * @param pending 待确认消息
+     */
     CompletionStage<Void> upsertPendingPublish(
             String clientId,
             int nextPacketId,
             MqttPendingPublish pending);
 
-    /** 删除已完成确认的出站消息。 */
+    /**
+     * 删除已完成确认的出站消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     CompletionStage<Void> deletePendingPublish(String clientId, int packetId);
 
-    /** 保存等待 PUBREL 的 QoS 2 入站消息。 */
+    /**
+     * 保存等待 PUBREL 的 QoS 2 入站消息。
+     *
+     * @param clientId 客户端标识
+     * @param publish 入站消息
+     */
     CompletionStage<Void> upsertInboundQosTwo(
             String clientId,
             MqttInboundQosTwoPublish publish);
 
-    /** 删除已经通过 PUBREL 释放的 QoS 2 入站消息。 */
+    /**
+     * 删除已经通过 PUBREL 释放的 QoS 2 入站消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     CompletionStage<Void> deleteInboundQosTwo(String clientId, int packetId);
 }

@@ -20,6 +20,12 @@ final class MqttSubscriptionIndex {
     private final Node root = new Node();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    /**
+     * 将单条订阅加入主题树。
+     *
+     * @param clientId 客户端标识
+     * @param subscription 订阅内容
+     */
     void add(String clientId, MqttSubscription subscription) {
         String[] levels = levels(subscription.topicFilter());
         lock.writeLock().lock();
@@ -40,18 +46,34 @@ final class MqttSubscriptionIndex {
         }
     }
 
+    /**
+     * 将会话中的全部订阅恢复到主题树。
+     *
+     * @param session 客户端会话
+     */
     void add(MqttSession session) {
         for (MqttSubscription subscription : session.subscriptions()) {
             add(session.clientId(), subscription);
         }
     }
 
+    /**
+     * 从主题树移除会话的全部订阅。
+     *
+     * @param session 客户端会话
+     */
     void remove(MqttSession session) {
         for (MqttSubscription subscription : session.subscriptions()) {
             remove(session.clientId(), subscription.topicFilter());
         }
     }
 
+    /**
+     * 删除客户端的一条主题订阅，并裁剪空节点。
+     *
+     * @param clientId 客户端标识
+     * @param topicFilter 主题过滤器
+     */
     void remove(String clientId, String topicFilter) {
         String[] levels = levels(topicFilter);
         lock.writeLock().lock();
@@ -80,6 +102,11 @@ final class MqttSubscriptionIndex {
         }
     }
 
+    /**
+     * 查找匹配主题名的客户端及其最高订阅 QoS。
+     *
+     * @param topicName 主题名
+     */
     Map<String, MqttQoS> findSubscribers(String topicName) {
         String[] topicLevels = levels(topicName);
         boolean systemTopic = topicName.charAt(0) == '$';
@@ -115,6 +142,12 @@ final class MqttSubscriptionIndex {
         }
     }
 
+    /**
+     * 合并命中订阅，并为每个客户端保留最高 QoS。
+     *
+     * @param matches 已合并的匹配结果
+     * @param subscribers 当前节点的订阅者
+     */
     private static void merge(
             Map<String, MqttQoS> matches,
             Map<String, MqttQoS> subscribers) {
@@ -127,6 +160,12 @@ final class MqttSubscriptionIndex {
                         : candidate));
     }
 
+    /**
+     * 从叶节点向根节点裁剪不再承载订阅的空路径。
+     *
+     * @param path 节点路径
+     * @param levels 过滤器层级
+     */
     private static void prune(
             List<Node> path,
             String[] levels) {
@@ -145,6 +184,11 @@ final class MqttSubscriptionIndex {
         }
     }
 
+    /**
+     * 切分主题层级并保留空层级。
+     *
+     * @param value 主题名或过滤器
+     */
     private static String[] levels(String value) {
         return value.split("/", -1);
     }
@@ -158,6 +202,7 @@ final class MqttSubscriptionIndex {
         private final Map<String, MqttQoS> multiLevelSubscribers = new HashMap<>();
         private Node singleLevel;
 
+        /** 获取或创建单层通配符子节点。 */
         private Node singleLevelChild() {
             if (singleLevel == null) {
                 singleLevel = new Node();
@@ -165,6 +210,7 @@ final class MqttSubscriptionIndex {
             return singleLevel;
         }
 
+        /** 判断节点是否不包含子节点及任何订阅者。 */
         private boolean isEmpty() {
             return literalChildren.isEmpty()
                     && singleLevel == null

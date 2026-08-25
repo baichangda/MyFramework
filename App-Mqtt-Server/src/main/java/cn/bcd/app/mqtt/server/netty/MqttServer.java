@@ -23,11 +23,18 @@ public class MqttServer {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
 
+    /**
+     * 创建使用指定监听配置和通道初始化器的服务。
+     *
+     * @param properties 服务配置
+     * @param channelInitializer 通道初始化器
+     */
     public MqttServer(MqttServerProperties properties, MqttChannelInitializer channelInitializer) {
         this.properties = properties;
         this.channelInitializer = channelInitializer;
     }
 
+    /** 幂等启动 Netty 事件循环并绑定监听端口。 */
     public synchronized void start() {
         if (isRunning()) {
             return;
@@ -54,6 +61,7 @@ public class MqttServer {
         }
     }
 
+    /** 幂等关闭监听通道及全部事件循环。 */
     public synchronized void stop() {
         // 先关闭监听通道停止接收新连接，再释放工作线程和接收线程。
         if (serverChannel != null) {
@@ -74,6 +82,7 @@ public class MqttServer {
         return ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
+    /** 在创建线程前校验监听与解码限制配置。 */
     private void validateProperties() {
         if (properties.getBindAddress() == null || properties.getBindAddress().isBlank()) {
             throw new IllegalArgumentException("mqtt.server.bind-address must not be blank");
@@ -89,6 +98,7 @@ public class MqttServer {
         }
     }
 
+    /** 按工作组、接收组的顺序优雅关闭事件循环。 */
     private void shutdownEventLoops() {
         if (workerGroup != null) {
             workerGroup.shutdownGracefully().syncUninterruptibly();

@@ -31,11 +31,22 @@ final class MqttRetainedMessageIndex {
         this(Integer.MAX_VALUE, Long.MAX_VALUE);
     }
 
+    /**
+     * 创建使用指定消息数和载荷字节上限的索引。
+     *
+     * @param maxMessages 消息数量上限
+     * @param maxPayloadBytes 载荷总字节上限
+     */
     MqttRetainedMessageIndex(int maxMessages, long maxPayloadBytes) {
         this.maxMessages = maxMessages;
         this.maxPayloadBytes = maxPayloadBytes;
     }
 
+    /**
+     * 新增或覆盖消息，并返回同主题的旧值。
+     *
+     * @param message 保留消息
+     */
     MqttApplicationMessage put(MqttApplicationMessage message) {
         String[] levels = levels(message.topicName());
         lock.writeLock().lock();
@@ -47,6 +58,7 @@ final class MqttRetainedMessageIndex {
             long nextBytes = payloadBytes + message.payloadLength()
                     - (previous == null ? 0 : previous.payloadLength());
             if (nextCount > maxMessages || nextBytes > maxPayloadBytes) {
+                // 在改动树结构前完成资源校验，失败时索引和计数保持原样。
                 throw BaseException.get("MQTT retained message limit exceeded");
             }
             Node node = root;
@@ -62,6 +74,11 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 删除主题消息、更新资源计数并返回旧值。
+     *
+     * @param topicName 主题名
+     */
     MqttApplicationMessage remove(String topicName) {
         String[] levels = levels(topicName);
         lock.writeLock().lock();
@@ -89,6 +106,12 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 在数据库保存失败后恢复内存索引的保存前状态。
+     *
+     * @param failed 保存失败的新消息
+     * @param previous 保存前的旧消息
+     */
     void restorePutFailure(
             MqttApplicationMessage failed,
             MqttApplicationMessage previous) {
@@ -96,6 +119,7 @@ final class MqttRetainedMessageIndex {
         try {
             Node node = findNode(failed.topicName());
             if (node != null && node.message == failed) {
+                // 仅回滚仍指向本次失败消息的节点，避免覆盖更晚的成功更新。
                 if (previous == null) {
                     removeWhileLocked(failed.topicName());
                 } else {
@@ -108,6 +132,12 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 在数据库删除失败后将旧消息恢复到内存索引。
+     *
+     * @param topicName 删除失败的主题名
+     * @param previous 删除前的旧消息
+     */
     void restoreDeleteFailure(
             String topicName,
             MqttApplicationMessage previous) {
@@ -118,6 +148,7 @@ final class MqttRetainedMessageIndex {
         try {
             Node node = findNode(topicName);
             if (node == null) {
+                // 删除后路径可能已被裁剪，需要重新创建完整主题路径。
                 putWhileLocked(previous);
             } else if (node.message == null) {
                 node.message = previous;
@@ -129,6 +160,11 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 使用主题树查找过滤器匹配的保留消息。
+     *
+     * @param topicFilter 主题过滤器
+     */
     List<MqttApplicationMessage> findMatching(String topicFilter) {
         String[] filters = levels(topicFilter);
         lock.readLock().lock();
@@ -171,6 +207,7 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /** 返回当前保留消息数量。 */
     int size() {
         lock.readLock().lock();
         try {
@@ -180,6 +217,7 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /** 返回当前保留消息的载荷总字节数。 */
     long payloadBytes() {
         lock.readLock().lock();
         try {
@@ -189,6 +227,13 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 收集指定节点下的全部消息，并可排除根级系统主题。
+     *
+     * @param start 起始节点
+     * @param messages 结果集合
+     * @param excludeSystemTopics 是否排除系统主题
+     */
     private static void collect(
             Node start,
             List<MqttApplicationMessage> messages,
@@ -211,6 +256,11 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 按完整主题名查找叶节点。
+     *
+     * @param topicName 主题名
+     */
     private Node findNode(String topicName) {
         Node node = root;
         for (String level : levels(topicName)) {
@@ -222,6 +272,11 @@ final class MqttRetainedMessageIndex {
         return node;
     }
 
+    /**
+     * 在调用方持有写锁时写入消息并更新计数。
+     *
+     * @param message 保留消息
+     */
     private void putWhileLocked(MqttApplicationMessage message) {
         Node node = root;
         for (String level : levels(message.topicName())) {
@@ -232,6 +287,11 @@ final class MqttRetainedMessageIndex {
         payloadBytes += message.payloadLength();
     }
 
+    /**
+     * 在调用方持有写锁时删除消息并裁剪主题路径。
+     *
+     * @param topicName 主题名
+     */
     private void removeWhileLocked(String topicName) {
         String[] levels = levels(topicName);
         List<Node> path = new ArrayList<>(levels.length + 1);
@@ -250,9 +310,16 @@ final class MqttRetainedMessageIndex {
             messageCount--;
             payloadBytes -= previous.payloadLength();
         }
+        // 删除消息后回收仅由该主题占用的空节点。
         prune(path, levels);
     }
 
+    /**
+     * 从叶节点开始删除不含消息和子节点的空路径。
+     *
+     * @param path 节点路径
+     * @param levels 主题层级
+     */
     private static void prune(List<Node> path, String[] levels) {
         for (int index = path.size() - 1; index > 0; index--) {
             Node node = path.get(index);
@@ -263,6 +330,11 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    /**
+     * 切分主题层级并保留空层级。
+     *
+     * @param value 主题名或过滤器
+     */
     private static String[] levels(String value) {
         return value.split("/", -1);
     }

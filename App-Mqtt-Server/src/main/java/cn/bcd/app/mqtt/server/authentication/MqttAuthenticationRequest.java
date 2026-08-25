@@ -17,11 +17,19 @@ public record MqttAuthenticationRequest(
         byte[] password
 ) {
 
+    /**
+     * 校验客户端标识，并复制密码字节以建立不可变请求。
+     *
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param password 密码字节
+     */
     public MqttAuthenticationRequest {
         Objects.requireNonNull(clientId);
         password = password == null ? null : password.clone();
     }
 
+    /** 返回密码字节副本，避免调用方修改请求内部数据。 */
     @Override
     public byte[] password() {
         return password == null ? null : password.clone();

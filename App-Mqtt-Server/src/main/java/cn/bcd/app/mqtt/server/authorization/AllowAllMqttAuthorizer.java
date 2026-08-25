@@ -5,6 +5,11 @@ package cn.bcd.app.mqtt.server.authorization;
  */
 public final class AllowAllMqttAuthorizer implements MqttAuthorizer {
 
+    /**
+     * 对任意发布或订阅请求直接授权。
+     *
+     * @param request 授权请求
+     */
     @Override
     public boolean authorize(MqttAuthorizationRequest request) {
         return true;

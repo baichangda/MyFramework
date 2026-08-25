@@ -28,11 +28,19 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
 
     private final Map<String, SessionState> sessions = new LinkedHashMap<>();
 
+    /** 返回全部内存会话的不可变快照。 */
     @Override
     public synchronized Collection<MqttSessionSnapshot> loadAll() {
         return sessions.values().stream().map(SessionState::snapshot).toList();
     }
 
+    /**
+     * 新增或更新会话元数据。
+     *
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param nextPacketId 下一个报文标识符
+     */
     @Override
     public synchronized CompletionStage<Void> upsertSession(
             String clientId,
@@ -44,12 +52,23 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 删除客户端会话。
+     *
+     * @param clientId 客户端标识
+     */
     @Override
     public synchronized CompletionStage<Void> deleteSession(String clientId) {
         sessions.remove(clientId);
         return completed();
     }
 
+    /**
+     * 新增或更新会话订阅。
+     *
+     * @param clientId 客户端标识
+     * @param subscription 订阅内容
+     */
     @Override
     public synchronized CompletionStage<Void> upsertSubscription(
             String clientId,
@@ -58,6 +77,12 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 批量删除会话订阅。
+     *
+     * @param clientId 客户端标识
+     * @param topicFilters 主题过滤器集合
+     */
     @Override
     public synchronized CompletionStage<Void> deleteSubscriptions(
             String clientId,
@@ -69,6 +94,13 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 保存出站待确认消息和下一个 packetId。
+     *
+     * @param clientId 客户端标识
+     * @param nextPacketId 下一个报文标识符
+     * @param pending 待确认消息
+     */
     @Override
     public synchronized CompletionStage<Void> upsertPendingPublish(
             String clientId,
@@ -80,6 +112,12 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 删除出站待确认消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     @Override
     public synchronized CompletionStage<Void> deletePendingPublish(
             String clientId,
@@ -91,6 +129,12 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 保存入站 QoS 2 消息。
+     *
+     * @param clientId 客户端标识
+     * @param publish 入站消息
+     */
     @Override
     public synchronized CompletionStage<Void> upsertInboundQosTwo(
             String clientId,
@@ -99,6 +143,12 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /**
+     * 删除入站 QoS 2 消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     @Override
     public synchronized CompletionStage<Void> deleteInboundQosTwo(
             String clientId,
@@ -110,6 +160,7 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         return completed();
     }
 
+    /** 返回已经成功完成的空异步阶段。 */
     private static CompletionStage<Void> completed() {
         return CompletableFuture.completedFuture(null);
     }
@@ -123,18 +174,32 @@ public final class InMemoryMqttSessionStore implements MqttSessionStore {
         private final Map<Integer, MqttInboundQosTwoPublish> inboundPublishes =
                 new LinkedHashMap<>();
 
+        /**
+         * 创建内存会话状态。
+         *
+         * @param clientId 客户端标识
+         * @param username 用户名
+         * @param nextPacketId 下一个报文标识符
+         */
         private SessionState(String clientId, String username, int nextPacketId) {
             this.clientId = clientId;
             this.username = username;
             this.nextPacketId = nextPacketId;
         }
 
+        /**
+         * 原位更新会话元数据并返回当前对象。
+         *
+         * @param username 用户名
+         * @param nextPacketId 下一个报文标识符
+         */
         private SessionState withMetadata(String username, int nextPacketId) {
             this.username = username;
             this.nextPacketId = nextPacketId;
             return this;
         }
 
+        /** 将当前可变状态复制为不可变会话快照。 */
         private MqttSessionSnapshot snapshot() {
             return new MqttSessionSnapshot(
                     clientId,

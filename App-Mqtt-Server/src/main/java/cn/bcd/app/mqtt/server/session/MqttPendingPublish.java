@@ -21,6 +21,13 @@ public record MqttPendingPublish(
         MqttOutboundPublishState state
 ) {
 
+    /**
+     * 根据消息 QoS 创建尚未发送的初始待确认状态。
+     *
+     * @param packetId 报文标识符
+     * @param message 应用消息
+     * @param retained 是否设置保留标志
+     */
     public MqttPendingPublish(
             int packetId,
             MqttApplicationMessage message,
@@ -35,6 +42,15 @@ public record MqttPendingPublish(
                         : MqttOutboundPublishState.WAIT_PUBREC);
     }
 
+    /**
+     * 校验待确认消息及状态不能为空。
+     *
+     * @param packetId 报文标识符
+     * @param message 应用消息
+     * @param retained 是否设置保留标志
+     * @param sent 是否已经发送
+     * @param state 确认状态
+     */
     public MqttPendingPublish {
         Objects.requireNonNull(message);
         Objects.requireNonNull(state);

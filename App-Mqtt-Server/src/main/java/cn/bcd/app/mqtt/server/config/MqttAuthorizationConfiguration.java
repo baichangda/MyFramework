@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class MqttAuthorizationConfiguration {
 
+    /** 在全量放行模式下提供默认授权器。 */
     @Bean
     @ConditionalOnMissingBean(MqttAuthorizer.class)
     @ConditionalOnProperty(

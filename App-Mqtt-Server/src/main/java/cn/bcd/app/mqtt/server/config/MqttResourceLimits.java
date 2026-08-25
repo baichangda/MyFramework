@@ -22,6 +22,17 @@ public record MqttResourceLimits(
         int retainedMessages,
         long retainedMessageBytes
 ) {
+    /**
+     * 校验所有资源上限以及 MQTT 报文标识符范围。
+     *
+     * @param clientIds 客户端标识数量上限
+     * @param subscriptionsPerSession 单会话订阅数上限
+     * @param inflightMessagesPerSession 单会话飞行中消息上限
+     * @param offlineMessagesPerSession 单会话离线消息上限
+     * @param offlineQueueBytesPerSession 单会话离线载荷字节上限
+     * @param retainedMessages 保留消息数量上限
+     * @param retainedMessageBytes 保留消息载荷字节上限
+     */
     public MqttResourceLimits {
         if (clientIds <= 0
                 || subscriptionsPerSession <= 0
@@ -39,10 +50,16 @@ public record MqttResourceLimits(
         }
     }
 
+    /** 创建使用服务默认配置的资源上限。 */
     public static MqttResourceLimits defaults() {
         return from(new MqttServerProperties.Limits());
     }
 
+    /**
+     * 将可变配置转换为不可变运行时上限。
+     *
+     * @param limits 资源限制配置
+     */
     public static MqttResourceLimits from(MqttServerProperties.Limits limits) {
         return new MqttResourceLimits(
                 limits.getClientIds(),

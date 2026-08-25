@@ -15,6 +15,12 @@ public record MqttSubscription(
         String topicFilter,
         MqttQoS qos
 ) {
+    /**
+     * 校验主题过滤器与订阅 QoS。
+     *
+     * @param topicFilter 主题过滤器
+     * @param qos 订阅服务质量等级
+     */
     public MqttSubscription {
         Objects.requireNonNull(topicFilter);
         Objects.requireNonNull(qos);

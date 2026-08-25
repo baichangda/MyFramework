@@ -58,14 +58,32 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private volatile MqttConnectionCloseReason closeReason;
     private volatile MqttConnectionState state = MqttConnectionState.NEW;
 
+    /**
+     * 使用匿名认证和全量授权创建连接处理器。
+     *
+     * @param broker MQTT Broker
+     */
     public MqttConnection(MqttBroker broker) {
         this(broker, new AnonymousMqttAuthenticator(), new AllowAllMqttAuthorizer());
     }
 
+    /**
+     * 使用指定认证器和全量授权创建连接处理器。
+     *
+     * @param broker MQTT Broker
+     * @param authenticator 认证器
+     */
     public MqttConnection(MqttBroker broker, MqttAuthenticator authenticator) {
         this(broker, authenticator, new AllowAllMqttAuthorizer());
     }
 
+    /**
+     * 使用指定 Broker、认证器和授权器创建连接处理器。
+     *
+     * @param broker MQTT Broker
+     * @param authenticator 认证器
+     * @param authorizer 授权器
+     */
     public MqttConnection(
             MqttBroker broker,
             MqttAuthenticator authenticator,
@@ -76,14 +94,26 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         publishFlow = new MqttPublishFlow(broker, authorizer);
     }
 
+    /**
+     * 保存处理器对应的 Netty 上下文，供异步回调安全访问通道。
+     *
+     * @param context Netty 处理器上下文
+     */
     @Override
     public void handlerAdded(ChannelHandlerContext context) {
         nettyContext = context;
     }
 
+    /**
+     * 按连接状态分派入站 MQTT 控制报文。
+     *
+     * @param context Netty 处理器上下文
+     * @param message MQTT 控制报文
+     */
     @Override
     protected void channelRead0(ChannelHandlerContext context, MqttMessage message) {
         if (message.decoderResult().isFailure()) {
+            // 解码失败的报文内容不可信，不再尝试分派或返回应用层响应。
             close(MqttConnectionCloseReason.PROTOCOL_ERROR);
             return;
         }
@@ -95,6 +125,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             return;
         }
         if (state != MqttConnectionState.CONNECTED) {
+            // CONNECT 完成前的其他报文，以及 CONNECT 成功后的第二个 CONNECT，均属协议错误。
             close(MqttConnectionCloseReason.PROTOCOL_ERROR);
             return;
         }
@@ -116,6 +147,13 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
     }
 
+    /**
+     * 绑定已注册会话，配置保活并返回成功 CONNACK。
+     *
+     * @param connectionContext 连接上下文
+     * @param connectResult Broker 连接结果
+     * @param willMessage 遗嘱消息
+     */
     void accept(
             MqttConnectionContext connectionContext,
             MqttConnectResult connectResult,
@@ -123,6 +161,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         context = connectionContext;
         session = connectResult.session();
         pendingWill = willMessage;
+        // 必须先切换到 CONNECTED，再发送 CONNACK，避免客户端紧随其后的报文被误拒绝。
         state = MqttConnectionState.CONNECTED;
         configureKeepAlive(connectionContext.keepAliveSeconds());
         write(MqttMessageBuilders.connAck()
@@ -131,6 +170,11 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 .build());
     }
 
+    /**
+     * 返回拒绝 CONNACK，并在写入完成后关闭连接。
+     *
+     * @param returnCode CONNACK 返回码
+     */
     void refuse(MqttConnectReturnCode returnCode) {
         recordCloseReason(MqttConnectionCloseReason.CONNECTION_REFUSED);
         state = MqttConnectionState.CLOSING;
@@ -141,7 +185,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 .addListener(ChannelFutureListener.CLOSE);
     }
 
+    /**
+     * 写出 PUBREC、PUBREL 或 PUBCOMP 等仅携带 packetId 的控制报文。
+     *
+     * @param messageType 控制报文类型
+     * @param packetId 报文标识符
+     */
     void writeQosControlPacket(MqttMessageType messageType, int packetId) {
+        // MQTT 规定 PUBREL 固定头 QoS 为 1，其余发布确认控制报文固定头 QoS 为 0。
         MqttQoS headerQos = messageType == MqttMessageType.PUBREL
                 ? MqttQoS.AT_LEAST_ONCE
                 : MqttQoS.AT_MOST_ONCE;
@@ -150,14 +201,27 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 MqttMessageIdVariableHeader.from(packetId)));
     }
 
+    /**
+     * 将 MQTT 报文写入当前通道。
+     *
+     * @param message MQTT 报文
+     */
     void write(MqttMessage message) {
         requiredNettyContext().writeAndFlush(message);
     }
 
+    /**
+     * 将异步阶段的结果切回连接事件循环，并统一处理失败。
+     *
+     * @param stage 异步计算阶段
+     * @param success 成功回调
+     * @param <T> 异步结果类型
+     */
     <T> void onCompletion(CompletionStage<T> stage, Consumer<T> success) {
         stage.whenComplete((result, failure) -> {
             Runnable completion = () -> {
                 if (failure != null) {
+                    // 持久化或路由失败后连接状态已不可安全继续，统一关闭连接。
                     close(MqttConnectionCloseReason.INTERNAL_ERROR);
                 } else if (channel().isActive()) {
                     success.accept(result);
@@ -173,6 +237,11 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         });
     }
 
+    /**
+     * 按 CONNECT 的 Keep Alive 值安装读空闲检测器。
+     *
+     * @param keepAliveSeconds 客户端声明的保活秒数
+     */
     private void configureKeepAlive(int keepAliveSeconds) {
         if (keepAliveSeconds == 0) {
             return;
@@ -184,6 +253,12 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 new IdleStateHandler(readerIdleMillis, 0, 0, TimeUnit.MILLISECONDS));
     }
 
+    /**
+     * 在读空闲超时时以保活超时原因关闭连接。
+     *
+     * @param context Netty 处理器上下文
+     * @param event 用户事件
+     */
     @Override
     public void userEventTriggered(ChannelHandlerContext context, Object event) throws Exception {
         if (event instanceof IdleStateEvent idleStateEvent
@@ -194,8 +269,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         super.userEventTriggered(context, event);
     }
 
+    /**
+     * 通道失效后注销连接，并根据首个关闭原因决定是否发布遗嘱。
+     *
+     * @param context Netty 处理器上下文
+     */
     @Override
     public void channelInactive(ChannelHandlerContext context) throws Exception {
+        // 若此前没有显式关闭原因，则以网络关闭作为兜底原因。
         recordCloseReason(MqttConnectionCloseReason.NETWORK_CLOSED);
         state = MqttConnectionState.CLOSED;
         broker.disconnect(this);
@@ -203,6 +284,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         super.channelInactive(context);
     }
 
+    /** 在非正常断开时至多发布一次待处理遗嘱。 */
     private void publishPendingWill() {
         MqttWillMessage willMessage = pendingWill;
         pendingWill = null;
@@ -214,6 +296,12 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
     }
 
+    /**
+     * 将解码异常归类为协议错误，其余异常归类为内部错误。
+     *
+     * @param context Netty 处理器上下文
+     * @param cause 异常原因
+     */
     @Override
     public void exceptionCaught(ChannelHandlerContext context, Throwable cause) {
         close(cause instanceof DecoderException
@@ -221,6 +309,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 : MqttConnectionCloseReason.INTERNAL_ERROR);
     }
 
+    /** 返回连接所属 Netty 通道。 */
     public Channel channel() {
         return requiredNettyContext().channel();
     }
@@ -241,6 +330,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         return state;
     }
 
+    /**
+     * 在连接事件循环中发送应用消息。
+     *
+     * @param message 应用消息
+     * @param packetId 报文标识符
+     * @param retained 是否设置保留标志
+     * @param duplicate 是否设置重复标志
+     */
     public void sendPublish(
             MqttApplicationMessage message,
             int packetId,
@@ -256,6 +353,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
     }
 
+    /**
+     * 构造 PUBLISH 报文，并在连接有效时执行实际写出。
+     *
+     * @param message 应用消息
+     * @param packetId 报文标识符
+     * @param retained 是否设置保留标志
+     * @param duplicate 是否设置重复标志
+     */
     private void sendOnEventLoop(
             MqttApplicationMessage message,
             int packetId,
@@ -270,10 +375,12 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                 .retained(retained)
                 .payload(Unpooled.wrappedBuffer(message.payload()));
         if (message.qos() != MqttQoS.AT_MOST_ONCE) {
+            // QoS 0 不允许携带 packetId，QoS 1/2 必须携带。
             publish.messageId(packetId);
         }
         MqttPublishMessage publishMessage = publish.build();
         if (duplicate) {
+            // Netty 构造器不直接暴露 DUP 设置，复用变量头和载荷重建固定头。
             publishMessage = new MqttPublishMessage(
                     new MqttFixedHeader(
                             MqttMessageType.PUBLISH,
@@ -287,8 +394,14 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         channel().writeAndFlush(publishMessage);
     }
 
+    /**
+     * 使用指定原因在事件循环中关闭连接。
+     *
+     * @param reason 关闭原因
+     */
     public void close(MqttConnectionCloseReason reason) {
         Channel channel = channel();
+        // close 可由持久化线程调用，实际状态转换始终限制在事件循环内。
         if (channel.eventLoop().inEventLoop()) {
             closeOnEventLoop(reason);
         } else {
@@ -296,6 +409,11 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
     }
 
+    /**
+     * 记录关闭原因、推进状态并关闭通道。
+     *
+     * @param reason 关闭原因
+     */
     private void closeOnEventLoop(MqttConnectionCloseReason reason) {
         recordCloseReason(reason);
         if (state != MqttConnectionState.CLOSED) {
@@ -304,6 +422,11 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         channel().close();
     }
 
+    /**
+     * 仅记录最先触发的关闭原因。
+     *
+     * @param reason 关闭原因
+     */
     private void recordCloseReason(MqttConnectionCloseReason reason) {
         // 保留首个关闭原因，避免 channelInactive 的 NETWORK_CLOSED 覆盖真实触发原因。
         if (closeReason == null) {
@@ -311,6 +434,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
     }
 
+    /** 返回已绑定的 Netty 上下文；处理器尚未入管线时抛出异常。 */
     private ChannelHandlerContext requiredNettyContext() {
         return Objects.requireNonNull(
                 nettyContext,

@@ -23,12 +23,22 @@ public final class SimpleMqttAuthorizer implements MqttAuthorizer {
 
     private final List<Rule> rules;
 
+    /**
+     * 复制并预校验全部授权规则。
+     *
+     * @param properties 授权配置
+     */
     public SimpleMqttAuthorizer(MqttAuthorizationProperties properties) {
         rules = properties.getSimple().getRules().stream()
                 .map(SimpleMqttAuthorizer::toRule)
                 .toList();
     }
 
+    /**
+     * 查找身份匹配且允许目标主题的任一规则。
+     *
+     * @param request 授权请求
+     */
     @Override
     public boolean authorize(MqttAuthorizationRequest request) {
         return rules.stream()
@@ -36,6 +46,11 @@ public final class SimpleMqttAuthorizer implements MqttAuthorizer {
                 .anyMatch(rule -> rule.allows(request));
     }
 
+    /**
+     * 将可变配置规则转换为内部不可变规则。
+     *
+     * @param source 配置规则
+     */
     private static Rule toRule(MqttAuthorizationProperties.Rule source) {
         List<String> publishTopicFilters = copyAndValidate(
                 source.getPublishTopicFilters());
@@ -48,6 +63,11 @@ public final class SimpleMqttAuthorizer implements MqttAuthorizer {
                 subscribeTopicFilters);
     }
 
+    /**
+     * 复制主题过滤器列表，并在启动阶段拒绝非法过滤器。
+     *
+     * @param topicFilters 主题过滤器列表
+     */
     private static List<String> copyAndValidate(List<String> topicFilters) {
         List<String> result = List.copyOf(topicFilters);
         for (String topicFilter : result) {
@@ -66,11 +86,21 @@ public final class SimpleMqttAuthorizer implements MqttAuthorizer {
             List<String> subscribeTopicFilters
     ) {
 
+        /**
+         * 判断客户端标识和用户名是否满足规则的身份条件。
+         *
+         * @param request 授权请求
+         */
         private boolean matchesIdentity(MqttAuthorizationRequest request) {
             return (clientId == null || clientId.equals(request.clientId()))
                     && (username == null || username.equals(request.username()));
         }
 
+        /**
+         * 根据操作类型使用匹配或覆盖语义判断主题权限。
+         *
+         * @param request 授权请求
+         */
         private boolean allows(MqttAuthorizationRequest request) {
             List<String> allowedFilters = request.action() == MqttAuthorizationAction.PUBLISH
                     ? publishTopicFilters

@@ -25,16 +25,29 @@ final class MqttSubscriptionFlow {
     private final MqttBroker broker;
     private final MqttAuthorizer authorizer;
 
+    /**
+     * 创建订阅流程处理器。
+     *
+     * @param broker MQTT Broker
+     * @param authorizer 授权器
+     */
     MqttSubscriptionFlow(MqttBroker broker, MqttAuthorizer authorizer) {
         this.broker = Objects.requireNonNull(broker);
         this.authorizer = Objects.requireNonNull(authorizer);
     }
 
+    /**
+     * 校验并处理一个可能包含多条主题过滤器的 SUBSCRIBE 报文。
+     *
+     * @param connection 当前连接
+     * @param message SUBSCRIBE 报文
+     */
     void subscribe(
             MqttConnection connection,
             MqttSubscribeMessage message) {
         int packetId = message.variableHeader().messageId();
         List<MqttTopicSubscription> requests = message.payload().topicSubscriptions();
+        // SUBSCRIBE 固定头必须使用 QoS 1，且请求列表不能为空。
         if (packetId == 0 || requests.isEmpty()
                 || message.fixedHeader().qosLevel() != MqttQoS.AT_LEAST_ONCE
                 || message.fixedHeader().isRetain()) {
@@ -42,6 +55,7 @@ final class MqttSubscriptionFlow {
             return;
         }
 
+        // 先校验整批请求，避免前半批已经生效后才发现后续过滤器非法。
         for (MqttTopicSubscription request : requests) {
             if (!MqttTopicFilter.isValid(request.topicFilter())
                     || !isSubscriptionQos(request.qualityOfService())) {
@@ -57,6 +71,15 @@ final class MqttSubscriptionFlow {
         subscribeNext(connection, requests, 0, subAck, retainedMessages);
     }
 
+    /**
+     * 按请求顺序异步处理下一条订阅并累计 SUBACK 返回码。
+     *
+     * @param connection 当前连接
+     * @param requests 订阅请求列表
+     * @param index 当前处理位置
+     * @param subAck SUBACK 构造器
+     * @param retainedMessages 已收集的保留消息
+     */
     private void subscribeNext(
             MqttConnection connection,
             List<MqttTopicSubscription> requests,
@@ -73,6 +96,7 @@ final class MqttSubscriptionFlow {
         String topicFilter = request.topicFilter();
         MqttQoS requestedQos = request.qualityOfService();
         if (!authorize(connection, MqttAuthorizationAction.SUBSCRIBE, topicFilter)) {
+            // 单条订阅未授权通过 SUBACK FAILURE 表达，不影响同一报文中的其他过滤器。
             subAck.addGrantedQos(MqttQoS.FAILURE);
             subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
             return;
@@ -89,6 +113,7 @@ final class MqttSubscriptionFlow {
                 subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
                 return;
             }
+            // 后处理请求覆盖先处理请求时，以同主题的最后一个对象去重，消息内容本身一致。
             result.retainedMessages().forEach(
                     retained -> retainedMessages.put(retained.topicName(), retained));
             subAck.addGrantedQos(requestedQos);
@@ -96,6 +121,12 @@ final class MqttSubscriptionFlow {
         });
     }
 
+    /**
+     * 投递本批新订阅匹配且已按主题去重的保留消息。
+     *
+     * @param connection 目标连接
+     * @param retainedMessages 保留消息集合
+     */
     private void deliverRetained(
             MqttConnection connection,
             Iterable<MqttApplicationMessage> retainedMessages) {
@@ -110,6 +141,12 @@ final class MqttSubscriptionFlow {
         }
     }
 
+    /**
+     * 校验并处理批量取消订阅请求。
+     *
+     * @param connection 当前连接
+     * @param message UNSUBSCRIBE 报文
+     */
     void unsubscribe(
             MqttConnection connection,
             MqttUnsubscribeMessage message) {
@@ -136,6 +173,13 @@ final class MqttSubscriptionFlow {
                 });
     }
 
+    /**
+     * 使用连接身份校验指定主题操作。
+     *
+     * @param connection 当前连接
+     * @param action 操作类型
+     * @param topic 主题名或过滤器
+     */
     private boolean authorize(
             MqttConnection connection,
             MqttAuthorizationAction action,
@@ -145,6 +189,11 @@ final class MqttSubscriptionFlow {
                 action, context.clientId(), context.username(), topic));
     }
 
+    /**
+     * 判断 QoS 是否可用于订阅请求。
+     *
+     * @param qos 服务质量等级
+     */
     private static boolean isSubscriptionQos(MqttQoS qos) {
         return qos == MqttQoS.AT_MOST_ONCE
                 || qos == MqttQoS.AT_LEAST_ONCE

@@ -20,6 +20,14 @@ public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
     private final MqttAuthenticator authenticator;
     private final MqttAuthorizer authorizer;
 
+    /**
+     * 创建使用指定服务组件的通道初始化器。
+     *
+     * @param properties 服务配置
+     * @param broker MQTT Broker
+     * @param authenticator 认证器
+     * @param authorizer 授权器
+     */
     public MqttChannelInitializer(
             MqttServerProperties properties,
             MqttBroker broker,
@@ -31,6 +39,11 @@ public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
         this.authorizer = authorizer;
     }
 
+    /**
+     * 为新接受的 Socket 通道安装 MQTT 处理链。
+     *
+     * @param channel 新接受的 Socket 通道
+     */
     @Override
     protected void initChannel(SocketChannel channel) {
         // 解码器在协议对象进入业务层前统一限制报文大小和 clientId 长度。

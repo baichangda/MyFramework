@@ -13,6 +13,12 @@ public record MqttWillMessage(
         boolean retained
 ) {
 
+    /**
+     * 校验遗嘱消息不能为空。
+     *
+     * @param message 应用消息
+     * @param retained 是否更新保留消息
+     */
     public MqttWillMessage {
         Objects.requireNonNull(message);
     }

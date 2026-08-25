@@ -16,11 +16,18 @@ public class MqttServerLifecycle implements SmartLifecycle {
     private final MqttServerProperties properties;
     private final MqttServer mqttServer;
 
+    /**
+     * 创建 Spring 生命周期适配器。
+     *
+     * @param properties 服务配置
+     * @param mqttServer MQTT 网络服务
+     */
     public MqttServerLifecycle(MqttServerProperties properties, MqttServer mqttServer) {
         this.properties = properties;
         this.mqttServer = mqttServer;
     }
 
+    /** 启动 MQTT 监听端口并记录实际绑定地址。 */
     @Override
     public void start() {
         mqttServer.start();
@@ -28,6 +35,7 @@ public class MqttServerLifecycle implements SmartLifecycle {
                 properties.getBindAddress(), mqttServer.getBoundPort());
     }
 
+    /** 停止 MQTT 服务并记录停止日志。 */
     @Override
     public void stop() {
         mqttServer.stop();

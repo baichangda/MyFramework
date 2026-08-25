@@ -25,6 +25,13 @@ final class MqttConnectFlow {
     private final MqttAuthenticator authenticator;
     private final MqttAuthorizer authorizer;
 
+    /**
+     * 创建连接流程处理器。
+     *
+     * @param broker MQTT Broker
+     * @param authenticator 认证器
+     * @param authorizer 授权器
+     */
     MqttConnectFlow(
             MqttBroker broker,
             MqttAuthenticator authenticator,
@@ -34,6 +41,12 @@ final class MqttConnectFlow {
         this.authorizer = Objects.requireNonNull(authorizer);
     }
 
+    /**
+     * 校验 CONNECT 报文并异步完成认证、授权和会话注册。
+     *
+     * @param connection 当前连接
+     * @param message CONNECT 报文
+     */
     void handle(
             MqttConnection connection,
             MqttConnectMessage message) {
@@ -53,6 +66,7 @@ final class MqttConnectFlow {
                     MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED);
             return;
         }
+        // MQTT 3.1.1 不允许只携带密码而不携带用户名。
         if (message.variableHeader().hasPassword()
                 && !message.variableHeader().hasUserName()) {
             connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
@@ -67,6 +81,7 @@ final class MqttConnectFlow {
         }
 
         String username = message.payload().userName();
+        // 先认证身份，再使用认证后的 clientId、username 检查遗嘱发布权限。
         if (!authenticator.authenticate(new MqttAuthenticationRequest(
                 clientId, username, message.payload().passwordInBytes()))) {
             connection.refuse(
@@ -83,6 +98,7 @@ final class MqttConnectFlow {
             return;
         }
 
+        // 将 CONNECT 中后续仍需使用的数据复制为只读上下文，不再持有入站报文对象。
         MqttConnectionContext connectionContext = new MqttConnectionContext(
                 clientId,
                 message.variableHeader().isCleanSession(),
@@ -105,6 +121,11 @@ final class MqttConnectFlow {
         });
     }
 
+    /**
+     * 按持久化状态恢复重连客户端尚未完成的 QoS 流程。
+     *
+     * @param connection 已恢复会话的连接
+     */
     private void resendPendingPublishes(MqttConnection connection) {
         broker.pendingPublishes(connection).forEach(pending -> {
             if (pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
@@ -125,16 +146,23 @@ final class MqttConnectFlow {
         });
     }
 
+    /**
+     * 从合法的 CONNECT 遗嘱字段构造内部遗嘱消息。
+     *
+     * @param message CONNECT 报文
+     */
     private static MqttWillMessage willMessage(MqttConnectMessage message) {
         if (!message.variableHeader().isWillFlag()) {
             return null;
         }
+        // Netty 暴露的是整数 QoS，需要显式排除保留值 3 及异常负值。
         int willQos = message.variableHeader().willQos();
         if (willQos < 0 || willQos > 2) {
             return null;
         }
         String willTopic = message.payload().willTopic();
         byte[] willPayload = message.payload().willMessageInBytes();
+        // 遗嘱主题必须是主题名而不是带通配符的订阅过滤器。
         if (!MqttTopicFilter.isValidTopicName(willTopic) || willPayload == null) {
             return null;
         }
@@ -146,6 +174,12 @@ final class MqttConnectFlow {
                 message.variableHeader().isWillRetain());
     }
 
+    /**
+     * 校验 Will Flag、Will QoS、Will Retain 与遗嘱内容的组合关系。
+     *
+     * @param message CONNECT 报文
+     * @param willMessage 解析后的遗嘱消息
+     */
     private static boolean isValidWill(
             MqttConnectMessage message,
             MqttWillMessage willMessage) {

@@ -7,6 +7,11 @@ package cn.bcd.app.mqtt.server.authentication;
  */
 public final class AnonymousMqttAuthenticator implements MqttAuthenticator {
 
+    /**
+     * 对任意认证请求直接返回通过。
+     *
+     * @param request 认证请求
+     */
     @Override
     public boolean authenticate(MqttAuthenticationRequest request) {
         return true;

@@ -11,10 +11,15 @@ public final class MqttTopicFilter {
     private static final String MULTI_LEVEL_WILDCARD = "#";
     private static final String SINGLE_LEVEL_WILDCARD = "+";
 
+    /** 工具类不允许实例化。 */
     private MqttTopicFilter() {
     }
 
-    /** 判断字符串是否为合法的主题过滤器。 */
+    /**
+     * 判断字符串是否为合法的主题过滤器。
+     *
+     * @param topicFilter 待校验的主题过滤器
+     */
     public static boolean isValid(String topicFilter) {
         if (topicFilter == null || topicFilter.isEmpty() || topicFilter.indexOf('\0') >= 0) {
             return false;
@@ -33,7 +38,12 @@ public final class MqttTopicFilter {
         return true;
     }
 
-    /** 判断主题过滤器是否匹配指定主题名。 */
+    /**
+     * 判断主题过滤器是否匹配指定主题名。
+     *
+     * @param topicFilter 主题过滤器
+     * @param topicName 主题名
+     */
     public static boolean matches(String topicFilter, String topicName) {
         if (!isValid(topicFilter) || !isValidTopicName(topicName)) {
             return false;
@@ -65,7 +75,12 @@ public final class MqttTopicFilter {
         return topicIndex == topicLevels.length;
     }
 
-    /** 判断授权过滤器是否完整覆盖请求过滤器可能匹配的所有主题。 */
+    /**
+     * 判断授权过滤器是否完整覆盖请求过滤器可能匹配的所有主题。
+     *
+     * @param allowedFilter 授权过滤器
+     * @param requestedFilter 客户端请求的过滤器
+     */
     public static boolean covers(String allowedFilter, String requestedFilter) {
         if (!isValid(allowedFilter) || !isValid(requestedFilter)) {
             return false;
@@ -101,7 +116,11 @@ public final class MqttTopicFilter {
         return index == requestedLevels.length;
     }
 
-    /** 判断字符串是否为不含通配符的合法主题名。 */
+    /**
+     * 判断字符串是否为不含通配符的合法主题名。
+     *
+     * @param topicName 待校验的主题名
+     */
     public static boolean isValidTopicName(String topicName) {
         return topicName != null
                 && !topicName.isEmpty()
@@ -110,6 +129,11 @@ public final class MqttTopicFilter {
                 && topicName.indexOf('+') < 0;
     }
 
+    /**
+     * 按主题层级分隔符切分字符串，并保留空层级。
+     *
+     * @param value 主题名或过滤器
+     */
     private static String[] levels(String value) {
         return value.split("/", -1);
     }

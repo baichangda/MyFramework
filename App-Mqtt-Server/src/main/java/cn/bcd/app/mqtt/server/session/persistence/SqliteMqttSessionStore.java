@@ -99,12 +99,18 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
                     .daemon()
                     .factory());
 
+    /**
+     * 初始化 SQLite 会话数据库及全部关联表。
+     *
+     * @param properties 持久化配置
+     */
     public SqliteMqttSessionStore(MqttPersistenceProperties properties) {
         String databasePath = properties.getSession().getSqlite().getDatabasePath();
         try {
             createParentDirectory(databasePath);
             connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
             try (Statement statement = connection.createStatement()) {
+                // busy_timeout 缓解短时文件锁竞争；外键用于删除会话时级联清理子表。
                 statement.execute("PRAGMA busy_timeout = 5000");
                 statement.execute("PRAGMA foreign_keys = ON");
                 statement.execute(CREATE_SESSION_TABLE_SQL);
@@ -117,6 +123,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /** 加载并组装全部持久会话。 */
     @Override
     public Collection<MqttSessionSnapshot> loadAll() {
         try {
@@ -133,6 +140,13 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 异步新增或更新会话元数据。
+     *
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param nextPacketId 下一个报文标识符
+     */
     @Override
     public CompletionStage<Void> upsertSession(
             String clientId,
@@ -141,12 +155,23 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         return write("upsert", () -> upsertSessionRow(clientId, username, nextPacketId));
     }
 
+    /**
+     * 异步删除会话及级联子状态。
+     *
+     * @param clientId 客户端标识
+     */
     @Override
     public CompletionStage<Void> deleteSession(String clientId) {
         return write("delete", () -> deleteByClientId(
                 "mqtt_session", clientId));
     }
 
+    /**
+     * 异步新增或更新会话订阅。
+     *
+     * @param clientId 客户端标识
+     * @param subscription 订阅内容
+     */
     @Override
     public CompletionStage<Void> upsertSubscription(
             String clientId,
@@ -165,6 +190,12 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         });
     }
 
+    /**
+     * 异步批量删除会话订阅。
+     *
+     * @param clientId 客户端标识
+     * @param topicFilters 主题过滤器集合
+     */
     @Override
     public CompletionStage<Void> deleteSubscriptions(
             String clientId,
@@ -174,6 +205,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
                     DELETE FROM mqtt_session_subscription
                     WHERE client_id = ? AND topic_filter = ?
                     """)) {
+                // 复用同一个预编译语句批量执行，避免逐条提交产生额外锁开销。
                 for (String topicFilter : topicFilters) {
                     statement.setString(1, clientId);
                     statement.setString(2, topicFilter);
@@ -184,6 +216,13 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         });
     }
 
+    /**
+     * 在同一事务中保存待确认消息并更新下一个 packetId。
+     *
+     * @param clientId 客户端标识
+     * @param nextPacketId 下一个报文标识符
+     * @param pending 待确认消息
+     */
     @Override
     public CompletionStage<Void> upsertPendingPublish(
             String clientId,
@@ -217,12 +256,24 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }));
     }
 
+    /**
+     * 异步删除出站待确认消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     @Override
     public CompletionStage<Void> deletePendingPublish(String clientId, int packetId) {
         return write("delete pending publish from", () -> deleteByPacketId(
                 "mqtt_session_pending_publish", clientId, packetId));
     }
 
+    /**
+     * 异步新增或更新入站 QoS 2 消息。
+     *
+     * @param clientId 客户端标识
+     * @param publish 入站消息
+     */
     @Override
     public CompletionStage<Void> upsertInboundQosTwo(
             String clientId,
@@ -247,12 +298,19 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         });
     }
 
+    /**
+     * 异步删除入站 QoS 2 消息。
+     *
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     @Override
     public CompletionStage<Void> deleteInboundQosTwo(String clientId, int packetId) {
         return write("delete inbound QoS 2 publish from", () -> deleteByPacketId(
                 "mqtt_session_inbound_qos_two", clientId, packetId));
     }
 
+    /** 排空写队列并关闭数据库连接。 */
     @Override
     public void close() {
         // 先拒绝新任务并等待队列写完，再关闭唯一的 JDBC 连接。
@@ -270,6 +328,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /** 加载会话主表并创建按 clientId 索引的快照构造器。 */
     private Map<String, SnapshotBuilder> loadSessions() throws SQLException {
         Map<String, SnapshotBuilder> builders = new LinkedHashMap<>();
         try (Statement statement = connection.createStatement();
@@ -286,6 +345,11 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         return builders;
     }
 
+    /**
+     * 将订阅表记录装配到对应会话构造器。
+     *
+     * @param builders 会话快照构造器索引
+     */
     private void loadSubscriptions(Map<String, SnapshotBuilder> builders) throws SQLException {
         try (Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery(
@@ -297,10 +361,16 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
                             result.getString("topic_filter"),
                             MqttQoS.valueOf(result.getInt("qos"))));
                 }
+                // 外键正常启用时不会出现孤儿记录；忽略它可兼容历史异常数据库。
             }
         }
     }
 
+    /**
+     * 将出站待确认消息装配到对应会话构造器。
+     *
+     * @param builders 会话快照构造器索引
+     */
     private void loadPendingPublishes(Map<String, SnapshotBuilder> builders) throws SQLException {
         try (Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery("""
@@ -325,6 +395,11 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 将入站 QoS 2 消息装配到对应会话构造器。
+     *
+     * @param builders 会话快照构造器索引
+     */
     private void loadInboundQosTwoPublishes(
             Map<String, SnapshotBuilder> builders) throws SQLException {
         try (Statement statement = connection.createStatement();
@@ -347,6 +422,13 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 同步新增或更新会话主表记录。
+     *
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param nextPacketId 下一个报文标识符
+     */
     private void upsertSessionRow(
             String clientId,
             String username,
@@ -364,6 +446,12 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 更新会话的下一个报文标识符。
+     *
+     * @param clientId 客户端标识
+     * @param nextPacketId 下一个报文标识符
+     */
     private void updateNextPacketId(String clientId, int nextPacketId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
                 UPDATE mqtt_session SET next_packet_id = ? WHERE client_id = ?
@@ -374,6 +462,12 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 按 clientId 删除指定内部表记录。
+     *
+     * @param table 内部表名
+     * @param clientId 客户端标识
+     */
     private void deleteByClientId(String table, String clientId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "DELETE FROM " + table + " WHERE client_id = ?")) {
@@ -382,6 +476,13 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 按 clientId 和 packetId 删除指定内部表记录。
+     *
+     * @param table 内部表名
+     * @param clientId 客户端标识
+     * @param packetId 报文标识符
+     */
     private void deleteByPacketId(
             String table,
             String clientId,
@@ -394,6 +495,12 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 在单线程执行器中提交 SQL 写操作。
+     *
+     * @param operation 操作名称
+     * @param sql SQL 操作
+     */
     private CompletionStage<Void> write(String operation, SqlOperation sql) {
         // 单线程 writer 同时承担 JDBC 连接的线程隔离和写入顺序保证。
         return CompletableFuture.runAsync(() -> {
@@ -405,20 +512,32 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }, writer);
     }
 
+    /**
+     * 在显式事务中执行 SQL，并统一提交、回滚和恢复自动提交状态。
+     *
+     * @param sql SQL 操作
+     */
     private void inTransaction(SqlOperation sql) throws SQLException {
         connection.setAutoCommit(false);
         try {
             sql.run();
+            // 只有复合操作全部成功才对其他连接可见。
             connection.commit();
         } catch (SQLException exception) {
             // 回滚失败作为 suppressed 异常保留，主异常仍反映最初的 SQL 失败。
             rollback(exception);
             throw exception;
         } finally {
+            // 无论提交还是回滚都恢复默认模式，避免影响 writer 中下一项任务。
             restoreAutoCommit();
         }
     }
 
+    /**
+     * 尝试回滚，并将回滚失败附加到原始异常。
+     *
+     * @param original 原始 SQL 异常
+     */
     private void rollback(SQLException original) {
         try {
             connection.rollback();
@@ -427,15 +546,22 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /** 恢复 JDBC 连接的自动提交模式。 */
     private void restoreAutoCommit() throws SQLException {
         connection.setAutoCommit(true);
     }
 
     @FunctionalInterface
     private interface SqlOperation {
+        /** 执行一次可能抛出 SQL 异常的数据库操作。 */
         void run() throws SQLException;
     }
 
+    /**
+     * 为文件数据库创建父目录，内存数据库不执行文件操作。
+     *
+     * @param databasePath 数据库路径
+     */
     private static void createParentDirectory(String databasePath) throws IOException {
         if (":memory:".equals(databasePath)) {
             return;
@@ -446,6 +572,12 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
+    /**
+     * 将底层异常包装为统一的会话存储异常。
+     *
+     * @param operation 操作名称
+     * @param exception 底层异常
+     */
     private static BaseException storeFailure(String operation, Exception exception) {
         return BaseException.get(
                 "Failed to " + operation + " persistent MQTT session", exception);
@@ -461,12 +593,20 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         private final List<MqttInboundQosTwoPublish> inboundQosTwoPublishes =
                 new ArrayList<>();
 
+        /**
+         * 创建会话快照构造器。
+         *
+         * @param clientId 客户端标识
+         * @param username 用户名
+         * @param nextPacketId 下一个报文标识符
+         */
         private SnapshotBuilder(String clientId, String username, int nextPacketId) {
             this.clientId = clientId;
             this.username = username;
             this.nextPacketId = nextPacketId;
         }
 
+        /** 生成不可变会话快照。 */
         private MqttSessionSnapshot build() {
             return new MqttSessionSnapshot(
                     clientId,

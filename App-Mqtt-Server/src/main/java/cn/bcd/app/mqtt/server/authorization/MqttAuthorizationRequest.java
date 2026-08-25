@@ -17,6 +17,14 @@ public record MqttAuthorizationRequest(
         String topic
 ) {
 
+    /**
+     * 校验授权判断必需的操作、客户端标识和主题。
+     *
+     * @param action 操作类型
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param topic 主题名或主题过滤器
+     */
     public MqttAuthorizationRequest {
         Objects.requireNonNull(action);
         Objects.requireNonNull(clientId);

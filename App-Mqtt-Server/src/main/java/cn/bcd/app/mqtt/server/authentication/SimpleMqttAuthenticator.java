@@ -22,10 +22,20 @@ public final class SimpleMqttAuthenticator implements MqttAuthenticator {
 
     private final Map<String, String> users;
 
+    /**
+     * 从配置中复制用户表，避免运行期间受配置对象修改影响。
+     *
+     * @param properties 认证配置
+     */
     public SimpleMqttAuthenticator(MqttAuthenticationProperties properties) {
         users = Map.copyOf(properties.getSimple().getUsers());
     }
 
+    /**
+     * 校验用户名是否存在，并以恒定时间比较密码字节。
+     *
+     * @param request 认证请求
+     */
     @Override
     public boolean authenticate(MqttAuthenticationRequest request) {
         byte[] password = request.password();

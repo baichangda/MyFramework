@@ -17,6 +17,16 @@ public record MqttSessionSnapshot(
         List<MqttInboundQosTwoPublish> inboundQosTwoPublishes
 ) {
 
+    /**
+     * 复制全部状态集合，构造不可变会话快照。
+     *
+     * @param clientId 客户端标识
+     * @param username 用户名
+     * @param nextPacketId 下一个报文标识符
+     * @param subscriptions 订阅集合
+     * @param pendingPublishes 出站待确认消息
+     * @param inboundQosTwoPublishes 入站 QoS 2 消息
+     */
     public MqttSessionSnapshot {
         Objects.requireNonNull(clientId);
         subscriptions = List.copyOf(subscriptions);

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class MqttAuthenticationConfiguration {
 
+    /** 在匿名模式下提供默认认证器。 */
     @Bean
     @ConditionalOnMissingBean(MqttAuthenticator.class)
     @ConditionalOnProperty(

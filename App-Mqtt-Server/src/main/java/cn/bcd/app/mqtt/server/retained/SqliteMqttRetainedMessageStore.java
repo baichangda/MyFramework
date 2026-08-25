@@ -67,10 +67,21 @@ public final class SqliteMqttRetainedMessageStore
                     .daemon()
                     .factory());
 
+    /**
+     * 使用默认资源上限创建 SQLite 存储。
+     *
+     * @param properties 持久化配置
+     */
     public SqliteMqttRetainedMessageStore(MqttPersistenceProperties properties) {
         this(properties, MqttResourceLimits.defaults());
     }
 
+    /**
+     * 使用服务配置中的资源上限创建 SQLite 存储。
+     *
+     * @param properties 持久化配置
+     * @param serverProperties 服务配置
+     */
     @Autowired
     public SqliteMqttRetainedMessageStore(
             MqttPersistenceProperties properties,
@@ -78,6 +89,12 @@ public final class SqliteMqttRetainedMessageStore
         this(properties, MqttResourceLimits.from(serverProperties.getLimits()));
     }
 
+    /**
+     * 初始化数据库连接、表结构和内存索引。
+     *
+     * @param properties 持久化配置
+     * @param limits 资源上限
+     */
     private SqliteMqttRetainedMessageStore(
             MqttPersistenceProperties properties,
             MqttResourceLimits limits) {
@@ -88,6 +105,7 @@ public final class SqliteMqttRetainedMessageStore
             createParentDirectory(databasePath);
             connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
             try (Statement statement = connection.createStatement()) {
+                // SQLite 文件短时被占用时等待而不是立即失败。
                 statement.execute("PRAGMA busy_timeout = 5000");
                 statement.execute(CREATE_TABLE_SQL);
             }
@@ -98,12 +116,18 @@ public final class SqliteMqttRetainedMessageStore
         }
     }
 
+    /**
+     * 乐观更新索引并异步保存消息，失败时恢复索引。
+     *
+     * @param message 保留消息
+     */
     @Override
     public CompletionStage<Void> save(MqttApplicationMessage message) {
         // 先更新内存索引，使查询无需等待磁盘；异步写失败时使用旧值回滚。
         MqttApplicationMessage previous = index.put(message);
         return write("save", () -> {
             try (PreparedStatement statement = connection.prepareStatement(UPSERT_SQL)) {
+                // topic_name 是主键，同主题保存自然覆盖载荷和 QoS。
                 statement.setString(1, message.topicName());
                 statement.setBytes(2, message.payload());
                 statement.setInt(3, message.qos().value());
@@ -111,11 +135,17 @@ public final class SqliteMqttRetainedMessageStore
             }
         }).whenComplete((ignored, failure) -> {
             if (failure != null) {
+                // 数据库失败时恢复读路径所依赖的内存真相。
                 index.restorePutFailure(message, previous);
             }
         });
     }
 
+    /**
+     * 乐观删除索引消息并异步删除数据库记录，失败时恢复索引。
+     *
+     * @param topicName 主题名
+     */
     @Override
     public CompletionStage<Void> delete(String topicName) {
         // 删除同样采用乐观更新，保证读路径始终只访问内存索引。
@@ -127,16 +157,23 @@ public final class SqliteMqttRetainedMessageStore
             }
         }).whenComplete((ignored, failure) -> {
             if (failure != null) {
+                // 仅恢复本次删除前存在的消息；不存在时回滚为空操作。
                 index.restoreDeleteFailure(topicName, previous);
             }
         });
     }
 
+    /**
+     * 从内存主题索引查询匹配消息。
+     *
+     * @param topicFilter 主题过滤器
+     */
     @Override
     public Collection<MqttApplicationMessage> findMatching(String topicFilter) {
         return index.findMatching(topicFilter);
     }
 
+    /** 排空异步写队列并关闭数据库连接。 */
     @Override
     public void close() {
         // 等待已排队的写任务完成后再关闭 JDBC 连接。
@@ -154,7 +191,9 @@ public final class SqliteMqttRetainedMessageStore
         }
     }
 
+    /** 在启动时将全部数据库记录恢复到内存索引。 */
     private void loadIndex() throws SQLException {
+        // 启动阶段同步重建完整索引，服务开始监听后查询无需访问 SQLite。
         try (Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery(LOAD_ALL_SQL)) {
             while (result.next()) {
@@ -166,6 +205,12 @@ public final class SqliteMqttRetainedMessageStore
         }
     }
 
+    /**
+     * 在单线程写执行器中提交 SQL 操作。
+     *
+     * @param operation 操作名称
+     * @param sql SQL 操作
+     */
     private CompletionStage<Void> write(String operation, SqlOperation sql) {
         // 单线程执行器保证共享 JDBC 连接不会被并发访问。
         return CompletableFuture.runAsync(() -> {
@@ -177,6 +222,11 @@ public final class SqliteMqttRetainedMessageStore
         }, writer);
     }
 
+    /**
+     * 为文件数据库创建父目录，内存数据库不执行文件操作。
+     *
+     * @param databasePath 数据库路径
+     */
     private static void createParentDirectory(String databasePath) throws IOException {
         if (":memory:".equals(databasePath)) {
             return;
@@ -187,6 +237,12 @@ public final class SqliteMqttRetainedMessageStore
         }
     }
 
+    /**
+     * 将 SQL 异常包装为包含操作名称的统一存储异常。
+     *
+     * @param operation 操作名称
+     * @param exception SQL 异常
+     */
     private static BaseException storeFailure(
             String operation,
             SQLException exception) {
@@ -196,6 +252,7 @@ public final class SqliteMqttRetainedMessageStore
 
     @FunctionalInterface
     private interface SqlOperation {
+        /** 执行一次可能抛出 SQL 异常的数据库操作。 */
         void run() throws SQLException;
     }
 }
