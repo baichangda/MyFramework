@@ -1,5 +1,6 @@
 package cn.bcd.app.mqtt.server.connection;
 
+/** 连接关闭原因，用于决定是否发布遗嘱并辅助诊断。 */
 public enum MqttConnectionCloseReason {
     NORMAL_DISCONNECT,
     KEEP_ALIVE_TIMEOUT,

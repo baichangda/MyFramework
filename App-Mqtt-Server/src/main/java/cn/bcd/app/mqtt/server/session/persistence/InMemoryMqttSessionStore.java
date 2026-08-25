@@ -14,6 +14,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * 进程内持久会话存储，主要用于测试或无需跨重启恢复的部署场景。
+ *
+ * <p>所有复合状态由同步方法保护，返回的完成阶段均已完成。</p>
+ */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.persistence.session",

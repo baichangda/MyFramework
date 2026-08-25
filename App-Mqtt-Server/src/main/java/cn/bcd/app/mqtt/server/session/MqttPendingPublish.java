@@ -4,6 +4,15 @@ import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 
 import java.util.Objects;
 
+/**
+ * Broker 向客户端投递、尚未完成确认流程的 QoS 1/2 消息。
+ *
+ * @param packetId 报文标识符
+ * @param message 应用消息
+ * @param retained 投递时是否设置保留标志
+ * @param sent 当前阶段的报文是否已写入连接
+ * @param state 等待的确认状态
+ */
 public record MqttPendingPublish(
         int packetId,
         MqttApplicationMessage message,
@@ -31,11 +40,13 @@ public record MqttPendingPublish(
         Objects.requireNonNull(state);
     }
 
+    /** 标记当前阶段的报文已经发送，重复调用不会创建新对象。 */
     public MqttPendingPublish asSent() {
         return sent ? this : new MqttPendingPublish(
                 packetId, message, retained, true, state);
     }
 
+    /** 将 QoS 2 状态推进到等待 PUBCOMP。 */
     public MqttPendingPublish waitingForPubComp() {
         return state == MqttOutboundPublishState.WAIT_PUBCOMP
                 ? this

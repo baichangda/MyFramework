@@ -18,6 +18,7 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 
 import java.util.Objects;
 
+/** 处理 CONNECT 校验、认证授权、会话注册和重连恢复。 */
 final class MqttConnectFlow {
 
     private final MqttBroker broker;
@@ -36,6 +37,7 @@ final class MqttConnectFlow {
     void handle(
             MqttConnection connection,
             MqttConnectMessage message) {
+        // 当前服务只实现 MQTT 3.1.1；对 MQTT 5 使用协议规定的“不支持版本”返回码。
         int protocolVersion = message.variableHeader().version();
         if (protocolVersion != MqttVersion.MQTT_3_1_1.protocolLevel()) {
             connection.refuse(
@@ -57,6 +59,7 @@ final class MqttConnectFlow {
             return;
         }
 
+        // 遗嘱字段之间存在组合约束，必须在认证和注册会话前完成整体校验。
         MqttWillMessage willMessage = willMessage(message);
         if (!isValidWill(message, willMessage)) {
             connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
@@ -86,6 +89,7 @@ final class MqttConnectFlow {
                 message.variableHeader().keepAliveTimeSeconds(),
                 username,
                 willMessage);
+        // Broker 注册及持久化可能异步完成，CONNACK 必须等待其最终结果。
         connection.onCompletion(broker.connect(
                 connection,
                 connectionContext.clientId(),
@@ -104,10 +108,12 @@ final class MqttConnectFlow {
     private void resendPendingPublishes(MqttConnection connection) {
         broker.pendingPublishes(connection).forEach(pending -> {
             if (pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
+                // QoS 2 已进入第二阶段，重连时只重发 PUBREL，不能再次投递载荷。
                 connection.writeQosControlPacket(
                         MqttMessageType.PUBREL, pending.packetId());
                 return;
             }
+            // 只有曾成功交给连接发送的 PUBLISH 才需要设置 DUP。
             boolean duplicate = pending.sent();
             connection.onCompletion(
                     broker.markPendingPublishSent(connection, pending.packetId()),

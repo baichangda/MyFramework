@@ -11,6 +11,7 @@ import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import org.springframework.stereotype.Component;
 
+/** 为每条 TCP 连接安装 MQTT 编解码器和连接状态处理器。 */
 @Component
 public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -32,6 +33,7 @@ public class MqttChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
     protected void initChannel(SocketChannel channel) {
+        // 解码器在协议对象进入业务层前统一限制报文大小和 clientId 长度。
         channel.pipeline().addLast("mqttDecoder", new MqttDecoder(
                 properties.getMaxPacketSize(),
                 properties.getMaxClientIdLength(),

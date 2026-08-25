@@ -26,6 +26,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * SQLite 保留消息存储。
+ *
+ * <p>内存主题树负责低延迟查询，SQLite 负责跨重启恢复；写操作先乐观更新索引，数据库
+ * 写入失败时再恢复旧索引状态。</p>
+ */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.persistence.retained-message",
@@ -94,6 +100,7 @@ public final class SqliteMqttRetainedMessageStore
 
     @Override
     public CompletionStage<Void> save(MqttApplicationMessage message) {
+        // 先更新内存索引，使查询无需等待磁盘；异步写失败时使用旧值回滚。
         MqttApplicationMessage previous = index.put(message);
         return write("save", () -> {
             try (PreparedStatement statement = connection.prepareStatement(UPSERT_SQL)) {
@@ -111,6 +118,7 @@ public final class SqliteMqttRetainedMessageStore
 
     @Override
     public CompletionStage<Void> delete(String topicName) {
+        // 删除同样采用乐观更新，保证读路径始终只访问内存索引。
         MqttApplicationMessage previous = index.remove(topicName);
         return write("delete", () -> {
             try (PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
@@ -131,6 +139,7 @@ public final class SqliteMqttRetainedMessageStore
 
     @Override
     public void close() {
+        // 等待已排队的写任务完成后再关闭 JDBC 连接。
         writer.shutdown();
         try {
             if (!writer.awaitTermination(30, TimeUnit.SECONDS)) {
@@ -158,6 +167,7 @@ public final class SqliteMqttRetainedMessageStore
     }
 
     private CompletionStage<Void> write(String operation, SqlOperation sql) {
+        // 单线程执行器保证共享 JDBC 连接不会被并发访问。
         return CompletableFuture.runAsync(() -> {
             try {
                 sql.run();

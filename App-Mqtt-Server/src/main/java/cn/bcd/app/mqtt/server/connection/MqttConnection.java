@@ -36,6 +36,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+/**
+ * 单条 Netty 通道对应的 MQTT 协议处理器。
+ *
+ * <p>连接状态只在通道事件循环中推进；来自持久化或 Broker 的异步回调会切回事件循环，
+ * 从而避免并发写通道及连接关闭竞态。</p>
+ */
 public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessage> {
 
     static final String IDLE_STATE_HANDLER_NAME = "mqttIdleStateHandler";
@@ -83,6 +89,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         }
 
         MqttMessageType messageType = message.fixedHeader().messageType();
+        // MQTT 规定客户端发送的第一个报文必须是 CONNECT，且一条连接只能发送一次。
         if (state == MqttConnectionState.NEW && messageType == MqttMessageType.CONNECT) {
             connectFlow.handle(this, (MqttConnectMessage) message);
             return;
@@ -156,6 +163,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
                     success.accept(result);
                 }
             };
+            // CompletionStage 可能在 SQLite 写线程完成，所有连接操作统一切回事件循环。
             Channel channel = channel();
             if (channel.eventLoop().inEventLoop()) {
                 completion.run();
@@ -169,6 +177,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
         if (keepAliveSeconds == 0) {
             return;
         }
+        // MQTT 3.1.1 允许服务端在 1.5 倍 Keep Alive 周期未收到报文后断开连接。
         long readerIdleMillis = keepAliveSeconds * 1500L;
         ChannelHandlerContext context = requiredNettyContext();
         context.pipeline().addBefore(context.name(), IDLE_STATE_HANDLER_NAME,
@@ -197,6 +206,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     private void publishPendingWill() {
         MqttWillMessage willMessage = pendingWill;
         pendingWill = null;
+        // 正常 DISCONNECT 和连接被拒绝不发布遗嘱，其余网络/协议/内部异常均需发布。
         if (willMessage != null
                 && closeReason != MqttConnectionCloseReason.NORMAL_DISCONNECT
                 && closeReason != MqttConnectionCloseReason.CONNECTION_REFUSED) {
@@ -236,6 +246,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
             int packetId,
             boolean retained,
             boolean duplicate) {
+        // 路由器可从非 Netty 线程投递消息，因此显式切换到该连接的事件循环。
         Channel channel = channel();
         if (channel.eventLoop().inEventLoop()) {
             sendOnEventLoop(message, packetId, retained, duplicate);
@@ -294,6 +305,7 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
     }
 
     private void recordCloseReason(MqttConnectionCloseReason reason) {
+        // 保留首个关闭原因，避免 channelInactive 的 NETWORK_CLOSED 覆盖真实触发原因。
         if (closeReason == null) {
             closeReason = Objects.requireNonNull(reason);
         }

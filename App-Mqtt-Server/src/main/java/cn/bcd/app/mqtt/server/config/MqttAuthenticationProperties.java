@@ -5,6 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * {@code mqtt.server.authentication} 认证配置。
+ */
 @ConfigurationProperties(prefix = "mqtt.server.authentication")
 public class MqttAuthenticationProperties {
 
@@ -27,6 +30,7 @@ public class MqttAuthenticationProperties {
         this.simple = simple;
     }
 
+    /** 简单认证模式的用户名、密码配置。 */
     public static class Simple {
 
         private Map<String, String> users = new LinkedHashMap<>();

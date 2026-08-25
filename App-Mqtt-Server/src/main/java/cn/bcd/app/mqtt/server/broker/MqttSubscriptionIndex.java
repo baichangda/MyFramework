@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/** 基于主题层级树的并发订阅索引，支持 {@code +} 和 {@code #} 通配符。 */
 final class MqttSubscriptionIndex {
 
     private static final String SINGLE_LEVEL_WILDCARD = "+";
@@ -85,6 +86,7 @@ final class MqttSubscriptionIndex {
         lock.readLock().lock();
         try {
             Map<String, MqttQoS> matches = new HashMap<>();
+            // 同时沿字面量与单层通配分支搜索，多层通配订阅在经过每个节点时合并。
             ArrayDeque<Cursor> cursors = new ArrayDeque<>();
             cursors.addLast(new Cursor(root, 0));
             while (!cursors.isEmpty()) {
@@ -116,6 +118,7 @@ final class MqttSubscriptionIndex {
     private static void merge(
             Map<String, MqttQoS> matches,
             Map<String, MqttQoS> subscribers) {
+        // 一个客户端可能通过多条过滤器命中同一主题，仅保留其中最高的订阅 QoS。
         subscribers.forEach((clientId, qos) -> matches.merge(
                 clientId,
                 qos,

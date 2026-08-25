@@ -10,6 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * 按主题层级组织的保留消息索引，并维护消息数量与载荷字节数上限。
+ *
+ * <p>写锁保护树结构和资源计数的一致更新，读锁允许多个主题过滤器查询并行执行。</p>
+ */
 final class MqttRetainedMessageIndex {
 
     private static final String SINGLE_LEVEL_WILDCARD = "+";
@@ -38,6 +43,7 @@ final class MqttRetainedMessageIndex {
             Node existing = findNode(message.topicName());
             MqttApplicationMessage previous = existing == null ? null : existing.message;
             int nextCount = previous == null ? messageCount + 1 : messageCount;
+            // 覆盖消息时只计算新旧载荷差值，避免把覆盖误判为新增资源。
             long nextBytes = payloadBytes + message.payloadLength()
                     - (previous == null ? 0 : previous.payloadLength());
             if (nextCount > maxMessages || nextBytes > maxPayloadBytes) {
@@ -128,6 +134,7 @@ final class MqttRetainedMessageIndex {
         lock.readLock().lock();
         try {
             List<MqttApplicationMessage> matches = new ArrayList<>();
+            // 使用显式栈遍历，避免主题层级过深导致递归栈溢出。
             ArrayDeque<Cursor> cursors = new ArrayDeque<>();
             cursors.addLast(new Cursor(root, 0));
             while (!cursors.isEmpty()) {
@@ -143,6 +150,7 @@ final class MqttRetainedMessageIndex {
 
                 String filter = filters[depth];
                 if (MULTI_LEVEL_WILDCARD.equals(filter)) {
+                    // 根节点的 # 不匹配以 $ 开头的系统主题。
                     collect(node, matches, depth == 0);
                 } else if (SINGLE_LEVEL_WILDCARD.equals(filter)) {
                     node.children.forEach((level, child) -> {

@@ -2,6 +2,9 @@ package cn.bcd.app.mqtt.server.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * {@code mqtt.server.persistence} 持久化后端配置。
+ */
 @ConfigurationProperties(prefix = "mqtt.server.persistence")
 public class MqttPersistenceProperties {
 
@@ -24,6 +27,7 @@ public class MqttPersistenceProperties {
         this.session = session;
     }
 
+    /** 保留消息存储配置。 */
     public static class RetainedMessage {
 
         private String type = "sqlite";
@@ -46,6 +50,7 @@ public class MqttPersistenceProperties {
         }
     }
 
+    /** 保留消息 SQLite 数据库配置。 */
     public static class Sqlite {
 
         private String databasePath = "data/mqtt-retained.db";
@@ -59,6 +64,7 @@ public class MqttPersistenceProperties {
         }
     }
 
+    /** 持久会话存储配置。 */
     public static class Session {
 
         private String type = "sqlite";
@@ -81,6 +87,7 @@ public class MqttPersistenceProperties {
         }
     }
 
+    /** 持久会话 SQLite 数据库配置。 */
     public static class SessionSqlite {
 
         private String databasePath = "data/mqtt-session.db";

@@ -13,6 +13,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * 单个客户端的 MQTT 会话状态。
+ *
+ * <p>该对象可能同时被 Netty 事件循环、持久化回调和消息路由线程访问，所有可变状态
+ * 均通过同步方法保护。返回集合时一律创建快照，不向调用方暴露内部容器。</p>
+ */
 public final class MqttSession {
 
     private final String clientId;
@@ -99,6 +105,7 @@ public final class MqttSession {
             throw BaseException.get(
                     "MQTT inflight message limit exceeded for clientId[{}]", clientId);
         }
+        // 优先从游标之后分配，达到 65535 后再从 1 开始寻找空闲标识符。
         int packetId = packetIdentifiers.nextClearBit(nextPacketId);
         if (packetId > 65535) {
             packetId = packetIdentifiers.nextClearBit(1);
@@ -107,6 +114,7 @@ public final class MqttSession {
             throw BaseException.get("No MQTT packet identifier available for clientId[{}]", clientId);
         }
         packetIdentifiers.set(packetId);
+        // 游标只决定下一次搜索起点；已占用标识符仍由 BitSet 保证不会重复分配。
         nextPacketId = packetId == 65535 ? 1 : packetId + 1;
         MqttPendingPublish pending = new MqttPendingPublish(
                 packetId, message.withQos(deliveryQos), retained);
@@ -131,6 +139,7 @@ public final class MqttSession {
         if (pending == null || pending.state() == MqttOutboundPublishState.WAIT_PUBACK) {
             return Optional.empty();
         }
+        // 重复 PUBREC 也返回 WAIT_PUBCOMP 状态，使上层可以安全地重发 PUBREL。
         MqttPendingPublish waitingForPubComp = pending.waitingForPubComp();
         pendingPublishes.put(packetId, waitingForPubComp);
         return Optional.of(waitingForPubComp);
@@ -153,6 +162,7 @@ public final class MqttSession {
             boolean retained,
             boolean duplicate) {
         if (inboundQosTwoPublishes.containsKey(packetId)) {
+            // 只有设置 DUP 的重传才允许复用现有 packetId。
             return duplicate
                     ? MqttInboundPublishStatus.DUPLICATE
                     : MqttInboundPublishStatus.PROTOCOL_ERROR;
@@ -240,6 +250,7 @@ public final class MqttSession {
         }
         for (MqttPendingPublish pending : snapshot.pendingPublishes()) {
             session.pendingPublishes.put(pending.packetId(), pending);
+            // 恢复占用位和载荷计数，防止重启后重复分配 packetId 或绕过资源限制。
             session.packetIdentifiers.set(pending.packetId());
             session.pendingPayloadBytes += pending.message().payloadLength();
         }

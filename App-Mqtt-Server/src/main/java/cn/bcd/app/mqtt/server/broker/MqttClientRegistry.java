@@ -25,6 +25,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+/**
+ * 管理 clientId、活动连接及持久会话之间的一致关系。
+ *
+ * <p>不同 clientId 可并行操作；同一 clientId 的连接接管、订阅变更、消息排队和确认
+ * 通过独立监视器串行化，避免全局锁限制吞吐量。</p>
+ */
 final class MqttClientRegistry {
 
     private final ConcurrentMap<String, MqttClientState> clients = new ConcurrentHashMap<>();
@@ -66,6 +72,7 @@ final class MqttClientRegistry {
                 return completed(new MqttClientRegistration(
                         MqttConnectResult.rejected(), null));
             }
+            // 持久会话只允许由相同用户名恢复，避免更换身份后继承旧订阅和离线消息。
             boolean sameIdentity = current != null
                     && Objects.equals(current.session().username(), username);
             boolean sessionPresent = !cleanSession
@@ -76,6 +83,7 @@ final class MqttClientRegistry {
             if (!sessionPresent && current != null) {
                 subscriptionIndex.remove(current.session());
             }
+            // cleanSession 或身份变化都需要清除旧会话及其级联持久化数据。
             if (cleanSession || current != null && !sessionPresent) {
                 persistence = sessionStore.deleteSession(clientId);
             }
@@ -377,6 +385,7 @@ final class MqttClientRegistry {
         if (state == null) {
             return completed(Optional.empty());
         }
+        // 实际投递 QoS 取发布 QoS 与订阅 QoS 的较低值。
         MqttQoS deliveryQos = MqttQoS.valueOf(
                 Math.min(message.qos().value(), subscriptionQos.value()));
         if (deliveryQos == MqttQoS.AT_MOST_ONCE) {
@@ -387,6 +396,7 @@ final class MqttClientRegistry {
         }
 
         boolean offline = state.connection() == null;
+        // 在线连接受飞行窗口约束；离线会话同时受消息数和载荷字节数约束。
         boolean limitExceeded = offline
                 ? state.session().pendingPublishCount() >= limits.offlineMessagesPerSession()
                         || state.session().pendingPayloadBytes() + message.payloadLength()
@@ -400,6 +410,7 @@ final class MqttClientRegistry {
             return completed(Optional.empty());
         }
 
+        // QoS 1/2 必须先进入会话并完成持久化，之后才允许写入活动连接。
         MqttPendingPublish pending = state.session().enqueue(
                 message, deliveryQos, retained);
         if (state.connection() != null) {
@@ -428,6 +439,7 @@ final class MqttClientRegistry {
     }
 
     private <T> T withClientLock(String clientId, Supplier<T> action) {
+        // 引用计数防止锁对象在仍有线程等待时从 Map 中移除并被重新创建。
         ClientMonitor monitor = clientMonitors.compute(clientId, (key, current) -> {
             ClientMonitor value = current == null ? new ClientMonitor() : current;
             value.references++;

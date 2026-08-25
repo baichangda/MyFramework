@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
 
+/** 将 MQTT 服务的启停接入 Spring 容器生命周期。 */
 @Component
 public class MqttServerLifecycle implements SmartLifecycle {
 

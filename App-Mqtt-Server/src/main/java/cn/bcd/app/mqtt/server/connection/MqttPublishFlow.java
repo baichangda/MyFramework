@@ -18,6 +18,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.util.Objects;
 
+/** 处理客户端发布消息以及 QoS 1/2 双向确认状态流转。 */
 final class MqttPublishFlow {
 
     private final MqttBroker broker;
@@ -51,9 +52,11 @@ final class MqttPublishFlow {
             return;
         }
 
+        // 复制 ByteBuf 内容，使后续异步路由不依赖 Netty 对入站缓冲区的释放时机。
         MqttApplicationMessage applicationMessage = new MqttApplicationMessage(
                 topicName, ByteBufUtil.getBytes(message.payload()), qos);
         if (qos == MqttQoS.EXACTLY_ONCE) {
+            // QoS 2 第一阶段仅保存消息；收到 PUBREL 后才真正路由，保证恰好一次处理。
             connection.onCompletion(broker.receiveQosTwo(
                     connection,
                     packetId,
@@ -99,6 +102,7 @@ final class MqttPublishFlow {
 
     void pubRec(MqttConnection connection, MqttMessage message) {
         int packetId = packetId(message);
+        // 将出站 QoS 2 消息推进到等待 PUBCOMP，并发送第二阶段的 PUBREL。
         connection.onCompletion(
                 broker.receivePubRec(connection, packetId),
                 pending -> pending.ifPresent(value -> connection.writeQosControlPacket(
@@ -107,6 +111,7 @@ final class MqttPublishFlow {
 
     void pubRel(MqttConnection connection, MqttMessage message) {
         int packetId = packetId(message);
+        // 原子释放已保存的入站消息后再发布；重复 PUBREL 不会重复路由载荷。
         connection.onCompletion(
                 broker.releaseQosTwo(connection, packetId),
                 released -> {

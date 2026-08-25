@@ -1,5 +1,18 @@
 package cn.bcd.app.mqtt.server.config;
 
+/**
+ * Broker 运行时资源上限的不可变快照。
+ *
+ * <p>配置转换为该记录后再传入核心组件，避免运行期间被意外修改。</p>
+ *
+ * @param clientIds 可登记的客户端标识数量
+ * @param subscriptionsPerSession 单个会话允许的订阅数
+ * @param inflightMessagesPerSession 单个会话允许的飞行中消息数
+ * @param offlineMessagesPerSession 单个离线会话允许排队的消息数
+ * @param offlineQueueBytesPerSession 单个离线会话的排队消息总字节数
+ * @param retainedMessages 保留消息数量
+ * @param retainedMessageBytes 保留消息载荷总字节数
+ */
 public record MqttResourceLimits(
         int clientIds,
         int subscriptionsPerSession,

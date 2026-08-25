@@ -8,6 +8,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * 基于配置规则的发布、订阅授权器。
+ *
+ * <p>身份条件为空时表示通配。发布规则按“过滤器是否匹配主题名”判断，订阅规则则要求
+ * 授权过滤器完整覆盖客户端请求的过滤器，防止客户端通过更宽的通配符扩大权限。</p>
+ */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.authorization",

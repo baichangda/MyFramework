@@ -21,6 +21,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * MQTT Broker 的协议无关门面，协调客户端会话、订阅索引、消息路由和持久化。
+ */
 @Component
 public class MqttBroker {
 
@@ -59,6 +62,7 @@ public class MqttBroker {
                     if (!registration.result().accepted()) {
                         return registration.result();
                     }
+                    // 相同 clientId 的新连接接管会话后，旧连接必须被主动关闭。
                     MqttConnection previous = registration.previousConnection();
                     if (previous != null && previous != connection) {
                         previous.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
@@ -129,6 +133,7 @@ public class MqttBroker {
         if (!clients.isCurrent(connection)) {
             return CompletableFuture.completedFuture(false);
         }
+        // 先从会话中释放并持久化删除，再路由载荷，防止重复 PUBREL 导致重复发布。
         return clients.releaseQosTwo(connection, packetId)
                 .thenCompose(pending -> pending
                         .map(message -> router.publish(

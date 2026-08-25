@@ -7,6 +7,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * MQTT 认证器的默认自动配置。
+ *
+ * <p>未显式配置认证方式或自定义认证器时，注册匿名认证器。</p>
+ */
 @Configuration(proxyBeanMethods = false)
 public class MqttAuthenticationConfiguration {
 

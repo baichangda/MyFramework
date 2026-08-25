@@ -5,6 +5,12 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 
 import java.util.Objects;
 
+/**
+ * 客户端会话中的一条有效订阅。
+ *
+ * @param topicFilter MQTT 主题过滤器
+ * @param qos 客户端请求的最大投递 QoS
+ */
 public record MqttSubscription(
         String topicFilter,
         MqttQoS qos

@@ -2,6 +2,7 @@ package cn.bcd.app.mqtt.server.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** MQTT 服务监听参数及资源限制配置。 */
 @ConfigurationProperties(prefix = "mqtt.server")
 public class MqttServerProperties {
 
@@ -60,6 +61,7 @@ public class MqttServerProperties {
         this.limits = limits;
     }
 
+    /** 客户端、订阅、待确认消息和保留消息的资源上限。 */
     public static class Limits {
         private int clientIds = 100000;
         private int subscriptionsPerSession = 1024;

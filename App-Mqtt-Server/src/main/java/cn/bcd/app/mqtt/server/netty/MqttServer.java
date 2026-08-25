@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
 
+/** 管理 MQTT TCP 监听端口及 Netty 事件循环的启动和释放。 */
 @Component
 public class MqttServer {
 
@@ -32,6 +33,7 @@ public class MqttServer {
             return;
         }
         validateProperties();
+        // boss 只负责接受连接，实际网络读写交给独立 worker 事件循环组。
         bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
         try {
@@ -46,12 +48,14 @@ public class MqttServer {
                     .syncUninterruptibly()
                     .channel();
         } catch (RuntimeException | Error e) {
+            // 绑定失败时释放已经创建的线程，避免 Spring 启动失败后残留非守护线程。
             shutdownEventLoops();
             throw e;
         }
     }
 
     public synchronized void stop() {
+        // 先关闭监听通道停止接收新连接，再释放工作线程和接收线程。
         if (serverChannel != null) {
             serverChannel.close().syncUninterruptibly();
             serverChannel = null;

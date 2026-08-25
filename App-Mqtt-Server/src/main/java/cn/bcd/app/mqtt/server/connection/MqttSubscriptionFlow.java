@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/** 处理 SUBSCRIBE、UNSUBSCRIBE 及首次订阅时的保留消息投递。 */
 final class MqttSubscriptionFlow {
 
     private final MqttBroker broker;
@@ -51,6 +52,7 @@ final class MqttSubscriptionFlow {
 
         MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck()
                 .packetId(packetId);
+        // 多个过滤器可能命中同一保留主题，按主题名去重后只投递一次。
         Map<String, MqttApplicationMessage> retainedMessages = new LinkedHashMap<>();
         subscribeNext(connection, requests, 0, subAck, retainedMessages);
     }
@@ -62,6 +64,7 @@ final class MqttSubscriptionFlow {
             MqttMessageBuilders.SubAckBuilder subAck,
             Map<String, MqttApplicationMessage> retainedMessages) {
         if (index == requests.size()) {
+            // 先发送完整 SUBACK，再异步投递本批订阅匹配到的保留消息。
             connection.write(subAck.build());
             deliverRetained(connection, retainedMessages.values());
             return;
@@ -74,6 +77,7 @@ final class MqttSubscriptionFlow {
             subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
             return;
         }
+        // 串行处理各过滤器，确保 SUBACK 返回码顺序与请求顺序严格一致。
         connection.onCompletion(broker.subscribe(
                 connection, new MqttSubscription(topicFilter, requestedQos)), result -> {
             if (!result.subscribed()) {

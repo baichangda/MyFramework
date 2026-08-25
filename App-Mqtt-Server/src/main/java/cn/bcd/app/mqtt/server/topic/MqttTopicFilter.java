@@ -1,5 +1,11 @@
 package cn.bcd.app.mqtt.server.topic;
 
+/**
+ * MQTT 主题名与主题过滤器的校验、匹配工具。
+ *
+ * <p>实现包含 MQTT 对 {@code $} 系统主题的特殊规则：以通配符开头的过滤器不会
+ * 匹配系统主题。</p>
+ */
 public final class MqttTopicFilter {
 
     private static final String MULTI_LEVEL_WILDCARD = "#";
@@ -8,6 +14,7 @@ public final class MqttTopicFilter {
     private MqttTopicFilter() {
     }
 
+    /** 判断字符串是否为合法的主题过滤器。 */
     public static boolean isValid(String topicFilter) {
         if (topicFilter == null || topicFilter.isEmpty() || topicFilter.indexOf('\0') >= 0) {
             return false;
@@ -26,6 +33,7 @@ public final class MqttTopicFilter {
         return true;
     }
 
+    /** 判断主题过滤器是否匹配指定主题名。 */
     public static boolean matches(String topicFilter, String topicName) {
         if (!isValid(topicFilter) || !isValidTopicName(topicName)) {
             return false;
@@ -57,6 +65,7 @@ public final class MqttTopicFilter {
         return topicIndex == topicLevels.length;
     }
 
+    /** 判断授权过滤器是否完整覆盖请求过滤器可能匹配的所有主题。 */
     public static boolean covers(String allowedFilter, String requestedFilter) {
         if (!isValid(allowedFilter) || !isValid(requestedFilter)) {
             return false;
@@ -92,6 +101,7 @@ public final class MqttTopicFilter {
         return index == requestedLevels.length;
     }
 
+    /** 判断字符串是否为不含通配符的合法主题名。 */
     public static boolean isValidTopicName(String topicName) {
         return topicName != null
                 && !topicName.isEmpty()

@@ -8,6 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
 
+/**
+ * 基于配置文件中用户名、明文密码映射的简单认证器。
+ *
+ * <p>密码使用恒定时间比较，减少根据比较耗时推断密码内容的风险。</p>
+ */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.authentication",

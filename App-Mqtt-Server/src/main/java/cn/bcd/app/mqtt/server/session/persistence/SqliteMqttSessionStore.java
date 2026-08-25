@@ -32,6 +32,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 使用 SQLite 保存订阅、出站待确认消息和入站 QoS 2 状态的会话存储。
+ *
+ * <p>读取只在服务启动阶段同步执行；运行时写操作交给单线程执行器，保证同一 JDBC
+ * 连接不会被并发使用，并保持提交顺序与 Broker 状态变更顺序一致。</p>
+ */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.persistence.session",
@@ -114,6 +120,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
     @Override
     public Collection<MqttSessionSnapshot> loadAll() {
         try {
+            // 先创建会话骨架，再按外键 clientId 装配各类子状态。
             Map<String, SnapshotBuilder> builders = loadSessions();
             loadSubscriptions(builders);
             loadPendingPublishes(builders);
@@ -182,6 +189,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
             String clientId,
             int nextPacketId,
             MqttPendingPublish pending) {
+        // 报文与 nextPacketId 必须在同一事务提交，否则重启后可能重复分配标识符。
         return write("upsert pending publish for", () -> inTransaction(() -> {
             updateNextPacketId(clientId, nextPacketId);
             try (PreparedStatement statement = connection.prepareStatement("""
@@ -247,6 +255,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
 
     @Override
     public void close() {
+        // 先拒绝新任务并等待队列写完，再关闭唯一的 JDBC 连接。
         writer.shutdown();
         try {
             if (!writer.awaitTermination(30, TimeUnit.SECONDS)) {
@@ -386,6 +395,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
     }
 
     private CompletionStage<Void> write(String operation, SqlOperation sql) {
+        // 单线程 writer 同时承担 JDBC 连接的线程隔离和写入顺序保证。
         return CompletableFuture.runAsync(() -> {
             try {
                 sql.run();
@@ -401,6 +411,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
             sql.run();
             connection.commit();
         } catch (SQLException exception) {
+            // 回滚失败作为 suppressed 异常保留，主异常仍反映最初的 SQL 失败。
             rollback(exception);
             throw exception;
         } finally {
