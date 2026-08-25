@@ -1,10 +1,13 @@
 package cn.bcd.app.mqtt.server.retained;
 
 import cn.bcd.app.mqtt.server.config.MqttPersistenceProperties;
+import cn.bcd.app.mqtt.server.config.MqttResourceLimits;
+import cn.bcd.app.mqtt.server.config.MqttServerProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.lib.base.exception.BaseException;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -51,7 +54,7 @@ public final class SqliteMqttRetainedMessageStore
             "SELECT topic_name, payload, qos FROM mqtt_retained_message";
 
     private final Connection connection;
-    private final MqttRetainedMessageIndex index = new MqttRetainedMessageIndex();
+    private final MqttRetainedMessageIndex index;
     private final ExecutorService writer = Executors.newSingleThreadExecutor(
             Thread.ofPlatform()
                     .name("mqtt-retained-sqlite-writer")
@@ -59,6 +62,21 @@ public final class SqliteMqttRetainedMessageStore
                     .factory());
 
     public SqliteMqttRetainedMessageStore(MqttPersistenceProperties properties) {
+        this(properties, MqttResourceLimits.defaults());
+    }
+
+    @Autowired
+    public SqliteMqttRetainedMessageStore(
+            MqttPersistenceProperties properties,
+            MqttServerProperties serverProperties) {
+        this(properties, MqttResourceLimits.from(serverProperties.getLimits()));
+    }
+
+    private SqliteMqttRetainedMessageStore(
+            MqttPersistenceProperties properties,
+            MqttResourceLimits limits) {
+        index = new MqttRetainedMessageIndex(
+                limits.retainedMessages(), limits.retainedMessageBytes());
         String databasePath = properties.getRetainedMessage().getSqlite().getDatabasePath();
         try {
             createParentDirectory(databasePath);

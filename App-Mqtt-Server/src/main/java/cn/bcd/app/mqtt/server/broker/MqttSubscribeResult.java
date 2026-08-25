@@ -7,6 +7,7 @@ import java.util.List;
 
 public record MqttSubscribeResult(
         boolean subscribed,
+        boolean granted,
         Collection<MqttApplicationMessage> retainedMessages
 ) {
     public MqttSubscribeResult {

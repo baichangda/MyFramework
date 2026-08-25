@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.broker;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
+import cn.bcd.app.mqtt.server.config.MqttResourceLimits;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import cn.bcd.app.mqtt.server.session.persistence.InMemoryMqttSessionStore;
@@ -13,8 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class MqttClientRegistryTest {
+
+    private static final MqttResourceLimits ONE_CLIENT = new MqttResourceLimits(
+            1, 10, 10, 10, 1024, 10, 1024);
 
     @Test
     void shouldRestorePersistentSessionsAndSubscriptionIndex() {
@@ -70,5 +75,45 @@ class MqttClientRegistryTest {
         assertTrue(replaced.result().session().subscriptions().isEmpty());
         assertTrue(store.loadAll().stream()
                 .allMatch(snapshot -> "second".equals(snapshot.username())));
+    }
+
+    @Test
+    void shouldLimitNewClientIdsButAllowExistingClientToReconnect() {
+        MqttClientRegistry registry = new MqttClientRegistry(
+                new InMemoryMqttSessionStore(), ONE_CLIENT);
+        MqttConnection first = mock(MqttConnection.class);
+
+        MqttClientRegistry.MqttClientRegistration initial = registry.connect(
+                first, "first", null, false).toCompletableFuture().join();
+        MqttClientRegistry.MqttClientRegistration resumed = registry.connect(
+                mock(MqttConnection.class), "first", null, false)
+                .toCompletableFuture().join();
+        MqttClientRegistry.MqttClientRegistration rejected = registry.connect(
+                mock(MqttConnection.class), "second", null, false)
+                .toCompletableFuture().join();
+
+        assertTrue(initial.result().accepted());
+        assertTrue(resumed.result().accepted());
+        assertTrue(resumed.result().sessionPresent());
+        assertFalse(rejected.result().accepted());
+        assertEquals(1, registry.size());
+    }
+
+    @Test
+    void shouldReleaseClientIdCapacityWhenCleanSessionDisconnects() {
+        MqttClientRegistry registry = new MqttClientRegistry(
+                new InMemoryMqttSessionStore(), ONE_CLIENT);
+        MqttConnection first = mock(MqttConnection.class);
+        MqttClientRegistry.MqttClientRegistration initial = registry.connect(
+                first, "first", null, true).toCompletableFuture().join();
+        when(first.session()).thenReturn(initial.result().session());
+
+        registry.disconnect(first);
+        MqttClientRegistry.MqttClientRegistration second = registry.connect(
+                mock(MqttConnection.class), "second", null, true)
+                .toCompletableFuture().join();
+
+        assertTrue(second.result().accepted());
+        assertEquals(1, registry.size());
     }
 }

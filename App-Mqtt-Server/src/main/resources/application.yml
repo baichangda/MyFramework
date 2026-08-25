@@ -9,6 +9,14 @@ mqtt:
     port: 1883
     max-packet-size: 1048576
     max-client-id-length: 65535
+    limits:
+      client-ids: 100000
+      subscriptions-per-session: 1024
+      inflight-messages-per-session: 1024
+      offline-messages-per-session: 10000
+      offline-queue-bytes-per-session: 67108864
+      retained-messages: 100000
+      retained-message-bytes: 268435456
     authentication:
       type: anonymous
     authorization:

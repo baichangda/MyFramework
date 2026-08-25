@@ -5,18 +5,73 @@ import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
+import cn.bcd.lib.base.exception.BaseException;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MqttSessionTest {
+
+    @Test
+    void shouldLimitSubscriptionsAndInflightMessages() {
+        MqttSession session = new MqttSession("cid", null, 1, 1);
+        assertTrue(session.subscribe(new MqttSubscription(
+                "sensor/one", MqttQoS.AT_LEAST_ONCE)));
+        assertFalse(session.canSubscribe("sensor/two"));
+        assertFalse(session.subscribe(new MqttSubscription(
+                "sensor/two", MqttQoS.AT_LEAST_ONCE)));
+
+        session.enqueue(new MqttApplicationMessage(
+                        "sensor/one", new byte[]{1}, MqttQoS.AT_LEAST_ONCE),
+                MqttQoS.AT_LEAST_ONCE, false);
+        assertFalse(session.canEnqueue());
+        assertThrows(BaseException.class, () -> session.enqueue(
+                new MqttApplicationMessage(
+                        "sensor/two", new byte[]{2}, MqttQoS.AT_LEAST_ONCE),
+                MqttQoS.AT_LEAST_ONCE,
+                false));
+    }
+
+    @Test
+    void shouldLimitUnreleasedInboundQosTwoMessages() {
+        MqttSession session = new MqttSession("cid", null, 1, 1);
+        MqttApplicationMessage message = new MqttApplicationMessage(
+                "sensor/one", new byte[]{1}, MqttQoS.EXACTLY_ONCE);
+
+        assertEquals(MqttInboundPublishStatus.STORED,
+                session.receiveQosTwo(1, message, false, false));
+        assertEquals(MqttInboundPublishStatus.RESOURCE_LIMIT_EXCEEDED,
+                session.receiveQosTwo(2, message, false, false));
+    }
+
+    @Test
+    void shouldFindFreePacketIdentifierAcrossWrapAround() {
+        MqttApplicationMessage message = new MqttApplicationMessage(
+                "sensor/one", new byte[]{1}, MqttQoS.AT_LEAST_ONCE);
+        MqttSession session = MqttSession.restore(new MqttSessionSnapshot(
+                "cid",
+                null,
+                65535,
+                List.of(),
+                List.of(new MqttPendingPublish(65535, message, false)),
+                List.of()));
+
+        MqttPendingPublish pending = session.enqueue(
+                message, MqttQoS.AT_LEAST_ONCE, false);
+
+        assertEquals(1, pending.packetId());
+        assertEquals(2, session.nextPacketId());
+    }
 
     @Test
     void shouldKeepPendingPublishStateInsideSession() {

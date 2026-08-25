@@ -91,6 +91,11 @@ final class MqttConnectFlow {
                 connectionContext.clientId(),
                 connectionContext.username(),
                 connectionContext.cleanSession()), result -> {
+            if (!result.accepted()) {
+                connection.refuse(
+                        MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+                return;
+            }
             connection.accept(connectionContext, result, willMessage);
             resendPendingPublishes(connection);
         });

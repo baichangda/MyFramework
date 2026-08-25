@@ -64,6 +64,10 @@ final class MqttPublishFlow {
                     connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
                     return;
                 }
+                if (status == MqttInboundPublishStatus.RESOURCE_LIMIT_EXCEEDED) {
+                    connection.close(MqttConnectionCloseReason.RESOURCE_LIMIT_EXCEEDED);
+                    return;
+                }
                 connection.writeQosControlPacket(MqttMessageType.PUBREC, packetId);
             });
             return;

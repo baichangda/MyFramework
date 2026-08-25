@@ -1,6 +1,9 @@
 package cn.bcd.app.mqtt.server.protocol;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnectionContext;
+import cn.bcd.app.mqtt.server.broker.MqttBroker;
+import cn.bcd.app.mqtt.server.config.MqttServerProperties;
+import cn.bcd.app.mqtt.server.support.MqttTestBroker;
 import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -111,6 +114,26 @@ class MqttConnectTest {
         assertFalse(channel.isActive());
         assertTrue(channel.outboundMessages().isEmpty());
         channel.finishAndReleaseAll();
+    }
+
+    @Test
+    void shouldRefuseNewClientIdWhenCapacityIsExhausted() {
+        MqttServerProperties properties = new MqttServerProperties();
+        properties.getLimits().setClientIds(1);
+        MqttBroker broker = MqttTestBroker.create(properties);
+        EmbeddedChannel first = MqttTestChannel.open(broker);
+        first.writeInbound(Unpooled.wrappedBuffer(
+                MqttTestChannel.connectPacket("first", false)));
+        assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x00}, readOutbound(first));
+
+        EmbeddedChannel second = MqttTestChannel.open(broker);
+        second.writeInbound(Unpooled.wrappedBuffer(
+                MqttTestChannel.connectPacket("second", false)));
+
+        assertArrayEquals(new byte[]{0x20, 0x02, 0x00, 0x03}, readOutbound(second));
+        assertFalse(second.isActive());
+        first.finishAndReleaseAll();
+        second.finishAndReleaseAll();
     }
 
     private static EmbeddedChannel newChannel() {

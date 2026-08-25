@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.retained;
 
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import cn.bcd.lib.base.exception.BaseException;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MqttRetainedMessageIndexTest {
 
@@ -50,6 +52,25 @@ class MqttRetainedMessageIndexTest {
 
         index.remove("sensor/status");
         assertTrue(index.findMatching("sensor/#").isEmpty());
+    }
+
+    @Test
+    void shouldLimitRetainedMessageCountAndPayloadBytes() {
+        MqttRetainedMessageIndex index = new MqttRetainedMessageIndex(1, 6);
+        index.put(message("sensor/one", "1234"));
+
+        assertThrows(BaseException.class,
+                () -> index.put(message("sensor/two", "1")));
+        assertThrows(BaseException.class,
+                () -> index.put(message("sensor/one", "1234567")));
+        assertEquals(1, index.size());
+        assertEquals(4, index.payloadBytes());
+
+        index.put(message("sensor/one", "123456"));
+        assertEquals(6, index.payloadBytes());
+        index.remove("sensor/one");
+        assertEquals(0, index.size());
+        assertEquals(0, index.payloadBytes());
     }
 
     private static Set<String> topics(

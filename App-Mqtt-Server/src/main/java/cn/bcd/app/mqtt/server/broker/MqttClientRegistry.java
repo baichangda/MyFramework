@@ -2,6 +2,7 @@ package cn.bcd.app.mqtt.server.broker;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
+import cn.bcd.app.mqtt.server.config.MqttResourceLimits;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
 import cn.bcd.app.mqtt.server.session.MqttInboundQosTwoPublish;
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 final class MqttClientRegistry {
@@ -30,14 +32,27 @@ final class MqttClientRegistry {
             new ConcurrentHashMap<>();
     private final MqttSubscriptionIndex subscriptionIndex = new MqttSubscriptionIndex();
     private final MqttSessionStore sessionStore;
+    private final MqttResourceLimits limits;
+    private final AtomicInteger registeredClientIds = new AtomicInteger();
 
     MqttClientRegistry(MqttSessionStore sessionStore) {
+        this(sessionStore, MqttResourceLimits.defaults());
+    }
+
+    MqttClientRegistry(MqttSessionStore sessionStore, MqttResourceLimits limits) {
         this.sessionStore = Objects.requireNonNull(sessionStore);
+        this.limits = Objects.requireNonNull(limits);
         for (MqttSessionSnapshot snapshot : sessionStore.loadAll()) {
-            MqttSession session = MqttSession.restore(snapshot);
+            MqttSession session = MqttSession.restore(
+                    snapshot,
+                    limits.subscriptionsPerSession(),
+                    Math.max(limits.inflightMessagesPerSession(),
+                            limits.offlineMessagesPerSession()),
+                    limits.inflightMessagesPerSession());
             clients.put(session.clientId(), new MqttClientState(session, null, true));
             subscriptionIndex.add(session);
         }
+        registeredClientIds.set(clients.size());
     }
 
     CompletionStage<MqttClientRegistration> connect(
@@ -47,6 +62,10 @@ final class MqttClientRegistry {
             boolean cleanSession) {
         return withClientLock(clientId, () -> {
             MqttClientState current = clients.get(clientId);
+            if (current == null && !reserveClientId()) {
+                return completed(new MqttClientRegistration(
+                        MqttConnectResult.rejected(), null));
+            }
             boolean sameIdentity = current != null
                     && Objects.equals(current.session().username(), username);
             boolean sessionPresent = !cleanSession
@@ -63,7 +82,13 @@ final class MqttClientRegistry {
 
             MqttSession session = sessionPresent
                     ? current.session()
-                    : new MqttSession(clientId, username);
+                    : new MqttSession(
+                            clientId,
+                            username,
+                            limits.subscriptionsPerSession(),
+                            Math.max(limits.inflightMessagesPerSession(),
+                                    limits.offlineMessagesPerSession()),
+                            limits.inflightMessagesPerSession());
             MqttClientState registered = new MqttClientState(
                     session, connection, !cleanSession);
             clients.put(clientId, registered);
@@ -72,7 +97,7 @@ final class MqttClientRegistry {
                         session.clientId(), session.username(), session.nextPacketId()));
             }
             MqttClientRegistration registration = new MqttClientRegistration(
-                    new MqttConnectResult(session, sessionPresent),
+                    MqttConnectResult.accepted(session, sessionPresent),
                     current == null ? null : current.connection());
             return persistence.thenApply(ignored -> registration);
         });
@@ -92,30 +117,35 @@ final class MqttClientRegistry {
                 clients.put(session.clientId(), current.offline());
             } else {
                 subscriptionIndex.remove(current.session());
-                clients.remove(session.clientId(), current);
+                if (clients.remove(session.clientId(), current)) {
+                    registeredClientIds.decrementAndGet();
+                }
             }
             return null;
         });
     }
 
-    CompletionStage<Boolean> subscribe(
+    CompletionStage<SubscriptionResult> subscribe(
             MqttConnection connection,
             MqttSubscription subscription) {
         MqttSession session = connection.session();
         if (session == null) {
-            return completed(false);
+            return completed(SubscriptionResult.NOT_CURRENT);
         }
         return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return completed(false);
+                return completed(SubscriptionResult.NOT_CURRENT);
+            }
+            if (!session.canSubscribe(subscription.topicFilter())) {
+                return completed(SubscriptionResult.REJECTED);
             }
             boolean changed = session.subscribe(subscription);
             subscriptionIndex.add(session.clientId(), subscription);
             CompletionStage<Void> persistence = changed && current.persistent()
                     ? sessionStore.upsertSubscription(session.clientId(), subscription)
                     : completed();
-            return persistence.thenApply(ignored -> true);
+            return persistence.thenApply(ignored -> SubscriptionResult.ACCEPTED);
         });
     }
 
@@ -328,6 +358,17 @@ final class MqttClientRegistry {
         return clients.size();
     }
 
+    private boolean reserveClientId() {
+        int current = registeredClientIds.get();
+        while (current < limits.clientIds()) {
+            if (registeredClientIds.compareAndSet(current, current + 1)) {
+                return true;
+            }
+            current = registeredClientIds.get();
+        }
+        return false;
+    }
+
     private CompletionStage<Optional<Delivery>> prepareDelivery(
             MqttClientState state,
             MqttApplicationMessage message,
@@ -343,6 +384,20 @@ final class MqttClientRegistry {
                     ? Optional.empty()
                     : Optional.of(new Delivery(
                             state.connection(), message.withQos(deliveryQos), 0, retained)));
+        }
+
+        boolean offline = state.connection() == null;
+        boolean limitExceeded = offline
+                ? state.session().pendingPublishCount() >= limits.offlineMessagesPerSession()
+                        || state.session().pendingPayloadBytes() + message.payloadLength()
+                                > limits.offlineQueueBytesPerSession()
+                : state.session().pendingPublishCount()
+                        >= limits.inflightMessagesPerSession();
+        if (limitExceeded) {
+            if (!offline) {
+                state.connection().close(MqttConnectionCloseReason.RESOURCE_LIMIT_EXCEEDED);
+            }
+            return completed(Optional.empty());
         }
 
         MqttPendingPublish pending = state.session().enqueue(
@@ -419,6 +474,12 @@ final class MqttClientRegistry {
             int packetId,
             boolean retained
     ) {
+    }
+
+    enum SubscriptionResult {
+        ACCEPTED,
+        REJECTED,
+        NOT_CURRENT
     }
 
     private record MqttClientState(

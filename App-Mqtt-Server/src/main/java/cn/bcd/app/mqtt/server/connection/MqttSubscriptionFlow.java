@@ -80,6 +80,11 @@ final class MqttSubscriptionFlow {
                 connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
                 return;
             }
+            if (!result.granted()) {
+                subAck.addGrantedQos(MqttQoS.FAILURE);
+                subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
+                return;
+            }
             result.retainedMessages().forEach(
                     retained -> retainedMessages.put(retained.topicName(), retained));
             subAck.addGrantedQos(requestedQos);

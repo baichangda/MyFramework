@@ -2,6 +2,8 @@ package cn.bcd.app.mqtt.server.broker;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
 import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
+import cn.bcd.app.mqtt.server.config.MqttResourceLimits;
+import cn.bcd.app.mqtt.server.config.MqttServerProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
@@ -11,6 +13,7 @@ import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import cn.bcd.app.mqtt.server.session.persistence.MqttSessionStore;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collection;
 import java.util.List;
@@ -27,7 +30,22 @@ public class MqttBroker {
     public MqttBroker(
             MqttRetainedMessageStore retainedMessageStore,
             MqttSessionStore sessionStore) {
-        clients = new MqttClientRegistry(sessionStore);
+        this(retainedMessageStore, sessionStore, MqttResourceLimits.defaults());
+    }
+
+    @Autowired
+    public MqttBroker(
+            MqttRetainedMessageStore retainedMessageStore,
+            MqttSessionStore sessionStore,
+            MqttServerProperties properties) {
+        this(retainedMessageStore, sessionStore, MqttResourceLimits.from(properties.getLimits()));
+    }
+
+    private MqttBroker(
+            MqttRetainedMessageStore retainedMessageStore,
+            MqttSessionStore sessionStore,
+            MqttResourceLimits limits) {
+        clients = new MqttClientRegistry(sessionStore, limits);
         router = new MqttMessageRouter(clients, retainedMessageStore);
     }
 
@@ -38,6 +56,9 @@ public class MqttBroker {
             boolean cleanSession) {
         return clients.connect(connection, clientId, username, cleanSession)
                 .thenApply(registration -> {
+                    if (!registration.result().accepted()) {
+                        return registration.result();
+                    }
                     MqttConnection previous = registration.previousConnection();
                     if (previous != null && previous != connection) {
                         previous.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
@@ -54,10 +75,12 @@ public class MqttBroker {
             MqttConnection connection,
             MqttSubscription subscription) {
         return clients.subscribe(connection, subscription)
-                .thenApply(subscribed -> subscribed
-                        ? new MqttSubscribeResult(
-                                true, router.findRetained(subscription.topicFilter()))
-                        : new MqttSubscribeResult(false, List.of()));
+                .thenApply(result -> switch (result) {
+                    case ACCEPTED -> new MqttSubscribeResult(
+                            true, true, router.findRetained(subscription.topicFilter()));
+                    case REJECTED -> new MqttSubscribeResult(true, false, List.of());
+                    case NOT_CURRENT -> new MqttSubscribeResult(false, false, List.of());
+                });
     }
 
     public CompletionStage<Boolean> unsubscribe(

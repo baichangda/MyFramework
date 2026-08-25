@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.retained;
 
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
+import cn.bcd.lib.base.exception.BaseException;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -16,17 +17,39 @@ final class MqttRetainedMessageIndex {
 
     private final Node root = new Node();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final int maxMessages;
+    private final long maxPayloadBytes;
+    private int messageCount;
+    private long payloadBytes;
+
+    MqttRetainedMessageIndex() {
+        this(Integer.MAX_VALUE, Long.MAX_VALUE);
+    }
+
+    MqttRetainedMessageIndex(int maxMessages, long maxPayloadBytes) {
+        this.maxMessages = maxMessages;
+        this.maxPayloadBytes = maxPayloadBytes;
+    }
 
     MqttApplicationMessage put(MqttApplicationMessage message) {
         String[] levels = levels(message.topicName());
         lock.writeLock().lock();
         try {
+            Node existing = findNode(message.topicName());
+            MqttApplicationMessage previous = existing == null ? null : existing.message;
+            int nextCount = previous == null ? messageCount + 1 : messageCount;
+            long nextBytes = payloadBytes + message.payloadLength()
+                    - (previous == null ? 0 : previous.payloadLength());
+            if (nextCount > maxMessages || nextBytes > maxPayloadBytes) {
+                throw BaseException.get("MQTT retained message limit exceeded");
+            }
             Node node = root;
             for (String level : levels) {
                 node = node.children.computeIfAbsent(level, key -> new Node());
             }
-            MqttApplicationMessage previous = node.message;
             node.message = message;
+            messageCount = nextCount;
+            payloadBytes = nextBytes;
             return previous;
         } finally {
             lock.writeLock().unlock();
@@ -49,6 +72,10 @@ final class MqttRetainedMessageIndex {
             }
             MqttApplicationMessage previous = node.message;
             node.message = null;
+            if (previous != null) {
+                messageCount--;
+                payloadBytes -= previous.payloadLength();
+            }
             prune(path, levels);
             return previous;
         } finally {
@@ -67,6 +94,7 @@ final class MqttRetainedMessageIndex {
                     removeWhileLocked(failed.topicName());
                 } else {
                     node.message = previous;
+                    payloadBytes += previous.payloadLength() - failed.payloadLength();
                 }
             }
         } finally {
@@ -87,6 +115,8 @@ final class MqttRetainedMessageIndex {
                 putWhileLocked(previous);
             } else if (node.message == null) {
                 node.message = previous;
+                messageCount++;
+                payloadBytes += previous.payloadLength();
             }
         } finally {
             lock.writeLock().unlock();
@@ -133,6 +163,24 @@ final class MqttRetainedMessageIndex {
         }
     }
 
+    int size() {
+        lock.readLock().lock();
+        try {
+            return messageCount;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    long payloadBytes() {
+        lock.readLock().lock();
+        try {
+            return payloadBytes;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     private static void collect(
             Node start,
             List<MqttApplicationMessage> messages,
@@ -172,6 +220,8 @@ final class MqttRetainedMessageIndex {
             node = node.children.computeIfAbsent(level, key -> new Node());
         }
         node.message = message;
+        messageCount++;
+        payloadBytes += message.payloadLength();
     }
 
     private void removeWhileLocked(String topicName) {
@@ -186,7 +236,12 @@ final class MqttRetainedMessageIndex {
             }
             path.add(node);
         }
+        MqttApplicationMessage previous = node.message;
         node.message = null;
+        if (previous != null) {
+            messageCount--;
+            payloadBytes -= previous.payloadLength();
+        }
         prune(path, levels);
     }
 

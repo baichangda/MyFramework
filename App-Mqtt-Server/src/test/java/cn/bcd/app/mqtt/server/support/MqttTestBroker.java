@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.support;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
+import cn.bcd.app.mqtt.server.config.MqttServerProperties;
 import cn.bcd.app.mqtt.server.retained.InMemoryMqttRetainedMessageStore;
 import cn.bcd.app.mqtt.server.session.persistence.InMemoryMqttSessionStore;
 
@@ -13,5 +14,12 @@ public final class MqttTestBroker {
         return new MqttBroker(
                 new InMemoryMqttRetainedMessageStore(),
                 new InMemoryMqttSessionStore());
+    }
+
+    public static MqttBroker create(MqttServerProperties properties) {
+        return new MqttBroker(
+                new InMemoryMqttRetainedMessageStore(),
+                new InMemoryMqttSessionStore(),
+                properties);
     }
 }

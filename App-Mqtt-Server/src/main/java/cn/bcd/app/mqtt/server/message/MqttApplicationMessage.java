@@ -28,7 +28,13 @@ public record MqttApplicationMessage(
         return payload.length == 0;
     }
 
+    public int payloadLength() {
+        return payload.length;
+    }
+
     public MqttApplicationMessage withQos(MqttQoS deliveryQos) {
-        return new MqttApplicationMessage(topicName, payload, deliveryQos);
+        return qos == deliveryQos
+                ? this
+                : new MqttApplicationMessage(topicName, payload, deliveryQos);
     }
 }
