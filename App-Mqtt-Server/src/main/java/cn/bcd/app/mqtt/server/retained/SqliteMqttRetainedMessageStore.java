@@ -2,7 +2,6 @@ package cn.bcd.app.mqtt.server.retained;
 
 import cn.bcd.app.mqtt.server.config.MqttPersistenceProperties;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
-import cn.bcd.app.mqtt.server.topic.MqttTopicFilter;
 import cn.bcd.lib.base.exception.BaseException;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,9 +16,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @ConditionalOnProperty(
@@ -37,7 +39,7 @@ public final class SqliteMqttRetainedMessageStore
                 qos INTEGER NOT NULL DEFAULT 0
             )
             """;
-    private static final String SAVE_SQL = """
+    private static final String UPSERT_SQL = """
             INSERT INTO mqtt_retained_message(topic_name, payload, qos) VALUES (?, ?, ?)
             ON CONFLICT(topic_name) DO UPDATE SET
                 payload = excluded.payload,
@@ -45,12 +47,16 @@ public final class SqliteMqttRetainedMessageStore
             """;
     private static final String DELETE_SQL =
             "DELETE FROM mqtt_retained_message WHERE topic_name = ?";
-    private static final String FIND_EXACT_SQL =
-            "SELECT topic_name, payload, qos FROM mqtt_retained_message WHERE topic_name = ?";
-    private static final String FIND_ALL_SQL =
+    private static final String LOAD_ALL_SQL =
             "SELECT topic_name, payload, qos FROM mqtt_retained_message";
 
     private final Connection connection;
+    private final MqttRetainedMessageIndex index = new MqttRetainedMessageIndex();
+    private final ExecutorService writer = Executors.newSingleThreadExecutor(
+            Thread.ofPlatform()
+                    .name("mqtt-retained-sqlite-writer")
+                    .daemon()
+                    .factory());
 
     public SqliteMqttRetainedMessageStore(MqttPersistenceProperties properties) {
         String databasePath = properties.getRetainedMessage().getSqlite().getDatabasePath();
@@ -61,6 +67,7 @@ public final class SqliteMqttRetainedMessageStore
                 statement.execute("PRAGMA busy_timeout = 5000");
                 statement.execute(CREATE_TABLE_SQL);
             }
+            loadIndex();
         } catch (IOException | SQLException exception) {
             throw BaseException.get(
                     "Failed to initialize SQLite retained message store", exception);
@@ -68,60 +75,78 @@ public final class SqliteMqttRetainedMessageStore
     }
 
     @Override
-    public synchronized void save(MqttApplicationMessage message) {
-        try (PreparedStatement statement = connection.prepareStatement(SAVE_SQL)) {
-            statement.setString(1, message.topicName());
-            statement.setBytes(2, message.payload());
-            statement.setInt(3, message.qos().value());
-            statement.executeUpdate();
-        } catch (SQLException exception) {
-            throw storeFailure("save", exception);
-        }
-    }
-
-    @Override
-    public synchronized void delete(String topicName) {
-        try (PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
-            statement.setString(1, topicName);
-            statement.executeUpdate();
-        } catch (SQLException exception) {
-            throw storeFailure("delete", exception);
-        }
-    }
-
-    @Override
-    public synchronized Collection<MqttApplicationMessage> findMatching(String topicFilter) {
-        boolean exact = topicFilter.indexOf('+') < 0 && topicFilter.indexOf('#') < 0;
-        String sql = exact ? FIND_EXACT_SQL : FIND_ALL_SQL;
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            if (exact) {
-                statement.setString(1, topicFilter);
+    public CompletionStage<Void> save(MqttApplicationMessage message) {
+        MqttApplicationMessage previous = index.put(message);
+        return write("save", () -> {
+            try (PreparedStatement statement = connection.prepareStatement(UPSERT_SQL)) {
+                statement.setString(1, message.topicName());
+                statement.setBytes(2, message.payload());
+                statement.setInt(3, message.qos().value());
+                statement.executeUpdate();
             }
-            try (ResultSet resultSet = statement.executeQuery()) {
-                List<MqttApplicationMessage> matches = new ArrayList<>();
-                while (resultSet.next()) {
-                    String topicName = resultSet.getString("topic_name");
-                    if (exact || MqttTopicFilter.matches(topicFilter, topicName)) {
-                        matches.add(new MqttApplicationMessage(
-                                topicName,
-                                resultSet.getBytes("payload"),
-                                MqttQoS.valueOf(resultSet.getInt("qos"))));
-                    }
-                }
-                return List.copyOf(matches);
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) {
+                index.restorePutFailure(message, previous);
             }
-        } catch (SQLException exception) {
-            throw storeFailure("query", exception);
-        }
+        });
     }
 
     @Override
-    public synchronized void close() {
+    public CompletionStage<Void> delete(String topicName) {
+        MqttApplicationMessage previous = index.remove(topicName);
+        return write("delete", () -> {
+            try (PreparedStatement statement = connection.prepareStatement(DELETE_SQL)) {
+                statement.setString(1, topicName);
+                statement.executeUpdate();
+            }
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) {
+                index.restoreDeleteFailure(topicName, previous);
+            }
+        });
+    }
+
+    @Override
+    public Collection<MqttApplicationMessage> findMatching(String topicFilter) {
+        return index.findMatching(topicFilter);
+    }
+
+    @Override
+    public void close() {
+        writer.shutdown();
         try {
+            if (!writer.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw BaseException.get("Timed out closing SQLite retained message store");
+            }
             connection.close();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw BaseException.get("Interrupted closing SQLite retained message store", exception);
         } catch (SQLException exception) {
             throw storeFailure("close", exception);
         }
+    }
+
+    private void loadIndex() throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery(LOAD_ALL_SQL)) {
+            while (result.next()) {
+                index.put(new MqttApplicationMessage(
+                        result.getString("topic_name"),
+                        result.getBytes("payload"),
+                        MqttQoS.valueOf(result.getInt("qos"))));
+            }
+        }
+    }
+
+    private CompletionStage<Void> write(String operation, SqlOperation sql) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                sql.run();
+            } catch (SQLException exception) {
+                throw storeFailure(operation, exception);
+            }
+        }, writer);
     }
 
     private static void createParentDirectory(String databasePath) throws IOException {
@@ -139,5 +164,10 @@ public final class SqliteMqttRetainedMessageStore
             SQLException exception) {
         return BaseException.get(
                 "Failed to " + operation + " retained MQTT message", exception);
+    }
+
+    @FunctionalInterface
+    private interface SqlOperation {
+        void run() throws SQLException;
     }
 }

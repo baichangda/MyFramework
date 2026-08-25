@@ -2,6 +2,8 @@ package cn.bcd.app.mqtt.server.protocol;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.retained.InMemoryMqttRetainedMessageStore;
+import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
+import cn.bcd.app.mqtt.server.session.persistence.InMemoryMqttSessionStore;
 import cn.bcd.app.mqtt.server.session.persistence.MqttSessionStore;
 import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import io.netty.buffer.Unpooled;
@@ -20,6 +22,31 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class MqttAsyncSessionPersistenceTest {
+
+    @Test
+    void shouldAcknowledgeRetainedPublishOnlyAfterWriteThroughCompletes() {
+        MqttRetainedMessageStore retainedStore = mock(MqttRetainedMessageStore.class);
+        CompletableFuture<Void> retainedSaved = new CompletableFuture<>();
+        when(retainedStore.save(any())).thenReturn(retainedSaved);
+        MqttBroker broker = new MqttBroker(
+                retainedStore, new InMemoryMqttSessionStore());
+        EmbeddedChannel channel = MqttTestChannel.connect(broker, "cid", true);
+
+        channel.writeInbound(Unpooled.wrappedBuffer(new byte[]{
+                0x33, 0x06,
+                0x00, 0x01, 't',
+                0x00, 0x07,
+                'x'
+        }));
+        assertTrue(channel.outboundMessages().isEmpty());
+
+        retainedSaved.complete(null);
+        channel.runPendingTasks();
+        assertArrayEquals(
+                new byte[]{0x40, 0x02, 0x00, 0x07},
+                MqttTestChannel.readOutbound(channel));
+        channel.finishAndReleaseAll();
+    }
 
     @Test
     void shouldAcknowledgeOnlyAfterDurableStateCompletes() {

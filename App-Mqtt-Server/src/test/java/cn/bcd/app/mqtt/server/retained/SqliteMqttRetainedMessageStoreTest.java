@@ -27,7 +27,7 @@ class SqliteMqttRetainedMessageStoreTest {
         try {
             try (SqliteMqttRetainedMessageStore first =
                          new SqliteMqttRetainedMessageStore(properties)) {
-                first.save(message);
+                first.save(message).toCompletableFuture().join();
             }
 
             try (SqliteMqttRetainedMessageStore second =
@@ -39,7 +39,7 @@ class SqliteMqttRetainedMessageStoreTest {
                 assertEquals(message.topicName(), restored.topicName());
                 assertArrayEquals(message.payload(), restored.payload());
                 assertEquals(MqttQoS.AT_LEAST_ONCE, restored.qos());
-                second.delete(message.topicName());
+                second.delete(message.topicName()).toCompletableFuture().join();
             }
 
             try (SqliteMqttRetainedMessageStore third =

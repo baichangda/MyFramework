@@ -24,14 +24,15 @@ final class MqttMessageRouter {
     }
 
     CompletionStage<Void> publish(MqttApplicationMessage message, boolean retained) {
-        if (retained) {
-            if (message.isEmpty()) {
-                retainedMessageStore.delete(message.topicName());
-            } else {
-                retainedMessageStore.save(message);
-            }
-        }
+        CompletionStage<Void> retainedWrite = !retained
+                ? CompletableFuture.completedFuture(null)
+                : message.isEmpty()
+                        ? retainedMessageStore.delete(message.topicName())
+                        : retainedMessageStore.save(message);
+        return retainedWrite.thenCompose(ignored -> deliver(message));
+    }
 
+    private CompletionStage<Void> deliver(MqttApplicationMessage message) {
         List<CompletableFuture<Void>> deliveries = clients.findSubscribers(message.topicName())
                 .entrySet()
                 .stream()
