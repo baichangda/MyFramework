@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/** 仅保存在进程内的保留消息存储，适用于测试或无需跨重启恢复的场景。 */
 @Component
 @ConditionalOnProperty(
         prefix = "mqtt.server.persistence.retained-message",
