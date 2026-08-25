@@ -32,7 +32,9 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessage> {
 
@@ -143,6 +145,24 @@ public final class MqttConnection extends SimpleChannelInboundHandler<MqttMessag
 
     void write(MqttMessage message) {
         requiredNettyContext().writeAndFlush(message);
+    }
+
+    <T> void onCompletion(CompletionStage<T> stage, Consumer<T> success) {
+        stage.whenComplete((result, failure) -> {
+            Runnable completion = () -> {
+                if (failure != null) {
+                    close(MqttConnectionCloseReason.INTERNAL_ERROR);
+                } else if (channel().isActive()) {
+                    success.accept(result);
+                }
+            };
+            Channel channel = channel();
+            if (channel.eventLoop().inEventLoop()) {
+                completion.run();
+            } else {
+                channel.eventLoop().execute(completion);
+            }
+        });
     }
 
     private void configureKeepAlive(int keepAliveSeconds) {

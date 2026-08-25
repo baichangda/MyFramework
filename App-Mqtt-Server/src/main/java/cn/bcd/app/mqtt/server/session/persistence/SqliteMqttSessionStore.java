@@ -26,6 +26,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @ConditionalOnProperty(
@@ -82,6 +87,11 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
             """;
 
     private final Connection connection;
+    private final ExecutorService writer = Executors.newSingleThreadExecutor(
+            Thread.ofPlatform()
+                    .name("mqtt-session-sqlite-writer")
+                    .daemon()
+                    .factory());
 
     public SqliteMqttSessionStore(MqttPersistenceProperties properties) {
         String databasePath = properties.getSession().getSqlite().getDatabasePath();
@@ -102,7 +112,7 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
     }
 
     @Override
-    public synchronized Collection<MqttSessionSnapshot> loadAll() {
+    public Collection<MqttSessionSnapshot> loadAll() {
         try {
             Map<String, SnapshotBuilder> builders = loadSessions();
             loadSubscriptions(builders);
@@ -117,38 +127,135 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
     }
 
     @Override
-    public synchronized void save(MqttSessionSnapshot snapshot) {
-        try {
-            connection.setAutoCommit(false);
-            saveSession(snapshot);
-            deleteChildren(snapshot.clientId());
-            saveSubscriptions(snapshot);
-            savePendingPublishes(snapshot);
-            saveInboundQosTwoPublishes(snapshot);
-            connection.commit();
-        } catch (SQLException exception) {
-            rollback(exception);
-            throw storeFailure("save", exception);
-        } finally {
-            restoreAutoCommit();
-        }
+    public CompletionStage<Void> upsertSession(
+            String clientId,
+            String username,
+            int nextPacketId) {
+        return write("upsert", () -> upsertSessionRow(clientId, username, nextPacketId));
     }
 
     @Override
-    public synchronized void delete(String clientId) {
-        try (PreparedStatement statement = connection.prepareStatement(
-                "DELETE FROM mqtt_session WHERE client_id = ?")) {
-            statement.setString(1, clientId);
-            statement.executeUpdate();
-        } catch (SQLException exception) {
-            throw storeFailure("delete", exception);
-        }
+    public CompletionStage<Void> deleteSession(String clientId) {
+        return write("delete", () -> deleteByClientId(
+                "mqtt_session", clientId));
     }
 
     @Override
-    public synchronized void close() {
+    public CompletionStage<Void> upsertSubscription(
+            String clientId,
+            MqttSubscription subscription) {
+        return write("upsert subscription for", () -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO mqtt_session_subscription(client_id, topic_filter, qos)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(client_id, topic_filter) DO UPDATE SET qos = excluded.qos
+                    """)) {
+                statement.setString(1, clientId);
+                statement.setString(2, subscription.topicFilter());
+                statement.setInt(3, subscription.qos().value());
+                statement.executeUpdate();
+            }
+        });
+    }
+
+    @Override
+    public CompletionStage<Void> deleteSubscriptions(
+            String clientId,
+            Collection<String> topicFilters) {
+        return write("delete subscriptions from", () -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    DELETE FROM mqtt_session_subscription
+                    WHERE client_id = ? AND topic_filter = ?
+                    """)) {
+                for (String topicFilter : topicFilters) {
+                    statement.setString(1, clientId);
+                    statement.setString(2, topicFilter);
+                    statement.addBatch();
+                }
+                statement.executeBatch();
+            }
+        });
+    }
+
+    @Override
+    public CompletionStage<Void> upsertPendingPublish(
+            String clientId,
+            int nextPacketId,
+            MqttPendingPublish pending) {
+        return write("upsert pending publish for", () -> inTransaction(() -> {
+            updateNextPacketId(clientId, nextPacketId);
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO mqtt_session_pending_publish(
+                        client_id, packet_id, topic_name, payload, qos, retained, sent, state
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(client_id, packet_id) DO UPDATE SET
+                        topic_name = excluded.topic_name,
+                        payload = excluded.payload,
+                        qos = excluded.qos,
+                        retained = excluded.retained,
+                        sent = excluded.sent,
+                        state = excluded.state
+                    """)) {
+                statement.setString(1, clientId);
+                statement.setInt(2, pending.packetId());
+                statement.setString(3, pending.message().topicName());
+                statement.setBytes(4, pending.message().payload());
+                statement.setInt(5, pending.message().qos().value());
+                statement.setBoolean(6, pending.retained());
+                statement.setBoolean(7, pending.sent());
+                statement.setString(8, pending.state().name());
+                statement.executeUpdate();
+            }
+        }));
+    }
+
+    @Override
+    public CompletionStage<Void> deletePendingPublish(String clientId, int packetId) {
+        return write("delete pending publish from", () -> deleteByPacketId(
+                "mqtt_session_pending_publish", clientId, packetId));
+    }
+
+    @Override
+    public CompletionStage<Void> upsertInboundQosTwo(
+            String clientId,
+            MqttInboundQosTwoPublish publish) {
+        return write("upsert inbound QoS 2 publish for", () -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO mqtt_session_inbound_qos_two(
+                        client_id, packet_id, topic_name, payload, retained
+                    ) VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(client_id, packet_id) DO UPDATE SET
+                        topic_name = excluded.topic_name,
+                        payload = excluded.payload,
+                        retained = excluded.retained
+                    """)) {
+                statement.setString(1, clientId);
+                statement.setInt(2, publish.packetId());
+                statement.setString(3, publish.message().topicName());
+                statement.setBytes(4, publish.message().payload());
+                statement.setBoolean(5, publish.retained());
+                statement.executeUpdate();
+            }
+        });
+    }
+
+    @Override
+    public CompletionStage<Void> deleteInboundQosTwo(String clientId, int packetId) {
+        return write("delete inbound QoS 2 publish from", () -> deleteByPacketId(
+                "mqtt_session_inbound_qos_two", clientId, packetId));
+    }
+
+    @Override
+    public void close() {
+        writer.shutdown();
         try {
+            if (!writer.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw BaseException.get("Timed out closing SQLite MQTT session store");
+            }
             connection.close();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw BaseException.get("Interrupted closing SQLite MQTT session store", exception);
         } catch (SQLException exception) {
             throw storeFailure("close", exception);
         }
@@ -231,84 +338,73 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
-    private void saveSession(MqttSessionSnapshot snapshot) throws SQLException {
+    private void upsertSessionRow(
+            String clientId,
+            String username,
+            int nextPacketId) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
                 INSERT INTO mqtt_session(client_id, username, next_packet_id) VALUES (?, ?, ?)
                 ON CONFLICT(client_id) DO UPDATE SET
                     username = excluded.username,
                     next_packet_id = excluded.next_packet_id
                 """)) {
-            statement.setString(1, snapshot.clientId());
-            statement.setString(2, snapshot.username());
-            statement.setInt(3, snapshot.nextPacketId());
+            statement.setString(1, clientId);
+            statement.setString(2, username);
+            statement.setInt(3, nextPacketId);
             statement.executeUpdate();
         }
     }
 
-    private void deleteChildren(String clientId) throws SQLException {
-        for (String table : List.of(
-                "mqtt_session_subscription",
-                "mqtt_session_pending_publish",
-                "mqtt_session_inbound_qos_two")) {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "DELETE FROM " + table + " WHERE client_id = ?")) {
-                statement.setString(1, clientId);
-                statement.executeUpdate();
-            }
+    private void updateNextPacketId(String clientId, int nextPacketId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                UPDATE mqtt_session SET next_packet_id = ? WHERE client_id = ?
+                """)) {
+            statement.setInt(1, nextPacketId);
+            statement.setString(2, clientId);
+            statement.executeUpdate();
         }
     }
 
-    private void saveSubscriptions(MqttSessionSnapshot snapshot) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("""
-                INSERT INTO mqtt_session_subscription(client_id, topic_filter, qos)
-                VALUES (?, ?, ?)
-                """)) {
-            for (MqttSubscription subscription : snapshot.subscriptions()) {
-                statement.setString(1, snapshot.clientId());
-                statement.setString(2, subscription.topicFilter());
-                statement.setInt(3, subscription.qos().value());
-                statement.addBatch();
-            }
-            statement.executeBatch();
+    private void deleteByClientId(String table, String clientId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "DELETE FROM " + table + " WHERE client_id = ?")) {
+            statement.setString(1, clientId);
+            statement.executeUpdate();
         }
     }
 
-    private void savePendingPublishes(MqttSessionSnapshot snapshot) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("""
-                INSERT INTO mqtt_session_pending_publish(
-                    client_id, packet_id, topic_name, payload, qos, retained, sent, state
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """)) {
-            for (MqttPendingPublish pending : snapshot.pendingPublishes()) {
-                statement.setString(1, snapshot.clientId());
-                statement.setInt(2, pending.packetId());
-                statement.setString(3, pending.message().topicName());
-                statement.setBytes(4, pending.message().payload());
-                statement.setInt(5, pending.message().qos().value());
-                statement.setBoolean(6, pending.retained());
-                statement.setBoolean(7, pending.sent());
-                statement.setString(8, pending.state().name());
-                statement.addBatch();
-            }
-            statement.executeBatch();
+    private void deleteByPacketId(
+            String table,
+            String clientId,
+            int packetId) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "DELETE FROM " + table + " WHERE client_id = ? AND packet_id = ?")) {
+            statement.setString(1, clientId);
+            statement.setInt(2, packetId);
+            statement.executeUpdate();
         }
     }
 
-    private void saveInboundQosTwoPublishes(MqttSessionSnapshot snapshot) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("""
-                INSERT INTO mqtt_session_inbound_qos_two(
-                    client_id, packet_id, topic_name, payload, retained
-                ) VALUES (?, ?, ?, ?, ?)
-                """)) {
-            for (MqttInboundQosTwoPublish inbound : snapshot.inboundQosTwoPublishes()) {
-                statement.setString(1, snapshot.clientId());
-                statement.setInt(2, inbound.packetId());
-                statement.setString(3, inbound.message().topicName());
-                statement.setBytes(4, inbound.message().payload());
-                statement.setBoolean(5, inbound.retained());
-                statement.addBatch();
+    private CompletionStage<Void> write(String operation, SqlOperation sql) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                sql.run();
+            } catch (SQLException exception) {
+                throw storeFailure(operation, exception);
             }
-            statement.executeBatch();
+        }, writer);
+    }
+
+    private void inTransaction(SqlOperation sql) throws SQLException {
+        connection.setAutoCommit(false);
+        try {
+            sql.run();
+            connection.commit();
+        } catch (SQLException exception) {
+            rollback(exception);
+            throw exception;
+        } finally {
+            restoreAutoCommit();
         }
     }
 
@@ -320,12 +416,13 @@ public final class SqliteMqttSessionStore implements MqttSessionStore, AutoClose
         }
     }
 
-    private void restoreAutoCommit() {
-        try {
-            connection.setAutoCommit(true);
-        } catch (SQLException exception) {
-            throw storeFailure("restore auto-commit for", exception);
-        }
+    private void restoreAutoCommit() throws SQLException {
+        connection.setAutoCommit(true);
+    }
+
+    @FunctionalInterface
+    private interface SqlOperation {
+        void run() throws SQLException;
     }
 
     private static void createParentDirectory(String databasePath) throws IOException {

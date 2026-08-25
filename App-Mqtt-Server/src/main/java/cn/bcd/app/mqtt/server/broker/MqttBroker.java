@@ -6,7 +6,6 @@ import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
 import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
-import cn.bcd.app.mqtt.server.session.MqttInboundQosTwoPublish;
 import cn.bcd.app.mqtt.server.session.MqttPendingPublish;
 import cn.bcd.app.mqtt.server.session.MqttSession;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
@@ -16,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 @Component
 public class MqttBroker {
@@ -30,56 +31,56 @@ public class MqttBroker {
         router = new MqttMessageRouter(clients, retainedMessageStore);
     }
 
-    public MqttConnectResult connect(
+    public CompletionStage<MqttConnectResult> connect(
             MqttConnection connection,
             String clientId,
             String username,
             boolean cleanSession) {
-        MqttClientRegistry.MqttClientRegistration registration = clients.connect(
-                connection, clientId, username, cleanSession);
-        MqttConnection previous = registration.previousConnection();
-        if (previous != null && previous != connection) {
-            previous.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-        }
-        return registration.result();
+        return clients.connect(connection, clientId, username, cleanSession)
+                .thenApply(registration -> {
+                    MqttConnection previous = registration.previousConnection();
+                    if (previous != null && previous != connection) {
+                        previous.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+                    }
+                    return registration.result();
+                });
     }
 
     public void disconnect(MqttConnection connection) {
         clients.disconnect(connection);
     }
 
-    public MqttSubscribeResult subscribe(
+    public CompletionStage<MqttSubscribeResult> subscribe(
             MqttConnection connection,
             MqttSubscription subscription) {
-        if (!clients.subscribe(connection, subscription)) {
-            return new MqttSubscribeResult(false, List.of());
-        }
-        return new MqttSubscribeResult(
-                true, router.findRetained(subscription.topicFilter()));
+        return clients.subscribe(connection, subscription)
+                .thenApply(subscribed -> subscribed
+                        ? new MqttSubscribeResult(
+                                true, router.findRetained(subscription.topicFilter()))
+                        : new MqttSubscribeResult(false, List.of()));
     }
 
-    public boolean unsubscribe(
+    public CompletionStage<Boolean> unsubscribe(
             MqttConnection connection,
             Collection<String> topicFilters) {
         return clients.unsubscribe(connection, topicFilters);
     }
 
-    public boolean publish(
+    public CompletionStage<Boolean> publish(
             MqttConnection publisher,
             MqttApplicationMessage message,
             boolean retained) {
         if (!clients.isCurrent(publisher)) {
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
-        router.publish(message, retained);
-        return true;
+        return router.publish(message, retained).thenApply(ignored -> true);
     }
 
     public void publishWill(MqttWillMessage willMessage) {
         router.publishWill(willMessage);
     }
 
-    public boolean deliverRetained(
+    public CompletionStage<Boolean> deliverRetained(
             MqttConnection connection,
             MqttApplicationMessage message) {
         return router.deliverRetained(connection, message);
@@ -89,7 +90,7 @@ public class MqttBroker {
         clients.acknowledge(connection, packetId);
     }
 
-    public MqttInboundPublishStatus receiveQosTwo(
+    public CompletionStage<MqttInboundPublishStatus> receiveQosTwo(
             MqttConnection connection,
             int packetId,
             MqttApplicationMessage message,
@@ -99,18 +100,21 @@ public class MqttBroker {
                 connection, packetId, message, retained, duplicate);
     }
 
-    public boolean releaseQosTwo(MqttConnection connection, int packetId) {
+    public CompletionStage<Boolean> releaseQosTwo(
+            MqttConnection connection,
+            int packetId) {
         if (!clients.isCurrent(connection)) {
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
-        Optional<MqttInboundQosTwoPublish> pending = clients.releaseQosTwo(
-                connection, packetId);
-        pending.ifPresent(message -> router.publish(
-                message.message(), message.retained()));
-        return true;
+        return clients.releaseQosTwo(connection, packetId)
+                .thenCompose(pending -> pending
+                        .map(message -> router.publish(
+                                message.message(), message.retained()))
+                        .orElseGet(() -> CompletableFuture.completedFuture(null)))
+                .thenApply(ignored -> true);
     }
 
-    public Optional<MqttPendingPublish> receivePubRec(
+    public CompletionStage<Optional<MqttPendingPublish>> receivePubRec(
             MqttConnection connection,
             int packetId) {
         return clients.receivePubRec(connection, packetId);
@@ -125,10 +129,10 @@ public class MqttBroker {
         return clients.pendingPublishes(connection);
     }
 
-    public void markPendingPublishSent(
+    public CompletionStage<Void> markPendingPublishSent(
             MqttConnection connection,
             int packetId) {
-        clients.markPendingPublishSent(connection, packetId);
+        return clients.markPendingPublishSent(connection, packetId);
     }
 
     public Optional<MqttConnection> findConnection(String clientId) {

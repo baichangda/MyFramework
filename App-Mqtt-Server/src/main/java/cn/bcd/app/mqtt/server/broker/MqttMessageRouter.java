@@ -6,7 +6,10 @@ import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.retained.MqttRetainedMessageStore;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 final class MqttMessageRouter {
 
@@ -20,7 +23,7 @@ final class MqttMessageRouter {
         this.retainedMessageStore = Objects.requireNonNull(retainedMessageStore);
     }
 
-    void publish(MqttApplicationMessage message, boolean retained) {
+    CompletionStage<Void> publish(MqttApplicationMessage message, boolean retained) {
         if (retained) {
             if (message.isEmpty()) {
                 retainedMessageStore.delete(message.topicName());
@@ -29,25 +32,32 @@ final class MqttMessageRouter {
             }
         }
 
-        clients.findSubscribers(message.topicName())
-                .forEach((clientId, subscriptionQos) -> clients
-                        .prepareDelivery(clientId, message, subscriptionQos, false)
-                        .ifPresent(this::send));
+        List<CompletableFuture<Void>> deliveries = clients.findSubscribers(message.topicName())
+                .entrySet()
+                .stream()
+                .map(entry -> clients.prepareDelivery(
+                                entry.getKey(), message, entry.getValue(), false)
+                        .thenAccept(delivery -> delivery.ifPresent(this::send))
+                        .toCompletableFuture())
+                .toList();
+        return CompletableFuture.allOf(deliveries.toArray(CompletableFuture[]::new));
     }
 
     void publishWill(MqttWillMessage willMessage) {
         publish(willMessage.message(), willMessage.retained());
     }
 
-    boolean deliverRetained(
+    CompletionStage<Boolean> deliverRetained(
             MqttConnection connection,
             MqttApplicationMessage message) {
         if (!clients.isCurrent(connection)) {
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
-        clients.prepareDelivery(connection, message, true)
-                .ifPresent(this::send);
-        return true;
+        return clients.prepareDelivery(connection, message, true)
+                .thenApply(delivery -> {
+                    delivery.ifPresent(this::send);
+                    return true;
+                });
     }
 
     Collection<MqttApplicationMessage> findRetained(String topicFilter) {

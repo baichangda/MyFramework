@@ -54,29 +54,34 @@ final class MqttPublishFlow {
         MqttApplicationMessage applicationMessage = new MqttApplicationMessage(
                 topicName, ByteBufUtil.getBytes(message.payload()), qos);
         if (qos == MqttQoS.EXACTLY_ONCE) {
-            MqttInboundPublishStatus status = broker.receiveQosTwo(
+            connection.onCompletion(broker.receiveQosTwo(
                     connection,
                     packetId,
                     applicationMessage,
                     message.fixedHeader().isRetain(),
-                    message.fixedHeader().isDup());
-            if (status == MqttInboundPublishStatus.PROTOCOL_ERROR) {
-                connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+                    message.fixedHeader().isDup()), status -> {
+                if (status == MqttInboundPublishStatus.PROTOCOL_ERROR) {
+                    connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
+                    return;
+                }
+                connection.writeQosControlPacket(MqttMessageType.PUBREC, packetId);
+            });
+            return;
+        }
+        connection.onCompletion(broker.publish(
+                connection,
+                applicationMessage,
+                message.fixedHeader().isRetain()), published -> {
+            if (!published) {
+                connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
                 return;
             }
-            connection.writeQosControlPacket(MqttMessageType.PUBREC, packetId);
-            return;
-        }
-        if (!broker.publish(
-                connection, applicationMessage, message.fixedHeader().isRetain())) {
-            connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        if (qos == MqttQoS.AT_LEAST_ONCE) {
-            connection.write(MqttMessageBuilders.pubAck()
-                    .packetId(packetId)
-                    .build());
-        }
+            if (qos == MqttQoS.AT_LEAST_ONCE) {
+                connection.write(MqttMessageBuilders.pubAck()
+                        .packetId(packetId)
+                        .build());
+            }
+        });
     }
 
     void pubAck(MqttConnection connection, MqttPubAckMessage message) {
@@ -90,18 +95,23 @@ final class MqttPublishFlow {
 
     void pubRec(MqttConnection connection, MqttMessage message) {
         int packetId = packetId(message);
-        broker.receivePubRec(connection, packetId)
-                .ifPresent(pending -> connection.writeQosControlPacket(
-                        MqttMessageType.PUBREL, pending.packetId()));
+        connection.onCompletion(
+                broker.receivePubRec(connection, packetId),
+                pending -> pending.ifPresent(value -> connection.writeQosControlPacket(
+                        MqttMessageType.PUBREL, value.packetId())));
     }
 
     void pubRel(MqttConnection connection, MqttMessage message) {
         int packetId = packetId(message);
-        if (!broker.releaseQosTwo(connection, packetId)) {
-            connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        connection.writeQosControlPacket(MqttMessageType.PUBCOMP, packetId);
+        connection.onCompletion(
+                broker.releaseQosTwo(connection, packetId),
+                released -> {
+                    if (!released) {
+                        connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+                        return;
+                    }
+                    connection.writeQosControlPacket(MqttMessageType.PUBCOMP, packetId);
+                });
     }
 
     void pubComp(MqttConnection connection, MqttMessage message) {

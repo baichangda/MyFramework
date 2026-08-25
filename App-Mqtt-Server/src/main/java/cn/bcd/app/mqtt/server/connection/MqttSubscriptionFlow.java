@@ -52,15 +52,30 @@ final class MqttSubscriptionFlow {
         MqttMessageBuilders.SubAckBuilder subAck = MqttMessageBuilders.subAck()
                 .packetId(packetId);
         Map<String, MqttApplicationMessage> retainedMessages = new LinkedHashMap<>();
-        for (MqttTopicSubscription request : requests) {
-            String topicFilter = request.topicFilter();
-            MqttQoS requestedQos = request.qualityOfService();
-            if (!authorize(connection, MqttAuthorizationAction.SUBSCRIBE, topicFilter)) {
-                subAck.addGrantedQos(MqttQoS.FAILURE);
-                continue;
-            }
-            MqttSubscribeResult result = broker.subscribe(
-                    connection, new MqttSubscription(topicFilter, requestedQos));
+        subscribeNext(connection, requests, 0, subAck, retainedMessages);
+    }
+
+    private void subscribeNext(
+            MqttConnection connection,
+            List<MqttTopicSubscription> requests,
+            int index,
+            MqttMessageBuilders.SubAckBuilder subAck,
+            Map<String, MqttApplicationMessage> retainedMessages) {
+        if (index == requests.size()) {
+            connection.write(subAck.build());
+            deliverRetained(connection, retainedMessages.values());
+            return;
+        }
+        MqttTopicSubscription request = requests.get(index);
+        String topicFilter = request.topicFilter();
+        MqttQoS requestedQos = request.qualityOfService();
+        if (!authorize(connection, MqttAuthorizationAction.SUBSCRIBE, topicFilter)) {
+            subAck.addGrantedQos(MqttQoS.FAILURE);
+            subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
+            return;
+        }
+        connection.onCompletion(broker.subscribe(
+                connection, new MqttSubscription(topicFilter, requestedQos)), result -> {
             if (!result.subscribed()) {
                 connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
                 return;
@@ -68,13 +83,21 @@ final class MqttSubscriptionFlow {
             result.retainedMessages().forEach(
                     retained -> retainedMessages.put(retained.topicName(), retained));
             subAck.addGrantedQos(requestedQos);
-        }
-        connection.write(subAck.build());
-        for (MqttApplicationMessage retained : retainedMessages.values()) {
-            if (!broker.deliverRetained(connection, retained)) {
-                connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-                return;
-            }
+            subscribeNext(connection, requests, index + 1, subAck, retainedMessages);
+        });
+    }
+
+    private void deliverRetained(
+            MqttConnection connection,
+            Iterable<MqttApplicationMessage> retainedMessages) {
+        for (MqttApplicationMessage retained : retainedMessages) {
+            connection.onCompletion(
+                    broker.deliverRetained(connection, retained),
+                    delivered -> {
+                        if (!delivered) {
+                            connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+                        }
+                    });
         }
     }
 
@@ -91,13 +114,17 @@ final class MqttSubscriptionFlow {
             connection.close(MqttConnectionCloseReason.PROTOCOL_ERROR);
             return;
         }
-        if (!broker.unsubscribe(connection, topicFilters)) {
-            connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
-            return;
-        }
-        connection.write(MqttMessageBuilders.unsubAck()
-                .packetId(packetId)
-                .build());
+        connection.onCompletion(
+                broker.unsubscribe(connection, topicFilters),
+                unsubscribed -> {
+                    if (!unsubscribed) {
+                        connection.close(MqttConnectionCloseReason.CONNECTION_TAKEN_OVER);
+                        return;
+                    }
+                    connection.write(MqttMessageBuilders.unsubAck()
+                            .packetId(packetId)
+                            .build());
+                });
     }
 
     private boolean authorize(

@@ -21,7 +21,8 @@ class MqttClientRegistryTest {
         InMemoryMqttSessionStore store = new InMemoryMqttSessionStore();
         MqttSession session = new MqttSession("cid", "device");
         session.subscribe(new MqttSubscription("sensor/+", MqttQoS.AT_LEAST_ONCE));
-        store.save(session.snapshot());
+        store.upsertSession("cid", "device", session.nextPacketId());
+        store.upsertSubscription("cid", session.subscriptions().iterator().next());
 
         MqttClientRegistry registry = new MqttClientRegistry(store);
 
@@ -37,10 +38,10 @@ class MqttClientRegistryTest {
         MqttConnection first = mock(MqttConnection.class);
         MqttConnection second = mock(MqttConnection.class);
         MqttClientRegistry.MqttClientRegistration initial = registry.connect(
-                first, "cid", "device", false);
+                first, "cid", "device", false).toCompletableFuture().join();
 
         MqttClientRegistry.MqttClientRegistration resumed = registry.connect(
-                second, "cid", "device", false);
+                second, "cid", "device", false).toCompletableFuture().join();
 
         assertTrue(resumed.result().sessionPresent());
         assertSame(initial.result().session(), resumed.result().session());
@@ -53,13 +54,16 @@ class MqttClientRegistryTest {
         InMemoryMqttSessionStore store = new InMemoryMqttSessionStore();
         MqttClientRegistry registry = new MqttClientRegistry(store);
         MqttClientRegistry.MqttClientRegistration initial = registry.connect(
-                mock(MqttConnection.class), "cid", "first", false);
+                mock(MqttConnection.class), "cid", "first", false)
+                .toCompletableFuture().join();
         initial.result().session().subscribe(
                 new MqttSubscription("sensor/#", MqttQoS.AT_LEAST_ONCE));
-        store.save(initial.result().session().snapshot());
+        store.upsertSubscription(
+                "cid", initial.result().session().subscriptions().iterator().next());
 
         MqttClientRegistry.MqttClientRegistration replaced = registry.connect(
-                mock(MqttConnection.class), "cid", "second", false);
+                mock(MqttConnection.class), "cid", "second", false)
+                .toCompletableFuture().join();
 
         assertFalse(replaced.result().sessionPresent());
         assertNotSame(initial.result().session(), replaced.result().session());

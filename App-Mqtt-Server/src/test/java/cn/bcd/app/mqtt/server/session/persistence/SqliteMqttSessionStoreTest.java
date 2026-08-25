@@ -5,6 +5,7 @@ import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.session.MqttOutboundPublishState;
 import cn.bcd.app.mqtt.server.session.MqttPendingPublish;
 import cn.bcd.app.mqtt.server.session.MqttSession;
+import cn.bcd.app.mqtt.server.session.MqttSessionSnapshot;
 import cn.bcd.app.mqtt.server.session.MqttSubscription;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class SqliteMqttSessionStoreTest {
 
         try {
             try (SqliteMqttSessionStore first = new SqliteMqttSessionStore(properties)) {
-                first.save(session.snapshot());
+                persist(first, session.snapshot());
             }
 
             try (SqliteMqttSessionStore second = new SqliteMqttSessionStore(properties)) {
@@ -61,7 +62,7 @@ class SqliteMqttSessionStoreTest {
                         MqttQoS.AT_LEAST_ONCE,
                         false);
                 assertEquals(3, next.packetId());
-                second.delete("cid");
+                second.deleteSession("cid").toCompletableFuture().join();
             }
 
             try (SqliteMqttSessionStore third = new SqliteMqttSessionStore(properties)) {
@@ -95,6 +96,23 @@ class SqliteMqttSessionStoreTest {
                 false,
                 false);
         return session;
+    }
+
+    private static void persist(
+            MqttSessionStore store,
+            MqttSessionSnapshot snapshot) {
+        store.upsertSession(
+                snapshot.clientId(), snapshot.username(), snapshot.nextPacketId())
+                .toCompletableFuture().join();
+        snapshot.subscriptions().forEach(subscription -> store
+                .upsertSubscription(snapshot.clientId(), subscription)
+                .toCompletableFuture().join());
+        snapshot.pendingPublishes().forEach(pending -> store
+                .upsertPendingPublish(snapshot.clientId(), snapshot.nextPacketId(), pending)
+                .toCompletableFuture().join());
+        snapshot.inboundQosTwoPublishes().forEach(inbound -> store
+                .upsertInboundQosTwo(snapshot.clientId(), inbound)
+                .toCompletableFuture().join());
     }
 
     private static Path databasePath() {

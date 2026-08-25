@@ -1,6 +1,7 @@
 package cn.bcd.app.mqtt.server.broker;
 
 import cn.bcd.app.mqtt.server.connection.MqttConnection;
+import cn.bcd.app.mqtt.server.connection.MqttConnectionCloseReason;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.session.MqttInboundPublishStatus;
 import cn.bcd.app.mqtt.server.session.MqttInboundQosTwoPublish;
@@ -16,16 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 final class MqttClientRegistry {
 
     private final ConcurrentMap<String, MqttClientState> clients = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ClientLock> clientLocks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ClientMonitor> clientMonitors =
+            new ConcurrentHashMap<>();
     private final MqttSubscriptionIndex subscriptionIndex = new MqttSubscriptionIndex();
     private final MqttSessionStore sessionStore;
 
@@ -38,7 +40,7 @@ final class MqttClientRegistry {
         }
     }
 
-    MqttClientRegistration connect(
+    CompletionStage<MqttClientRegistration> connect(
             MqttConnection connection,
             String clientId,
             String username,
@@ -51,11 +53,12 @@ final class MqttClientRegistry {
                     && current != null
                     && current.persistent()
                     && sameIdentity;
+            CompletionStage<Void> persistence = completed();
             if (!sessionPresent && current != null) {
                 subscriptionIndex.remove(current.session());
             }
             if (cleanSession || current != null && !sessionPresent) {
-                sessionStore.delete(clientId);
+                persistence = sessionStore.deleteSession(clientId);
             }
 
             MqttSession session = sessionPresent
@@ -64,10 +67,14 @@ final class MqttClientRegistry {
             MqttClientState registered = new MqttClientState(
                     session, connection, !cleanSession);
             clients.put(clientId, registered);
-            persist(registered);
-            return new MqttClientRegistration(
+            if (registered.persistent()) {
+                persistence = persistence.thenCompose(ignored -> sessionStore.upsertSession(
+                        session.clientId(), session.username(), session.nextPacketId()));
+            }
+            MqttClientRegistration registration = new MqttClientRegistration(
                     new MqttConnectResult(session, sessionPresent),
                     current == null ? null : current.connection());
+            return persistence.thenApply(ignored -> registration);
         });
     }
 
@@ -82,7 +89,6 @@ final class MqttClientRegistry {
                 return null;
             }
             if (current.persistent()) {
-                persist(current);
                 clients.put(session.clientId(), current.offline());
             } else {
                 subscriptionIndex.remove(current.session());
@@ -92,40 +98,48 @@ final class MqttClientRegistry {
         });
     }
 
-    boolean subscribe(MqttConnection connection, MqttSubscription subscription) {
+    CompletionStage<Boolean> subscribe(
+            MqttConnection connection,
+            MqttSubscription subscription) {
         MqttSession session = connection.session();
-        return session != null && withClientLock(session.clientId(), () -> {
+        if (session == null) {
+            return completed(false);
+        }
+        return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return false;
+                return completed(false);
             }
             boolean changed = session.subscribe(subscription);
             subscriptionIndex.add(session.clientId(), subscription);
-            if (changed) {
-                persist(current);
-            }
-            return true;
+            CompletionStage<Void> persistence = changed && current.persistent()
+                    ? sessionStore.upsertSubscription(session.clientId(), subscription)
+                    : completed();
+            return persistence.thenApply(ignored -> true);
         });
     }
 
-    boolean unsubscribe(
+    CompletionStage<Boolean> unsubscribe(
             MqttConnection connection,
             Collection<String> topicFilters) {
         MqttSession session = connection.session();
-        return session != null && withClientLock(session.clientId(), () -> {
+        if (session == null) {
+            return completed(false);
+        }
+        return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return false;
+                return completed(false);
             }
             boolean changed = false;
             for (String topicFilter : topicFilters) {
                 changed |= session.unsubscribe(topicFilter);
                 subscriptionIndex.remove(session.clientId(), topicFilter);
             }
-            if (changed) {
-                persist(current);
-            }
-            return true;
+            CompletionStage<Void> persistence = changed && current.persistent()
+                    ? sessionStore.deleteSubscriptions(session.clientId(), topicFilters)
+                    : completed();
+            return persistence.thenApply(ignored -> true);
         });
     }
 
@@ -138,7 +152,7 @@ final class MqttClientRegistry {
         return subscriptionIndex.findSubscribers(topicName);
     }
 
-    Optional<Delivery> prepareDelivery(
+    CompletionStage<Optional<Delivery>> prepareDelivery(
             String clientId,
             MqttApplicationMessage message,
             MqttQoS subscriptionQos,
@@ -147,35 +161,42 @@ final class MqttClientRegistry {
                 clients.get(clientId), message, subscriptionQos, retained));
     }
 
-    Optional<Delivery> prepareDelivery(
+    CompletionStage<Optional<Delivery>> prepareDelivery(
             MqttConnection connection,
             MqttApplicationMessage message,
             boolean retained) {
         MqttSession session = connection.session();
         if (session == null) {
-            return Optional.empty();
+            return completed(Optional.empty());
         }
         MqttQoS subscriptionQos = subscriptionIndex
                 .findSubscribers(message.topicName())
                 .get(session.clientId());
         if (subscriptionQos == null) {
-            return Optional.empty();
+            return completed(Optional.empty());
         }
-        return withClientLock(session.clientId(), () -> {
-            MqttClientState current = current(connection, session);
-            return prepareDelivery(current, message, subscriptionQos, retained);
-        });
+        return withClientLock(session.clientId(), () -> prepareDelivery(
+                current(connection, session), message, subscriptionQos, retained));
     }
 
     void acknowledge(MqttConnection connection, int packetId) {
-        mutateCurrent(connection, state -> {
-            if (state.session().acknowledgeQosOne(packetId)) {
-                persist(state);
+        MqttSession session = connection.session();
+        if (session == null) {
+            return;
+        }
+        CompletionStage<Void> persistence = withClientLock(session.clientId(), () -> {
+            MqttClientState current = current(connection, session);
+            if (current == null || !session.acknowledgeQosOne(packetId)) {
+                return completed();
             }
+            return current.persistent()
+                    ? sessionStore.deletePendingPublish(session.clientId(), packetId)
+                    : completed();
         });
+        closeOnFailure(connection, persistence);
     }
 
-    MqttInboundPublishStatus receiveQosTwo(
+    CompletionStage<MqttInboundPublishStatus> receiveQosTwo(
             MqttConnection connection,
             int packetId,
             MqttApplicationMessage message,
@@ -183,68 +204,81 @@ final class MqttClientRegistry {
             boolean duplicate) {
         MqttSession session = connection.session();
         if (session == null) {
-            return MqttInboundPublishStatus.PROTOCOL_ERROR;
+            return completed(MqttInboundPublishStatus.PROTOCOL_ERROR);
         }
         return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return MqttInboundPublishStatus.PROTOCOL_ERROR;
+                return completed(MqttInboundPublishStatus.PROTOCOL_ERROR);
             }
             MqttInboundPublishStatus status = session.receiveQosTwo(
                     packetId, message, retained, duplicate);
-            if (status == MqttInboundPublishStatus.STORED) {
-                persist(current);
+            if (status != MqttInboundPublishStatus.STORED || !current.persistent()) {
+                return completed(status);
             }
-            return status;
+            MqttInboundQosTwoPublish inbound = new MqttInboundQosTwoPublish(
+                    packetId, message, retained);
+            return sessionStore.upsertInboundQosTwo(session.clientId(), inbound)
+                    .thenApply(ignored -> status);
         });
     }
 
-    Optional<MqttInboundQosTwoPublish> releaseQosTwo(
+    CompletionStage<Optional<MqttInboundQosTwoPublish>> releaseQosTwo(
             MqttConnection connection,
             int packetId) {
         MqttSession session = connection.session();
         if (session == null) {
-            return Optional.empty();
+            return completed(Optional.empty());
         }
         return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return Optional.empty();
+                return completed(Optional.empty());
             }
             Optional<MqttInboundQosTwoPublish> pending = session.releaseQosTwo(packetId);
-            if (pending.isPresent()) {
-                persist(current);
-            }
-            return pending;
+            CompletionStage<Void> persistence = pending.isPresent() && current.persistent()
+                    ? sessionStore.deleteInboundQosTwo(session.clientId(), packetId)
+                    : completed();
+            return persistence.thenApply(ignored -> pending);
         });
     }
 
-    Optional<MqttPendingPublish> receivePubRec(
+    CompletionStage<Optional<MqttPendingPublish>> receivePubRec(
             MqttConnection connection,
             int packetId) {
         MqttSession session = connection.session();
         if (session == null) {
-            return Optional.empty();
+            return completed(Optional.empty());
         }
         return withClientLock(session.clientId(), () -> {
             MqttClientState current = current(connection, session);
             if (current == null) {
-                return Optional.empty();
+                return completed(Optional.empty());
             }
             Optional<MqttPendingPublish> pending = session.receivePubRec(packetId);
-            if (pending.isPresent()) {
-                persist(current);
-            }
-            return pending;
+            CompletionStage<Void> persistence = pending.isPresent() && current.persistent()
+                    ? sessionStore.upsertPendingPublish(
+                            session.clientId(), session.nextPacketId(), pending.orElseThrow())
+                    : completed();
+            return persistence.thenApply(ignored -> pending);
         });
     }
 
     void receivePubComp(MqttConnection connection, int packetId) {
-        mutateCurrent(connection, state -> {
-            if (state.session().receivePubComp(packetId)) {
-                persist(state);
+        MqttSession session = connection.session();
+        if (session == null) {
+            return;
+        }
+        CompletionStage<Void> persistence = withClientLock(session.clientId(), () -> {
+            MqttClientState current = current(connection, session);
+            if (current == null || !session.receivePubComp(packetId)) {
+                return completed();
             }
+            return current.persistent()
+                    ? sessionStore.deletePendingPublish(session.clientId(), packetId)
+                    : completed();
         });
+        closeOnFailure(connection, persistence);
     }
 
     Collection<MqttPendingPublish> pendingPublishes(MqttConnection connection) {
@@ -257,11 +291,24 @@ final class MqttClientRegistry {
                 : session.pendingPublishes());
     }
 
-    void markPendingPublishSent(MqttConnection connection, int packetId) {
-        mutateCurrent(connection, state -> {
-            if (state.session().markPendingPublishSent(packetId)) {
-                persist(state);
+    CompletionStage<Void> markPendingPublishSent(
+            MqttConnection connection,
+            int packetId) {
+        MqttSession session = connection.session();
+        if (session == null) {
+            return completed();
+        }
+        return withClientLock(session.clientId(), () -> {
+            MqttClientState current = current(connection, session);
+            if (current == null || !session.markPendingPublishSent(packetId)) {
+                return completed();
             }
+            return current.persistent()
+                    ? sessionStore.upsertPendingPublish(
+                            session.clientId(),
+                            session.nextPacketId(),
+                            session.pendingPublish(packetId).orElseThrow())
+                    : completed();
         });
     }
 
@@ -281,52 +328,41 @@ final class MqttClientRegistry {
         return clients.size();
     }
 
-    private Optional<Delivery> prepareDelivery(
+    private CompletionStage<Optional<Delivery>> prepareDelivery(
             MqttClientState state,
             MqttApplicationMessage message,
             MqttQoS subscriptionQos,
             boolean retained) {
         if (state == null) {
-            return Optional.empty();
+            return completed(Optional.empty());
         }
         MqttQoS deliveryQos = MqttQoS.valueOf(
                 Math.min(message.qos().value(), subscriptionQos.value()));
         if (deliveryQos == MqttQoS.AT_MOST_ONCE) {
-            return state.connection() == null
+            return completed(state.connection() == null
                     ? Optional.empty()
                     : Optional.of(new Delivery(
-                            state.connection(), message.withQos(deliveryQos), 0, retained));
+                            state.connection(), message.withQos(deliveryQos), 0, retained)));
         }
 
         MqttPendingPublish pending = state.session().enqueue(
                 message, deliveryQos, retained);
         if (state.connection() != null) {
             state.session().markPendingPublishSent(pending.packetId());
+            pending = state.session().pendingPublish(pending.packetId()).orElseThrow();
         }
-        persist(state);
-        return state.connection() == null
+        CompletionStage<Void> persistence = state.persistent()
+                ? sessionStore.upsertPendingPublish(
+                        state.session().clientId(), state.session().nextPacketId(), pending)
+                : completed();
+        MqttPendingPublish persisted = pending;
+        return persistence.thenApply(ignored -> state.connection() == null
                 ? Optional.empty()
                 : Optional.of(new Delivery(
                         state.connection(),
-                        pending.message(),
-                        pending.packetId(),
-                        pending.retained()));
-    }
-
-    private void mutateCurrent(
-            MqttConnection connection,
-            Consumer<MqttClientState> mutation) {
-        MqttSession session = connection.session();
-        if (session == null) {
-            return;
-        }
-        withClientLock(session.clientId(), () -> {
-            MqttClientState current = current(connection, session);
-            if (current != null) {
-                mutation.accept(current);
-            }
-            return null;
-        });
+                        persisted.message(),
+                        persisted.packetId(),
+                        persisted.retained())));
     }
 
     private MqttClientState current(
@@ -336,28 +372,39 @@ final class MqttClientRegistry {
         return state != null && state.connection() == connection ? state : null;
     }
 
-    private void persist(MqttClientState state) {
-        if (state.persistent()) {
-            sessionStore.save(state.session().snapshot());
-        }
-    }
-
     private <T> T withClientLock(String clientId, Supplier<T> action) {
-        ClientLock clientLock = clientLocks.compute(clientId, (key, current) -> {
-            ClientLock lock = current == null ? new ClientLock() : current;
-            lock.references++;
-            return lock;
+        ClientMonitor monitor = clientMonitors.compute(clientId, (key, current) -> {
+            ClientMonitor value = current == null ? new ClientMonitor() : current;
+            value.references++;
+            return value;
         });
-        clientLock.lock.lock();
         try {
-            return action.get();
+            synchronized (monitor) {
+                return action.get();
+            }
         } finally {
-            clientLock.lock.unlock();
-            clientLocks.computeIfPresent(clientId, (key, current) -> {
+            clientMonitors.computeIfPresent(clientId, (key, current) -> {
                 current.references--;
                 return current.references == 0 ? null : current;
             });
         }
+    }
+
+    private static CompletionStage<Void> completed() {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private static <T> CompletionStage<T> completed(T value) {
+        return CompletableFuture.completedFuture(value);
+    }
+
+    private static void closeOnFailure(
+            MqttConnection connection,
+            CompletionStage<Void> persistence) {
+        persistence.exceptionally(exception -> {
+            connection.close(MqttConnectionCloseReason.INTERNAL_ERROR);
+            return null;
+        });
     }
 
     record MqttClientRegistration(
@@ -384,8 +431,7 @@ final class MqttClientRegistry {
         }
     }
 
-    private static final class ClientLock {
-        private final ReentrantLock lock = new ReentrantLock();
+    private static final class ClientMonitor {
         private int references;
     }
 }

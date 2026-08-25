@@ -124,6 +124,14 @@ public final class MqttSession {
         return List.copyOf(pendingPublishes.values());
     }
 
+    public synchronized Optional<MqttPendingPublish> pendingPublish(int packetId) {
+        return Optional.ofNullable(pendingPublishes.get(packetId));
+    }
+
+    public synchronized int nextPacketId() {
+        return nextPacketId;
+    }
+
     public synchronized boolean markPendingPublishSent(int packetId) {
         MqttPendingPublish pending = pendingPublishes.get(packetId);
         if (pending == null || pending.sent()) {

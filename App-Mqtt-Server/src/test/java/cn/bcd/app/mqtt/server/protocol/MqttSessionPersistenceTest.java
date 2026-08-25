@@ -17,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
@@ -150,7 +152,16 @@ class MqttSessionPersistenceTest {
     }
 
     private static byte[] readOutbound(EmbeddedChannel channel) {
-        ByteBuf buffer = channel.readOutbound();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        ByteBuf buffer;
+        while ((buffer = channel.readOutbound()) == null
+                && System.nanoTime() < deadline) {
+            channel.runPendingTasks();
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+        }
+        if (buffer == null) {
+            throw new AssertionError("Timed out waiting for MQTT packet");
+        }
         byte[] bytes = new byte[buffer.readableBytes()];
         buffer.readBytes(bytes);
         buffer.release();

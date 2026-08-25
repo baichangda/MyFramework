@@ -6,7 +6,6 @@ import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationAction;
 import cn.bcd.app.mqtt.server.authorization.MqttAuthorizationRequest;
 import cn.bcd.app.mqtt.server.authorization.MqttAuthorizer;
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
-import cn.bcd.app.mqtt.server.broker.MqttConnectResult;
 import cn.bcd.app.mqtt.server.message.MqttApplicationMessage;
 import cn.bcd.app.mqtt.server.message.MqttWillMessage;
 import cn.bcd.app.mqtt.server.session.MqttOutboundPublishState;
@@ -87,12 +86,17 @@ final class MqttConnectFlow {
                 message.variableHeader().keepAliveTimeSeconds(),
                 username,
                 willMessage);
-        MqttConnectResult result = broker.connect(
+        connection.onCompletion(broker.connect(
                 connection,
                 connectionContext.clientId(),
                 connectionContext.username(),
-                connectionContext.cleanSession());
-        connection.accept(connectionContext, result, willMessage);
+                connectionContext.cleanSession()), result -> {
+            connection.accept(connectionContext, result, willMessage);
+            resendPendingPublishes(connection);
+        });
+    }
+
+    private void resendPendingPublishes(MqttConnection connection) {
         broker.pendingPublishes(connection).forEach(pending -> {
             if (pending.state() == MqttOutboundPublishState.WAIT_PUBCOMP) {
                 connection.writeQosControlPacket(
@@ -100,12 +104,13 @@ final class MqttConnectFlow {
                 return;
             }
             boolean duplicate = pending.sent();
-            broker.markPendingPublishSent(connection, pending.packetId());
-            connection.sendPublish(
-                    pending.message(),
-                    pending.packetId(),
-                    pending.retained(),
-                    duplicate);
+            connection.onCompletion(
+                    broker.markPendingPublishSent(connection, pending.packetId()),
+                    ignored -> connection.sendPublish(
+                            pending.message(),
+                            pending.packetId(),
+                            pending.retained(),
+                            duplicate));
         });
     }
 
