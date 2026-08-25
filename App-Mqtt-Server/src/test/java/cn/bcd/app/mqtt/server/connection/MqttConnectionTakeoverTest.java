@@ -2,11 +2,8 @@ package cn.bcd.app.mqtt.server.connection;
 
 import cn.bcd.app.mqtt.server.broker.MqttBroker;
 import cn.bcd.app.mqtt.server.support.MqttTestBroker;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import cn.bcd.app.mqtt.server.support.MqttTestChannel;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,13 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MqttConnectionTakeoverTest {
-
-    private static final byte[] CONNECT = {
-            0x10, 0x0f,
-            0x00, 0x04, 'M', 'Q', 'T', 'T',
-            0x04, 0x02, 0x00, 0x3c,
-            0x00, 0x03, 'c', 'i', 'd'
-    };
 
     @Test
     void shouldTakeOverExistingConnectionWithSameClientId() {
@@ -62,14 +52,8 @@ class MqttConnectionTakeoverTest {
     }
 
     private static TestClient connect(MqttBroker broker) {
-        EmbeddedChannel channel = new EmbeddedChannel();
-        MqttConnection connection = new MqttConnection(broker);
-        channel.pipeline().addLast(new MqttDecoder(1024, 64, true));
-        channel.pipeline().addLast(MqttEncoder.INSTANCE);
-        channel.pipeline().addLast(connection);
-        channel.writeInbound(Unpooled.wrappedBuffer(CONNECT));
-        ByteBuf connAck = channel.readOutbound();
-        connAck.release();
+        EmbeddedChannel channel = MqttTestChannel.connect(broker, "cid", true);
+        MqttConnection connection = MqttTestChannel.connection(channel);
         return new TestClient(channel, connection);
     }
 
