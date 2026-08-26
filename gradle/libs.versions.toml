@@ -62,8 +62,9 @@ prometheus-metrics-instrumentation-jvm = { module = "io.prometheus:prometheus-me
 prometheus-metrics-exporter-httpserver = { module = "io.prometheus:prometheus-metrics-exporter-httpserver" }
 
 
-cassandra-java-driver-core = { module = "org.apache.cassandra:java-driver-core", version = "4.19.3" }
-cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driver-query-builder", version = "4.19.3" }
+cassandra-java-driver-bom= { module = "org.apache.cassandra:java-driver-bom", version = "4.19.3" }
+cassandra-java-driver-core = { module = "org.apache.cassandra:java-driver-core"}
+cassandra-java-driver-query-builder = { module = "org.apache.cassandra:java-driver-query-builder"}
 
 
 vertx-dependencies = { module = "io.vertx:vertx-dependencies", version = "5.1.6" }
@@ -81,8 +82,8 @@ sa-token-reactor-spring-boot-starter = { module = "cn.dev33:sa-token-reactor-spr
 sa-token-redis-jackson = { module = "cn.dev33:sa-token-redis-jackson"}
 
 
-spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version = "4.1.1" }
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version = "4.1.1" }
+spring-boot-gradle-plugin = { module = "org.springframework.boot:spring-boot-gradle-plugin", version = "4.1.1" }
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
 spring-boot-starter-data-redis = { module = "org.springframework.boot:spring-boot-starter-data-redis" }
