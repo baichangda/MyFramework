@@ -1,6 +1,5 @@
 package cn.bcd.app.businessProcess.backend.base.support_ringbuffer;
 
-import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -91,17 +90,22 @@ public class RingBufferArray<T> {
         return (T) content[lastIndex];
     }
 
-    @SuppressWarnings("unchecked")
-    public ArrayList<T> content() {
-        ArrayList<T> result = new ArrayList<>(elementCount);
+    public int copyTo(Object[] target, int offset) {
+        Objects.requireNonNull(target, "target");
+        Objects.checkFromIndexSize(offset, elementCount, target.length);
+
         int firstPartLength = Math.min(elementCount, size - firstIndex);
-        for (int i = 0; i < firstPartLength; i++) {
-            result.add((T) content[firstIndex + i]);
-        }
+        System.arraycopy(content, firstIndex, target, offset, firstPartLength);
         int secondPartLength = elementCount - firstPartLength;
-        for (int i = 0; i < secondPartLength; i++) {
-            result.add((T) content[i]);
+        if (secondPartLength > 0) {
+            System.arraycopy(content, 0, target, offset + firstPartLength, secondPartLength);
         }
+        return elementCount;
+    }
+
+    public Object[] content() {
+        Object[] result = new Object[elementCount];
+        copyTo(result, 0);
         return result;
     }
 }
