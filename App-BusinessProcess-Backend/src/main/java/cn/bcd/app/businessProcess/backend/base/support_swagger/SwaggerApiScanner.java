@@ -80,8 +80,7 @@ public class SwaggerApiScanner {
     }
 
     /**
-     * 取值顺序如下:
-     * 1、
+     * 获取Api的描述
      *
      * @param method
      * @return
@@ -97,7 +96,7 @@ public class SwaggerApiScanner {
     }
 
     /**
-     * 取值如下:
+     * 获取Api的响应描述
      *
      * @return
      * @see ApiResponse#description()
@@ -109,7 +108,7 @@ public class SwaggerApiScanner {
     }
 
     /**
-     * 取值如下:
+     * 获取Api的方法
      *
      * @return
      * @see RequestMapping#method()
@@ -120,8 +119,8 @@ public class SwaggerApiScanner {
     }
 
     /**
-     * 取值如下:
-     * controller的
+     *
+     * 获取Api的路径
      *
      * @param controllerRequestMapping
      * @param methodRequestMapping
