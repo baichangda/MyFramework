@@ -67,6 +67,7 @@ subprojects {
         annotationProcessor libs.mapstruct.processor
 
         //统一配置测试环境
+        implementation platform(libs.junit.bom)
         testImplementation libs.junit.jupiter.engine
         testRuntimeOnly libs.junit.platform.launcher
         testImplementation libs.log4j.slf4j2.impl
