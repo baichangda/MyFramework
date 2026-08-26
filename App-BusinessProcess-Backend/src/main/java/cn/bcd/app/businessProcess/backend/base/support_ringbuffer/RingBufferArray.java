@@ -1,128 +1,107 @@
 package cn.bcd.app.businessProcess.backend.base.support_ringbuffer;
 
-
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
- * 固定长度的缓存队列
- * 如果长度已满、时间最早的纪录会被移除
+ * 供单线程使用的固定容量环形缓冲区。
+ * 容量已满时，新元素会覆盖最早的元素。允许存储 {@code null}。
  *
- * @param <T>
+ * @param <T> 元素类型
  */
-@SuppressWarnings("unchecked")
 public class RingBufferArray<T> {
-    private int firstIndex = -1;
-    private int lastIndex = -1;
+    private int firstIndex;
+    private int nextWriteIndex;
+    private int elementCount;
     private final int size;
     private final Object[] content;
 
     public RingBufferArray(int size) {
+        if (size <= 0) {
+            throw new IllegalArgumentException("size must be greater than 0");
+        }
         this.size = size;
         this.content = new Object[size];
     }
 
-    public void add(T t) {
-        lastIndex = ((lastIndex + 1) % size);
-        content[lastIndex] = t;
-
-        if (firstIndex == -1) {
-            firstIndex = 0;
+    public void add(T element) {
+        content[nextWriteIndex] = element;
+        if (++nextWriteIndex == size) {
+            nextWriteIndex = 0;
+        }
+        if (elementCount == size) {
+            firstIndex = nextWriteIndex;
         } else {
-            if (firstIndex == lastIndex) {
-                firstIndex = ((lastIndex + 1) % size);
-            }
+            elementCount++;
         }
     }
 
-    public void addAll(final T[] arr) {
-        int length = arr.length;
+    public void addAll(T[] elements) {
+        Objects.requireNonNull(elements, "elements");
+        int length = elements.length;
+        if (length == 0) {
+            return;
+        }
+
         if (length >= size) {
-            System.arraycopy(arr, length - size, content, 0, size);
+            System.arraycopy(elements, length - size, content, 0, size);
             firstIndex = 0;
-            lastIndex = size - 1;
-        } else {
-            if (firstIndex == -1) {
-                System.arraycopy(arr, 0, content, 0, length);
-                firstIndex = 0;
-                lastIndex = length - 1;
-            } else {
-                if (firstIndex > lastIndex) {
-                    int rightLength = size - lastIndex - 1;
-                    if (length > rightLength) {
-                        System.arraycopy(arr, 0, content, lastIndex + 1, rightLength);
-                        System.arraycopy(arr, rightLength, content, 0, length - rightLength);
-                    } else {
-                        System.arraycopy(arr, 0, content, lastIndex + 1, length);
-                    }
-                    lastIndex = ((lastIndex + length) % size);
-                    firstIndex = ((lastIndex + 1) % size);
-                } else {
-                    int leave = size - lastIndex - firstIndex - 1;
-                    if (length <= leave) {
-                        System.arraycopy(arr, 0, content, lastIndex + 1, length);
-                        lastIndex = lastIndex + length;
-                    } else {
-                        System.arraycopy(arr, 0, content, lastIndex + 1, leave);
-                        System.arraycopy(arr, leave, content, 0, length - leave);
-                        lastIndex = ((lastIndex + length) % size);
-                        firstIndex = ((lastIndex + 1) % size);
-                    }
-                }
-
-            }
+            nextWriteIndex = 0;
+            elementCount = size;
+            return;
         }
 
+        int firstPartLength = Math.min(length, size - nextWriteIndex);
+        System.arraycopy(elements, 0, content, nextWriteIndex, firstPartLength);
+        if (firstPartLength < length) {
+            System.arraycopy(elements, firstPartLength, content, 0, length - firstPartLength);
+        }
+
+        nextWriteIndex += length;
+        if (nextWriteIndex >= size) {
+            nextWriteIndex -= size;
+        }
+        int overflow = elementCount + length - size;
+        if (overflow > 0) {
+            firstIndex += overflow;
+            if (firstIndex >= size) {
+                firstIndex -= size;
+            }
+            elementCount = size;
+        } else {
+            elementCount += length;
+        }
     }
 
+    @SuppressWarnings("unchecked")
     public T getFirst() {
-        return firstIndex == -1 ? null : (T) content[firstIndex];
+        if (elementCount == 0) {
+            throw new NoSuchElementException("ring buffer is empty");
+        }
+        return (T) content[firstIndex];
     }
 
+    @SuppressWarnings("unchecked")
     public T getLast() {
-        return lastIndex == -1 ? null : (T) content[lastIndex];
+        if (elementCount == 0) {
+            throw new NoSuchElementException("ring buffer is empty");
+        }
+        int lastIndex = nextWriteIndex == 0 ? size - 1 : nextWriteIndex - 1;
+        return (T) content[lastIndex];
     }
 
+    @SuppressWarnings("unchecked")
     public ArrayList<T> content() {
-        if (firstIndex == -1) {
-            return new ArrayList<>();
-        } else {
-            Object[] temp;
-            if (firstIndex > lastIndex) {
-                temp = new Object[size];
-                int rightLength = size - firstIndex;
-                System.arraycopy(content, firstIndex, temp, 0, rightLength);
-                System.arraycopy(content, 0, temp, rightLength, lastIndex + 1);
-            } else {
-                temp = new Object[lastIndex - firstIndex + 1];
-                System.arraycopy(content, firstIndex, temp, 0, temp.length);
-            }
-            return (ArrayList<T>) new ArrayList<>(Arrays.asList(temp));
+        ArrayList<T> result = new ArrayList<>(elementCount);
+        int firstPartLength = Math.min(elementCount, size - firstIndex);
+        for (int i = 0; i < firstPartLength; i++) {
+            result.add((T) content[firstIndex + i]);
         }
-    }
-
-    public static void main(String[] args) {
-        RingBufferArray<Integer> ringBufferArray = new RingBufferArray<>(5);
-//        for (int i = 0; i < 10; i++) {
-//            ringBuffer.add(i);
-//            System.out.println(ringBuffer.firstIndex + " " + ringBuffer.lastIndex);
-//        }
-//        Object[] list = ringBuffer.content();
-//        for (Object integer : list) {
-//            System.out.print(integer);
-//        }
-        int i = 0;
-        long t1 = System.currentTimeMillis();
-        while (i++ < 10000000) {
-            ringBufferArray.addAll(new Integer[]{1, 2, 3, 4});
-            ringBufferArray.addAll(new Integer[]{5, 5});
-            ringBufferArray.addAll(new Integer[]{6});
-            ringBufferArray.addAll(new Integer[]{7, 8, 9});
-            ringBufferArray.addAll(new Integer[]{10, 11});
-            ArrayList<Integer> list = ringBufferArray.content();
-//            System.out.println(Arrays.toString(arr));
+        int secondPartLength = elementCount - firstPartLength;
+        for (int i = 0; i < secondPartLength; i++) {
+            result.add((T) content[i]);
         }
-        System.out.println(System.currentTimeMillis() - t1);
-
+        return result;
     }
 }
