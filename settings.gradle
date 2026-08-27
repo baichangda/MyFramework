@@ -34,7 +34,6 @@ include 'App-DataProcess-Transfer'
 include 'App-Tool-Aws-S3-Client-Web'
 include 'App-Tool-Kafka-Client-Web'
 include 'App-DataProcess-Gateway-Mqtt'
-include 'App-Mqtt-Server'
 
 include 'App-Transponder-GB32960'
 include 'Lib-Spring-Storage-Influxdb'
