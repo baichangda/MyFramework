@@ -1,0 +1,5 @@
+dependencies {
+    api platform(libs.spring.boot.dependencies)
+    api libs.hivemq.community.edition.embedded
+    api libs.spring.boot.starter
+}

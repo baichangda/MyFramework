@@ -22,6 +22,7 @@ include 'Lib-Spring-Vehicle-Command'
 include 'Lib-Spring-Storage-Cassandra'
 include 'Lib-Spring-Schedule-Xxljob'
 include 'Lib-Spring-Prometheus-Exporter'
+include 'Lib-Spring-Mqtt-Server'
 
 include 'App-BusinessProcess-Backend'
 include 'App-DataProcess-Gateway-Tcp'

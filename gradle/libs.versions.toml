@@ -26,6 +26,8 @@ redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-sta
 xxl-job-core = { module = "com.xuxueli:xxl-job-core", version = "3.4.2" }
 
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version = "1.4.0" }
+
+
 hivemq-community-edition-embedded = { module = "com.hivemq:hivemq-community-edition-embedded", version = "2026.5" }
 
 
