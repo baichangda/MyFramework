@@ -1,4 +1,4 @@
-FROM openjdk:21
+FROM openjdk:25
 # 指定工作目录
 WORKDIR /app
 # 复制jar包、依赖包(如果有)
