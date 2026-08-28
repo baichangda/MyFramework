@@ -1,13 +1,12 @@
 package cn.bcd.lib.base.executor;
 
-import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.DefaultEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.RejectedExecutionHandlers;
 
 import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.StreamSupport;
 
 /**
  * 根据业务 ID 将任务稳定路由到固定单线程执行器的执行器分配器。
@@ -23,12 +22,7 @@ import java.util.stream.StreamSupport;
 public class IdEventExecutorGroup implements AutoCloseable {
 
     /**
-     * 实际持有执行器的 Netty 执行器组，不向调用方暴露无 ID 的任务提交接口。
-     */
-    private final DefaultEventExecutorGroup executorGroup;
-
-    /**
-     * 执行器快照，数组长度与实际创建的执行器数量一致。
+     * 执行器数组，只通过 ID 分配方法向调用方提供其中的执行器。
      */
     private final EventExecutor[] executors;
 
@@ -38,13 +32,18 @@ public class IdEventExecutorGroup implements AutoCloseable {
      */
     public IdEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
         int executorNum = tableSizeFor(nThreads);
-        executorGroup = new DefaultEventExecutorGroup(
-                executorNum,
-                threadFactory,
-                Integer.MAX_VALUE,
-                RejectedExecutionHandlers.reject());
-        executors = StreamSupport.stream(executorGroup.spliterator(), false)
-                .toArray(EventExecutor[]::new);
+        executors = new EventExecutor[executorNum];
+        for (int i = 0; i < executorNum; i++) {
+            if (threadFactory == null) {
+                executors[i] = new DefaultEventExecutor();
+            } else {
+                executors[i] = new DefaultEventExecutor(
+                        null,
+                        threadFactory,
+                        Integer.MAX_VALUE,
+                        RejectedExecutionHandlers.reject());
+            }
+        }
     }
 
     /**
@@ -87,10 +86,18 @@ public class IdEventExecutorGroup implements AutoCloseable {
     }
 
     /**
-     * 优雅关闭内部的全部执行器，并等待已有任务执行完成。
+     * 优雅关闭全部执行器，并等待已有任务执行完成。
+     * 从某个内部执行器线程调用时，不等待该执行器自身终止，以避免死锁。
      */
     @Override
     public void close() {
-        executorGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS).syncUninterruptibly();
+        for (EventExecutor executor : executors) {
+            executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+        }
+        for (EventExecutor executor : executors) {
+            if (!executor.inEventLoop()) {
+                executor.terminationFuture().syncUninterruptibly();
+            }
+        }
     }
 }
