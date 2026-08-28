@@ -2,10 +2,8 @@ package cn.bcd.lib.base.executor;
 
 import io.netty.util.concurrent.DefaultEventExecutor;
 import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.RejectedExecutionHandlers;
 
 import java.util.Objects;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,32 +25,30 @@ public class IdEventExecutorGroup implements AutoCloseable {
     private final EventExecutor[] executors;
 
     /**
-     * @param nThreads      期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
-     * @param threadFactory 线程工厂；传 {@code null} 时使用 Netty 默认线程工厂
+     * @param nThreads 期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
      */
-    public IdEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
+    public IdEventExecutorGroup(int nThreads) {
         int executorNum = tableSizeFor(nThreads);
         executors = new EventExecutor[executorNum];
         for (int i = 0; i < executorNum; i++) {
-            if (threadFactory == null) {
-                executors[i] = new DefaultEventExecutor();
-            } else {
-                executors[i] = new DefaultEventExecutor(
-                        null,
-                        threadFactory,
-                        Integer.MAX_VALUE,
-                        RejectedExecutionHandlers.reject());
-            }
+            executors[i] = Objects.requireNonNull(
+                    newEventExecutor(i),
+                    "newEventExecutor returned null");
         }
     }
 
     /**
-     * 使用 Netty 默认线程工厂创建执行器分配器。
+     * 创建指定分片使用的执行器。子类可以覆盖此方法，自行决定线程工厂、
+     * 任务队列和拒绝策略等执行器配置。
+     * <p>
+     * 此方法在父类构造期间调用，覆盖实现不能依赖子类构造函数中初始化的实例字段。
+     * </p>
      *
-     * @param nThreads 期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
+     * @param index 分片索引，从 {@code 0} 开始
+     * @return 新的执行器，不能为 {@code null}
      */
-    public IdEventExecutorGroup(int nThreads) {
-        this(nThreads, null);
+    protected EventExecutor newEventExecutor(int index) {
+        return new DefaultEventExecutor();
     }
 
     private static int tableSizeFor(int cap) {
