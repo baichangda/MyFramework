@@ -263,15 +263,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         });
     }
 
-    /**
-     * @deprecated 使用 {@link #removeEntityIf(String, Predicate)}，返回 true 表示删除。
-     */
-    @Deprecated
-    public Future<?> checkRemoveEntity(String id, Function<ConsumeEntity<T>, Boolean> func) {
-        Objects.requireNonNull(func, "func");
-        return removeEntityIf(id, entity -> Boolean.TRUE.equals(func.apply(entity)));
-    }
-
     protected ConsumeExecutor<T> getExecutor(String id) {
         Objects.requireNonNull(id, "id");
         int h = id.hashCode();
