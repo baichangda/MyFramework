@@ -9,5 +9,6 @@ public class MqttServerProp {
     public boolean enabled = true;
     public String address = "0.0.0.0";
     public int port = 1883;
-    public String dataPath = "data/hivemq";
+    public String dataPath = "data/moquette";
+    public boolean persistenceEnabled = true;
 }
