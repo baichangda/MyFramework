@@ -14,31 +14,39 @@ import javax.net.ssl.TrustManagerFactory;
 
 @CommandLine.Command(name = "v2025", mixinStandardHelpOptions = true)
 public class Starter_v2025 extends TcpServer {
+    @CommandLine.Option(names = "--key-store", defaultValue = "server.jks", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+    private String keyStorePath;
 
-    // 证书路径（根据实际情况修改）
-    private static final String SERVER_KEY_STORE = "server.jks";
-    private static final String TRUST_STORE = "ca.jks";
-    private static final String PASSWORD = "123456";
+    @CommandLine.Option(names = "--trust-store", defaultValue = "ca.jks", showDefaultValue = CommandLine.Help.Visibility.ALWAYS)
+    private String trustStorePath;
 
-    SslContext sslContext;
+    @CommandLine.Option(names = "--store-password", description = "JKS password; alternatively set GB32960_STORE_PASSWORD")
+    private String storePassword;
 
-    public Starter_v2025() {
-//        initSslContext();
-    }
+    @CommandLine.Option(names = "--key-password", description = "private-key password; defaults to store password")
+    private String keyPassword;
 
-    private void initSslContext() {
+    @CommandLine.Option(names = "--trust-store-password", description = "trust-store password; defaults to store password")
+    private String trustStorePassword;
+
+    private SslContext sslContext;
+
+    @Override
+    protected void beforeStart() {
+        String password = firstNonBlank(storePassword, System.getenv("GB32960_STORE_PASSWORD"));
+        if (password == null) {
+            throw BaseException.get("--store-password or GB32960_STORE_PASSWORD is required");
+        }
+        String actualKeyPassword = firstNonBlank(keyPassword, password);
+        String actualTrustStorePassword = firstNonBlank(trustStorePassword, password);
         try {
-            // 1. 加载服务器密钥库（自身证书+私钥）
-            KeyManagerFactory kmf = SslUtils.loadKeyManagerFactory(SERVER_KEY_STORE, PASSWORD, PASSWORD);
-            // 2. 加载信任库（信任CA根证书，用于验证客户端）
-            TrustManagerFactory tmf = SslUtils.loadTrustManagerFactory(TRUST_STORE, PASSWORD);
-
-            // 3. 构建SslContext（服务器端），强制客户端认证
+            KeyManagerFactory kmf = SslUtils.loadKeyManagerFactory(keyStorePath, password, actualKeyPassword);
+            TrustManagerFactory tmf = SslUtils.loadTrustManagerFactory(trustStorePath, actualTrustStorePassword);
             sslContext = SslContextBuilder
-                    .forServer(kmf) // 服务器自身证书和私钥
-                    .trustManager(tmf) // 信任的CA（用于验证客户端）
-                    .clientAuth(ClientAuth.REQUIRE) // 强制要求客户端发送证书
-                    .sslProvider(SslProvider.JDK) // 使用JDK的SSL实现
+                    .forServer(kmf)
+                    .trustManager(tmf)
+                    .clientAuth(ClientAuth.REQUIRE)
+                    .sslProvider(SslProvider.JDK)
                     .protocols("TLSv1.2")
                     .build();
         } catch (Exception e) {
@@ -46,10 +54,17 @@ public class Starter_v2025 extends TcpServer {
         }
     }
 
+    private static String firstNonBlank(String first, String fallback) {
+        return first == null || first.isBlank() ? fallback : first;
+    }
+
+    @Override
+    protected void initTransport(Channel ch) {
+        ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
+    }
 
     @Override
     protected void init(Channel ch) {
-        ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
         ch.pipeline().addLast(new DataInboundHandler_v2025());
     }
 }

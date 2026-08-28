@@ -1,10 +1,9 @@
-FROM openjdk:21
-# 指定工作目录
+FROM eclipse-temurin:25-jre
+
 WORKDIR /app
-# 复制jar包、依赖包(如果有)
-COPY build/libs/*.jar app.jar
-COPY build/libs/lib/ lib/
-# 设置环境变量
+
+COPY build/libs/App-Transponder-GB32960-1.0.jar app.jar
+
 ENV TZ=Asia/Shanghai
-# 启动命令
+
 ENTRYPOINT ["java","-jar","app.jar"]
