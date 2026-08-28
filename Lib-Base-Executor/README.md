@@ -13,14 +13,12 @@ implementation project(':Lib-Base-Executor')
 ## 快速使用
 
 ```java
-IdEventExecutorGroup group = new IdEventExecutorGroup(4);
-group.getEventExecutor("vehicle-001").execute(() -> handle("vehicle-001"));
-
-// 应用关闭时释放线程。
-group.shutdownGracefully().syncUninterruptibly();
+try (IdEventExecutorGroup group = new IdEventExecutorGroup(4)) {
+    group.getEventExecutor("vehicle-001").execute(() -> handle("vehicle-001"));
+}
 ```
 
-线程数必须大于 0，实际数量会向上取整为 2 的幂。业务 ID 不能为 `null`；同一 ID 内不要执行长时间阻塞任务，否则会阻塞该分片后续工作。
+`IdEventExecutorGroup` 只负责根据 ID 分配执行器，不提供无 ID 的任务提交接口。线程数必须大于 0，实际数量会向上取整为 2 的幂。业务 ID 不能为 `null`；同一 ID 内不要执行长时间阻塞任务，否则会阻塞该分片后续工作。使用完毕后调用 `close()` 释放线程。
 
 ## 验证
 
