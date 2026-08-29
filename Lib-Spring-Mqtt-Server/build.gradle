@@ -3,5 +3,6 @@ dependencies {
     api(libs.moquette.broker){
         exclude group: "org.slf4j", module: "slf4j-reload4j"
     }
+    api(libs.moquette.metrics.prometheus)
     api libs.spring.boot.starter
 }
