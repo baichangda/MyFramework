@@ -63,6 +63,7 @@ okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-intercepto
 
 prometheus-bom = { module = "io.prometheus:prometheus-metrics-bom", version = "1.8.0" }
 prometheus-metrics-core = { module = "io.prometheus:prometheus-metrics-core" }
+prometheus-metrics-model = { module = "io.prometheus:prometheus-metrics-model" }
 prometheus-metrics-instrumentation-jvm = { module = "io.prometheus:prometheus-metrics-instrumentation-jvm" }
 prometheus-metrics-exporter-httpserver = { module = "io.prometheus:prometheus-metrics-exporter-httpserver" }
 

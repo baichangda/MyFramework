@@ -1,7 +1,7 @@
 dependencies {
     implementation platform(libs.spring.boot.dependencies)
-    implementation platform(libs.prometheus.bom)
-    implementation libs.prometheus.metrics.core
+    api platform(libs.prometheus.bom)
+    api libs.prometheus.metrics.model
     implementation libs.prometheus.metrics.instrumentation.jvm
     implementation libs.prometheus.metrics.exporter.httpserver
     implementation libs.spring.boot.starter
