@@ -12,6 +12,34 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 一次采集多个相互独立、无标签的 Prometheus Gauge 指标。
+ *
+ * <p>子类需要在构造方法中声明所有指标，并注册为 Spring Bean。每次 Prometheus
+ * 抓取时，框架只调用一次 {@link #collectValues()}，其返回值必须按照指标的声明顺序
+ * 一一对应。</p>
+ *
+ * <p>使用示例：</p>
+ * <pre>{@code
+ * @Component
+ * class QueueCollector extends MetricCollector {
+ *     QueueCollector() {
+ *         super(
+ *                 new Metric("ready_queue_depth", "Current ready queue depth"),
+ *                 new Metric("retry_queue_depth", "Current retry queue depth"));
+ *     }
+ *
+ *     @Override
+ *     protected double[] collectValues() {
+ *         return new double[]{12, 3};
+ *     }
+ * }
+ * }</pre>
+ *
+ * <p>上述 Collector 会输出 {@code ready_queue_depth 12.0} 和
+ * {@code retry_queue_depth 3.0}。指标名称在同一个 Collector 中必须唯一，且
+ * {@code collectValues()} 返回值数量必须与声明的指标数量相同。</p>
+ */
 public abstract class MetricCollector implements MultiCollector {
     private final List<Metric> metrics;
     private final List<MetricFamilyDescriptor> descriptors;
