@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
  * 例如test-reset
  * <p>
  */
+@SuppressWarnings("unchecked")
 public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -142,6 +143,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      *                              主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
      *                              具体参考{@link ConsumerParam}中静态方法
      */
+    @SuppressWarnings("unchecked")
     public ThreadDrivenKafkaConsumer(String name,
                                      boolean oneWorkThreadOneQueue,
                                      int workThreadNum,
@@ -233,7 +235,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 开始消费
      */
-    @SuppressWarnings("unchecked")
     public synchronized void startConsume(Map<String, Object> consumerProp) {
         if (closed) {
             throw new IllegalStateException("consumer already closed");

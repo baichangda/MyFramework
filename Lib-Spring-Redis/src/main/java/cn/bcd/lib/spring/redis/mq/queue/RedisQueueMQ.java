@@ -18,13 +18,14 @@ import tools.jackson.databind.JavaType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unchecked")
-public class RedisQueueMQ<V> implements AutoCloseable{
+public class RedisQueueMQ<V> implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final String name;
@@ -112,7 +113,7 @@ public class RedisQueueMQ<V> implements AutoCloseable{
                     this.consumeExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(consumerThreadNum);
                     this.workExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(workThreadNum);
                     start();
-                    consumerAvailable=true;
+                    consumerAvailable = true;
                 }
             }
         }
@@ -145,7 +146,7 @@ public class RedisQueueMQ<V> implements AutoCloseable{
                 long popTimeout = 1000L;
                 while (!stop) {
                     try {
-                        byte[] data = boundListOperations.rightPop(popTimeout, TimeUnit.MILLISECONDS);
+                        byte[] data = boundListOperations.rightPop(Duration.ofMillis(popTimeout));
                         if (data != null) {
                             workExecutor.execute(() -> {
                                 try {

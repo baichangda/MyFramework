@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -71,7 +72,7 @@ public class CommandSender {
 
     public static boolean tryLock(String vin, int flag, int timeout) {
         String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag);
-        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), timeout * 2L, TimeUnit.SECONDS));
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), Expiration.seconds(timeout * 2L)));
     }
 
     public static void releaseLock(String vin, int flag) {

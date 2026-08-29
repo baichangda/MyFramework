@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 @EnableConfigurationProperties(CommandProp.class)
 @ConditionalOnProperty("lib.spring.vehicle.command.senderGroupId")
 @Component
+@SuppressWarnings("unchecked")
 public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implements ApplicationListener<ContextRefreshedEvent> {
 
     @Autowired
