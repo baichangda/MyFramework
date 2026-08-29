@@ -5,7 +5,7 @@ import cn.bcd.lib.spring.database.common.util.SpringUtil;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.data.DBInfo;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.ColumnsBean;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.TablesBean;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -38,9 +38,9 @@ public class DBInfoUtil {
                     "spring.datasource.url"
                     , "spring.datasource.username"
                     , "spring.datasource.password");
-            String url = props[0].asText();
-            String username = props[1].asText();
-            String password = props[2].asText();
+            String url = props[0].stringValue();
+            String username = props[1].stringValue();
+            String password = props[2].stringValue();
             int index = url.indexOf('?');
             String pre;
             if (index == -1) {

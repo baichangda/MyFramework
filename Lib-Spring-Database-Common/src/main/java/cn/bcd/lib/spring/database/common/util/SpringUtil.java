@@ -1,108 +1,123 @@
 package cn.bcd.lib.spring.database.common.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
-public class SpringUtil {
-    private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
+/**
+ * 读取 classpath 下 application.yml/application.yaml 及其 profile 文件的轻量工具。
+ *
+ * <p>该工具不替代 Spring Boot 的完整配置加载机制。Spring 容器内应优先使用
+ * {@code Environment} 或 {@code Binder}；这里主要用于 Spring 容器启动前的简单读取。</p>
+ */
+public final class SpringUtil {
+    private static final String ACTIVE_PROFILES_PROPERTY = "spring.profiles.active";
+    private static final String ACTIVE_PROFILES_ENV = "SPRING_PROFILES_ACTIVE";
+    private static final YAMLMapper YAML_MAPPER = YAMLMapper.builder().build();
+
+    private SpringUtil() {
+    }
 
     /**
-     * 获取spring.yml中指定key的节点
+     * 按 key 读取 classpath YAML 配置。后声明的 active profile 优先级更高。
      *
-     * @param keys
-     * @return
-     * @throws IOException
+     * @param keys 使用点号分隔的配置路径
+     * @return 与 keys 顺序一致的节点数组；不存在的配置返回 null
+     * @throws IOException YAML 读取失败
      */
     public static JsonNode[] getSpringPropsInYml(String... keys) throws IOException {
-        final JsonNode base = loadBaseConfig();
+        Objects.requireNonNull(keys, "keys");
+        for (String key : keys) {
+            if (key == null || key.isBlank()) {
+                throw new IllegalArgumentException("key must not be blank");
+            }
+        }
+
+        JsonNode base = loadConfig("application");
         if (base == null) {
             return new JsonNode[keys.length];
         }
 
-        final JsonNode active = loadActiveConfig(base);
-        JsonNode[] res = new JsonNode[keys.length];
+        List<JsonNode> profileConfigs = new ArrayList<>();
+        for (String profile : findActiveProfiles(base)) {
+            JsonNode profileConfig = loadConfig("application-" + profile);
+            if (profileConfig != null) {
+                profileConfigs.add(profileConfig);
+            }
+        }
+
+        JsonNode[] result = new JsonNode[keys.length];
         for (int i = 0; i < keys.length; i++) {
-            res[i] = resolveKey(active, base, keys[i]);
+            result[i] = resolveKey(profileConfigs, base, keys[i]);
         }
-        return res;
+        return result;
     }
 
-    private static JsonNode loadBaseConfig() throws IOException {
-        try (InputStream is = SpringUtil.class.getResourceAsStream("/application.yml")) {
-            if (is != null) {
-                return YAML_MAPPER.readTree(is);
+    private static JsonNode loadConfig(String fileStem) throws IOException {
+        for (String extension : List.of(".yml", ".yaml")) {
+            try (InputStream input = SpringUtil.class.getResourceAsStream("/" + fileStem + extension)) {
+                if (input != null) {
+                    return YAML_MAPPER.readTree(input);
+                }
             }
         }
         return null;
     }
 
-    private static JsonNode loadActiveConfig(JsonNode base) throws IOException {
-        JsonNode profilesNode = Optional.ofNullable(base.get("spring"))
-                .map(e -> e.get("profiles"))
-                .map(e -> e.get("active"))
-                .orElse(null);
-        if (profilesNode == null) {
-            return null;
+    private static List<String> findActiveProfiles(JsonNode base) {
+        String configured = System.getProperty(ACTIVE_PROFILES_PROPERTY);
+        if (configured == null || configured.isBlank()) {
+            configured = System.getenv(ACTIVE_PROFILES_ENV);
+        }
+        if (configured != null && !configured.isBlank()) {
+            return splitProfiles(configured);
         }
 
-        String activeProfile = extractFirstProfile(profilesNode);
-        if (activeProfile == null || activeProfile.isEmpty()) {
-            return null;
+        JsonNode profilesNode = base.path("spring").path("profiles").path("active");
+        if (profilesNode.isString()) {
+            return splitProfiles(profilesNode.stringValue());
         }
-
-        String activeFileName = "application-" + activeProfile + ".yml";
-
-        // 优先从 classpath 加载
-        try (InputStream is = SpringUtil.class.getResourceAsStream("/" + activeFileName)) {
-            if (is != null) {
-                return YAML_MAPPER.readTree(is);
-            }
+        if (profilesNode.isArray()) {
+            List<String> profiles = new ArrayList<>();
+            profilesNode.forEach(e -> profiles.addAll(splitProfiles(e.stringValue())));
+            return profiles;
         }
-        return null;
+        return List.of();
     }
 
-    private static String extractFirstProfile(JsonNode node) {
-        if (node.isTextual()) {
-            String text = node.asText();
-            int comma = text.indexOf(',');
-            return comma >= 0 ? text.substring(0, comma).trim() : text.trim();
-        }
-        if (node.isArray() && !node.isEmpty()) {
-            return node.get(0).asText();
-        }
-        return null;
+    private static List<String> splitProfiles(String profiles) {
+        return Arrays.stream(profiles.split(","))
+                .map(String::trim)
+                .filter(e -> !e.isEmpty())
+                .distinct()
+                .toList();
     }
 
-    private static JsonNode resolveKey(JsonNode active, JsonNode base, String key) {
+    private static JsonNode resolveKey(List<JsonNode> profileConfigs, JsonNode base, String key) {
         String[] parts = key.split("\\.");
-
-        JsonNode result = lookup(active, parts);
-        if (result != null) {
-            return result;
+        for (int i = profileConfigs.size() - 1; i >= 0; i--) {
+            JsonNode result = lookup(profileConfigs.get(i), parts);
+            if (result != null) {
+                return result;
+            }
         }
-
         return lookup(base, parts);
     }
 
     private static JsonNode lookup(JsonNode root, String[] parts) {
-        if (root == null) {
-            return null;
-        }
-        JsonNode temp = root;
+        JsonNode current = root;
         for (String part : parts) {
-            temp = temp.get(part);
-            if (temp == null) {
+            current = current.get(part);
+            if (current == null) {
                 return null;
             }
         }
-        return temp;
+        return current;
     }
 }

@@ -1,7 +1,6 @@
 dependencies {
     api platform(libs.spring.boot.dependencies)
-    api platform(libs.springdoc.openapi.bom)
-    api project(":Lib-Base-Json")
-    api libs.jackson.dataformat.yaml
-    api libs.springdoc.openapi.starter.common
+    api platform(libs.jackson.bom)
+    api libs.jackson.databind
+    implementation libs.jackson.dataformat.yaml
 }

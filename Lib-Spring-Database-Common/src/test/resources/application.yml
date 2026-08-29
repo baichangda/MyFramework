@@ -1,0 +1,6 @@
+spring:
+  profiles:
+    active: first
+database:
+  host: base
+  baseOnly: base
