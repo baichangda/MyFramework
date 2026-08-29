@@ -10,6 +10,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @ConditionalOnProperty("lib.spring.prometheus.exporter.host")
 @EnableConfigurationProperties(ExporterProp.class)
 @Component
@@ -20,10 +23,18 @@ class ExporterStarter implements CommandLineRunner {
     @Autowired
     ExporterProp exporterProp;
 
+    @Autowired
+    List<MetricCollector> collectors;
+
     @Override
     public void run(String... args) throws Exception {
         JvmMetrics.builder().register();
         HTTPServer.builder().hostname(exporterProp.host).port(exporterProp.port).buildAndStart();
-        logger.info("prometheus exporter started、listen on http://{}:{}/metrics", exporterProp.host, exporterProp.port);
+        logger.info("prometheus exporter started、listen on http://{}:{}/metrics、find {} collectors:\n{}",
+                exporterProp.host,
+                exporterProp.port,
+                collectors.size(),
+                collectors.stream().map(e -> e.getClass().getName()).collect(Collectors.joining("\n")));
+
     }
 }
