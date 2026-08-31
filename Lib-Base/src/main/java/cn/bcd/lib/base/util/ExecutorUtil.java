@@ -4,9 +4,7 @@ package cn.bcd.lib.base.util;
 import cn.bcd.lib.base.exception.BaseException;
 
 import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -80,6 +78,12 @@ public class ExecutorUtil {
                             pool.shutdown();
                         }
                     }
+                } else if (arg instanceof Future future) {
+                    future.cancel(mayInterruptIfRunning);
+                } else if (arg instanceof Future[] futures) {
+                    for (Future future : futures) {
+                        future.cancel(mayInterruptIfRunning);
+                    }
                 } else if (arg instanceof Thread thread) {
                     if (mayInterruptIfRunning) {
                         thread.interrupt();
@@ -115,7 +119,7 @@ public class ExecutorUtil {
      * @param args
      */
     public static void shutdownThenAwait(boolean mayInterruptIfRunning, Object... args) {
-        if (args == null || args.length == 0) {
+        if (args == null) {
             return;
         }
         for (Object arg : args) {
@@ -139,18 +143,26 @@ public class ExecutorUtil {
                             await(pool);
                         }
                     }
+                } else if (arg instanceof Future future) {
+                    future.cancel(mayInterruptIfRunning);
+                    await(future);
+                } else if (arg instanceof Future[] futures) {
+                    for (Future future : futures) {
+                        future.cancel(mayInterruptIfRunning);
+                        await(future);
+                    }
                 } else if (arg instanceof Thread thread) {
                     if (mayInterruptIfRunning) {
                         thread.interrupt();
                     }
                     await(thread);
                 } else if (arg instanceof Thread[] threads) {
-                    if (mayInterruptIfRunning) {
-                        for (Thread thread : threads) {
+                    for (Thread thread : threads) {
+                        if (mayInterruptIfRunning) {
                             thread.interrupt();
                         }
+                        await(thread);
                     }
-                    await((Object) threads);
                 } else if (arg instanceof BlockingQueue<?> queue) {
                     await(queue);
                 } else if (arg instanceof BlockingQueue<?>[] queues) {
@@ -200,6 +212,12 @@ public class ExecutorUtil {
                         for (ExecutorService pool : pools) {
                             pool.shutdown();
                         }
+                    }
+                } else if (arg instanceof Future future) {
+                    future.cancel(mayInterruptIfRunning);
+                } else if (arg instanceof Future[] futures) {
+                    for (Future future : futures) {
+                        future.cancel(mayInterruptIfRunning);
                     }
                 } else if (arg instanceof Thread thread) {
                     if (mayInterruptIfRunning) {
@@ -255,6 +273,12 @@ public class ExecutorUtil {
 
                             }
                         }
+                    } else if (arg instanceof Future future) {
+                        future.get();
+                    } else if (arg instanceof Future[] futures) {
+                        for (Future future : futures) {
+                            future.get();
+                        }
                     } else if (arg instanceof Thread thread) {
                         thread.join();
                     } else if (arg instanceof Thread[] threads) {
@@ -277,7 +301,7 @@ public class ExecutorUtil {
                 }
 
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw BaseException.get(e);
         }
     }

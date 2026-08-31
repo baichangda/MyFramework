@@ -47,6 +47,10 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     volatile boolean closed;
 
+    private final Object closeLock = new Object();
+    private boolean closing;
+    private boolean closeComplete;
+
     final ScheduledExecutorService monitorPool;
     final LongAdder monitorBlockingNum;
     final LongAdder monitorEntityNum;
@@ -128,24 +132,19 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         return (n < 0) ? 1 : n + 1;
     }
 
-    private void scanAndDestroyEntity(ConsumeExecutor<T> executor, long expiredAt) {
+    void scanAndDestroyEntity(ConsumeExecutor<T> executor, long expiredAt) {
         if (closed) {
             return;
         }
-        executor.execute(() -> {
-            if (closed) {
-                return;
+        List<String> ids = new ArrayList<>();
+        for (ConsumeEntity<T> entity : executor.entityMap.values()) {
+            if (entity.lastMessageTime < expiredAt) {
+                ids.add(entity.id);
             }
-            List<String> ids = new ArrayList<>();
-            for (ConsumeEntity<T> entity : executor.entityMap.values()) {
-                if (entity.lastMessageTime < expiredAt) {
-                    ids.add(entity.id);
-                }
-            }
-            for (String id : ids) {
-                removeEntityNow(id, executor);
-            }
-        });
+        }
+        for (String id : ids) {
+            removeEntityNow(id, executor);
+        }
     }
 
     /**
@@ -155,31 +154,64 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      * </p>
      */
     @Override
-    public synchronized void close() throws Exception {
-        if (closed) {
-            return;
+    public void close() throws Exception {
+        synchronized (closeLock) {
+            if (closeComplete) {
+                return;
+            }
+            if (closing) {
+                if (inConsumeExecutorThread()) {
+                    return;
+                }
+                while (closing) {
+                    closeLock.wait();
+                }
+                if (closeComplete) {
+                    return;
+                }
+            }
+            closed = true;
+            closing = true;
         }
-        closed = true;
-        ExecutorUtil.shutdownThenAwait(true, monitorPool);
+
+        boolean success = false;
+        try {
+            closeExecutors();
+            success = true;
+        } finally {
+            synchronized (closeLock) {
+                closeComplete = success;
+                closing = false;
+                closeLock.notifyAll();
+            }
+        }
+    }
+
+    private void closeExecutors() {
+        if (monitorPool != null) {
+            ExecutorUtil.shutdownThenAwait(false, monitorPool);
+        }
 
         List<Future<?>> cleanups = new ArrayList<>();
-        for (ConsumeExecutor<T> executor : executors) {
-            if (executor.inEventLoop()) {
-                cleanupEntities(executor);
-            } else {
-                cleanups.add(executor.submit(() -> cleanupEntities(executor)));
+        try {
+            for (ConsumeExecutor<T> executor : executors) {
+                if (executor.inEventLoop()) {
+                    cleanupEntities(executor);
+                } else {
+                    cleanups.add(executor.submit(() -> cleanupEntities(executor)));
+                }
             }
-        }
-        awaitAll(cleanups);
-
-        List<Future<?>> terminations = new ArrayList<>();
-        for (ConsumeExecutor<T> executor : executors) {
-            Future<?> termination = executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
-            if (!executor.inEventLoop()) {
-                terminations.add(termination);
+            ExecutorUtil.await(cleanups);
+        } finally {
+            List<Future<?>> terminations = new ArrayList<>();
+            for (ConsumeExecutor<T> executor : executors) {
+                Future<?> termination = executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+                if (!executor.inEventLoop()) {
+                    terminations.add(termination);
+                }
             }
+            ExecutorUtil.await(cleanups);
         }
-        awaitAll(terminations);
     }
 
     private void cleanupEntities(ConsumeExecutor<T> executor) {
@@ -189,10 +221,14 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         executor.entityMap.clear();
     }
 
-    private void awaitAll(List<Future<?>> futures) throws InterruptedException {
-        for (Future<?> future : futures) {
-            future.sync();
+
+    private boolean inConsumeExecutorThread() {
+        for (ConsumeExecutor<T> executor : executors) {
+            if (executor.inEventLoop()) {
+                return true;
+            }
         }
+        return false;
     }
 
     private void checkClosed() {
