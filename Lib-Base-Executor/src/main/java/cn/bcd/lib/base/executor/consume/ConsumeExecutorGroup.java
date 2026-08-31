@@ -47,7 +47,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     volatile boolean closed;
 
-    final ScheduledExecutorService scannerPool;
     final ScheduledExecutorService monitorPool;
     final LongAdder monitorBlockingNum;
     final LongAdder monitorEntityNum;
@@ -55,11 +54,11 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     final LongAdder monitorWorkNum;
 
     /**
-     * @param groupName        执行器组名称，用于线程名和日志
-     * @param executorNum      期望分片数；实际数量会向上取整为 2 的幂
+     * @param groupName         执行器组名称，用于线程名和日志
+     * @param executorNum       期望分片数；实际数量会向上取整为 2 的幂
      * @param executorQueueSize 单个执行器的任务队列容量；{@code 0} 表示无界队列
-     * @param entityScanner    实体过期扫描配置；传 {@code null} 表示不扫描
-     * @param monitorPeriod    监控日志周期，单位秒；{@code 0} 表示关闭监控
+     * @param entityScanner     实体过期扫描配置；传 {@code null} 表示不扫描
+     * @param monitorPeriod     监控日志周期，单位秒；{@code 0} 表示关闭监控
      */
     @SuppressWarnings("unchecked")
     public ConsumeExecutorGroup(String groupName,
@@ -84,20 +83,21 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
         executors = new ConsumeExecutor[this.executorNum];
         for (int i = 0; i < this.executorNum; i++) {
-            executors[i] = new ConsumeExecutor<>(
+            ConsumeExecutor<T> executor = new ConsumeExecutor<>(
                     groupName + "-executor(" + (i + 1) + "/" + this.executorNum + ")",
                     executorQueueSize);
-        }
+            executors[i] = executor;
 
-        if (entityScanner == null) {
-            scannerPool = null;
-        } else {
-            scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, groupName + "-entityScanner"));
-            scannerPool.scheduleAtFixedRate(
-                    () -> scanAndDestroyEntity(entityScanner.expiredInSecond),
-                    entityScanner.periodInSecond,
-                    entityScanner.periodInSecond,
-                    TimeUnit.SECONDS);
+            if (entityScanner != null) {
+                executor.scheduleAtFixedRate(
+                        () -> {
+                            long ts = DateUtil.CacheSecond.current() - entityScanner.expiredInSecond;
+                            scanAndDestroyEntity(executor, ts);
+                        },
+                        entityScanner.periodInSecond,
+                        entityScanner.periodInSecond,
+                        TimeUnit.SECONDS);
+            }
         }
 
         if (monitorPeriod > 0) {
@@ -128,37 +128,24 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         return (n < 0) ? 1 : n + 1;
     }
 
-    /**
-     * 异步扫描并销毁超过指定时间未收到消息的实体。
-     * 每个分片的扫描和销毁操作均提交到对应执行器线程执行。
-     *
-     * @param expiredInSecond 无消息存活时间，单位秒
-     */
-    public final void scanAndDestroyEntity(int expiredInSecond) {
-        checkClosed();
-        long ts = DateUtil.CacheSecond.current() - expiredInSecond;
-        for (ConsumeExecutor<T> executor : executors) {
-            try {
-                executor.execute(() -> {
-                    if (closed) {
-                        return;
-                    }
-                    List<String> ids = new ArrayList<>();
-                    for (ConsumeEntity<T> entity : executor.entityMap.values()) {
-                        if (entity.lastMessageTime < ts) {
-                            ids.add(entity.id);
-                        }
-                    }
-                    for (String id : ids) {
-                        removeEntityNow(id, executor);
-                    }
-                });
-            } catch (RejectedExecutionException ex) {
-                if (!closed) {
-                    throw ex;
+    private void scanAndDestroyEntity(ConsumeExecutor<T> executor, long expiredAt) {
+        if (closed) {
+            return;
+        }
+        executor.execute(() -> {
+            if (closed) {
+                return;
+            }
+            List<String> ids = new ArrayList<>();
+            for (ConsumeEntity<T> entity : executor.entityMap.values()) {
+                if (entity.lastMessageTime < expiredAt) {
+                    ids.add(entity.id);
                 }
             }
-        }
+            for (String id : ids) {
+                removeEntityNow(id, executor);
+            }
+        });
     }
 
     /**
@@ -173,7 +160,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             return;
         }
         closed = true;
-        ExecutorUtil.shutdownThenAwait(true, scannerPool, monitorPool);
+        ExecutorUtil.shutdownThenAwait(true, monitorPool);
 
         List<Future<?>> cleanups = new ArrayList<>();
         for (ConsumeExecutor<T> executor : executors) {
@@ -249,7 +236,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      * @return 可用于等待判断及删除任务完成的 Future
      */
     public Future<?> removeEntityIf(String id, Predicate<ConsumeEntity<T>> predicate) {
-        Objects.requireNonNull(predicate, "predicate");
         checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> {
@@ -287,10 +273,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public Future<ConsumeEntity<T>> getEntity(String id) {
         checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
-        return executor.submit(() -> {
-            checkClosed();
-            return executor.entityMap.get(id);
-        });
+        return executor.submit(() -> executor.entityMap.get(id));
     }
 
     /**
