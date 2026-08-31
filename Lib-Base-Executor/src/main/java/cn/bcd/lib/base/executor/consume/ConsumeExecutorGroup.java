@@ -210,7 +210,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     terminations.add(termination);
                 }
             }
-            ExecutorUtil.await(cleanups);
+            ExecutorUtil.await(terminations);
         }
     }
 
