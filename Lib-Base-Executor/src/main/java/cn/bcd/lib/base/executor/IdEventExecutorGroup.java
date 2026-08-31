@@ -27,6 +27,10 @@ public class IdEventExecutorGroup implements AutoCloseable {
      */
     private final EventExecutor[] executors;
 
+    public IdEventExecutorGroup() {
+        this(Runtime.getRuntime().availableProcessors());
+    }
+
     /**
      * @param nThreads 期望执行器线程数，必须大于 0；实际数量向上取整为 2 的幂
      */
@@ -87,7 +91,7 @@ public class IdEventExecutorGroup implements AutoCloseable {
     /**
      * 在 ID 对应的单线程执行器中执行任务。
      *
-     * @param id       业务 ID，不能为 {@code null}
+     * @param id      业务 ID，不能为 {@code null}
      * @param command 要执行的任务
      */
     public void execute(String id, Runnable command) {
@@ -98,7 +102,7 @@ public class IdEventExecutorGroup implements AutoCloseable {
     /**
      * 在 ID 对应的单线程执行器中提交任务。
      *
-     * @param id       业务 ID，不能为 {@code null}
+     * @param id      业务 ID，不能为 {@code null}
      * @param command 要提交的任务
      * @return 用于等待任务完成或取消任务的 Future
      */
@@ -147,7 +151,7 @@ public class IdEventExecutorGroup implements AutoCloseable {
      * 在 ID 对应的单线程执行器中，以固定频率重复执行任务。
      */
     public ScheduledFuture<?> scheduleAtFixedRate(String id, Runnable command,
-                                                   long initialDelay, long period, TimeUnit unit) {
+                                                  long initialDelay, long period, TimeUnit unit) {
         Objects.requireNonNull(command, "command");
         return getEventExecutor(id).scheduleAtFixedRate(command, initialDelay, period, unit);
     }
@@ -157,7 +161,7 @@ public class IdEventExecutorGroup implements AutoCloseable {
      * 间隔从上一次任务执行完成后开始计算。
      */
     public ScheduledFuture<?> scheduleWithFixedDelay(String id, Runnable command,
-                                                      long initialDelay, long delay, TimeUnit unit) {
+                                                     long initialDelay, long delay, TimeUnit unit) {
         Objects.requireNonNull(command, "command");
         return getEventExecutor(id).scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
