@@ -170,8 +170,8 @@ public class CompileUtil {
             String prefix = String.format("    %" + lineNoWidth + "d | ", lineNo);
             errorMsg.append(prefix).append(sourceLine).append("\n");
             if (i == errorLineIndex && column >= 1) {
-                int pointerColumn = Math.max(1, Math.min((int) column, sourceLine.length() + 1));
-                errorMsg.append(" ".repeat(prefix.length() + pointerColumn - 1)).append("^").append("\n");
+                int pointerColumn = Math.clamp((int) column, 1, sourceLine.length() + 1);
+                errorMsg.repeat(" ", prefix.length() + pointerColumn - 1).append("^").append("\n");
             }
         }
     }
