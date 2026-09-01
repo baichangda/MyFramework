@@ -1,5 +1,6 @@
 package cn.bcd.lib.base.executor.consume;
 
+import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.FloatUtil;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,7 +48,16 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     public final ConsumeExecutor<T>[] executors;
 
-    volatile boolean closed;
+    private enum State {
+        OPEN,
+        CLOSING,
+        CLOSED
+    }
+
+    private final Object closeLock = new Object();
+    private volatile State state = State.OPEN;
+    private CompletableFuture<Void> closeFuture;
+
     final ScheduledExecutorService monitorPool;
     final LongAdder monitorBlockingNum;
     final LongAdder monitorEntityNum;
@@ -128,7 +140,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     void scanAndDestroyEntity(ConsumeExecutor<T> executor, long expiredAt) {
-        if (closed) {
+        if (state != State.OPEN) {
             return;
         }
         List<String> ids = new ArrayList<>();
@@ -146,58 +158,62 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      * 停止扫描和监控，销毁全部实体，并关闭所有消费执行器。
      * <p>
      * 允许从任意线程调用，包括某个消费执行器自身的线程；重复调用不会重复关闭。
+     * 消费执行器线程内调用时只发起关闭，调用方可通过 {@link #closeAsync()} 观察完成状态。
      * </p>
      */
     @Override
     public void close() throws Exception {
-        if (!closed) {
-            synchronized (this) {
-                if (!closed) {
-                    closed = true;
-                    ExecutorUtil.shutdown(false, monitorPool, executors);
-                }
-            }
+        CompletableFuture<Void> future = closeAsync();
+        if (!inConsumeExecutorThread()) {
+            awaitClose(future);
         }
     }
 
-    private void closeExecutors() {
-        if (monitorPool != null) {
-            ExecutorUtil.shutdownThenAwait(false, monitorPool);
+    /**
+     * 发起优雅关闭并返回所有资源完全终止时完成的 Future。
+     * <p>
+     * 重复或并发调用返回同一个 Future。实体由各自的 {@link ConsumeExecutor} 在执行器
+     * 线程退出阶段销毁。
+     * </p>
+     */
+    public CompletableFuture<Void> closeAsync() {
+        CompletableFuture<Void> future;
+        synchronized (closeLock) {
+            if (closeFuture != null) {
+                return closeFuture;
+            }
+            state = State.CLOSING;
+            future = new CompletableFuture<>();
+            closeFuture = future;
         }
 
-        List<Future<?>> cleanups = new ArrayList<>();
         try {
-            for (ConsumeExecutor<T> executor : executors) {
-                if (executor.inEventLoop()) {
-                    cleanupEntities(executor);
-                } else {
-                    cleanups.add(executor.submit(() -> cleanupEntities(executor)));
-                }
+            if (monitorPool != null) {
+                monitorPool.shutdown();
             }
-            awaitAll(cleanups);
-        } finally {
-            List<Future<?>> terminations = new ArrayList<>();
+            List<Future<?>> terminations = new ArrayList<>(executors.length);
             for (ConsumeExecutor<T> executor : executors) {
-                Future<?> termination = executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
-                if (!executor.inEventLoop()) {
-                    terminations.add(termination);
-                }
+                terminations.add(executor.shutdownGracefully(0, 5, TimeUnit.SECONDS));
             }
-            awaitAll(terminations);
-        }
-    }
 
-    private void cleanupEntities(ConsumeExecutor<T> executor) {
-        for (ConsumeEntity<T> entity : executor.entityMap.values()) {
-            destroyEntity(entity);
+            Thread.ofVirtual().name(groupName + "-close").start(() -> {
+                try {
+                    if (monitorPool != null) {
+                        ExecutorUtil.await(monitorPool);
+                    }
+                    for (Future<?> termination : terminations) {
+                        termination.syncUninterruptibly();
+                    }
+                    state = State.CLOSED;
+                    future.complete(null);
+                } catch (Throwable ex) {
+                    future.completeExceptionally(ex);
+                }
+            });
+        } catch (Throwable ex) {
+            future.completeExceptionally(ex);
         }
-        executor.entityMap.clear();
-    }
-
-    private void awaitAll(List<Future<?>> futures) {
-        for (Future<?> future : futures) {
-            future.syncUninterruptibly();
-        }
+        return future;
     }
 
     private boolean inConsumeExecutorThread() {
@@ -210,7 +226,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     private void checkClosed() {
-        if (closed) {
+        if (state != State.OPEN) {
             throw new IllegalStateException("ConsumeExecutorGroup[" + groupName + "] is closed");
         }
     }
@@ -225,7 +241,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> {
-            if (!closed) {
+            if (state == State.OPEN) {
                 removeEntityNow(id, executor);
             }
         });
@@ -253,7 +269,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         checkClosed();
         ConsumeExecutor<T> executor = getExecutor(id);
         return executor.submit(() -> {
-            if (closed) {
+            if (state != State.OPEN) {
                 return;
             }
             ConsumeEntity<T> entity = executor.entityMap.get(id);
@@ -331,7 +347,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     private void consumeMessage(ConsumeExecutor<T> executor, String id, T message) {
         try {
-            if (closed) {
+            if (state != State.OPEN) {
                 return;
             }
             ConsumeEntity<T> entity = executor.entityMap.get(id);
@@ -381,6 +397,33 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             entity.destroy();
         } catch (Exception ex) {
             logger.error("entity destroy error id[{}]", entity.id, ex);
+        }
+    }
+
+    private void awaitClose(CompletableFuture<Void> future) throws Exception {
+        boolean interrupted = false;
+        try {
+            for (; ; ) {
+                try {
+                    future.get();
+                    return;
+                } catch (InterruptedException ex) {
+                    interrupted = true;
+                } catch (ExecutionException ex) {
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof Exception exception) {
+                        throw exception;
+                    }
+                    if (cause instanceof Error error) {
+                        throw error;
+                    }
+                    throw BaseException.get(cause);
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

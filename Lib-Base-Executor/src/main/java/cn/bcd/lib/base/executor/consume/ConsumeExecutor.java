@@ -1,6 +1,5 @@
 package cn.bcd.lib.base.executor.consume;
 
-import cn.bcd.lib.base.exception.BaseException;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.RejectedExecutionHandlers;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
@@ -68,34 +67,42 @@ public class ConsumeExecutor<T> extends SingleThreadEventExecutor {
         }
     }
 
-    private void clearEntityMapBeforeClose() {
-        if (inEventLoop()) {
-            try {
-                for (ConsumeEntity<T> entity : entityMap.values()) {
+    /**
+     * 执行器线程退出前销毁其持有的全部实体。
+     * <p>
+     * {@link SingleThreadEventExecutor} 会在执行线程的退出阶段调用此方法，因此实体的
+     * 销毁仍然遵守线程封闭约束，也不需要向可能已经满的任务队列提交清理任务。
+     * </p>
+     */
+    @Override
+    protected void cleanup() {
+        try {
+            for (ConsumeEntity<T> entity : entityMap.values()) {
+                try {
                     entity.destroy();
+                } catch (Exception ex) {
+                    logger.error("entity destroy error id[{}]", entity.id, ex);
                 }
-            } catch (Exception e) {
-                logger.error("error", e);
             }
-        } else {
+        } finally {
+            entityMap.clear();
             try {
-                submit(() -> {
-                    try {
-                        for (ConsumeEntity<T> entity : entityMap.values()) {
-                            entity.destroy();
-                        }
-                    } catch (Exception e) {
-                        logger.error("error", e);
-                    }
-                }).await();
-            } catch (InterruptedException e) {
-                throw BaseException.get(e);
+                super.cleanup();
+            } catch (Exception ex) {
+                logger.error("executor cleanup error", ex);
             }
         }
     }
 
+    /**
+     * 发起优雅关闭。外部线程等待执行器完全退出；执行器自身线程不能等待自己，因而只发起关闭。
+     */
+    @Override
     public void close() {
-        clearEntityMapBeforeClose();
-        super.close();
+        Future<?> termination = shutdownGracefully(0, 5, java.util.concurrent.TimeUnit.SECONDS);
+        if (!inEventLoop()) {
+            termination.syncUninterruptibly();
+        }
     }
+
 }
