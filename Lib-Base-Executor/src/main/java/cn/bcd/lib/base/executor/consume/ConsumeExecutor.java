@@ -1,8 +1,12 @@
 package cn.bcd.lib.base.executor.consume;
 
+import cn.bcd.lib.base.exception.BaseException;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.RejectedExecutionHandlers;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import io.netty.util.concurrent.ThreadPerTaskExecutor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @param <T> 实体消费的消息类型
  */
 public class ConsumeExecutor<T> extends SingleThreadEventExecutor {
+
+    static Logger logger = LoggerFactory.getLogger(ConsumeExecutor.class);
 
     /**
      * 当前执行器持有的实体。该集合不是线程安全集合，只能在执行器线程内访问。
@@ -50,7 +56,7 @@ public class ConsumeExecutor<T> extends SingleThreadEventExecutor {
      */
     @Override
     protected void run() {
-        for (;;) {
+        for (; ; ) {
             Runnable task = takeTask();
             if (task != null) {
                 runTask(task);
@@ -60,5 +66,36 @@ public class ConsumeExecutor<T> extends SingleThreadEventExecutor {
                 break;
             }
         }
+    }
+
+    private void clearEntityMapBeforeClose() {
+        if (inEventLoop()) {
+            try {
+                for (ConsumeEntity<T> entity : entityMap.values()) {
+                    entity.destroy();
+                }
+            } catch (Exception e) {
+                logger.error("error", e);
+            }
+        } else {
+            try {
+                submit(() -> {
+                    try {
+                        for (ConsumeEntity<T> entity : entityMap.values()) {
+                            entity.destroy();
+                        }
+                    } catch (Exception e) {
+                        logger.error("error", e);
+                    }
+                }).await();
+            } catch (InterruptedException e) {
+                throw BaseException.get(e);
+            }
+        }
+    }
+
+    public void close() {
+        clearEntityMapBeforeClose();
+        super.close();
     }
 }

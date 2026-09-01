@@ -46,11 +46,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     public final ConsumeExecutor<T>[] executors;
 
     volatile boolean closed;
-
-    private final Object closeLock = new Object();
-    private boolean closing;
-    private boolean closeComplete;
-
     final ScheduledExecutorService monitorPool;
     final LongAdder monitorBlockingNum;
     final LongAdder monitorEntityNum;
@@ -155,34 +150,12 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
      */
     @Override
     public void close() throws Exception {
-        synchronized (closeLock) {
-            if (closeComplete) {
-                return;
-            }
-            if (closing) {
-                if (inConsumeExecutorThread()) {
-                    return;
+        if (!closed) {
+            synchronized (this) {
+                if (!closed) {
+                    closed = true;
+                    ExecutorUtil.shutdown(false, monitorPool, executors);
                 }
-                while (closing) {
-                    closeLock.wait();
-                }
-                if (closeComplete) {
-                    return;
-                }
-            }
-            closed = true;
-            closing = true;
-        }
-
-        boolean success = false;
-        try {
-            closeExecutors();
-            success = true;
-        } finally {
-            synchronized (closeLock) {
-                closeComplete = success;
-                closing = false;
-                closeLock.notifyAll();
             }
         }
     }
@@ -201,7 +174,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     cleanups.add(executor.submit(() -> cleanupEntities(executor)));
                 }
             }
-            ExecutorUtil.await(cleanups);
+            awaitAll(cleanups);
         } finally {
             List<Future<?>> terminations = new ArrayList<>();
             for (ConsumeExecutor<T> executor : executors) {
@@ -210,7 +183,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                     terminations.add(termination);
                 }
             }
-            ExecutorUtil.await(terminations);
+            awaitAll(terminations);
         }
     }
 
@@ -221,6 +194,11 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
         executor.entityMap.clear();
     }
 
+    private void awaitAll(List<Future<?>> futures) {
+        for (Future<?> future : futures) {
+            future.syncUninterruptibly();
+        }
+    }
 
     private boolean inConsumeExecutorThread() {
         for (ConsumeExecutor<T> executor : executors) {
