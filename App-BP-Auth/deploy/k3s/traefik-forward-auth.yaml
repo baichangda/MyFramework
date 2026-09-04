@@ -48,7 +48,7 @@ spec:
         - name: bp-service-prefix-strip
       services:
         - name: app-bp-auth
-          port: 8890
+          port: 9999
 ---
 # 受保护的 API 路由。
 # 每增加一个微服务，在 routes 下复制一条规则并修改路径、Service 名称和端口。
