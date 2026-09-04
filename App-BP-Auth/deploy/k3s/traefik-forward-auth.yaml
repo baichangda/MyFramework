@@ -1,0 +1,35 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bp-forward-auth
+spec:
+  forwardAuth:
+    address: http://app-bp-auth:8890/auth/verify
+    trustForwardHeader: false
+    authRequestHeaders:
+      - Cookie
+      - token
+      - Authorization
+    authResponseHeaders:
+      - X-User
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bp-api
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: PathPrefix(`/auth`)
+      kind: Rule
+      services:
+        - name: app-bp-auth
+          port: 8890
+    - match: PathPrefix(`/api`)
+      kind: Rule
+      middlewares:
+        - name: bp-forward-auth
+      services:
+        - name: app-bp-backend
+          port: 8888

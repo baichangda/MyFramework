@@ -3,8 +3,8 @@ package cn.bcd.app.bp.backend.sys.bean;
 import cn.bcd.lib.base.util.ExceptionUtil;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
-import cn.bcd.app.bp.backend.base.support_satoken.SaTokenUtil;
 import cn.bcd.app.bp.backend.base.support_task.Task;
+import cn.bcd.lib.spring.auth.AuthenticatedUserContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -78,11 +78,10 @@ public class TaskBean extends SuperBaseBean implements Task<Long> {
     @Override
     public void onCreated() {
         createTime = new Date();
-        UserBean userBean = SaTokenUtil.getLoginUser_cache();
-        if (userBean != null) {
-            createUserId = userBean.getId();
-            createUserName = userBean.realName;
-        }
+        AuthenticatedUserContext.current().ifPresent(user -> {
+            createUserId = user.id();
+            createUserName = user.username();
+        });
     }
 
     @Override

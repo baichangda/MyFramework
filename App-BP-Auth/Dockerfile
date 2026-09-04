@@ -5,7 +5,7 @@ WORKDIR /app
 COPY build/libs/*.jar app.jar
 COPY build/libs/lib/ lib/
 # 暴露端口
-EXPOSE 8888
+EXPOSE 8890
 # 设置环境变量
 ENV TZ=Asia/Shanghai
 # 启动命令

@@ -1,7 +1,6 @@
 package cn.bcd.app.bp.backend.sys.controller;
 
-import cn.bcd.app.bp.backend.base.support_satoken.SaTokenUtil;
-import cn.bcd.app.bp.backend.base.support_satoken.anno.SaCheckRequestMappingUrl;
+import cn.bcd.lib.spring.auth.AuthenticatedUserContext;
 import cn.bcd.app.bp.backend.sys.bean.UserBean;
 import cn.bcd.app.bp.backend.sys.service.UserService;
 import cn.bcd.lib.base.result.Result;
@@ -9,7 +8,6 @@ import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
-import cn.dev33.satoken.stp.StpUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,7 +36,6 @@ public class UserController {
      *
      * @return
      */
-    @SaCheckRequestMappingUrl
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     @Operation(summary = "查询用户列表")
     @ApiResponse(responseCode = "200", description = "用户列表")
@@ -73,7 +70,6 @@ public class UserController {
      *
      * @return
      */
-    @SaCheckRequestMappingUrl
     @RequestMapping(value = "/page", method = RequestMethod.GET)
     @Operation(summary = "查询用户分页")
     @ApiResponse(responseCode = "200", description = "用户分页结果集")
@@ -134,40 +130,6 @@ public class UserController {
     }
 
     /**
-     * 登录
-     *
-     * @param username
-     * @param password
-     * @return
-     */
-    @RequestMapping(value = "/login", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    @Operation(summary = "用户登录")
-    @ApiResponse(responseCode = "200", description = "登录的用户信息")
-    public Result<UserBean> login(
-            @Parameter(description = "用户名")
-            @RequestParam String username,
-            @Parameter(description = "密码")
-            @RequestParam String password) {
-        UserBean user = userService.login(username, password);
-        return Result.success(user);
-    }
-
-    /**
-     * 注销
-     *
-     * @return
-     */
-    @RequestMapping(value = "/logout", method = RequestMethod.POST, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    @Operation(summary = "用户注销")
-    @ApiResponse(responseCode = "200", description = "注销结果")
-    public Result<?> logout() {
-        Result<?> result = Result.success().message("注销成功");
-        //在logout之前必须完成所有与session相关的操作(例如从session中获取国际化的后缀)
-        StpUtil.logout();
-        return result;
-    }
-
-    /**
      * 重置密码
      *
      * @param userId
@@ -197,8 +159,9 @@ public class UserController {
             @RequestParam String oldPassword,
             @Parameter(description = "新密码")
             @RequestParam String newPassword) {
-        UserBean userBean = SaTokenUtil.getLoginUser_cache();
-        boolean flag = userService.updatePassword(userBean.id, oldPassword, newPassword);
+        long userId = AuthenticatedUserContext.current()
+                .orElseThrow(() -> new IllegalStateException("缺少当前用户信息")).id();
+        boolean flag = userService.updatePassword(userId, oldPassword, newPassword);
         if (flag) {
             return Result.success().message("修改成功");
         } else {

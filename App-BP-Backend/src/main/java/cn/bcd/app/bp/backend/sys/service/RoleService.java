@@ -24,7 +24,7 @@ public class RoleService extends BaseService<RoleBean> {
         } else {
             String sql = """
                     select b.* from t_sys_user_role a
-                    inner join t_sys_role b on a.role_code=b.code
+                    inner join t_sys_role b on a.role_id=b.id
                     where a.user_id=?
                     """;
             return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RoleBean.class), userId);
@@ -38,7 +38,7 @@ public class RoleService extends BaseService<RoleBean> {
             String sql = """
                     select b.* from t_sys_user x
                     inner join t_sys_user_role a on x.id=a.user_id
-                    inner join t_sys_role b on a.role_code=b.code
+                    inner join t_sys_role b on a.role_id=b.id
                     where x.username=?
                     """;
             return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(RoleBean.class), username);

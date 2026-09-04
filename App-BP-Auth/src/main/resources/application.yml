@@ -1,0 +1,31 @@
+server:
+  port: 8890
+
+spring:
+  application:
+    name: app-bp-auth
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${BP_DB_URL:jdbc:mysql://127.0.0.1:13306/bcd?characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
+    username: ${BP_DB_USERNAME:root}
+    password: ${BP_DB_PASSWORD:root}
+  data:
+    redis:
+      host: ${BP_REDIS_HOST:127.0.0.1}
+      port: ${BP_REDIS_PORT:16379}
+      password: ${BP_REDIS_PASSWORD:bcd}
+      database: ${BP_REDIS_DATABASE:0}
+
+sa-token:
+  token-name: token
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-body: false
+  is-read-header: true
+  is-read-cookie: true

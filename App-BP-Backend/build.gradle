@@ -12,6 +12,7 @@ dependencies {
     implementation project(":Lib-Spring-Database-Mongo")
     implementation project(":Lib-Spring-Schedule-Xxljob")
     implementation project(":Lib-Spring-Aws-S3")
+    implementation project(":Lib-Spring-Auth")
 
     implementation libs.caffeine
 
@@ -31,9 +32,6 @@ dependencies {
     implementation libs.spring.boot.starter.validation
 
     testImplementation libs.spring.boot.starter.test
-
-    implementation libs.sa.token.spring.boot3.starter
-    implementation libs.sa.token.redis.jackson
 
     // define any required OkHttp artifacts without version
     implementation libs.okhttp
