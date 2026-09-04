@@ -5,7 +5,6 @@ import cn.bcd.app.businessProcess.backend.base.support_satoken.anno.SaCheckReque
 import cn.bcd.app.businessProcess.backend.sys.bean.UserBean;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
 import cn.bcd.lib.base.result.Result;
-import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
@@ -236,25 +235,6 @@ public class UserController {
             @Parameter(description = "登陆方式") @RequestParam String loginType
     ) {
         return Result.success(userService.getUserPermissions(username, loginType));
-    }
-
-    /**
-     * 获取用户信息
-     *
-     * @return
-     */
-    @RequestMapping(value = "/getAuthUser", method = RequestMethod.GET)
-    @Operation(summary = "根据用户名获取用户信息")
-    @ApiResponse(responseCode = "200", description = "用户信息")
-    public Result<AuthUser> getAuthUser(
-            @Parameter(description = "用户名") @RequestParam String username
-    ) {
-        UserBean userBean = userService.getUser(username);
-        if (userBean == null) {
-            return Result.success(null);
-        }
-        AuthUser authUser = new AuthUser(userBean.id, username, userBean.status);
-        return Result.success(authUser);
     }
 
 }

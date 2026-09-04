@@ -2,7 +2,6 @@ package cn.bcd.app.businessProcess.backend.base.support_satoken;
 
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.spring.cloud.common.fegin.user.AuthUser;
 import cn.bcd.app.businessProcess.backend.sys.bean.UserBean;
 import cn.bcd.app.businessProcess.backend.sys.service.CacheService;
 import cn.bcd.app.businessProcess.backend.sys.service.UserService;
@@ -47,16 +46,5 @@ public class SaTokenUtil {
         } catch (SaTokenException ex) {
             return null;
         }
-    }
-
-    public static AuthUser getLoginUserFromRequest(HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(Const.request_header_authUser)).map(e -> {
-            try {
-                return JsonUtil.OBJECT_MAPPER.readValue(e, AuthUser.class);
-            } catch (JacksonException ex) {
-                logger.error("error", ex);
-                return null;
-            }
-        }).orElse(null);
     }
 }

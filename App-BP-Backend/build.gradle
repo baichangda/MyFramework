@@ -10,11 +10,12 @@ dependencies {
     implementation project(":Lib-Spring-Kafka")
     implementation project(":Lib-Spring-Data-Notify")
     implementation project(":Lib-Spring-Monitor-Client")
-    implementation project(":Lib-Spring-Cloud-Common")
     implementation project(":Lib-Spring-Database-Jdbc")
     implementation project(":Lib-Spring-Database-Mongo")
     implementation project(":Lib-Spring-Schedule-Xxljob")
     implementation project(":Lib-Spring-Aws-S3")
+
+    implementation libs.caffeine
 
     //springboot cache支持
     implementation libs.spring.boot.starter.cache
@@ -22,6 +23,8 @@ dependencies {
     implementation libs.spring.boot.starter.web
     //springboot websocket支持
     implementation libs.spring.boot.starter.websocket
+
+    implementation libs.spring.boot.starter.log4j2
 
     //邮件支持
     implementation libs.spring.boot.starter.mail
