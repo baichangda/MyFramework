@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 
 @RestController
-@RequestMapping("/api/sys/task")
+@RequestMapping("/sys/task")
 @Tag(name = "任务-TaskController")
 public class TaskController {
 

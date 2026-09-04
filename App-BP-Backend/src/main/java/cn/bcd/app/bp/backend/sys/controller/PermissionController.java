@@ -21,7 +21,7 @@ import cn.bcd.app.bp.backend.sys.bean.PermissionBean;
 import cn.bcd.app.bp.backend.sys.service.PermissionService;
 
 @RestController
-@RequestMapping("/api/sys/permission")
+@RequestMapping("/sys/permission")
 @Tag(name = "权限-PermissionController")
 public class PermissionController{
 

@@ -24,7 +24,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sys/user")
+@RequestMapping("/sys/user")
 @Tag(name = "用户-UserController")
 public class UserController {
 

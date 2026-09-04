@@ -1,18 +1,57 @@
+# 统一鉴权中间件。
+# 仅挂载到 /api/{service}/** 路由，/public/** 路由不使用该中间件。
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: bp-forward-auth
 spec:
   forwardAuth:
-    address: http://app-bp-auth:8890/auth/verify
+    # App-BP-Auth 的集群内地址，/verify 不需要暴露给外部客户端。
+    address: http://app-bp-auth:8890/verify
+    # 不信任客户端传入的 X-Forwarded-*，由 Traefik 生成原始请求信息。
     trustForwardHeader: false
+    # 转发认证所需的 Token。Sa-Token 默认使用 token Cookie 或 token Header。
     authRequestHeaders:
       - Cookie
       - token
       - Authorization
+    # 鉴权成功后，把 Auth 服务生成的用户 JSON 注入业务请求。
     authResponseHeaders:
       - X-User
 ---
+# 通用服务前缀剥离中间件，同时支持 /api/{service} 和 /public/{service}。
+# StripPrefixRegex 会自动写入 X-Forwarded-Prefix，供 Springdoc/Swagger 生成外部 URL。
+# 例如：/api/backend/sys/user/list -> /sys/user/list。
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bp-service-prefix-strip
+spec:
+  stripPrefixRegex:
+    regex:
+      - ^/(api)/[^/]+
+---
+# 公开接口路由，不执行身份和权限校验。
+# 登录、注销等公开接口统一放在 /public/** 下。
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bp-public
+spec:
+  entryPoints:
+    - web
+  routes:
+    # /api/auth 或其子路径转发到 App-BP-Auth，并剥离 /api/auth。
+    - match: Path(`/api/auth`) || PathPrefix(`/api/auth/`)
+      kind: Rule
+      middlewares:
+        - name: bp-service-prefix-strip
+      services:
+        - name: app-bp-auth
+          port: 8890
+---
+# 受保护的 API 路由。
+# 每增加一个微服务，在 routes 下复制一条规则并修改路径、Service 名称和端口。
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -21,15 +60,13 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: PathPrefix(`/auth`)
-      kind: Rule
-      services:
-        - name: app-bp-auth
-          port: 8890
-    - match: PathPrefix(`/api`)
+    # Backend 外部访问前缀：/api/backend/**。
+    - match: Path(`/api/backend`) || PathPrefix(`/api/backend/`)
       kind: Rule
       middlewares:
+        # 顺序不能颠倒：先使用外部原始路径鉴权，再剥离服务前缀。
         - name: bp-forward-auth
+        - name: bp-service-prefix-strip
       services:
         - name: app-bp-backend
           port: 8888

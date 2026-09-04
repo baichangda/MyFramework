@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sys/file")
+@RequestMapping("/sys/file")
 @Tag(name = "文件-FileController")
 public class FileController {
 
