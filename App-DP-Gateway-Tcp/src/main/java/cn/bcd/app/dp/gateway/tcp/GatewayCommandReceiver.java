@@ -1,0 +1,79 @@
+package cn.bcd.app.dp.gateway.tcp;
+
+import cn.bcd.lib.spring.vehicle.command.CommandReceiver;
+import cn.bcd.lib.spring.vehicle.command.Request;
+import cn.bcd.lib.spring.vehicle.command.ResponseStatus;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Expiry;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
+import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+
+
+@Component
+public class GatewayCommandReceiver implements CommandReceiver {
+
+    public static final Cache<String, Request<?, ?>> cache = Caffeine.newBuilder().<String, Request<?, ?>>expireAfter(new Expiry<>() {
+        @Override
+        public long expireAfterCreate(String key, Request<?, ?> value, long currentTime) {
+            return TimeUnit.SECONDS.toNanos(value.timeout);
+        }
+
+        @Override
+        public long expireAfterUpdate(String key, Request<?, ?> value, long currentTime, long currentDuration) {
+            return currentDuration;
+        }
+
+        @Override
+        public long expireAfterRead(String key, Request<?, ?> value, long currentTime, long currentDuration) {
+            return currentDuration;
+        }
+    }).build();
+
+    @Override
+    public void onRequest(Request<?, ?> request) {
+        //放入缓存
+        if (request.waitVehicleResponse) {
+            cache.put(request.id, request);
+        }
+        Session session = Session.getSession(request.vin);
+        if (session == null || !session.channel.isActive()) {
+            cache.invalidate(request.id);
+            CommandReceiver.response(request, ResponseStatus.offline, null);
+            return;
+        }
+        try {
+            //写报文到车端
+            session.channel.writeAndFlush(Unpooled.wrappedBuffer(request.toPacketBytes())).addListener((ChannelFutureListener) future -> {
+                if (future.isSuccess()) {
+                    //判断直接响应
+                    if (!request.waitVehicleResponse) {
+                        CommandReceiver.response(request, ResponseStatus.success, null);
+                    }
+                } else {
+                    cache.invalidate(request.id);
+                    CommandReceiver.response(request, ResponseStatus.program_error, null);
+                }
+            });
+        } catch (Exception ex) {
+            cache.invalidate(request.id);
+            CommandReceiver.response(request, ResponseStatus.program_error, null);
+        }
+    }
+
+    public void onResponse(String vin, int flag, byte[] bytes) {
+        String id = Request.toId(vin, flag);
+        Request<?, ?> request = cache.getIfPresent(id);
+        if (request == null) {
+            return;
+        }
+        //清除缓存
+        cache.invalidate(id);
+        //响应
+        CommandReceiver.response(request, ResponseStatus.success, bytes);
+    }
+
+}

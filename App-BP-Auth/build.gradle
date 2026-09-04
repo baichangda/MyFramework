@@ -1,0 +1,34 @@
+dependencies {
+    implementation platform(libs.spring.boot.dependencies)
+    implementation platform(libs.sa.token.bom)
+    implementation platform(libs.springdoc.openapi.bom)
+    implementation project(":Lib-Spring-Redis")
+    implementation project(":Lib-Spring-Database-Jdbc")
+
+    implementation libs.caffeine
+
+    //springboot cache支持
+    implementation libs.spring.boot.starter.cache
+    //springboot web支持
+    implementation libs.spring.boot.starter.web
+
+    implementation libs.spring.boot.starter.log4j2
+
+    //springboot validation支持
+    implementation libs.spring.boot.starter.validation
+
+    testImplementation libs.spring.boot.starter.test
+
+    implementation libs.sa.token.spring.boot3.starter
+    implementation libs.sa.token.redis.jackson
+
+    // define any required OkHttp artifacts without version
+    implementation libs.okhttp
+    implementation libs.okhttp.logging.interceptor
+
+    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    implementation libs.sqlite
+
+    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
+    implementation libs.springdoc.openapi.starter.webmvc.ui
+}

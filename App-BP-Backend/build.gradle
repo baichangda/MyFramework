@@ -2,8 +2,6 @@ apply plugin: 'maven-publish'
 
 dependencies {
     implementation platform(libs.spring.boot.dependencies)
-    implementation platform(libs.spring.cloud.dependencies)
-    implementation platform(libs.spring.cloud.alibaba.dependencies)
     implementation platform(libs.sa.token.bom)
     implementation platform(libs.springdoc.openapi.bom)
     implementation project(":Lib-Spring-Redis")

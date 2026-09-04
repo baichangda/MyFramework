@@ -37,3 +37,5 @@ include 'App-DP-Gateway-Mqtt'
 include 'App-Transponder-GB32960'
 include 'Lib-Spring-Storage-Influxdb'
 include 'Lib-Spring-Aws-S3'
+
+include 'App-BP-Auth'
