@@ -2,7 +2,6 @@ dependencies {
     implementation platform(libs.spring.boot.dependencies)
     implementation platform(libs.sa.token.bom)
     implementation platform(libs.springdoc.openapi.bom)
-    implementation project(":Lib-Spring-Redis")
     implementation project(":Lib-Spring-Database-Jdbc")
     implementation project(":Lib-Spring-Auth")
 
@@ -22,13 +21,6 @@ dependencies {
 
     implementation libs.sa.token.spring.boot3.starter
     implementation libs.sa.token.redis.jackson
-
-    // define any required OkHttp artifacts without version
-    implementation libs.okhttp
-    implementation libs.okhttp.logging.interceptor
-
-    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    implementation libs.sqlite
 
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation libs.springdoc.openapi.starter.webmvc.ui
