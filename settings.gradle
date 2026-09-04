@@ -39,3 +39,4 @@ include 'Lib-Spring-Storage-Influxdb'
 include 'Lib-Spring-Aws-S3'
 
 include 'App-BP-Auth'
+include 'Lib-Spring-Auth'

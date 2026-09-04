@@ -4,6 +4,7 @@ dependencies {
     implementation platform(libs.springdoc.openapi.bom)
     implementation project(":Lib-Spring-Redis")
     implementation project(":Lib-Spring-Database-Jdbc")
+    implementation project(":Lib-Spring-Auth")
 
     implementation libs.caffeine
 
