@@ -10,15 +10,15 @@ spring:
       enabled: true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${BP_DB_URL:jdbc:mysql://127.0.0.1:13306/bcd?characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
-    username: ${BP_DB_USERNAME:root}
-    password: ${BP_DB_PASSWORD:root}
+    url: jdbc:mysql://127.0.0.1:13306/bcd?characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
   data:
     redis:
-      host: ${BP_REDIS_HOST:127.0.0.1}
-      port: ${BP_REDIS_PORT:16379}
-      password: ${BP_REDIS_PASSWORD:bcd}
-      database: ${BP_REDIS_DATABASE:0}
+      host: 127.0.0.1
+      port: 16379
+      password: bcd
+      database: 0
 
 sa-token:
   token-name: token
