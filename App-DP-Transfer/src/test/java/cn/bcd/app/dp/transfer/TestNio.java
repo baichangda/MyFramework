@@ -1,6 +1,6 @@
 package cn.bcd.app.dp.transfer;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class TestNio {
                         buffer.get(data);
                         String message = new String(data);
                         System.out.println("receive:\n" + message);
-                        String s = DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date());
+                        String s = DateUtil.dateToStr_yyyyMMddHHmmss(new Date());
                         socketChannel.write(ByteBuffer.wrap(s.getBytes()));
                     }
                 }

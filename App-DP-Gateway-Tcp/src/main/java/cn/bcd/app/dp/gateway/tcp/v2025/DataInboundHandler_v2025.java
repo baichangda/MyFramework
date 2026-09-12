@@ -1,6 +1,6 @@
 package cn.bcd.app.dp.gateway.tcp.v2025;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.data.init.vehicle.VehicleDataInit;
 import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.PacketFlag;
@@ -39,7 +39,7 @@ public class DataInboundHandler_v2025 extends SimpleChannelInboundHandler<ByteBu
         vin = PacketUtil.getVin(bytes);
         PacketFlag flag = PacketUtil.getPacketFlag(bytes);
 
-        logger.info("receive msg vin[{}] receiverTime[{}] flag[{}]:\n{}", vin, DateZoneUtil.dateToStr_yyyyMMddHHmmss(receiveTime), flag, ByteBufUtil.hexDump(bytes));
+        logger.info("receive msg vin[{}] receiverTime[{}] flag[{}]:\n{}", vin, DateUtil.dateToStr_yyyyMMddHHmmss(receiveTime), flag, ByteBufUtil.hexDump(bytes));
 
         //判断初始化
         if (vehicleCacheData == null) {

@@ -2,7 +2,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.util;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.*;
 import io.netty.buffer.ByteBuf;
@@ -124,7 +123,7 @@ public class PacketUtil {
                 data.getByte(offset + 26),
                 data.getByte(offset + 27),
                 data.getByte(offset + 28),
-                data.getByte(offset + 29)).toInstant(DateZoneUtil.ZONE_OFFSET));
+                data.getByte(offset + 29)).toInstant(DateUtil.ZONE_OFFSET));
     }
 
 
@@ -138,7 +137,7 @@ public class PacketUtil {
                 bytes[offset + 26],
                 bytes[offset + 27],
                 bytes[offset + 28],
-                bytes[offset + 29]).toInstant(DateZoneUtil.ZONE_OFFSET));
+                bytes[offset + 29]).toInstant(DateUtil.ZONE_OFFSET));
     }
 
     public static byte[] getPacketData_bytes(byte[] bytes) {
@@ -180,7 +179,7 @@ public class PacketUtil {
         bytes[21] = 1;
         bytes[22] = 0;
         bytes[23] = 6;
-        LocalDateTime ldt = LocalDateTime.ofInstant(time.toInstant(), DateZoneUtil.ZONE_ID);
+        LocalDateTime ldt = LocalDateTime.ofInstant(time.toInstant(), DateUtil.ZONE_ID);
         bytes[24] = (byte) (ldt.getYear() - 2000);
         bytes[25] = (byte) ldt.getMonth().getValue();
         bytes[26] = (byte) ldt.getDayOfMonth();

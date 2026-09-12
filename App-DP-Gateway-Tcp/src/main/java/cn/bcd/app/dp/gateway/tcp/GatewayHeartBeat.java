@@ -1,6 +1,6 @@
 package cn.bcd.app.dp.gateway.tcp;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class GatewayHeartBeat implements ApplicationListener<ContextRefreshedEve
             try {
                 redisTemplate.opsForHash().put(gatewayOnline_redisHashKey,
                         gatewayProp.id,
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+                        DateUtil.dateToStr_yyyyMMddHHmmss(new Date()));
             } catch (Exception ex) {
                 logger.error("heartbeat error", ex);
             }

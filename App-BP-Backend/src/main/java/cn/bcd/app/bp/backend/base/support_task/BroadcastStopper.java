@@ -4,7 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.spring.redis.mq.topic.RedisTopicMQ;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import tools.jackson.core.JacksonException;
 
@@ -38,7 +38,7 @@ public class BroadcastStopper extends RedisTopicMQ<BroadcastStopper.StopCmd> {
     }
 
     public final StopResult[] stop(String... ids) {
-        String cmdId = DateZoneUtil.dateToStr_yyyyMMddHHmmssSSS(new Date());
+        String cmdId = DateUtil.dateToStr_yyyyMMddHHmmssSSS(new Date());
         StopCmd stopCmd = new StopCmd(cmdId, ids);
         //发送
         send(stopCmd);

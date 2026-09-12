@@ -1,6 +1,6 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.base.anno.F_num;
 import cn.bcd.lib.parser.base.data.NumType;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
@@ -37,7 +37,7 @@ public class DriverIdentityReportResponse implements PacketBody {
     public static DriverIdentityReportResponse read(ByteBuf data) {
         DriverIdentityReportResponse driverIdentityReportResponse = new DriverIdentityReportResponse();
         driverIdentityReportResponse.status = data.readByte();
-        driverIdentityReportResponse.time = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
+        driverIdentityReportResponse.time = new Date(FieldBuilder__F_date_bytes_6.read(data, DateUtil.ZONE_OFFSET, 2000));
         driverIdentityReportResponse.res = data.readByte();
         if (driverIdentityReportResponse.res == 0) {
             driverIdentityReportResponse.nameLen = data.readUnsignedByte();
@@ -53,7 +53,7 @@ public class DriverIdentityReportResponse implements PacketBody {
 
     public void write(ByteBuf data) {
         data.writeByte(status);
-        FieldBuilder__F_date_bytes_6.write(data, time.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
+        FieldBuilder__F_date_bytes_6.write(data, time.getTime(), DateUtil.ZONE_OFFSET, 2000);
         data.writeByte(res);
         if (res == 0) {
             data.writeByte(nameLen);

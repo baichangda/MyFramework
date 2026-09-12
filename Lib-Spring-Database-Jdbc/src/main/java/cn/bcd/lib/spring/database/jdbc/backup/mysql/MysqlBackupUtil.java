@@ -1,7 +1,7 @@
 package cn.bcd.lib.spring.database.jdbc.backup.mysql;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ public class MysqlBackupUtil {
         } catch (IOException e) {
             throw BaseException.get(e);
         }
-        String fileName = DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".bak";
+        String fileName = DateUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".bak";
         String filePath = databaseDir + File.separator + fileName;
         logger.info("start backup database[{}] to path[{}]", database, filePath);
         String cmd = "mysqldump -h" + host + " -P" + port + " -u" + username + " -p" + password + " --databases " + database + " > " + filePath;

@@ -1,6 +1,6 @@
 package cn.bcd.lib.spring.storage.mongo.transfer;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.storage.mongo.MongoUtil;
 import cn.bcd.lib.spring.storage.mongo.QueryData;
 import com.google.common.base.Strings;
@@ -115,7 +115,7 @@ public class MongoUtil_transferData {
         return Hashing.md5().hashString(vin, StandardCharsets.UTF_8).toString().substring(0, 4)
                 + vin
                 + Strings.padEnd(platformCode, 20, '#')
-                + DateZoneUtil.dateToStr_yyyyMMddHHmmss(collectTime)
+                + DateUtil.dateToStr_yyyyMMddHHmmss(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
 }

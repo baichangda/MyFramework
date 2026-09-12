@@ -1,6 +1,6 @@
 package cn.bcd.lib.websocket.client;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.websocket.server.MyWebSocketServer;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -27,7 +27,7 @@ public class TestWebSocketClient {
         while (true) {
             MyWebSocketServer webSocketServer = new MyWebSocketServer("0.0.0.0", 8080, "/", ws -> {
                 logger.info("websocket connect");
-                ws.writeTextMessage(DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()));
+                ws.writeTextMessage(DateUtil.dateToStr_yyyyMMddHHmmss(new Date()));
             });
             logger.info("websocket server start");
             TimeUnit.SECONDS.sleep(5);

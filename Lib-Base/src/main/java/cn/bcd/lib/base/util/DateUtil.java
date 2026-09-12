@@ -1,12 +1,9 @@
 package cn.bcd.lib.base.util;
 
 import cn.bcd.lib.base.exception.BaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -15,109 +12,192 @@ import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 日期帮助类
- * 1、所有涉及到时区逻辑,日期转换均转换成 LocalDateTime 运算然后再 转回Date
- * <p>
- * 不考虑夏令时问题
- * {@link ZoneId#of(String)} 中传入+8和时区英文，前者仅仅是偏移量，后者会导致夏令时
- */
 public class DateUtil {
 
-    private final static Logger logger = LoggerFactory.getLogger(DateUtil.class);
 
+    public final static ZoneId ZONE_ID = ZoneId.of("Asia/Shanghai");
+    public final static ZoneOffset ZONE_OFFSET = ZoneOffset.of("+8");
+
+    /**
+     * 注意
+     * {@link DateTimeFormatter#withZone(ZoneId)}如果不设置时区
+     * 则不能格式化和解析不带时区的日期类、例如{@link Instant}
+     */
+    public final static DateTimeFormatter FORMATTER_yyyyMMdd = DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmss = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyyMMddHHmmssSSS = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyy_MM_dd = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZONE_OFFSET);
+    public final static DateTimeFormatter FORMATTER_yyyy_MM_dd_HH_mm_ss = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZONE_OFFSET);
+
+    /**
+     * 根据dateStr长度转换成不同的时间
+     *
+     * @param dateStr
+     * @return
+     */
+    public static Date stringToDate(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        int len = dateStr.length();
+        return switch (len) {
+            case 8 -> DateUtil.strToDate_yyyyMMdd(dateStr);
+            case 14 -> DateUtil.strToDate_yyyyMMddHHmmss(dateStr);
+            case 17 -> DateUtil.strToDate_yyyyMMddHHmmssSSS(dateStr);
+            default -> throw BaseException.get("dateStr[{}] not support", dateStr);
+        };
+    }
+
+    public static LocalDateTime strToLdt_yyyyMMdd(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDate.from(FORMATTER_yyyyMMdd.parse(dateStr)).atStartOfDay();
+    }
+
+    public static Date strToDate_yyyyMMdd(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(LocalDate.from(FORMATTER_yyyyMMdd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
+    }
+
+    public static LocalDateTime strToLdt_yyyyMMddHHmmss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyyMMddHHmmss.parse(dateStr));
+    }
+
+    public static Date strToDate_yyyyMMddHHmmss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmss.parse(dateStr)));
+    }
+
+
+    public static LocalDateTime strToLdt_yyyyMMddHHmmssSSS(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyyMMddHHmmssSSS.parse(dateStr));
+    }
+
+    public static Date strToDate_yyyyMMddHHmmssSSS(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(Instant.from(FORMATTER_yyyyMMddHHmmssSSS.parse(dateStr)));
+    }
+
+    public static LocalDateTime strToLdt_yyyy_MM_dd_HH_mm_ss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return LocalDateTime.from(FORMATTER_yyyy_MM_dd_HH_mm_ss.parse(dateStr));
+    }
+
+    public static Date strToDate_yyyy_MM_dd_HH_mm_ss(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(Instant.from(FORMATTER_yyyy_MM_dd_HH_mm_ss.parse(dateStr)));
+    }
+
+    public static Date strToDate_yyyy_MM_dd(String dateStr) {
+        if (dateStr == null) {
+            return null;
+        }
+        return Date.from(LocalDate.from(FORMATTER_yyyy_MM_dd.parse(dateStr)).atStartOfDay().toInstant(ZONE_OFFSET));
+    }
+
+    public static String ldtToStr_yyyyMMdd(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMdd.format(ldt);
+    }
+
+    public static String dateToStr_yyyyMMdd(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMdd.format(date.toInstant());
+    }
+
+    public static String ldtToStr_yyyyMMddHHmmss(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmss.format(ldt);
+    }
+
+    public static String dateToStr_yyyyMMddHHmmss(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmss.format(date.toInstant());
+    }
+
+    public static String ldtToStr_yyyyMMddHHmmssSSS(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmssSSS.format(ldt);
+    }
+
+    public static String dateToStr_yyyyMMddHHmmssSSS(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyyMMddHHmmssSSS.format(date.toInstant());
+    }
+
+    public static String ldtToStr_yyyy_MM_dd(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd.format(ldt);
+    }
+
+
+    public static String dateToStr_yyyy_MM_dd(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd.format(date.toInstant());
+    }
+
+    public static String ldtToStr_yyyy_MM_dd_HH_mm_ss(LocalDateTime ldt) {
+        if (ldt == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd_HH_mm_ss.format(ldt);
+    }
+
+    public static String dateToStr_yyyy_MM_dd_HH_mm_ss(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return FORMATTER_yyyy_MM_dd_HH_mm_ss.format(date.toInstant());
+    }
+
+
+
+
+    /**
+     * 清除毫秒值
+     * @param date
+     * @return
+     */
     public static Date clearMills(Date date) {
         long time = date.getTime();
         return new Date((time / 1000) * 1000);
     }
 
-    /**
-     * 获取最近在当前日期之前的最后一个日期单位
-     *
-     * @param date
-     * @param unit       支持
-     *                   {@link ChronoUnit#MILLIS}
-     *                   {@link ChronoUnit#SECONDS}
-     *                   {@link ChronoUnit#MINUTES}
-     *                   {@link ChronoUnit#HOURS}
-     *                   {@link ChronoUnit#DAYS}
-     *                   {@link ChronoUnit#MONTHS}
-     *                   {@link ChronoUnit#YEARS}
-     * @param zoneOffset 时区
-     * @return
-     */
-    public static Date getFloorDate(Date date, ChronoUnit unit, ZoneOffset zoneOffset) {
-        if (date == null) {
-            return null;
-        }
-        LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), zoneOffset);
-        if (unit.ordinal() <= ChronoUnit.DAYS.ordinal()) {
-            ldt = ldt.truncatedTo(unit);
-            ldt = ldt.plus(-1, unit);
-        } else {
-            ldt = ldt.truncatedTo(ChronoUnit.DAYS);
-            switch (unit) {
-                case MONTHS: {
-                    ldt = ldt.withDayOfMonth(1);
-                    break;
-                }
-                case YEARS: {
-                    ldt = ldt.withDayOfMonth(1);
-                    ldt = ldt.withMonth(1);
-                    break;
-                }
-                default: {
-                    throw BaseException.get("[DateUtil.getFloorDate],unit[{}}] Not Support!", unit.toString());
-                }
-            }
-        }
-        return Date.from(ldt.toInstant(zoneOffset));
-    }
-
-
-    /**
-     * 获取最近在当前日期之后的第一个日期单位
-     *
-     * @param date
-     * @param unit       支持
-     *                   {@link ChronoUnit#MILLIS}
-     *                   {@link ChronoUnit#SECONDS}
-     *                   {@link ChronoUnit#MINUTES}
-     *                   {@link ChronoUnit#HOURS}
-     *                   {@link ChronoUnit#DAYS}
-     *                   {@link ChronoUnit#MONTHS}
-     *                   {@link ChronoUnit#YEARS}
-     * @param zoneOffset 时区
-     * @return
-     */
-    public static Date getCeilDate(Date date, ChronoUnit unit, ZoneOffset zoneOffset) {
-        if (date == null) {
-            return null;
-        }
-        LocalDateTime ldt = LocalDateTime.ofInstant(date.toInstant(), zoneOffset);
-        if (unit.ordinal() <= ChronoUnit.DAYS.ordinal()) {
-            ldt = ldt.truncatedTo(unit);
-            ldt = ldt.plus(1, unit);
-        } else {
-            ldt = ldt.truncatedTo(ChronoUnit.DAYS);
-            switch (unit) {
-                case MONTHS: {
-                    ldt = ldt.withDayOfMonth(1);
-                    ldt = ldt.plusMonths(1);
-                    break;
-                }
-                case YEARS: {
-                    ldt = ldt.withDayOfMonth(1);
-                    ldt = ldt.withMonth(1);
-                    ldt = ldt.plusYears(1);
-                    break;
-                }
-                default: {
-                    throw BaseException.get("[DateUtil.getCeilDate],unit[{}}] Not Support!", unit.toString());
-                }
-            }
-        }
-        return Date.from(ldt.toInstant(zoneOffset));
+    public static List<Date[]> range(Date startDate, Date endDate, int skip, ChronoUnit unit) {
+        return range(startDate, endDate, skip, unit, ZONE_OFFSET);
     }
 
     /**
@@ -234,10 +314,9 @@ public class DateUtil {
         return returnList;
     }
 
-
     /**
-     * 计算两个时间相差多少日期单位(不足一个日期单位的的按一个日期单位算)
-     * d2-d1
+     * 计算两个时间相差多少日期单位
+     * 如果不足一个单位、则参考up参数、up=true则视为加1的日期单位、否则忽略
      *
      * @param d1   开始时间
      * @param d2   结束时间
@@ -298,7 +377,6 @@ public class DateUtil {
         }
     }
 
-
     /**
      * date转换为时间戳字节数组
      *
@@ -329,7 +407,6 @@ public class DateUtil {
         return new Date(ts);
     }
 
-
     /**
      * 添加多个date到bytes前面、得到新的bytes
      *
@@ -343,7 +420,7 @@ public class DateUtil {
         }
         byte[] res = new byte[bytes.length + dates.length * 8];
         for (int i = 0; i < dates.length; i++) {
-            byte[] temp = DateUtil.dateToBytes(dates[i]);
+            byte[] temp = dateToBytes(dates[i]);
             System.arraycopy(temp, 0, res, i * 8, 8);
         }
         System.arraycopy(bytes, 0, res, dates.length * 8, bytes.length);
@@ -414,47 +491,4 @@ public class DateUtil {
             return instance.l;
         }
     }
-
-    public static void main(String[] args) {
-//        LocalDateTime ldt1 = LocalDateTime.of(2023, 8, 16, 6, 10, 10, 0);
-//        LocalDateTime ldt2 = ldt1.plusDays(20);
-//        ZoneOffset zoneOffset = ZoneOffset.of("+8");
-//        List<Date[]> range = DateUtil.range(Date.from(ldt1.toInstant(zoneOffset)), Date.from(ldt2.toInstant(zoneOffset)), 1, ChronoUnit.MONTHS, zoneOffset);
-//        for (Date[] dates : range) {
-//            System.out.println(dates[0] + "," + dates[1]);
-//        }
-
-//        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneId.of("+8"));
-//        LocalDateTime ldt = LocalDateTime.now();
-//        OffsetDateTime odt = LocalDateTime.now().atOffset(ZoneOffset.of("+4"));
-//        ZonedDateTime zdt = LocalDateTime.now().atZone(ZoneId.of("+0"));
-//        System.out.println(ldt.format(dtf));
-//        System.out.println(odt.format(dtf));
-//        System.out.println(zdt.format(dtf));
-//        System.out.println(dtf.format(new Date().toInstant()));
-//        System.out.println(Instant.from(dtf.parse("20220101010101")).atOffset(ZoneOffset.of("+8")));
-        int n = 1000000000;
-        long t1 = System.currentTimeMillis();
-        for (int i = 0; i < n; i++) {
-            long l = System.currentTimeMillis();
-        }
-        long t2 = System.currentTimeMillis();
-        System.out.println(t2 - t1);
-        for (int i = 0; i < n; i++) {
-            long l = CacheMillisecond.current();
-        }
-        long t3 = System.currentTimeMillis();
-        System.out.println(t3 - t2);
-        for (int i = 0; i < n; i++) {
-            long l = System.currentTimeMillis() / 1000L;
-        }
-        long t4 = System.currentTimeMillis();
-        System.out.println(t4 - t3);
-        for (int i = 0; i < n; i++) {
-            long l = CacheSecond.current();
-        }
-        long t5 = System.currentTimeMillis();
-        System.out.println(t5 - t4);
-    }
-
 }

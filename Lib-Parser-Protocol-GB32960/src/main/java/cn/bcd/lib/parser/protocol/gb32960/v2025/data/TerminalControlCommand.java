@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import io.netty.buffer.ByteBuf;
@@ -22,7 +22,7 @@ public class TerminalControlCommand implements PacketData {
     public static TerminalControlCommand read(int contentLength, ByteBuf byteBuf) {
         int dataLen = contentLength - 7;
         TerminalControlCommand terminalControlCommand = new TerminalControlCommand();
-        long ts = FieldBuilder__F_date_bytes_6.read(byteBuf, DateZoneUtil.ZONE_ID, 2000);
+        long ts = FieldBuilder__F_date_bytes_6.read(byteBuf, DateUtil.ZONE_ID, 2000);
         terminalControlCommand.time = new Date(ts);
         terminalControlCommand.id = byteBuf.readByte();
         if (dataLen > 0) {
@@ -34,7 +34,7 @@ public class TerminalControlCommand implements PacketData {
     }
 
     public void write(ByteBuf byteBuf) {
-        FieldBuilder__F_date_bytes_6.write(byteBuf, time.getTime(), DateZoneUtil.ZONE_ID, 2000);
+        FieldBuilder__F_date_bytes_6.write(byteBuf, time.getTime(), DateUtil.ZONE_ID, 2000);
         byteBuf.writeByte(id);
         if (data != null) {
             byteBuf.writeBytes(data);

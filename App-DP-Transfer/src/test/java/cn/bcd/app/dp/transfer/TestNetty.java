@@ -1,6 +1,6 @@
 package cn.bcd.app.dp.transfer;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -28,7 +28,7 @@ public class TestNetty {
                             byte[] bytes=new byte[byteBuf.readableBytes()];
                             byteBuf.readBytes(bytes);
                             System.out.println(new String(bytes));
-                            String s = DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date());
+                            String s = DateUtil.dateToStr_yyyyMMddHHmmss(new Date());
                             ctx.writeAndFlush(Unpooled.wrappedBuffer(s.getBytes()));
                         }
 

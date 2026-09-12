@@ -1,6 +1,6 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bcd;
 import io.netty.buffer.ByteBuf;
 
@@ -33,7 +33,7 @@ public class PositionBase {
         positionBase.alt = data.readUnsignedShort();
         positionBase.speed = data.readUnsignedShort() / 10f;
         positionBase.direction = data.readUnsignedShort();
-        positionBase.time = new Date(FieldBuilder__F_date_bcd.read(data, DateZoneUtil.ZONE_OFFSET, 1990));
+        positionBase.time = new Date(FieldBuilder__F_date_bcd.read(data, DateUtil.ZONE_OFFSET, 1990));
         return positionBase;
     }
 
@@ -45,6 +45,6 @@ public class PositionBase {
         data.writeShort(alt);
         data.writeShort((int) (speed * 10));
         data.writeShort(direction);
-        FieldBuilder__F_date_bcd.write(data, time.getTime(), DateZoneUtil.ZONE_OFFSET, 1990);
+        FieldBuilder__F_date_bcd.write(data, time.getTime(), DateUtil.ZONE_OFFSET, 1990);
     }
 }

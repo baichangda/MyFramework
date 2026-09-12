@@ -1,6 +1,6 @@
 package cn.bcd.lib.spring.storage.mongo.raw;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.storage.mongo.MongoUtil;
 import cn.bcd.lib.spring.storage.mongo.QueryData;
 import com.google.common.base.Strings;
@@ -65,7 +65,7 @@ public class MongoUtil_gb32960 {
     public static String toId(String vin, Date collectTime, int type) {
         return Hashing.md5().hashString(vin, StandardCharsets.UTF_8).toString().substring(0, 4)
                 + vin
-                + DateZoneUtil.dateToStr_yyyyMMddHHmmss(collectTime)
+                + DateUtil.dateToStr_yyyyMMddHHmmss(collectTime)
                 + Strings.padStart(Integer.toHexString(type), 2, '0');
     }
 }

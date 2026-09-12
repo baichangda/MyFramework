@@ -1,6 +1,6 @@
 package cn.bcd.lib.spring.kafka;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
@@ -81,7 +81,7 @@ public class KafkaUtil {
     }
 
     public static void consumerSeekToTimestamp(KafkaConsumer<String, byte[]> consumer, long seekTimestamp) {
-        logger.info("start consumer seekToTimestamp[{}]", DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
+        logger.info("start consumer seekToTimestamp[{}]", DateUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
         Set<TopicPartition> assigment = new HashSet<>();
         while (assigment.isEmpty()) {
             consumer.poll(Duration.ofSeconds(1));
@@ -107,7 +107,7 @@ public class KafkaUtil {
                 consumer.seekToEnd(Collections.singletonList(partition));
             }
         }
-        logger.info("finish consumer seekToTimestamp[{}]", DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
+        logger.info("finish consumer seekToTimestamp[{}]", DateUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
     }
 
 }

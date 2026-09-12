@@ -3,7 +3,7 @@ package cn.bcd.lib.spring.vehicle.command;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.HexUtil;
 import cn.bcd.lib.parser.protocol.gb32960.ProtocolVersion;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Component;
@@ -72,7 +71,7 @@ public class CommandSender {
 
     public static boolean tryLock(String vin, int flag, int timeout) {
         String key = REDIS_KEY_PREFIX_COMMAND_LOCK + vin + "," + HexUtil.hexDump((byte) flag);
-        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()), Expiration.seconds(timeout * 2L)));
+        return Boolean.TRUE.equals(redisTemplate.opsForValue().setIfAbsent(key, DateUtil.dateToStr_yyyyMMddHHmmss(new Date()), Expiration.seconds(timeout * 2L)));
     }
 
     public static void releaseLock(String vin, int flag) {

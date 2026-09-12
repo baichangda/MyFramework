@@ -3,7 +3,7 @@ package cn.bcd.app.dp.transfer.v2016.tcp;
 import cn.bcd.app.dp.transfer.v2016.DataConsumer;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.data.init.transferConfig.TransferConfigData;
 import cn.bcd.lib.spring.data.notify.onlyNotify.platformStatus.PlatformStatusData;
 import cn.bcd.lib.spring.data.notify.onlyNotify.platformStatus.PlatformStatusSender;
@@ -283,9 +283,9 @@ public class TcpClient {
             platformStatusData.setServerId(transferConfigData.serverId);
             platformStatusData.setTime(new Date());
             platformStatusSender.send(platformStatusData);
-            logger.info("platform login succeed sn[{}] time[{}]", platformLoginSn, DateZoneUtil.dateToStr_yyyyMMddHHmmss(time));
+            logger.info("platform login succeed sn[{}] time[{}]", platformLoginSn, DateUtil.dateToStr_yyyyMMddHHmmss(time));
             //保存最后登陆时间
-            redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_TIME + transferConfigData.serverId, DateZoneUtil.dateToStr_yyyyMMddHHmmss(time));
+            redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_TIME + transferConfigData.serverId, DateUtil.dateToStr_yyyyMMddHHmmss(time));
             //保存最后登陆的sn
             redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_LOGIN_SN + transferConfigData.serverId, platformLoginSn + "");
         }
@@ -319,7 +319,7 @@ public class TcpClient {
     private static void onHeartbeatResponse(byte[] bytes) {
         Date time = PacketUtil.getTime(bytes);
         //保存最后心跳时间
-        redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_HEARTBEAT_TIME + transferConfigData.serverId, DateZoneUtil.dateToStr_yyyyMMddHHmmss(time));
+        redisTemplate.opsForValue().set(REDIS_KEY_PRE_PLATFORM_LAST_HEARTBEAT_TIME + transferConfigData.serverId, DateUtil.dateToStr_yyyyMMddHHmmss(time));
     }
 
 
@@ -359,7 +359,7 @@ public class TcpClient {
         //启动定时任务、每天清除30天之前redis中的流水号数据
         manageExecutor.scheduleAtFixedRate(() -> {
             Set<String> keys = redisTemplate.keys(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":*");
-            int i = Integer.parseInt(LocalDate.now().plusDays(-30).format(DateZoneUtil.FORMATTER_yyyyMMdd));
+            int i = Integer.parseInt(LocalDate.now().plusDays(-30).format(DateUtil.FORMATTER_yyyyMMdd));
             for (String key : keys) {
                 int temp = Integer.parseInt(key.substring(key.length() - 8));
                 if (temp <= i) {
@@ -370,7 +370,7 @@ public class TcpClient {
     }
 
     private static int incrementAndGetSn(String platformCode) {
-        return Objects.requireNonNull(redisTemplate.opsForValue().increment(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":" + DateZoneUtil.dateToStr_yyyyMMdd(new Date()))).intValue();
+        return Objects.requireNonNull(redisTemplate.opsForValue().increment(REDIS_KEY_PRE_PLATFORM_SN + platformCode + ":" + DateUtil.dateToStr_yyyyMMdd(new Date()))).intValue();
     }
 
 

@@ -1,6 +1,6 @@
 package cn.bcd.app.bp.backend.sys.service;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import cn.bcd.app.bp.backend.base.support_task.TaskBuilder;
@@ -81,7 +81,7 @@ public class TaskService extends BaseService<TaskBean> implements TaskDao<TaskBe
     public long startTask_export(String taskName, BaseService<?> service, Condition condition, Sort sort) {
         TaskBean taskBean = new TaskBean(taskName, 1);
         return taskBuilder.register(taskBean, runnable -> {
-            String fileName = taskName + "_" + DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".xlsx";
+            String fileName = taskName + "_" + DateUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".xlsx";
             Path exportPath = Paths.get(exportDirPath + "/" + fileName);
             try {
                 //导出文件

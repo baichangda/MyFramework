@@ -1,6 +1,6 @@
 package cn.bcd.lib.parser.protocol.jtt808.v2019.data;
 
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import io.netty.buffer.ByteBuf;
 
@@ -45,8 +45,8 @@ public class RectangleAreaItem implements AreaOrPathItem {
         item.lat2 = data.readUnsignedInt() / 1000000d;
         item.lng2 = data.readUnsignedInt() / 1000000d;
         if ((attr & 0x01) != 0) {
-            item.startTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
-            item.endTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
+            item.startTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateUtil.ZONE_OFFSET, 2000));
+            item.endTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateUtil.ZONE_OFFSET, 2000));
         }
         if (((attr >> 1) & 0x01) != 0) {
             item.speed = data.readUnsignedShort();
@@ -67,8 +67,8 @@ public class RectangleAreaItem implements AreaOrPathItem {
         data.writeInt((int) (lat2 * 1000000));
         data.writeInt((int) (lng2 * 1000000));
         if ((attr & 0x01) != 0) {
-            FieldBuilder__F_date_bytes_6.write(data, startTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
-            FieldBuilder__F_date_bytes_6.write(data, endTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
+            FieldBuilder__F_date_bytes_6.write(data, startTime.getTime(), DateUtil.ZONE_OFFSET, 2000);
+            FieldBuilder__F_date_bytes_6.write(data, endTime.getTime(), DateUtil.ZONE_OFFSET, 2000);
         }
         if (((attr >> 1) & 0x01) != 0) {
             data.writeShort(speed);

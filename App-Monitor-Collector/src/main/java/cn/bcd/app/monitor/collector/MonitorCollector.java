@@ -2,7 +2,7 @@ package cn.bcd.app.monitor.collector;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.monitor.client.MonitorData;
 import cn.bcd.lib.spring.monitor.client.MonitorProp;
 import cn.bcd.lib.spring.monitor.client.MonitorRedisTopicMQ;
@@ -48,7 +48,7 @@ public class MonitorCollector {
 
     @Scheduled(cron = "${monitor.collectCron}")
     public void collect() {
-        String dateStr = DateZoneUtil.dateToStr_yyyyMMddHHmmss(new Date());
+        String dateStr = DateUtil.dateToStr_yyyyMMddHHmmss(new Date());
         long batch = Long.parseLong(dateStr);
         logger.info("start batch[{}]", batch);
         monitorRedisTopicMQ.send(dateStr);

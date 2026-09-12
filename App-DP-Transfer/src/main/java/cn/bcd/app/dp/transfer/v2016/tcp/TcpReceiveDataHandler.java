@@ -2,7 +2,7 @@ package cn.bcd.app.dp.transfer.v2016.tcp;
 
 import cn.bcd.app.dp.transfer.v2016.SaveUtil;
 import cn.bcd.lib.base.common.Const;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.HexUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
 import cn.bcd.lib.spring.storage.mongo.transfer.TransferResponseData;
@@ -34,7 +34,7 @@ public class TcpReceiveDataHandler implements TcpDataHandler {
             if (Const.logEnable) {
                 logger.info("transfer response data vin[{}] collectTime[{}] type[{}] replyFlag[{}] hex[{}]",
                         vin,
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(time),
+                        DateUtil.dateToStr_yyyyMMddHHmmss(time),
                         HexUtil.hexDump((byte) type),
                         replyFlag,
                         hex);

@@ -3,7 +3,6 @@ package cn.bcd.app.dp.transfer.v2016.handler;
 import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.base.util.DateUtil;
-import cn.bcd.lib.base.util.DateZoneUtil;
 import cn.bcd.lib.spring.data.init.vehicle.VehicleDataInit;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil;
@@ -64,10 +63,10 @@ public class TransferDataHandler extends WorkHandler {
                 logger.info("on kafka message vin[{}] type[{}] gwInTime[{}] gwOutTime[{}] parseInTime[{}] parseOutTime[{}]:\n{}",
                         PacketUtil.getVin(message),
                         flag,
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[0]),
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[1]),
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[2]),
-                        DateZoneUtil.dateToStr_yyyyMMddHHmmss(dates[3]),
+                        DateUtil.dateToStr_yyyyMMddHHmmss(dates[0]),
+                        DateUtil.dateToStr_yyyyMMddHHmmss(dates[1]),
+                        DateUtil.dateToStr_yyyyMMddHHmmss(dates[2]),
+                        DateUtil.dateToStr_yyyyMMddHHmmss(dates[3]),
                         ByteBufUtil.hexDump(message));
             }
             context.gwInTime = dates[0];

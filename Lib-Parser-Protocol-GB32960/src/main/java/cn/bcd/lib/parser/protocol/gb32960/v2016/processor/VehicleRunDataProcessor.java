@@ -1,7 +1,7 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2016.processor;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.DateZoneUtil;
+import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.builder.FieldBuilder__F_date_bytes_6;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
@@ -31,7 +31,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
     public VehicleRunData process(ByteBuf data, ProcessContext processContext) {
         final int contentLength = (int) processContext.getCache(2);
         VehicleRunData instance = new VehicleRunData();
-            instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateZoneUtil.ZONE_OFFSET, 2000));
+            instance.collectTime = new Date(FieldBuilder__F_date_bytes_6.read(data, DateUtil.ZONE_OFFSET, 2000));
             int allLen = contentLength - 6;
             int beginLeave = data.readableBytes();
             while ((beginLeave - data.readableBytes()) < allLen) {
@@ -83,7 +83,7 @@ public class VehicleRunDataProcessor implements Processor<VehicleRunData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, VehicleRunData instance) {
-            FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateZoneUtil.ZONE_OFFSET, 2000);
+            FieldBuilder__F_date_bytes_6.write(data, instance.collectTime.getTime(), DateUtil.ZONE_OFFSET, 2000);
             if (instance.vehicleBaseData != null) {
                 data.writeByte(1);
                 processor_vehicleBaseData.deProcess(data, processContext, instance.vehicleBaseData);
