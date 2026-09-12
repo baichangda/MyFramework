@@ -133,22 +133,47 @@
     }
 
     function connectWs() {
-        let vin = $("#vin").val();
-        ws = new WebSocket(getWsUrl() + "?vin=" + encodeURIComponent(vin));
-        ws.onopen = function () {
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+            appendToOutput("ws正在连接或已经连接", 1)
+            return
+        }
+
+        const vin = $("#vin").val()
+        const currentWs = new WebSocket(getWsUrl() + "?vin=" + encodeURIComponent(vin))
+        ws = currentWs
+        $("#ws_connect_btn").css("color", "orange")
+        $("#ws_connect_btn").prop("disabled", true)
+
+        currentWs.onopen = function () {
+            if (ws !== currentWs) {
+                currentWs.close()
+                return
+            }
             isConnectWs = true
             $("#ws_connect_btn").css("color", "green")
-            $("#ws_connect_btn").prop("disabled", true)
             $("#update_vehicleData_btn").css("color", "green")
             $("#update_vehicleData_btn").prop("disabled", false)
             appendToOutput("连接ws服务器成功,vin[" + vin + "]", 1)
         };
 
-        ws.onmessage = function (evt) {
+        currentWs.onmessage = function (evt) {
+            if (ws !== currentWs) {
+                return
+            }
             onMsg(evt.data)
         };
 
-        ws.onclose = function () {
+        currentWs.onerror = function () {
+            if (ws === currentWs) {
+                appendToOutput("连接ws服务器失败,vin[" + vin + "]", 1)
+            }
+        }
+
+        currentWs.onclose = function () {
+            if (ws !== currentWs) {
+                return
+            }
+            ws = null
             isConnectWs = false
             isConnectGw = false
             $("#ws_connect_btn").css("color", "red")
@@ -208,6 +233,12 @@
                 appendToOutput("tcp网关断开")
                 break
             }
+            case 999: {
+                appendToOutput(parse.data || "当前车辆正在使用中，请更换车辆", 2)
+                break
+            }
+            default:
+                appendToOutput("收到未知消息类型:" + parse.flag, 2)
         }
     }
 
