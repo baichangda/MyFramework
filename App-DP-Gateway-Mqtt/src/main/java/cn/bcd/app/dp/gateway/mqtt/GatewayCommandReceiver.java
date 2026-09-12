@@ -48,12 +48,17 @@ public class GatewayCommandReceiver implements CommandReceiver {
             }
             //写报文到车端
             byte[] packetBytes = request.toPacketBytes();
-            client.publish(Mqtt5Publish.builder().topic(gatewayProp.getMqttProduceTopicPrefix() + vin).payload(packetBytes).build());
-            logger.info("GatewayCommandReceiver --> command request send to MQTT, Request flag：{}, message：{}", request.flag, ByteBufUtil.hexDump(packetBytes));
-            //判断直接响应
-            if (!request.waitVehicleResponse) {
-                CommandReceiver.response(request, ResponseStatus.success, null);
-            }
+            client.publish(Mqtt5Publish.builder()
+                            .topic(gatewayProp.getMqttProduceTopicPrefix() + vin)
+                            .payload(packetBytes)
+                            .build())
+                    .whenComplete((e1, e2) -> {
+                        logger.info("GatewayCommandReceiver --> command request send to MQTT, Request flag：{}, message：{}", request.flag, ByteBufUtil.hexDump(packetBytes));
+                        //判断直接响应
+                        if (!request.waitVehicleResponse) {
+                            CommandReceiver.response(request, ResponseStatus.success, null);
+                        }
+                    });
         } catch (Exception e) {
             logger.error("GatewayCommandReceiver --> command request error", e);
             CommandReceiver.response(request, ResponseStatus.program_error, null);
