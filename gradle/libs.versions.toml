@@ -79,10 +79,6 @@ vertx-dependencies = { module = "io.vertx:vertx-dependencies", version = "5.1.6"
 vertx-web = { module = "io.vertx:vertx-web" }
 
 
-helidon-bom = { module = "io.helidon:helidon-bom", version = "4.5.4" }
-helidon-webserver = { module = "io.helidon.webserver:helidon-webserver"}
-
-
 awssdk-bom = { module = "software.amazon.awssdk:bom", version = "2.54.2" }
 awssdk-s3 = { module = "software.amazon.awssdk:s3" }
 
