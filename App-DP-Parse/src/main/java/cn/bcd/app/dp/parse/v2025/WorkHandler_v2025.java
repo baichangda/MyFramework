@@ -69,6 +69,7 @@ public class WorkHandler_v2025 extends WorkHandler {
         context.gwInTime = dates[0];
         context.gwOutTime = dates[1];
         context.parseInTime = new Date();
+        context.rawData = message;
 
         Packet packet;
         try {
