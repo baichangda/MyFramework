@@ -82,6 +82,37 @@ class BitBufReaderTest {
         }
     }
 
+    @Test
+    @SuppressWarnings("deprecation")
+    void alignedReadsWorkOnDirectAndCompositeBuffers() {
+        byte[] source = {99, (byte) 0x81, 0x72, 0x40, (byte) 0xFE,
+                0x35, (byte) 0xA9, 0x16, (byte) 0xC3, 0x6D};
+        for (int bit : new int[]{16, 32, 64}) {
+            for (boolean unsigned : new boolean[]{true, false}) {
+                for (ByteOrder order : new ByteOrder[]{ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN}) {
+                    for (int kind = 0; kind < 2; kind++) {
+                        ByteBuf buffer = kind == 0
+                                ? Unpooled.directBuffer(source.length).writeBytes(source)
+                                : Unpooled.wrappedBuffer(java.util.Arrays.copyOfRange(source, 0, 3),
+                                        java.util.Arrays.copyOfRange(source, 3, source.length));
+                        buffer = buffer.order(order);
+                        try {
+                            buffer.skipBytes(1);
+                            BitBuf_reader reader = new BitBuf_reader(buffer);
+                            assertEquals(BitBuf_reader.valueOf(readReference(source, 8, bit), bit, unsigned),
+                                    reader.read(bit, unsigned));
+                            assertEquals(1 + bit / 8, buffer.readerIndex());
+                            assertEquals(0, reader.bitOffset);
+                            assertEquals(readReference(source, 8 + bit, 3), reader.read(3, true));
+                        } finally {
+                            buffer.release();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private static long readReference(byte[] source, int position, int bit) {
         long value = 0;
         for (int i = 0; i < bit; i++) {

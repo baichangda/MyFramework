@@ -117,7 +117,7 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 case int56 -> {
                     funcName = ParseUtil.format("{}.read_int56{}({})", FieldBuilder__F_num.class.getName(), bigEndian ? "" : "_le", FieldBuilder.varNameByteBuf);
                 }
-                case int64 -> {
+                case uint64, int64 -> {
                     funcName = varNameByteBuf + ".readLong" + (bigEndian ? "" : "LE") + "()";
                 }
                 case float32 -> {

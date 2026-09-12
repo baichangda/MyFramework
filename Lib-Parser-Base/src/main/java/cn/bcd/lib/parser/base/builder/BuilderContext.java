@@ -126,10 +126,8 @@ public class BuilderContext {
     }
 
     public final String getGlobalVarName(char c) {
-        return (String) method_cache.computeIfAbsent(ParseUtil.getGlobalVarName(c), k -> {
-            ParseUtil.appendGetGlobalVar(this, c);
-            return k;
-        });
+        // Read at the point of use: nested processors and later fields may update the value.
+        return ParseUtil.format("{}.getGlobalVar('{}')", FieldBuilder.varNameProcessContext, c);
     }
 
     public final String getBitBuf_parse() {

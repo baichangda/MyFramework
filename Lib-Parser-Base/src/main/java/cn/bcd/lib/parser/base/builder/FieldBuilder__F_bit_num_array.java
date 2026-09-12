@@ -126,10 +126,10 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         final String varNameBitBuf = context.getBitBuf_deParse();
         int skipBefore = anno.skipBefore();
         int skipAfter = anno.skipAfter();
-        ParseUtil.append(body, "if({}!=null){\n", valCode);
         if (skipBefore > 0) {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, skipBefore);
         }
+        ParseUtil.append(body, "if({}!=null){\n", valCode);
         final String varNameFieldArr = varNameField + "_arr";
         ParseUtil.append(body, "final {}[] {}={};\n", arrElementType, varNameFieldArr, valCode);
         ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", varNameFieldArr);
@@ -148,13 +148,13 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, singleSkip);
         }
         ParseUtil.append(body, "}\n");
+        ParseUtil.append(body, "}\n");
         if (skipAfter > 0) {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, skipAfter);
         }
         if (finish(context)) {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
-        ParseUtil.append(body, "}\n");
     }
 
     private void buildSkip(BuilderContext context, F_bit_num_array anno, boolean parse) {

@@ -342,7 +342,10 @@ public class ParseUtil {
      * @return
      */
     public static int getClassByteLenIfPossible(Class<?> clazz) {
-
+        // An interface's concrete implementation (including custom processors) determines its size.
+        if (clazz.isInterface()) {
+            return -1;
+        }
         int all = 0;
         List<Field> parseFields = getParseFields(clazz);
         int bit = 0;
