@@ -4,6 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ObjectWriter;
@@ -14,10 +15,12 @@ import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.databind.type.CollectionType;
 import tools.jackson.databind.type.TypeFactory;
 
 import java.lang.reflect.Type;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -91,6 +94,10 @@ public final class JsonUtil {
                 .disable(DateTimeFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
     }
 
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        return OBJECT_MAPPER.readValue(json, clazz);
+    }
+
     public static String toJson(Object object) {
         try {
             return OBJECT_MAPPER.writeValueAsString(object);
@@ -115,18 +122,24 @@ public final class JsonUtil {
         }
     }
 
-    static class TestBean{
-        public Date d=new Date();
-        public Map<String,String> m;
+    static class TestBean {
+        public Date d = new Date();
+        public Map<String, String> m;
         public int a;
-        public byte[] br=new byte[]{1,2,3};
+        public byte[] br = new byte[]{1, 2, 3};
     }
 
     static void main() {
-        TestBean testBean=new TestBean();
+        TestBean testBean = new TestBean();
         String json = JsonUtil.toJson(testBean);
         System.out.println(json);
-        TestBean testBean1=JsonUtil.OBJECT_MAPPER.readValue(json,TestBean.class);
+        TestBean testBean1 = JsonUtil.OBJECT_MAPPER.readValue(json, TestBean.class);
         System.out.println(testBean1);
+
+        List<TestBean> list = List.of(testBean1);
+        String json1 = toJson(list);
+        List<TestBean> list1 = JsonUtil.OBJECT_MAPPER.readValue(json1, new TypeReference<>() {
+        });
+        System.out.println(list1);
     }
 }
