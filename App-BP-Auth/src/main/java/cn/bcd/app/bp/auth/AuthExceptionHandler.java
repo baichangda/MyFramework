@@ -12,18 +12,18 @@ public class AuthExceptionHandler {
     @ExceptionHandler(NotLoginException.class)
     public ResponseEntity<Result<?>> notLogin(NotLoginException exception) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Result.fail(401).message("请先登录"));
+                .body(Result.fail(401,"请先登录"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Result<?>> badCredentials(IllegalArgumentException exception) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Result.fail(401).message(exception.getMessage()));
+                .body(Result.fail(401,exception.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Result<?>> unavailableUser(IllegalStateException exception) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Result.fail(401).message(exception.getMessage()));
+                .body(Result.fail(401,exception.getMessage()));
     }
 }

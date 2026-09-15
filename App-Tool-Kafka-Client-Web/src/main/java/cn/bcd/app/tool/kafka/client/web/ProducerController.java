@@ -7,7 +7,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,7 +43,7 @@ public class ProducerController {
             return Result.success().message("发送" + messages.length + "条数据到kafka成功");
         } catch (Exception ex) {
             logger.error("error", ex);
-            return Result.fail_message("发送数据到kafka失败、错误原因:[" + ex.getMessage() + "]");
+            return Result.fail("发送数据到kafka失败、错误原因:[" + ex.getMessage() + "]");
         }
     }
 }

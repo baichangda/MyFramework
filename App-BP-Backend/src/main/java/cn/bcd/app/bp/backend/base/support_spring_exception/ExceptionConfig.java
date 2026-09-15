@@ -74,7 +74,7 @@ public class ExceptionConfig {
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList());
-            result = Result.fail(ExceptionCode.arg_error.code, errorList).message(ExceptionCode.arg_error.msg);
+            result = Result.fail(ExceptionCode.arg_error.code, JsonUtil.toJson(errorList));
         } else {
             result = Result.from(realException);
         }

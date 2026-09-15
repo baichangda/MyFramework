@@ -19,8 +19,18 @@ public class Result<T> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    /**
+     * code=0 视为成功
+     * 其他情况视为失败
+     */
     public int code;
+    /**
+     * 成功/失败都可能会有信息
+     */
     public String message;
+    /**
+     * 只有成功时候有值、失败则为null
+     */
     public T data;
 
     public Result() {
@@ -42,9 +52,8 @@ public class Result<T> implements Serializable {
         return this;
     }
 
-    public Result<T> code(int code) {
-        this.code = code;
-        return this;
+    public boolean succeed() {
+        return code == 0;
     }
 
     public static <T> Result<T> success() {
@@ -67,19 +76,11 @@ public class Result<T> implements Serializable {
         return new Result<>(code, null);
     }
 
-    public static <R> Result<R> fail(int code, R data) {
-        return new Result<>(code, data);
+    public static <R> Result<R> fail(int code, String message) {
+        return new Result<>(code, null, message);
     }
 
-    public static <R> Result<R> fail(int code, R data, String message) {
-        return new Result<>(code, data, message);
-    }
-
-    public static <R> Result<R> fail(R data) {
-        return new Result<>(1, data);
-    }
-
-    public static <R> Result<R> fail_message(String message) {
+    public static <R> Result<R> fail(String message) {
         return new Result<>(1, null, message);
     }
 
@@ -87,9 +88,9 @@ public class Result<T> implements Serializable {
         Objects.requireNonNull(throwable);
         Throwable realException = ExceptionUtil.getRealException(throwable);
         if (realException instanceof BaseException ex) {
-            return Result.fail(ex.code).message(ex.getMessage());
+            return Result.fail(ex.code, ex.getMessage());
         } else {
-            return Result.fail_message(realException.getMessage());
+            return Result.fail(realException.getMessage());
         }
     }
 
