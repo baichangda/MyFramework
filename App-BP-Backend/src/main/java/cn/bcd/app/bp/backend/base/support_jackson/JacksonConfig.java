@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
-public class ObjectMapperConfig {
+public class JacksonConfig {
 
     @Bean
     public JsonMapper objectMapper(){
