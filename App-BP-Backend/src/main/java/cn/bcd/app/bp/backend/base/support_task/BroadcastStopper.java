@@ -55,7 +55,7 @@ public class BroadcastStopper extends RedisTopicMQ<BroadcastStopper.StopCmd> {
             List<byte[]> range = redisTemplate.boundListOps(queuePre + cmdId).range(0, -1);
             if (range != null) {
                 for (byte[] bytes : range) {
-                    StopResult[] stopResults = JsonUtil.OBJECT_MAPPER.readValue(bytes, StopResult[].class);
+                    StopResult[] stopResults = JsonUtil.MAPPER.readValue(bytes, StopResult[].class);
                     list.add(stopResults);
                 }
                 //删除缓存

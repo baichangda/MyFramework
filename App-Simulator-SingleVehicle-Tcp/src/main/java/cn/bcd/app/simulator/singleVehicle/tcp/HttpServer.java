@@ -116,7 +116,7 @@ public abstract class HttpServer implements Runnable {
                 });
                 webSocket.textMessageHandler(data -> {
                     try {
-                        WsInMsg message = JsonUtil.OBJECT_MAPPER.readValue(data, WsInMsg.class);
+                        WsInMsg message = JsonUtil.MAPPER.readValue(data, WsInMsg.class);
                         session.onWebSocketMessage(message);
                     } catch (Exception ex) {
                         logger.error("receive ws msg parse json error:\n{}", data, ex);

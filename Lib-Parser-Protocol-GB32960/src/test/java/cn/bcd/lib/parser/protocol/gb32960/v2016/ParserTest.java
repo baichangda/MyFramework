@@ -2,7 +2,6 @@ package cn.bcd.lib.parser.protocol.gb32960.v2016;
 
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.parser.base.Parser;
-import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.base.util.PerformanceUtil;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import io.netty.buffer.ByteBuf;
@@ -61,7 +60,7 @@ public class ParserTest {
         try (ScheduledExecutorService pool = Executors.newSingleThreadScheduledExecutor()) {
             pool.scheduleAtFixedRate(() -> logger.info("perThreadSpeed/s:{}", count.sumThenReset()), 3, 3, TimeUnit.SECONDS);
             for (int i = 0; i < Integer.MAX_VALUE; i++) {
-                Packet packet = JsonUtil.OBJECT_MAPPER.readValue(data, Packet.class);
+                Packet packet = JsonUtil.MAPPER.readValue(data, Packet.class);
                 count.increment();
             }
         }

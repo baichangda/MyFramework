@@ -70,7 +70,7 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
                 throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
-            Result<List<TransferAccessData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
+            Result<List<TransferAccessData>> result = JsonUtil.MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (result.getCode() == 0) {
                 List<TransferAccessData> list = result.getData();

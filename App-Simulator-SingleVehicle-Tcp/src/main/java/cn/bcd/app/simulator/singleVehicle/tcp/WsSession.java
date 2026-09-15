@@ -113,7 +113,7 @@ public class WsSession implements Vehicle.Listener {
     private void updateVehicleData(String json) {
         try {
             VehicleData current = vehicle.vehicleData();
-            VehicleData updated = JsonUtil.OBJECT_MAPPER.readValue(json, VehicleData.class);
+            VehicleData updated = JsonUtil.MAPPER.readValue(json, VehicleData.class);
             if (current == null || current.getClass() != updated.getClass()) {
                 throw new IllegalArgumentException("vehicle data protocol version cannot be changed");
             }

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -55,7 +54,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
                     //取消超时任务
                     request.timeoutFuture.cancel(false);
                     //执行回调
-                    Response response = JsonUtil.OBJECT_MAPPER.readValue(value, Response.class);
+                    Response response = JsonUtil.MAPPER.readValue(value, Response.class);
                     response.setCommand(request.getCommand());
                     request.callback.callback(response);
                 } catch (Exception ex) {

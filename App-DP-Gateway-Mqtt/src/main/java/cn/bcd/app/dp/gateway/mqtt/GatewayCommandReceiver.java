@@ -74,7 +74,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
             return;
         }
         try {
-            Request<?, ?> request = JsonUtil.OBJECT_MAPPER.readValue(val, Request.class);
+            Request<?, ?> request = JsonUtil.MAPPER.readValue(val, Request.class);
             //响应
             CommandReceiver.response(request, ResponseStatus.success, bytes);
         } catch (Exception ex) {

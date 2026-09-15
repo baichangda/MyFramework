@@ -55,7 +55,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
                 throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
-            Result<List<VehicleData>> resultData = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
+            Result<List<VehicleData>> resultData = JsonUtil.MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (resultData.getCode() == 0) {
                 List<VehicleData> list = resultData.getData();

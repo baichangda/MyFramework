@@ -31,6 +31,6 @@ public class ListenerInfo {
     }
 
     public static ListenerInfo fromString(String str) throws IOException {
-        return JsonUtil.OBJECT_MAPPER.readValue(str, ListenerInfo.class);
+        return JsonUtil.MAPPER.readValue(str, ListenerInfo.class);
     }
 }

@@ -50,7 +50,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
         logger.info("receive message---------->:\n{}", new String(consumerRecord.value()));
         byte[] value = consumerRecord.value();
-        T t = JsonUtil.OBJECT_MAPPER.readValue(value, clazz);
+        T t = JsonUtil.MAPPER.readValue(value, clazz);
         if (consumer == null) {
             logger.warn("receiver[{}] consumer[{}] is null、discard message", name, this.clazz.getName());
         } else {

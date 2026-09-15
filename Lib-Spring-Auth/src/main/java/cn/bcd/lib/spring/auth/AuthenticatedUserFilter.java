@@ -38,7 +38,7 @@ public class AuthenticatedUserFilter extends OncePerRequestFilter {
             return null;
         }
         try {
-            return JsonUtil.OBJECT_MAPPER.readValue(userJson, AuthUser.class);
+            return JsonUtil.MAPPER.readValue(userJson, AuthUser.class);
         } catch (Exception ignored) {
             return null;
         }

@@ -51,7 +51,7 @@ public class PermissionDataInit implements Initializable {
                     throw BaseException.get("request failed、response code[{}]", response.code());
                 }
                 byte[] bytes = response.body().bytes();
-                Result<List<PermissionData>> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
+                Result<List<PermissionData>> result = JsonUtil.MAPPER.readValue(bytes, new TypeReference<>() {
                 });
                 if (result.code == 0) {
                     if (result.data == null) {

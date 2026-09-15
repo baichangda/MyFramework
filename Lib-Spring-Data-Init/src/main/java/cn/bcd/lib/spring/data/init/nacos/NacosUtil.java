@@ -1,6 +1,5 @@
 package cn.bcd.lib.spring.data.init.nacos;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
@@ -62,7 +61,7 @@ public class NacosUtil {
                 .build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             byte[] bytes = response.body().bytes();
-            ListInstanceResponse listInstanceResponse = JsonUtil.OBJECT_MAPPER.readValue(bytes, ListInstanceResponse.class);
+            ListInstanceResponse listInstanceResponse = JsonUtil.MAPPER.readValue(bytes, ListInstanceResponse.class);
             if (listInstanceResponse.code == 0) {
                 return listInstanceResponse.getData();
             } else {

@@ -22,7 +22,7 @@ public class Starter_v2025 extends HttpServer {
 
     @Override
     public String jsonToHex(String json) throws Exception {
-        Packet packet = JsonUtil.OBJECT_MAPPER.readValue(json, Packet.class);
+        Packet packet = JsonUtil.MAPPER.readValue(json, Packet.class);
         ByteBuf buffer = Unpooled.buffer();
         packet.write(buffer);
         return ByteBufUtil.hexDump(buffer);

@@ -43,7 +43,7 @@ public class TransferConfigDataInit {
                 throw BaseException.get("request failed、response code[{}]", response.code());
             }
             byte[] bytes = response.body().bytes();
-            Result<TransferConfigData> result = JsonUtil.OBJECT_MAPPER.readValue(bytes, new TypeReference<>() {
+            Result<TransferConfigData> result = JsonUtil.MAPPER.readValue(bytes, new TypeReference<>() {
             });
             if (result.getCode() == 0) {
                 return result.getData();

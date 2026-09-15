@@ -15,7 +15,6 @@ import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.ser.std.ToStringSerializer;
-import tools.jackson.databind.type.CollectionType;
 import tools.jackson.databind.type.TypeFactory;
 
 import java.lang.reflect.Type;
@@ -28,10 +27,10 @@ import java.util.Map;
  */
 public final class JsonUtil {
 
-    public static final JsonMapper OBJECT_MAPPER = buildObjectMapper();
+    public static final JsonMapper MAPPER = buildObjectMapper();
 
     public static final ObjectWriter OBJECT_WRITER_PRETTY =
-            OBJECT_MAPPER.writerWithDefaultPrettyPrinter();
+            MAPPER.writerWithDefaultPrettyPrinter();
 
     private JsonUtil() {
     }
@@ -95,12 +94,12 @@ public final class JsonUtil {
     }
 
     public static <T> T fromJson(String json, Class<T> clazz) {
-        return OBJECT_MAPPER.readValue(json, clazz);
+        return MAPPER.readValue(json, clazz);
     }
 
     public static String toJson(Object object) {
         try {
-            return OBJECT_MAPPER.writeValueAsString(object);
+            return MAPPER.writeValueAsString(object);
         } catch (JacksonException e) {
             throw BaseException.get(e);
         }
@@ -116,7 +115,7 @@ public final class JsonUtil {
 
     public static byte[] toJsonAsBytes(Object object) {
         try {
-            return OBJECT_MAPPER.writeValueAsBytes(object);
+            return MAPPER.writeValueAsBytes(object);
         } catch (JacksonException e) {
             throw BaseException.get(e);
         }
@@ -133,12 +132,12 @@ public final class JsonUtil {
         TestBean testBean = new TestBean();
         String json = JsonUtil.toJson(testBean);
         System.out.println(json);
-        TestBean testBean1 = JsonUtil.OBJECT_MAPPER.readValue(json, TestBean.class);
+        TestBean testBean1 = JsonUtil.MAPPER.readValue(json, TestBean.class);
         System.out.println(testBean1);
 
         List<TestBean> list = List.of(testBean1);
         String json1 = toJson(list);
-        List<TestBean> list1 = JsonUtil.OBJECT_MAPPER.readValue(json1, new TypeReference<>() {
+        List<TestBean> list1 = JsonUtil.MAPPER.readValue(json1, new TypeReference<>() {
         });
         System.out.println(list1);
     }

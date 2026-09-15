@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -52,7 +51,7 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
         logger.info("receive command request:\n{}", new String(consumerRecord.value()));
-        Request request = JsonUtil.OBJECT_MAPPER.readValue(consumerRecord.value(), Request.class);
+        Request request = JsonUtil.MAPPER.readValue(consumerRecord.value(), Request.class);
         commandReceiver.onRequest(request);
     }
 }
