@@ -40,8 +40,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     implementation libs.sqlite
 
-    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-    implementation libs.springdoc.openapi.starter.webmvc.ui
+    implementation libs.springdoc.openapi.starter.webmvc.scalar
 }
 
 

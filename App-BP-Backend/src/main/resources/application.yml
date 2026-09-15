@@ -33,9 +33,9 @@ spring:
       maximum-pool-size: 15
     #mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:13306/bcd?characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&serverTimezone=GMT%2B8&generateSimpleParameterMetadata=true&allowPublicKeyRetrieval=True
+    url: jdbc:mysql://www.baicd.fun:13306/bcd?characterEncoding=utf8&useSSL=false&rewriteBatchedStatements=true&serverTimezone=GMT%2B8&generateSimpleParameterMetadata=true&allowPublicKeyRetrieval=True
     username: root
-    password: root
+    password: 123456
     #pgsql:
   #    driver-class-name: org.postgresql.Driver
   #    url: jdbc:postgresql://127.0.0.1:5432/msbf
@@ -49,20 +49,20 @@ spring:
       max-rows: -1
       query-timeout:
   #mongodb配置
-  mongodb.uri: mongodb://root:root@127.0.0.1:27017/bcd
+#  mongodb.uri: mongodb://root:root@127.0.0.1:27017/bcd
     #redis配置
     #如果都进行了配置,加载的先后顺序为:
     #sentinel>cluster>single
   data:
     redis:
       ssl:
-        enabled: false
+        enabled: true
       repositories:
         enabled: false
       #公用配置
       database: 0
       timeout: 60000
-      password: bcd
+      password: 123456
       #异步lettuce连接池(默认)
       lettuce:
         pool:
@@ -88,7 +88,7 @@ spring:
       #          - 192.168.23.129:7006
 
       #单机配置
-      host: 127.0.0.1
+      host: www.baicd.fun
       port: 16379
   # kafka配置
   kafka:
@@ -118,19 +118,6 @@ spring:
     username:
     password:
     default-encoding: UTF-8
-  cloud:
-    nacos:
-      discovery:
-        server-addr: 127.0.0.1:18848
-        ip: 127.0.0.1
-        port: 8888
-    sentinel:
-      log:
-        dir: logs/csp
-      transport:
-        port: 8889
-        dashboard: 127.0.0.1:33333
-
 
 springdoc:
   packages-to-scan:
@@ -140,17 +127,20 @@ springdoc:
   api-docs:
     enabled: true
 
+scalar:
+  enabled: true
+
 register:
   host: 127.0.0.1
   servers: test1,test2
 
 lib:
   spring:
-    schedule:
-      xxljob:
-        adminAddresses: http://127.0.0.1:38080/xxl-job-admin
-        appName: app-businessProcess-backend
-        accessToken: default_token
+#    schedule:
+#      xxljob:
+#        adminAddresses: http://127.0.0.1:38080/xxl-job-admin
+#        appName: app-businessProcess-backend
+#        accessToken: default_token
     monitor:
       client:
         request-topic: monitorRequest

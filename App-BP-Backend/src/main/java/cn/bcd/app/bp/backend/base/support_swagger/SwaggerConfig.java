@@ -9,9 +9,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
-    @Value("${sa-token.token-name}")
-    String tokenName;
-
     @Bean
     public OpenAPI openApi() {
         return new OpenAPI()

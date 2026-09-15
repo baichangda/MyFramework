@@ -118,8 +118,8 @@ spring-cloud-alibaba-dependencies = { module = "com.alibaba.cloud:spring-cloud-a
 spring-cloud-starter-alibaba-nacos-discovery = { module = "com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery" }
 
 
-springdoc-openapi-bom = { module = "org.springdoc:springdoc-openapi-bom", version = "3.1.0" }
+springdoc-openapi-bom = { module = "org.springdoc:springdoc-openapi-bom", version = "3.1.1" }
 springdoc-openapi-starter-common = { module = "org.springdoc:springdoc-openapi-starter-common" }
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui" }
-
+springdoc-openapi-starter-webmvc-scalar = { module = "org.springdoc:springdoc-openapi-starter-webmvc-scalar" }
 
