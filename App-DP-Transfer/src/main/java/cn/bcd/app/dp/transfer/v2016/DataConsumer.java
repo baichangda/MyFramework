@@ -23,7 +23,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
                         List<KafkaDataHandler> kafkaDataHandlers) {
         super("DataConsumer",
                 Runtime.getRuntime().availableProcessors(),
-                false,
                 100000,
                 true,
                 0,

@@ -41,10 +41,7 @@ import java.util.stream.Collectors;
  * 需要开启{@link #monitor_period}才会有
  * 例如test-monitor
  * <p>
- * 工作任务执行器中的计划任务线程可能有多个、和工作任务执行器数量有关、开头为 {name}-worker、以 -schedule 结尾
- * 需要开启{@link #workExecutorSchedule}才会有
- * 例如test-worker(1/3)-schedule
- * 其中test-worker(1/3)即工作线程名称、接后缀 -schedule
+ * 工作任务执行器支持计划任务、计划任务由对应的工作线程执行、不额外创建线程
  * <p>
  * 限速重置消费计数线程只有一个、开头为 {name}-reset
  * 需要开启{@link #maxConsumeSpeed}才会有
@@ -60,7 +57,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
     public final String name;
     public final int workExecutorNum;
-    public final boolean workExecutorSchedule;
     public final int maxBlockingNum;
     public final boolean autoReleaseBlocking;
     public final int maxConsumeSpeed;
@@ -108,6 +104,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * 是否关闭
      */
     boolean closed;
+    boolean closeScheduled;
 
     /**
      * 控制退出线程标志
@@ -140,27 +137,24 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     }
 
     /**
-     * @param name                 当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum      工作任务执行器个数、最好是2的倍数、如果不是向上取整到2的倍数
-     * @param workExecutorSchedule 工作任务执是否开启计划任务
-     *                             开启后会启动一个计划线程池用于接收计划任务
-     * @param maxBlockingNum       最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
-     *                             当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
-     * @param autoReleaseBlocking  是否自动释放阻塞、适用于工作内容为同步处理的逻辑
-     * @param maxConsumeSpeed      最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
-     *                             每消费一次的数据量大小取决于如下消费者参数
-     *                             {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
-     *                             {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
-     * @param workHandlerScanner   定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
-     *                             null则代表不启动扫描
-     * @param monitor_period       监控信息打印周期(秒)、0则代表不打印
-     * @param consumerParam        消费者的参数、不能为null
-     *                             主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
-     *                             具体参考{@link ConsumerParam}中静态方法
+     * @param name                当前消费者的名称(用于标定线程名称)
+     * @param workExecutorNum     工作任务执行器个数、最好是2的倍数、如果不是向上取整到2的倍数
+     * @param maxBlockingNum      最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
+     *                            当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
+     * @param autoReleaseBlocking 是否自动释放阻塞、适用于工作内容为同步处理的逻辑
+     * @param maxConsumeSpeed     最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
+     *                            每消费一次的数据量大小取决于如下消费者参数
+     *                            {@link ConsumerConfig#MAX_POLL_RECORDS_CONFIG} 一次poll消费最大数据量
+     *                            {@link ConsumerConfig#MAX_PARTITION_FETCH_BYTES_CONFIG} 每个分区最大拉取字节数
+     * @param workHandlerScanner  定时扫描并销毁过期的{@link WorkHandler}、销毁时候会执行其{@link WorkHandler#destroy()}方法、由对应的工作任务执行器执行
+     *                            null则代表不启动扫描
+     * @param monitor_period      监控信息打印周期(秒)、0则代表不打印
+     * @param consumerParam       消费者的参数、不能为null
+     *                            主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
+     *                            具体参考{@link ConsumerParam}中静态方法
      */
     public DataDrivenKafkaConsumer(String name,
                                    int workExecutorNum,
-                                   boolean workExecutorSchedule,
                                    int maxBlockingNum,
                                    boolean autoReleaseBlocking,
                                    int maxConsumeSpeed,
@@ -169,7 +163,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                                    ConsumerParam consumerParam) {
         this.name = name;
         this.workExecutorNum = tableSizeFor(workExecutorNum);
-        this.workExecutorSchedule = workExecutorSchedule;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
         this.maxConsumeSpeed = maxConsumeSpeed;
@@ -266,6 +259,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * @return
      */
     public WorkExecutor getWorkExecutor(String id) {
+        if (id == null) {
+            return workExecutors[0];
+        }
         int h = id.hashCode();
         h = h ^ (h >>> 16);
         return workExecutors[h & (workExecutorNum - 1)];
@@ -339,6 +335,13 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
     @Override
     public synchronized void close() {
+        if (isCurrentWorkExecutorThread()) {
+            if (!closed && !closeScheduled) {
+                closeScheduled = true;
+                new Thread(this::close, name + "-shutdown").start();
+            }
+            return;
+        }
         if (!closed) {
             closed = true;
             //打上退出标记、等待消费线程退出
@@ -373,6 +376,18 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         }
     }
 
+    private boolean isCurrentWorkExecutorThread() {
+        if (workExecutors == null) {
+            return false;
+        }
+        for (WorkExecutor workExecutor : workExecutors) {
+            if (workExecutor != null && workExecutor.inEventLoop()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     /**
      * 消费
@@ -380,118 +395,89 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     public void consume(KafkaConsumer<String, byte[]> consumer) {
         try {
             boolean paused = false;
-            int blockCount = 0;
             while (running_consume) {
-                /**
-                 * 连续阻塞时间过长消费者掉线保护机制
-                 * 一次阻塞100ms、如果阻塞超过1min、则暂停消费
-                 * 防止超过{@link ConsumerConfig#MAX_POLL_INTERVAL_MS_CONFIG}
-                 * 而导致消费者被移除、进而导致rebalance
-                 */
-                if (blockCount > 600) {
-                    consumer.pause(consumer.assignment());
-                    paused = true;
-                }
                 try {
-                    //检查暂停消费
-                    if (pause_consume) {
-                        TimeUnit.MILLISECONDS.sleep(100);
-                        blockCount++;
+                    boolean throttled = pause_consume
+                            || (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum)
+                            || (maxConsumeSpeed > 0 && consumeCount.get() >= maxConsumeSpeed);
+                    Duration pollDuration;
+                    if (throttled) {
+                        Set<org.apache.kafka.common.TopicPartition> assignment = consumer.assignment();
+                        if (!assignment.isEmpty()) {
+                            consumer.pause(assignment);
+                            paused = true;
+                        }
+                        // pause() only stops fetching; poll must continue to keep group membership alive.
+                        pollDuration = Duration.ofMillis(100);
+                    } else {
+                        if (paused) {
+                            consumer.resume(consumer.assignment());
+                            paused = false;
+                        }
+                        pollDuration = Duration.ofSeconds(1);
+                    }
+
+                    ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(pollDuration);
+                    if (consumerRecords.isEmpty()) {
                         continue;
                     }
-
-                    //检查阻塞
-                    if (maxBlockingNum > 0) {
-                        if (blockingNum.sum() >= maxBlockingNum) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            blockCount++;
-                            continue;
-                        }
-                    }
-
-                    //检查速度、如果速度太快则阻塞
-                    if (maxConsumeSpeed > 0) {
-                        //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
-                        final int curConsumeCount = consumeCount.get();
-                        if (curConsumeCount >= maxConsumeSpeed) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            blockCount++;
-                            continue;
-                        }
-                    }
-
-                    if (paused) {
-                        consumer.resume(consumer.assignment());
-                        paused = false;
-                    }
-                    blockCount = 0;
-
-                    //消费一批数据
-                    final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
-                    if (consumerRecords == null || consumerRecords.isEmpty()) {
-                        continue;
-                    }
-
                     if (maxConsumeSpeed > 0) {
                         consumeCount.addAndGet(consumerRecords.count());
                     }
-
-
-                    //统计
-                    final int count = consumerRecords.count();
-                    blockingNum.add(count);
-                    if (monitor_period > 0) {
-                        monitor_consumeCount.add(count);
-                    }
-
-
-                    //发布消息
                     for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
                         final String id = id(consumerRecord);
                         WorkExecutor workExecutor = getWorkExecutor(id);
-                        //交给执行器处理
-                        workExecutor.execute(() -> {
-                            //首先获取workHandler
-                            WorkHandler workHandler = workExecutor.workHandlers.computeIfAbsent(id, k -> {
-                                //初始化workHandler
-                                try {
-                                    WorkHandler temp = newHandler(id, consumerRecord);
-                                    temp.afterConstruct(workExecutor, this);
-                                    temp.init(consumerRecord);
-                                    if (monitor_period > 0) {
-                                        monitor_workHandlerCount.increment();
+                        blockingNum.increment();
+                        if (monitor_period > 0) {
+                            monitor_consumeCount.increment();
+                        }
+                        try {
+                            workExecutor.execute(() -> {
+                                WorkHandler workHandler = workExecutor.workHandlers.computeIfAbsent(id, k -> {
+                                    try {
+                                        WorkHandler temp = newHandler(id, consumerRecord);
+                                        temp.afterConstruct(workExecutor, this);
+                                        temp.init(consumerRecord);
+                                        if (monitor_period > 0) {
+                                            monitor_workHandlerCount.increment();
+                                        }
+                                        return temp;
+                                    } catch (Exception ex) {
+                                        blockingNum.decrement();
+                                        logger.error("workHandler init error id[{}]", id, ex);
+                                        return null;
                                     }
-                                    return temp;
-                                } catch (Exception ex) {
-                                    //初始化workHandler失败时候、释放阻塞
-                                    blockingNum.decrement();
-                                    logger.error("workHandler init error id[{}]", id, ex);
-                                    return null;
+                                });
+                                if (workHandler != null) {
+                                    workHandler.lastMessageTime = DateUtil.CacheSecond.current();
+                                    try {
+                                        workHandler.onMessage(consumerRecord);
+                                    } catch (Exception ex) {
+                                        logger.error("workHandler onMessage error id[{}]", id, ex);
+                                    }
+                                    if (autoReleaseBlocking) {
+                                        blockingNum.decrement();
+                                    }
+                                    if (monitor_period > 0) {
+                                        monitor_workCount.increment();
+                                    }
                                 }
                             });
-                            //处理数据
-                            if (workHandler != null) {
-                                workHandler.lastMessageTime = DateUtil.CacheSecond.current();
-                                try {
-                                    workHandler.onMessage(consumerRecord);
-                                } catch (Exception ex) {
-                                    logger.error("workHandler onMessage error id[{}]", id, ex);
-                                }
-                                if (autoReleaseBlocking) {
-                                    blockingNum.decrement();
-                                }
-                                if (monitor_period > 0) {
-                                    monitor_workCount.increment();
-                                }
-                            }
-                        });
+                        } catch (RuntimeException ex) {
+                            blockingNum.decrement();
+                            throw ex;
+                        }
                     }
                 } catch (Exception ex) {
+                    if (!running_consume) {
+                        break;
+                    }
                     logger.error("kafka consumer cycle error,try again after 3s", ex);
                     try {
                         TimeUnit.SECONDS.sleep(3);
                     } catch (InterruptedException e) {
-                        throw BaseException.get(e);
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }

@@ -40,7 +40,6 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
                         List<DataHandler_v2025> handlers_v2025) {
         super("dataConsumer",
                 Runtime.getRuntime().availableProcessors(),
-                false,
                 100000,
                 true,
                 0,

@@ -58,12 +58,9 @@ public class KafkaExtUtil {
         switch (consumerParam.mode) {
             case 1 -> {
                 String threadName = getConsumerThreadName(name, 0, 1);
-                consumeThread = new Thread(() -> {
-                    KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
-                    consumer.subscribe(Arrays.asList(topics), new ConsumerRebalanceLogger(consumer));
-                    seek(consumer, seekTimestamp);
-                    kafkaConsumerConsumer.accept(consumer);
-                }, threadName);
+                consumeThread = new Thread(() -> consume(config, seekTimestamp,
+                        consumer -> consumer.subscribe(Arrays.asList(topics), new ConsumerRebalanceLogger(consumer)),
+                        kafkaConsumerConsumer), threadName);
                 logger.info("start consumer[{}] for topics{}", threadName, Arrays.toString(topics));
             }
             case 2 -> {
@@ -71,23 +68,17 @@ public class KafkaExtUtil {
                 for (int i = 0; i < topics.length; i++) {
                     String topic = topics[i];
                     String threadName = getConsumerThreadName(name, i, topics.length);
-                    consumeThreads[i] = new Thread(() -> {
-                        KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
-                        consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer));
-                        seek(consumer, seekTimestamp);
-                        kafkaConsumerConsumer.accept(consumer);
-                    }, threadName);
+                    consumeThreads[i] = new Thread(() -> consume(config, seekTimestamp,
+                            consumer -> consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceLogger(consumer)),
+                            kafkaConsumerConsumer), threadName);
                     logger.info("start consumer[{}] for topic[{}]", threadName, topic);
                 }
             }
             case 3 -> {
                 String threadName = getConsumerThreadName(name, 0, 1);
-                consumeThread = new Thread(() -> {
-                    KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
-                    consumer.assign(Arrays.asList(topicPartitions));
-                    seek(consumer, seekTimestamp);
-                    kafkaConsumerConsumer.accept(consumer);
-                }, threadName);
+                consumeThread = new Thread(() -> consume(config, seekTimestamp,
+                        consumer -> consumer.assign(Arrays.asList(topicPartitions)),
+                        kafkaConsumerConsumer), threadName);
                 logger.info("start consumer[{}] for topicPartitions{}", threadName, Arrays.toString(topicPartitions));
             }
             case 4 -> {
@@ -95,18 +86,26 @@ public class KafkaExtUtil {
                 for (int i = 0; i < topicPartitions.length; i++) {
                     TopicPartition topicPartition = topicPartitions[i];
                     String threadName = getConsumerThreadName(name, i, topicPartitions.length);
-                    consumeThreads[i] = new Thread(() -> {
-                        KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
-                        consumer.assign(Collections.singletonList(topicPartition));
-                        seek(consumer, seekTimestamp);
-                        kafkaConsumerConsumer.accept(consumer);
-                    }, threadName);
+                    consumeThreads[i] = new Thread(() -> consume(config, seekTimestamp,
+                            consumer -> consumer.assign(Collections.singletonList(topicPartition)),
+                            kafkaConsumerConsumer), threadName);
                     logger.info("start consumer threadName[{}] for topicPartition[{}]", threadName, topicPartition);
                 }
             }
             default -> throw BaseException.get("ConsumerParam mode not support", name, consumerParam.mode);
         }
         return new ConsumerThreadHolder(consumeThread, consumeThreads);
+    }
+
+    private static void consume(Map<String, Object> config,
+                                long seekTimestamp,
+                                Consumer<KafkaConsumer<String, byte[]>> initializer,
+                                Consumer<KafkaConsumer<String, byte[]>> kafkaConsumerConsumer) {
+        try (KafkaConsumer<String, byte[]> consumer = KafkaUtil.newKafkaConsumer_string_bytes(config)) {
+            initializer.accept(consumer);
+            seek(consumer, seekTimestamp);
+            kafkaConsumerConsumer.accept(consumer);
+        }
     }
 
     private static void seek(KafkaConsumer<String, byte[]> consumer, long seekTimestamp) {

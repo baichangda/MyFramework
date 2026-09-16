@@ -107,6 +107,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      * 是否关闭
      */
     boolean closed;
+    boolean closeScheduled;
 
     /**
      * 控制退出线程标志
@@ -269,6 +270,13 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
     @Override
     public synchronized void close() {
+        if (isCurrentOwnedThread()) {
+            if (!closed && !closeScheduled) {
+                closeScheduled = true;
+                new Thread(this::close, name + "-shutdown").start();
+            }
+            return;
+        }
         if (!closed) {
             closed = true;
             //打上退出标记、等待消费线程退出
@@ -294,10 +302,29 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         if (workThreadNum == 1) {
             return 0;
         } else {
-            int h = consumerRecord.key().hashCode();
+            String key = consumerRecord.key();
+            if (key == null) {
+                return 0;
+            }
+            int h = key.hashCode();
             h = h ^ (h >>> 16);
             return h & (workThreadNum - 1);
         }
+    }
+
+    private boolean isCurrentOwnedThread() {
+        Thread current = Thread.currentThread();
+        if (workThreads != null && Arrays.asList(workThreads).contains(current)) {
+            return true;
+        }
+        if (consumerThreadHolder == null) {
+            return false;
+        }
+        if (consumerThreadHolder.thread() == current) {
+            return true;
+        }
+        Thread[] threads = consumerThreadHolder.threads();
+        return threads != null && Arrays.asList(threads).contains(current);
     }
 
     /**
@@ -306,168 +333,80 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     private void consume(KafkaConsumer<String, byte[]> consumer) {
         try {
             boolean paused = false;
-            int blockCount = 0;
-            if (oneWorkThreadOneQueue) {
-                while (running_consume) {
-                    /**
-                     * 连续阻塞时间过长消费者掉线保护机制
-                     * 一次阻塞100ms、如果阻塞超过1min、则暂停消费
-                     * 防止超过{@link ConsumerConfig#MAX_POLL_INTERVAL_MS_CONFIG}
-                     * 而导致消费者被移除、进而导致rebalance
-                     */
-                    if (blockCount > 600) {
-                        consumer.pause(consumer.assignment());
-                        paused = true;
-                    }
-                    try {
-                        //检查暂停消费
-                        if (pause_consume) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            blockCount++;
-                            continue;
-                        }
-
-                        //检查阻塞
-                        if (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            blockCount++;
-                            continue;
-                        }
-
-                        //检查速度、如果速度太快则阻塞
-                        if (maxConsumeSpeed > 0) {
-                            //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
-                            final int curConsumeCount = consumeCount.get();
-                            if (curConsumeCount >= maxConsumeSpeed) {
-                                TimeUnit.MILLISECONDS.sleep(100);
-                                blockCount++;
-                                continue;
-                            }
-                        }
-
-                        if (paused) {
-                            consumer.resume(consumer.assignment());
-                            paused = false;
-                        }
-                        blockCount = 0;
-
-                        //消费一批数据
-                        final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(1));
-                        if (consumerRecords == null || consumerRecords.isEmpty()) {
-                            continue;
-                        }
-
-                        if (maxConsumeSpeed > 0) {
-                            consumeCount.addAndGet(consumerRecords.count());
-                        }
-
-                        //统计
-                        final int count = consumerRecords.count();
-                        blockingNum.add(count);
-                        if (monitor_period > 0) {
-                            monitor_consumeCount.add(count);
-                        }
-
-
-                        //发布消息
-                        for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
-                            //放入队列
-                            queues[index(consumerRecord)].put(consumerRecord);
-                        }
-                    } catch (Exception ex) {
-                        logger.error("kafka consumer cycle error,try again after 3s", ex);
-                        try {
-                            TimeUnit.SECONDS.sleep(3);
-                        } catch (InterruptedException e) {
-                            throw BaseException.get(e);
-                        }
-                    }
-                }
-            } else {
-                while (running_consume) {
-                    try {
-                        /**
-                         * 连续阻塞时间过长消费者掉线保护机制
-                         * 一次阻塞100ms、如果阻塞超过1min、则暂停消费
-                         * 防止超过{@link ConsumerConfig#MAX_POLL_INTERVAL_MS_CONFIG}
-                         * 而导致消费者被移除、进而导致rebalance
-                         */
-                        if (blockCount > 600) {
-                            consumer.pause(consumer.assignment());
+            while (running_consume) {
+                try {
+                    boolean throttled = pause_consume
+                            || (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum)
+                            || (maxConsumeSpeed > 0 && consumeCount.get() >= maxConsumeSpeed);
+                    Duration pollDuration;
+                    if (throttled) {
+                        Set<TopicPartition> assignment = consumer.assignment();
+                        if (!assignment.isEmpty()) {
+                            consumer.pause(assignment);
                             paused = true;
                         }
-                        //检查暂停消费
-                        if (pause_consume) {
-                            //阻塞消费者
-                            Set<TopicPartition> assignment = consumer.assignment();
-                            consumer.pause(assignment);
-                            do {
-                                TimeUnit.MILLISECONDS.sleep(100);
-                            } while (pause_consume);
-                            //恢复消费者
-                            consumer.resume(assignment);
-                        }
-
-                        //检查阻塞
-                        if (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum) {
-                            TimeUnit.MILLISECONDS.sleep(100);
-                            continue;
-                        }
-
-                        //检查速度、如果速度太快则阻塞
-                        if (maxConsumeSpeed > 0) {
-                            //控制每秒消费、如果消费过快、则阻塞一会、放慢速度
-                            final int curConsumeCount = consumeCount.get();
-                            if (curConsumeCount >= maxConsumeSpeed) {
-                                TimeUnit.MILLISECONDS.sleep(100);
-                                blockCount++;
-                                continue;
-                            }
-                        }
-
+                        // pause() only stops fetching; poll must continue to keep group membership alive.
+                        pollDuration = Duration.ofMillis(100);
+                    } else {
                         if (paused) {
                             consumer.resume(consumer.assignment());
                             paused = false;
                         }
-                        blockCount = 0;
+                        pollDuration = oneWorkThreadOneQueue ? Duration.ofSeconds(1) : Duration.ofSeconds(3);
+                    }
 
-                        //消费一批数据
-                        final ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(Duration.ofSeconds(3));
-
-                        if (consumerRecords == null || consumerRecords.isEmpty()) {
-                            continue;
+                    ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(pollDuration);
+                    if (consumerRecords.isEmpty()) {
+                        continue;
+                    }
+                    if (maxConsumeSpeed > 0) {
+                        consumeCount.addAndGet(consumerRecords.count());
+                    }
+                    for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
+                        BlockingQueue<ConsumerRecord<String, byte[]>> targetQueue = oneWorkThreadOneQueue
+                                ? queues[index(consumerRecord)] : queue;
+                        while (running_consume && !targetQueue.offer(consumerRecord, 100, TimeUnit.MILLISECONDS)) {
+                            Set<TopicPartition> assignment = consumer.assignment();
+                            if (!assignment.isEmpty()) {
+                                consumer.pause(assignment);
+                                paused = true;
+                            }
+                            consumer.poll(Duration.ZERO);
                         }
-
-                        if (maxConsumeSpeed > 0) {
-                            consumeCount.addAndGet(consumerRecords.count());
+                        if (!running_consume) {
+                            break;
                         }
-
-                        //统计
-                        final int count = consumerRecords.count();
-                        blockingNum.add(count);
+                        blockingNum.increment();
                         if (monitor_period > 0) {
-                            monitor_consumeCount.add(count);
+                            monitor_consumeCount.increment();
                         }
-
-                        //发布消息
-                        for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
-                            //放入队列
-                            queue.put(consumerRecord);
-                        }
-                    } catch (Exception ex) {
-                        logger.error("kafka consumer cycle error,try again after 3s", ex);
-                        try {
-                            TimeUnit.SECONDS.sleep(3);
-                        } catch (InterruptedException e) {
-                            throw BaseException.get(e);
-                        }
+                    }
+                } catch (Exception ex) {
+                    if (!running_consume && ex instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    logger.error("kafka consumer cycle error,try again after 3s", ex);
+                    try {
+                        TimeUnit.SECONDS.sleep(3);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
             }
         } finally {
-            String assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
-            logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
-            consumer.close();
+            String assignment = "";
+            try {
+                assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
+            } catch (Exception ex) {
+                logger.debug("get consumer assignment before close error", ex);
+            }
+            try {
+                consumer.close();
+            } finally {
+                logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
+            }
         }
 
     }
