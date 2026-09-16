@@ -35,10 +35,10 @@ public class StringConditionConverter implements Converter<StringCondition, Conv
                 return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of("%" + val + "%")));
             }
             case LEFT_LIKE: {
-                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of("%" + val)));
+                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of(val + "%")));
             }
             case RIGHT_LIKE: {
-                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of(val + "%")));
+                return new ConvertRes(columnName + " like ?", new ArrayList<>(List.of("%" + val)));
             }
             case IN: {
                 if (val.getClass().isArray()) {

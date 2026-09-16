@@ -184,7 +184,7 @@ public class BaseService<T extends SuperBaseBean> {
      */
     public void delete(String... ids) {
         if (ids.length == 1) {
-            getMongoTemplate().remove(new Query(Criteria.where("id").is(ids[0])));
+            getMongoTemplate().remove(new Query(Criteria.where("id").is(ids[0])), getBeanInfo().clazz);
         } else if (ids.length > 1) {
             Query query = new Query(Criteria.where("id").in((Object[]) ids));
             getMongoTemplate().remove(query, getBeanInfo().clazz);
