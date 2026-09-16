@@ -104,7 +104,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * 是否关闭
      */
     boolean closed;
-    boolean closeScheduled;
 
     /**
      * 控制退出线程标志
@@ -334,46 +333,52 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
 
     @Override
-    public synchronized void close() {
-        if (isCurrentWorkExecutorThread()) {
-            if (!closed && !closeScheduled) {
-                closeScheduled = true;
-                new Thread(this::close, name + "-shutdown").start();
+    public void close() {
+        boolean async;
+        synchronized (this) {
+            if (closed) {
+                return;
             }
-            return;
-        }
-        if (!closed) {
             closed = true;
-            //打上退出标记、等待消费线程退出
-            running_consume = false;
-            if (consumerThreadHolder != null) {
-                ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
-            }
-            ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool);
-            //等待工作执行器退出
-            if (workExecutors != null) {
-                for (WorkExecutor workExecutor : workExecutors) {
-                    //添加删除任务
-                    try {
-                        workExecutor.submit(() -> {
-                            for (String id : workExecutor.workHandlers.keySet()) {
-                                removeHandler(id);
-                            }
-                        }).get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        logger.error("error", e);
-                    }
-                    //关闭线程池
-                    workExecutor.shutdownGracefully();
-                }
-                for (WorkExecutor workExecutor : workExecutors) {
-                    //等待工作执行器退出
-                    ExecutorUtil.await(workExecutor);
-                }
-            }
-            //取消监控、扫描过期线程
-            ExecutorUtil.shutdownAllThenAwait(false, monitor_pool, scannerPool);
+            async = isCurrentWorkExecutorThread();
         }
+        if (async) {
+            new Thread(this::closeInternal, name + "-shutdown").start();
+        } else {
+            closeInternal();
+        }
+    }
+
+    private void closeInternal() {
+        //打上退出标记、等待消费线程退出
+        running_consume = false;
+        if (consumerThreadHolder != null) {
+            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
+        }
+        ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool);
+        //等待工作执行器退出
+        if (workExecutors != null) {
+            for (WorkExecutor workExecutor : workExecutors) {
+                //添加删除任务
+                try {
+                    workExecutor.submit(() -> {
+                        for (String id : workExecutor.workHandlers.keySet()) {
+                            removeHandler(id);
+                        }
+                    }).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    logger.error("error", e);
+                }
+                //关闭线程池
+                workExecutor.shutdownGracefully();
+            }
+            for (WorkExecutor workExecutor : workExecutors) {
+                //等待工作执行器退出
+                ExecutorUtil.await(workExecutor);
+            }
+        }
+        //取消监控、扫描过期线程
+        ExecutorUtil.shutdownAllThenAwait(false, monitor_pool, scannerPool);
     }
 
     private boolean isCurrentWorkExecutorThread() {

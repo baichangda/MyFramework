@@ -107,7 +107,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      * 是否关闭
      */
     boolean closed;
-    boolean closeScheduled;
 
     /**
      * 控制退出线程标志
@@ -269,26 +268,32 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
 
     @Override
-    public synchronized void close() {
-        if (isCurrentOwnedThread()) {
-            if (!closed && !closeScheduled) {
-                closeScheduled = true;
-                new Thread(this::close, name + "-shutdown").start();
+    public void close() {
+        boolean async;
+        synchronized (this) {
+            if (closed) {
+                return;
             }
-            return;
-        }
-        if (!closed) {
             closed = true;
-            //打上退出标记、等待消费线程退出
-            running_consume = false;
-            if (consumerThreadHolder != null) {
-                ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
-            }
-            ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool, queue, queues);
-            //打上退出标记、等待工作线程退出
-            running_work = false;
-            ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
+            async = isCurrentOwnedThread();
         }
+        if (async) {
+            new Thread(this::closeInternal, name + "-shutdown").start();
+        } else {
+            closeInternal();
+        }
+    }
+
+    private void closeInternal() {
+        //打上退出标记、等待消费线程退出
+        running_consume = false;
+        if (consumerThreadHolder != null) {
+            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
+        }
+        ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool, queue, queues);
+        //打上退出标记、等待工作线程退出
+        running_work = false;
+        ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
     }
 
     /**
