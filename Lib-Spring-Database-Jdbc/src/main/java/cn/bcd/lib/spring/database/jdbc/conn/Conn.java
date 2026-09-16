@@ -22,7 +22,7 @@ import java.util.function.Function;
 @SuppressWarnings("unchecked")
 public class Conn {
     private record ClassInfo<T>(boolean isRecord, Constructor<T> constructor,
-                                LinkedHashMap<String, FieldInfo> columnName_field) {
+                                List<FieldInfo> fields, LinkedHashMap<String, FieldInfo> columnName_field) {
 
     }
 
@@ -37,6 +37,7 @@ public class Conn {
             try {
                 if (clazz.isRecord()) {
                     List<Class<?>> fieldTypeList = new ArrayList<>();
+                    List<FieldInfo> fieldList = new ArrayList<>();
                     LinkedHashMap<String, FieldInfo> columnName_field = new LinkedHashMap<>();
                     do {
                         Field[] fields = c.getDeclaredFields();
@@ -50,14 +51,16 @@ public class Conn {
                             String fieldName = field.getName();
                             String columnName = StringUtil.camelCaseToSplitChar(fieldName, '_');
                             FieldInfo fieldInfo = new FieldInfo(field, fieldName, columnName, index++);
+                            fieldList.add(fieldInfo);
                             columnName_field.put(columnName, fieldInfo);
                             columnName_field.put(fieldName, fieldInfo);
                             fieldTypeList.add(field.getType());
                         }
                         c = c.getSuperclass();
                     } while (c != null);
-                    return new ClassInfo<>(true, clazz.getConstructor(fieldTypeList.toArray(new Class[0])), columnName_field);
+                    return new ClassInfo<>(true, clazz.getConstructor(fieldTypeList.toArray(new Class[0])), List.copyOf(fieldList), columnName_field);
                 } else {
+                    List<FieldInfo> fieldList = new ArrayList<>();
                     LinkedHashMap<String, FieldInfo> map = new LinkedHashMap<>();
                     do {
                         Field[] fields = c.getDeclaredFields();
@@ -71,12 +74,13 @@ public class Conn {
                             String fieldName = field.getName();
                             String columnName = StringUtil.camelCaseToSplitChar(fieldName, '_');
                             FieldInfo fieldInfo = new FieldInfo(field, fieldName, columnName, index++);
+                            fieldList.add(fieldInfo);
                             map.put(columnName, fieldInfo);
                             map.put(fieldName, fieldInfo);
                         }
                         c = c.getSuperclass();
                     } while (c != null);
-                    return new ClassInfo<>(false, clazz.getConstructor(), map);
+                    return new ClassInfo<>(false, clazz.getConstructor(), List.copyOf(fieldList), map);
                 }
             } catch (NoSuchMethodException | SecurityException ex) {
                 throw BaseException.get(ex);
@@ -137,7 +141,7 @@ public class Conn {
             LinkedHashMap<String, FieldInfo> columnName_field = classInfo.columnName_field;
             if (classInfo.isRecord) {
                 while (rs.next()) {
-                    Object[] arr = new Object[columnName_field.size()];
+                    Object[] arr = new Object[classInfo.fields.size()];
                     for (int i = 1; i <= metaData.getColumnCount(); i++) {
                         String columnName = metaData.getColumnName(i);
                         FieldInfo fieldInfo = columnName_field.get(columnName);
@@ -255,7 +259,7 @@ public class Conn {
     public static <T> InsertSqlResult<T> toInsertSqlResult(Class<T> clazz, String table,
                                                            boolean fieldCamelCaseToSplitChar,
                                                            Function<Field, Boolean> fieldFilter) {
-        final Collection<FieldInfo> allFields = getClassInfo(clazz).columnName_field.values();
+        final List<FieldInfo> allFields = getClassInfo(clazz).fields;
         final List<FieldInfo> insertFieldList = new ArrayList<>();
         for (FieldInfo fieldInfo : allFields) {
             if ((fieldFilter == null || fieldFilter.apply(fieldInfo.field))) {
@@ -325,7 +329,7 @@ public class Conn {
      * @return
      */
     public static <T> UpdateSqlResult<T> toUpdateSqlResult(Class<T> clazz, String table, boolean fieldCamelCaseToSplitChar, Function<Field, Boolean> fieldFilter, String... whereFieldNames) {
-        final Collection<FieldInfo> allFields = getClassInfo(clazz).columnName_field.values();
+        final List<FieldInfo> allFields = getClassInfo(clazz).fields;
         final List<FieldInfo> updateFieldList = new ArrayList<>();
         final Map<String, FieldInfo> whereMap = new HashMap<>();
         final Set<String> whereFieldSet = Set.of(whereFieldNames);

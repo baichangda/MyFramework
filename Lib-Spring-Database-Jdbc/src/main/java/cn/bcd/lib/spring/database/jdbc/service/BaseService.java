@@ -384,7 +384,7 @@ public class BaseService<T extends SuperBaseBean> {
             sj2.add("?");
             args.add(entry.getValue());
         }
-        String sql = "insert " + info.tableName + "(" + sj1 + ") values(" + sj2 + ")";
+        String sql = "insert into " + info.tableName + "(" + sj1 + ") values(" + sj2 + ")";
         getJdbcTemplate().update(sql, args.toArray());
     }
 
@@ -514,8 +514,12 @@ public class BaseService<T extends SuperBaseBean> {
         if (paramMap.isEmpty()) {
             return;
         }
-        Map<String, Object> newParamMap = new LinkedHashMap<>(paramMap);
         BeanInfo<T> info = getBeanInfo();
+        final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
+        if (convertRes == null) {
+            return;
+        }
+        Map<String, Object> newParamMap = new LinkedHashMap<>(paramMap);
         setUpdateInfo(newParamMap);
         StringJoiner sj = new StringJoiner(",");
         List<Object> args = new ArrayList<>();
@@ -528,12 +532,10 @@ public class BaseService<T extends SuperBaseBean> {
         sql.append(info.tableName);
         sql.append(" set ");
         sql.append(sj);
-        final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        if (convertRes != null) {
-            sql.append(" where ");
-            sql.append(convertRes.sql);
-            args.addAll(convertRes.paramList);
-        }
+
+        sql.append(" where ");
+        sql.append(convertRes.sql);
+        args.addAll(convertRes.paramList);
         getJdbcTemplate().update(sql.toString(), args.toArray());
     }
 
@@ -565,27 +567,13 @@ public class BaseService<T extends SuperBaseBean> {
      * 根据条件删除
      */
     public void delete(Condition condition) {
-        if (condition == null) {
+        BeanInfo<T> info = getBeanInfo();
+        ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
+        if (convertRes == null) {
             return;
         }
-        BeanInfo<T> info = getBeanInfo();
-        final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        final StringBuilder sql = new StringBuilder();
-        sql.append("delete from ");
-        sql.append(info.tableName);
-        final List<Object> paramList;
-        if (convertRes != null) {
-            sql.append(" where ");
-            sql.append(convertRes.sql);
-            paramList = convertRes.paramList;
-        } else {
-            paramList = null;
-        }
-        if (paramList != null && !paramList.isEmpty()) {
-            getJdbcTemplate().update(sql.toString(), paramList.toArray());
-        } else {
-            getJdbcTemplate().update(sql.toString());
-        }
+        String sql = "delete from " + info.tableName + " where " + convertRes.sql;
+        getJdbcTemplate().update(sql, convertRes.paramList.toArray());
     }
 
     public void validateUnique(List<T> list) {
@@ -697,7 +685,7 @@ public class BaseService<T extends SuperBaseBean> {
         if (convertRes != null) {
             sql.append(" where ");
             sql.append(convertRes.sql);
-            paramList = convertRes.paramList;
+            paramList = new ArrayList<>(convertRes.paramList);
         } else {
             paramList = new ArrayList<>();
         }
@@ -709,9 +697,9 @@ public class BaseService<T extends SuperBaseBean> {
         }
 
         if (offset != -1) {
-            sql.append(" limit ?,?");
-            paramList.add(offset);
+            sql.append(" limit ? offset ?");
             paramList.add(limit);
+            paramList.add(offset);
         }
 
         if (paramList.isEmpty()) {

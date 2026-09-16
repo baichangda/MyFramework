@@ -5,17 +5,18 @@ import cn.bcd.lib.base.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.nio.file.attribute.*;
+import java.util.EnumSet;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 public class MysqlBackupUtil {
@@ -42,51 +43,132 @@ public class MysqlBackupUtil {
                                      String database,
                                      String dir,
                                      int maxFileNum) {
-        String databaseDir = dir + File.separator + database;
-        Path databaseDirPath = Paths.get(databaseDir);
-        try {
-            Files.createDirectories(databaseDirPath);
-        } catch (IOException e) {
-            throw BaseException.get(e);
+        Path root = Paths.get(dir).toAbsolutePath().normalize();
+        Path databaseDir = root.resolve(database).normalize();
+        if (database.isBlank() || !root.equals(databaseDir.getParent())) {
+            throw BaseException.get("database must be a directory name");
         }
-        String fileName = DateUtil.dateToStr_yyyyMMddHHmmss(new Date()) + ".bak";
-        String filePath = databaseDir + File.separator + fileName;
-        logger.info("start backup database[{}] to path[{}]", database, filePath);
-        String cmd = "mysqldump -h" + host + " -P" + port + " -u" + username + " -p" + password + " --databases " + database + " > " + filePath;
-        String[] command = {"/bin/bash", "-c", cmd};
-        logger.info("execute backup[{}]", cmd);
-        Path p = Paths.get(filePath);
+        Path credentials = null;
         try {
-            Process process = Runtime.getRuntime().exec(command);
-            process.waitFor();
-            try (InputStream is = process.getErrorStream()) {
-                int len = is.available();
-                if (len > 0) {
-                    byte[] result = new byte[len];
-                    int readRes = is.read(result);
-                    logger.error("database[{}] backup error read[{}] result:\n{}", database, readRes, new String(result));
-                }
-            }
-            if (Files.size(p) == 0) {
-                throw BaseException.get("database[{}] backup failed,can't find backup file[{}]", database, filePath);
-            }
+            credentials = createCredentials(password);
+            return backup(databaseDir, maxFileNum, dumpProcess(host, port, username, credentials, database));
+        } catch (IOException ex) {
+            throw BaseException.get(ex);
+        } finally {
+            deleteTemporaryFile(credentials);
+        }
+    }
 
-            if (maxFileNum > 0) {
-                try (Stream<Path> stream = Files.list(databaseDirPath)) {
-                    List<Path> fileList = new ArrayList<>(stream.toList());
-                    if (fileList.size() > maxFileNum) {
-                        fileList.sort(Comparator.comparing(Path::getFileName));
-                        for (int i = 0; i < fileList.size() - maxFileNum; i++) {
-                            Path curFile = fileList.get(i);
-                            Files.deleteIfExists(curFile);
-                            logger.info("delete backup file[{}]", curFile);
+    static ProcessBuilder dumpProcess(String host, int port, String username, Path credentials, String database) {
+        return new ProcessBuilder("mysqldump", "--defaults-extra-file=" + credentials.toAbsolutePath(),
+                "--host=" + host, "--port=" + port, "--user=" + username, "--databases", "--", database);
+    }
+
+    static Path createCredentials(String password) throws IOException {
+        Path path = Files.createTempFile("mysql-backup-", ".cnf");
+        try {
+            PosixFileAttributeView posix = Files.getFileAttributeView(path, PosixFileAttributeView.class);
+            if (posix != null) {
+                posix.setPermissions(PosixFilePermissions.fromString("rw-------"));
+            } else {
+                AclFileAttributeView acl = Files.getFileAttributeView(path, AclFileAttributeView.class);
+                if (acl == null) {
+                    throw new IOException("cannot restrict backup credential file permissions");
+                }
+                acl.setAcl(List.of(AclEntry.newBuilder().setType(AclEntryType.ALLOW)
+                        .setPrincipal(Files.getOwner(path))
+                        .setPermissions(EnumSet.allOf(AclEntryPermission.class)).build()));
+            }
+            String escaped = password.replace("\\", "\\\\").replace("\"", "\\\"")
+                    .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+                    .replace("\b", "\\b");
+            Files.writeString(path, "[client]\npassword=\"" + escaped + "\"\n");
+            return path;
+        } catch (IOException | RuntimeException ex) {
+            deleteTemporaryFile(path);
+            throw ex;
+        }
+    }
+
+    static String backup(Path directory, int maxFileNum, ProcessBuilder builder) {
+        Path partial = null;
+        Path errors = null;
+        Process process = null;
+        try {
+            Files.createDirectories(directory);
+            String prefix = DateUtil.dateToStr_yyyyMMddHHmmss(new Date()) + "-";
+            partial = Files.createTempFile(directory, prefix, ".part");
+            errors = Files.createTempFile(directory, prefix, ".err");
+            // Redirect both streams before waiting, so neither pipe can fill up.
+            process = builder.redirectOutput(partial.toFile()).redirectError(errors.toFile()).start();
+            if (!process.waitFor(30, TimeUnit.MINUTES)) {
+                throw BaseException.get("database backup timed out");
+            }
+            if (process.exitValue() != 0 || Files.size(partial) == 0) {
+                // Do not log arbitrary process output, which may contain credentials.
+                throw BaseException.get("database backup failed, exitCode[{}]", process.exitValue());
+            }
+            String name = partial.getFileName().toString().replace(".part", ".bak");
+            Path completed = directory.resolve(name);
+            Files.move(partial, completed);
+            partial = null;
+            pruneBackups(directory, completed, maxFileNum);
+            logger.info("database backup complete: {}", completed);
+            return completed.toString();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw BaseException.get(ex);
+        } catch (IOException ex) {
+            throw BaseException.get(ex);
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+                // Wait for file handles to close even when the caller was interrupted.
+                boolean interrupted = Thread.interrupted();
+                try {
+                    while (process.isAlive()) {
+                        try {
+                            process.waitFor();
+                        } catch (InterruptedException ex) {
+                            interrupted = true;
                         }
+                    }
+                } finally {
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
-            return filePath;
-        } catch (IOException | InterruptedException ex) {
-            throw BaseException.get(ex);
+            deleteTemporaryFile(partial);
+            deleteTemporaryFile(errors);
+        }
+    }
+
+    private static void pruneBackups(Path directory, Path completed, int maxFileNum) throws IOException {
+        if (maxFileNum <= 0) {
+            return;
+        }
+        List<Path> previous;
+        try (Stream<Path> stream = Files.list(directory)) {
+            previous = stream.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().matches("\\d{14}(-\\d+)?\\.bak"))
+                    .filter(path -> !path.equals(completed))
+                    .sorted(Comparator.comparing(Path::getFileName).reversed())
+                    .toList();
+        }
+        // The just-completed backup always occupies one retention slot.
+        for (int i = maxFileNum - 1; i < previous.size(); i++) {
+            Files.deleteIfExists(previous.get(i));
+        }
+    }
+
+    private static void deleteTemporaryFile(Path path) {
+        if (path != null) {
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException ex) {
+                logger.warn("cannot remove temporary backup file: {}", path, ex);
+            }
         }
     }
 
