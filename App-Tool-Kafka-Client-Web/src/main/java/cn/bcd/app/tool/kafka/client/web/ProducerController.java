@@ -40,10 +40,10 @@ public class ProducerController {
             for (String s : messages) {
                 producer.send(new ProducerRecord<>(param.kafkaTopic, s));
             }
-            return Result.success().message("发送" + messages.length + "条数据到kafka成功");
+            return Result.successMessage("发送{}条数据到kafka成功", messages.length);
         } catch (Exception ex) {
             logger.error("error", ex);
-            return Result.fail("发送数据到kafka失败、错误原因:[" + ex.getMessage() + "]");
+            return Result.fail("发送数据到kafka失败、错误原因:{}", ex.getMessage());
         }
     }
 }

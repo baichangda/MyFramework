@@ -29,7 +29,7 @@ public class AuthController {
     @PostMapping("/logout")
     public Result<?> logout() {
         StpUtil.logout();
-        return Result.success_message("注销成功");
+        return Result.successMessage("注销成功");
     }
 
     @GetMapping("/verify")

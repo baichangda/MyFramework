@@ -2,6 +2,7 @@ package cn.bcd.lib.base.result;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ExceptionUtil;
+import cn.bcd.lib.base.util.StringUtil;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,19 +37,19 @@ public class Result<T> implements Serializable {
     public Result() {
     }
 
-    public Result(int code, T data) {
+    private Result(int code, T data) {
         this.code = code;
         this.data = data;
     }
 
-    public Result(int code, T data, String message) {
+    private Result(int code, T data, String message) {
         this.code = code;
         this.data = data;
         this.message = message;
     }
 
-    public Result<T> message(String message) {
-        this.message = message;
+    public Result<T> message(String message, Object... args) {
+        this.message = format(message, args);
         return this;
     }
 
@@ -64,24 +65,32 @@ public class Result<T> implements Serializable {
         return new Result<>(0, data);
     }
 
-    public static <T> Result<T> success_message(String message) {
-        return new Result<>(0, null, message);
+    public static <T> Result<T> successMessage(String message, Object... args) {
+        return new Result<>(0, null, format(message, args));
     }
 
-    public static Result<?> fail() {
+    public static <T> Result<T> fail() {
         return new Result<>(1, null);
     }
 
-    public static <R> Result<R> fail(int code) {
+    public static <T> Result<T> fail(int code) {
         return new Result<>(code, null);
     }
 
-    public static <R> Result<R> fail(int code, String message) {
-        return new Result<>(code, null, message);
+    public static <T> Result<T> fail(int code, String message, Object... args) {
+        return new Result<>(code, null, format(message, args));
     }
 
-    public static <R> Result<R> fail(String message) {
-        return new Result<>(1, null, message);
+    public static <T> Result<T> fail(String message, Object... args) {
+        return new Result<>(1, null, format(message, args));
+    }
+
+    private static String format(String message, Object... args) {
+        if (args.length == 0) {
+            return message;
+        } else {
+            return StringUtil.format(message, args);
+        }
     }
 
     public static Result<?> from(Throwable throwable) {

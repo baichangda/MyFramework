@@ -112,7 +112,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "保存结果")
     public Result<?> save(@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "用户实体") @Validated @RequestBody UserBean user) {
         userService.saveUser(user);
-        return Result.success().message("保存成功");
+        return Result.successMessage("保存成功");
     }
 
     /**
@@ -126,7 +126,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "删除结果")
     public Result<?> delete(@Parameter(description = "用户id数组", example = "100,101,102") @RequestParam long[] ids) {
         userService.delete(ids);
-        return Result.success().message("删除成功");
+        return Result.successMessage("删除成功");
     }
 
     /**
@@ -140,7 +140,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "重制密码结果")
     public Result<?> resetPassword(@Parameter(description = "用户主键") @RequestParam Long userId) {
         userService.resetPassword(userId);
-        return Result.success().message("重置成功");
+        return Result.successMessage("重置成功");
     }
 
 
@@ -163,7 +163,7 @@ public class UserController {
                 .orElseThrow(() -> new IllegalStateException("缺少当前用户信息")).id();
         boolean flag = userService.updatePassword(userId, oldPassword, newPassword);
         if (flag) {
-            return Result.success().message("修改成功");
+            return Result.successMessage("修改成功");
         } else {
             return Result.fail("密码错误");
         }
