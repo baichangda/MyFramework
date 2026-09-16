@@ -5,7 +5,6 @@ import cn.bcd.lib.spring.database.common.condition.impl.NullCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
-import cn.bcd.lib.spring.database.jdbc.condition.ConditionUtil;
 import cn.bcd.lib.spring.database.jdbc.condition.ConvertRes;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -55,7 +54,7 @@ class BaseServiceTest {
 
     @Test
     void missingAndIgnoredWriteConditionsDoNotExecuteSql() {
-        Condition[] conditions = {null, NumberCondition.EQUAL("id", null), NumberCondition.NOT_IN("id")};
+        Condition[] conditions = {null, NumberCondition.EQUAL("id", null), NumberCondition.NOT_IN("id"), NullCondition.NULL("name")};
         for (Condition condition : conditions) {
             assertDoesNotThrow(() -> service.delete(condition));
             assertDoesNotThrow(() -> service.update(condition, Map.of("name", "new")));
@@ -67,11 +66,9 @@ class BaseServiceTest {
     void validWritesKeepTheirPredicateAndParameters() {
         service.delete(NumberCondition.EQUAL("id", 7));
         service.update(NumberCondition.EQUAL("id", 7), Map.of("name", "new"));
-        service.delete(NullCondition.NULL("name"));
         assertEquals(List.of("delete from test_bean where id=?",
-                "update test_bean set name=? where id=?",
-                "delete from test_bean where name is null"), jdbc.statements);
-        assertEquals(List.of(List.of(7), List.of("new", 7), List.of()), jdbc.arguments);
+                "update test_bean set name=? where id=?"), jdbc.statements);
+        assertEquals(List.of(List.of(7), List.of("new", 7)), jdbc.arguments);
     }
 
     @Test
@@ -85,11 +82,11 @@ class BaseServiceTest {
 
     @Test
     void paginationAcceptsImmutableConditionParameters() {
-        ConvertRes condition = ConditionUtil.convertCondition(NullCondition.NULL("name"), service.getBeanInfo());
+        ConvertRes condition = new ConvertRes("id=?", List.of(7));
         service.list(condition, null, 20, 10);
-        assertTrue(condition.paramList.isEmpty());
-        assertEquals(List.of(10, 20), jdbc.arguments.getFirst());
-        assertEquals("select * from test_bean where name is null limit ? offset ?", jdbc.statements.getFirst());
+        assertEquals(List.of(7), condition.paramList);
+        assertEquals(List.of(7, 10, 20), jdbc.arguments.getFirst());
+        assertEquals("select * from test_bean where id=? limit ? offset ?", jdbc.statements.getFirst());
     }
 
     @Test

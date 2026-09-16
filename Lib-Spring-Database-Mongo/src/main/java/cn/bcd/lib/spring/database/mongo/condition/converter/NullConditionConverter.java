@@ -13,10 +13,10 @@ public class NullConditionConverter implements Converter<NullCondition, Criteria
         String fieldName = condition.fieldName;
         NullCondition.Handler handler = condition.handler;
         return switch (handler) {
-            case NULL -> {
-                Criteria criteria = Criteria.where(fieldName);
-                yield  criteria.orOperator(criteria.exists(false), criteria.exists(true).is(null));
-            }
+            case NULL -> new Criteria().orOperator(
+                    Criteria.where(fieldName).exists(false),
+                    Criteria.where(fieldName).isNullValue()
+            );
             case NOT_NULL -> Criteria.where(fieldName).exists(true).ne(null);
         };
     }

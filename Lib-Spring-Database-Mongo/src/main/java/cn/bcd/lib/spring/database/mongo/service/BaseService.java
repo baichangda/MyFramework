@@ -1,7 +1,5 @@
 package cn.bcd.lib.spring.database.mongo.service;
 
-import cn.bcd.lib.base.exception.BaseException;
-
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.mongo.bean.BaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
@@ -10,7 +8,6 @@ import cn.bcd.lib.spring.database.mongo.util.ConditionUtil;
 import com.mongodb.bulk.BulkWriteResult;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import cn.bcd.lib.spring.database.mongo.anno.Unique;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -23,10 +20,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.Pair;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Administrator on 2017/8/25.
@@ -132,20 +127,19 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
-     * 会验证{@link Unique}
      * 会设置创建信息或更新信息
      *
      * @param t
      * @return
      */
     public T save(T t) {
-        validateUniqueBeforeSave(Collections.singletonList(t));
-        if (t.getId() == null) {
-            if (getBeanInfo().autoSetCreateInfo) {
+        BeanInfo<T> info = getBeanInfo();
+        if (info.autoSetCreateInfo || info.autoSetUpdateInfo) {
+            boolean isNew = t.getId() == null || !getMongoTemplate().exists(
+                    Query.query(Criteria.where("id").is(t.getId())), info.clazz);
+            if (isNew && info.autoSetCreateInfo) {
                 setCreateInfo(t);
-            }
-        } else {
-            if (getBeanInfo().autoSetUpdateInfo) {
+            } else if (!isNew && info.autoSetUpdateInfo) {
                 setUpdateInfo(t);
             }
         }
@@ -153,14 +147,12 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
-     * 会验证{@link Unique}
      * 会设置创建信息
      *
      * @param list
      * @return
      */
     public List<T> insertAll(List<T> list) {
-        validateUniqueBeforeSave(list);
         if (getBeanInfo().autoSetCreateInfo) {
             for (T t : list) {
                 setCreateInfo(t);
@@ -244,73 +236,6 @@ public class BaseService<T extends SuperBaseBean> {
         if (user != null) {
             bean.updateUserId = user.getId();
             bean.updateUserName = user.getUsername();
-        }
-    }
-
-    private void validateUniqueBeforeSave(List<T> list) {
-        if (getBeanInfo().uniqueInfos.length > 0) {
-            try {
-                //1、循环集合,看传入的参数集合中唯一字段是否有重复的值
-                if (list.size() > 1) {
-                    Map<String, Set<Object>> fieldValueSetMap = new HashMap<>();
-                    for (T t : list) {
-                        for (UniqueInfo uniqueInfo : getBeanInfo().uniqueInfos) {
-                            Field field = uniqueInfo.field;
-                            String fieldName = uniqueInfo.fieldName;
-                            Object val = field.get(t);
-                            Set<Object> valueSet = fieldValueSetMap.get(fieldName);
-                            if (valueSet == null) {
-                                valueSet = new HashSet<>();
-                                fieldValueSetMap.put(fieldName, valueSet);
-                            } else {
-                                if (valueSet.contains(val)) {
-                                    throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                                }
-                            }
-                            valueSet.add(val);
-                        }
-                    }
-                }
-                //2、循环集合,验证每个唯一字段是否在数据库中有重复值
-                for (T t : list) {
-                    for (UniqueInfo uniqueInfo : getBeanInfo().uniqueInfos) {
-                        Object val = uniqueInfo.field.get(t);
-                        if (!isUnique(uniqueInfo.fieldName, val, t.getId())) {
-                            throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                        }
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                throw BaseException.get(e);
-            }
-        }
-    }
-
-    /**
-     * 字段唯一性验证
-     *
-     * @param fieldName  属性名称
-     * @param val        属性值
-     * @param excludeIds 排除id数组
-     * @return
-     */
-    private boolean isUnique(String fieldName, Object val, String... excludeIds) {
-        Query query = new Query(Criteria.where(fieldName).is(val));
-        query.fields().include("id");
-        List<T> resultList = getMongoTemplate().find(query, getBeanInfo().clazz);
-        if (resultList.isEmpty()) {
-            return true;
-        } else {
-            if (excludeIds == null || excludeIds.length == 0) {
-                return false;
-            } else {
-                Set<String> excludeIdSet = Arrays.stream(excludeIds).filter(Objects::nonNull).collect(Collectors.toSet());
-                if (excludeIdSet.isEmpty()) {
-                    return false;
-                } else {
-                    return resultList.stream().allMatch(e -> excludeIdSet.contains(e.getId()));
-                }
-            }
         }
     }
 

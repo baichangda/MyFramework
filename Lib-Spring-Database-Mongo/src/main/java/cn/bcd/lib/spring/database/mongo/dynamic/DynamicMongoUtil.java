@@ -2,6 +2,7 @@ package cn.bcd.lib.spring.database.mongo.dynamic;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,32 +23,56 @@ public class DynamicMongoUtil {
     /**
      * datasource闲置过期时间
      */
-    private final static int EXPIRE_IN_SECOND = 5;
+    private static final int EXPIRE_IN_SECOND = 5 * 60;
 
-    static Logger logger = LoggerFactory.getLogger(DynamicMongoUtil.class);
-    private static final LoadingCache<String, MongoTemplate> cache = Caffeine.newBuilder()
+    private static final Logger logger = LoggerFactory.getLogger(DynamicMongoUtil.class);
+    record DynamicMongoData(MongoTemplate mongoTemplate,
+                            SimpleMongoClientDatabaseFactory databaseFactory) {
+    }
+
+    private static final LoadingCache<String, DynamicMongoData> cache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofSeconds(EXPIRE_IN_SECOND))
-            .<String, MongoTemplate>evictionListener((k, v, c) -> {
-                //移除数据源时候关闭数据源
-                logger.info("dataSource[{}] [{}] start remove", k, v.hashCode());
-                logger.info("dataSource[{}] [{}] finish remove", k, v.hashCode());
-            })
             .scheduler(Scheduler.systemScheduler())
-            .build(s -> {
-                //加载新的数据源
-                logger.info("dataSource[{}] start load", s);
-                SimpleMongoClientDatabaseFactory simpleMongoClientDatabaseFactory = new SimpleMongoClientDatabaseFactory(s);
-                MappingMongoConverter converter = new MappingMongoConverter(new DefaultDbRefResolver(simpleMongoClientDatabaseFactory), new MongoMappingContext());
-                converter.setTypeMapper(new DefaultMongoTypeMapper(null));
-                MongoTemplate mongoTemplate = new MongoTemplate(simpleMongoClientDatabaseFactory, converter);
-                logger.info("dataSource[{}] [{}] finish load", s, mongoTemplate.hashCode());
-                return mongoTemplate;
-            });
+            .executor(Runnable::run)
+            .<String, DynamicMongoData>removalListener(DynamicMongoUtil::close)
+            .build(DynamicMongoUtil::load);
+
+    private static DynamicMongoData load(String url) {
+        SimpleMongoClientDatabaseFactory databaseFactory = new SimpleMongoClientDatabaseFactory(url);
+        try {
+            MappingMongoConverter converter = new MappingMongoConverter(
+                    new DefaultDbRefResolver(databaseFactory), new MongoMappingContext());
+            converter.setTypeMapper(new DefaultMongoTypeMapper(null));
+            converter.afterPropertiesSet();
+            MongoTemplate mongoTemplate = new MongoTemplate(databaseFactory, converter);
+            logger.info("mongo data source [{}] loaded", mongoTemplate.hashCode());
+            return new DynamicMongoData(mongoTemplate, databaseFactory);
+        } catch (RuntimeException ex) {
+            destroy(databaseFactory);
+            throw ex;
+        }
+    }
+
+    static void close(String ignoredUrl, DynamicMongoData data, RemovalCause cause) {
+        if (data != null) {
+            destroy(data.databaseFactory());
+            logger.info("mongo data source [{}] removed, cause[{}]",
+                    data.mongoTemplate().hashCode(), cause);
+        }
+    }
+
+    private static void destroy(SimpleMongoClientDatabaseFactory databaseFactory) {
+        try {
+            databaseFactory.destroy();
+        } catch (Exception ex) {
+            logger.error("close mongo data source failed", ex);
+        }
+    }
 
 
 
     public static MongoTemplate getMongoTemplate(String url) {
-        return cache.get(url);
+        return cache.get(url).mongoTemplate();
     }
 
     public static void close(String url) {

@@ -3,7 +3,6 @@ package cn.bcd.lib.spring.database.jdbc.service;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.anno.Transient;
-import cn.bcd.lib.spring.database.jdbc.anno.Unique;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -63,11 +62,6 @@ public final class BeanInfo<T extends SuperBaseBean> {
      * 是否在更新时候自动设置更新信息
      */
     public final boolean autoSetUpdateInfo;
-    /**
-     * 唯一字段集合
-     */
-    public final List<UniqueInfo> uniqueInfoList;
-
     public final BeanPropertyRowMapper<T> beanPropertyRowMapper;
 
     public BeanInfo(Class<T> clazz) {
@@ -92,7 +86,6 @@ public final class BeanInfo<T extends SuperBaseBean> {
         insertFieldList_noId = new ArrayList<>();
         insertFieldList = new ArrayList<>();
         updateFieldList = new ArrayList<>();
-        uniqueInfoList = new ArrayList<>();
         fieldNameOrColumnName_columnName = new HashMap<>();
 
         FieldInfo tempIdFieldInfo = null;
@@ -111,10 +104,6 @@ public final class BeanInfo<T extends SuperBaseBean> {
                 }
                 fieldNameOrColumnName_columnName.put(fieldInfo.fieldName, fieldInfo.columnName);
                 fieldNameOrColumnName_columnName.put(fieldInfo.columnName, fieldInfo.columnName);
-                Unique unique = f.getAnnotation(Unique.class);
-                if (unique != null) {
-                    uniqueInfoList.add(new UniqueInfo(fieldInfo, unique, tableName));
-                }
             }
         }
         idFieldInfo = tempIdFieldInfo;

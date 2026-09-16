@@ -1,7 +1,6 @@
 package cn.bcd.app.bp.backend.sys.bean;
 
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
-import cn.bcd.lib.spring.database.jdbc.anno.Unique;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -26,7 +25,6 @@ public class UserBean extends BaseBean implements UserInterface {
     private final static long serialVersionUID = 1L;
 
     //field
-    @Unique(msg = "用户名不能重复",code = 501)
     @NotBlank(message = "[用户名]不能为空")
     @Size(max = 50, message = "[用户名]长度不能超过50")
     @Schema(description = "用户名", maxLength = 50, requiredMode = Schema.RequiredMode.REQUIRED)

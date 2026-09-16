@@ -9,4 +9,5 @@ dependencies {
     api libs.caffeine
     api libs.freemarker
     api libs.fesod.sheet
+    testImplementation libs.spring.boot.starter.test
 }

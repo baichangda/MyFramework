@@ -21,7 +21,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 ```
 
-实体按现有模型继承 `BaseBean`/`SuperBaseBean`，使用 `@Table` 标记表、`@Unique` 标记唯一字段、`@Transient` 排除非持久化字段。服务可继承 `BaseService<T>`，通过 `Condition` 完成列表、分页和更新操作。
+实体按现有模型继承 `BaseBean`/`SuperBaseBean`，使用 `@Table` 标记表、`@Transient` 排除非持久化字段。服务可继承 `BaseService<T>`，通过 `Condition` 完成列表、分页和更新操作。
 
 ## 工具与安全
 

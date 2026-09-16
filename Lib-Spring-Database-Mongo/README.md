@@ -2,7 +2,7 @@
 
 ## 功能
 
-提供 Spring Data MongoDB 通用 CRUD 服务、条件转换、唯一字段处理、动态 Mongo 连接和代码生成。
+提供 Spring Data MongoDB 通用 CRUD 服务、条件转换、动态 Mongo 连接和代码生成。
 
 ## 引入与配置
 
@@ -17,7 +17,7 @@ spring:
       uri: mongodb://127.0.0.1:27017/demo
 ```
 
-领域对象使用 `@DocumentExt`，按需继承 `BaseBean`/`SuperBaseBean`，唯一字段使用 `@Unique`。建立服务时继承 `BaseService<T>` 并确保 Bean 位于 Spring 扫描范围；可调用 `list`、`page`、`get`、`save`、`delete` 和 `updateMulti`。
+领域对象使用 `@DocumentExt`，按需继承 `BaseBean`/`SuperBaseBean`。建立服务时继承 `BaseService<T>` 并确保 Bean 位于 Spring 扫描范围；可调用 `list`、`page`、`get`、`save`、`delete` 和 `updateMulti`。
 
 ```java
 List<Device> devices = deviceService.list(

@@ -1,8 +1,6 @@
 package cn.bcd.lib.spring.database.jdbc.service;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.database.common.condition.Condition;
-import cn.bcd.lib.spring.database.jdbc.anno.Unique;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
@@ -313,7 +311,6 @@ public class BaseService<T extends SuperBaseBean> {
      * 保存
      * 如果id为null、则是新增、否则是更新
      * <p>
-     * 会验证{@link Unique}
      * 会设置创建信息或者更新信息
      *
      * @param t 如果id==null、则会设置
@@ -332,16 +329,12 @@ public class BaseService<T extends SuperBaseBean> {
      * 如果设置了id、即会按照id新增、否则自增id
      * 所有属性都会作为参数设置、即使是null
      * <p>
-     * 会验证{@link Unique}
      * 会设置创建信息
      *
      * @param t 如果id==null、则会设置
      */
     public void insert(T t) {
         BeanInfo<T> info = getBeanInfo();
-        if (!info.uniqueInfoList.isEmpty()) {
-            validateUnique(Collections.singletonList(t));
-        }
         if (info.autoSetCreateInfo) {
             setCreateInfo(t);
         }
@@ -393,7 +386,6 @@ public class BaseService<T extends SuperBaseBean> {
      * 根据第一个元素来判断新增的sql语句是否包含id字段
      * 所有属性都会作为参数设置、即使是null
      * <p>
-     * 会验证{@link Unique}
      * 会设置创建信息
      *
      * @param list 即使其中id为null、也不会设置
@@ -403,9 +395,6 @@ public class BaseService<T extends SuperBaseBean> {
             return;
         }
         BeanInfo<T> info = getBeanInfo();
-        if (!info.uniqueInfoList.isEmpty()) {
-            validateUnique(list);
-        }
         if (info.autoSetCreateInfo) {
             for (T t : list) {
                 setCreateInfo(t);
@@ -425,7 +414,6 @@ public class BaseService<T extends SuperBaseBean> {
      * 根据id更新
      * 更新所有字段、即使是null
      * <p>
-     * 会验证{@link Unique}
      * 会设置更新信息
      * <p>
      * 如果继承于{@link BaseBean}、则不会更新创建信息
@@ -434,9 +422,6 @@ public class BaseService<T extends SuperBaseBean> {
      */
     public void update(T t) {
         BeanInfo<T> info = getBeanInfo();
-        if (!info.uniqueInfoList.isEmpty()) {
-            validateUnique(Collections.singletonList(t));
-        }
         if (info.autoSetUpdateInfo) {
             setUpdateInfo(t);
         }
@@ -449,7 +434,6 @@ public class BaseService<T extends SuperBaseBean> {
      * 批量更新
      * 更新所有字段、即使是null
      * <p>
-     * 会验证{@link Unique}
      * 会设置更新信息
      * <p>
      * 如果继承于{@link BaseBean}、则不会更新创建信息
@@ -461,9 +445,6 @@ public class BaseService<T extends SuperBaseBean> {
             return;
         }
         BeanInfo<T> info = getBeanInfo();
-        if (!info.uniqueInfoList.isEmpty()) {
-            validateUnique(list);
-        }
         if (info.autoSetUpdateInfo) {
             for (T t : list) {
                 setUpdateInfo(t);
@@ -574,86 +555,6 @@ public class BaseService<T extends SuperBaseBean> {
         }
         String sql = "delete from " + info.tableName + " where " + convertRes.sql;
         getJdbcTemplate().update(sql, convertRes.paramList.toArray());
-    }
-
-    public void validateUnique(List<T> list) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-        try {
-            BeanInfo<T> beanInfo = getBeanInfo();
-            List<UniqueInfo> uniqueInfoList = beanInfo.uniqueInfoList;
-            if (uniqueInfoList.isEmpty()) {
-                return;
-            }
-
-            for (UniqueInfo uniqueInfo : uniqueInfoList) {
-                FieldInfo fieldInfo = uniqueInfo.fieldInfo;
-
-                // 收集所有非null的值，同时记录对应的beanId
-                List<Object> valList = new ArrayList<>();
-                List<Long> beanIdList = new ArrayList<>();
-
-                for (T t : list) {
-                    Object val = fieldInfo.field.get(t);
-                    if (val == null) {
-                        continue;
-                    }
-                    // 检查list内部是否有重复值
-                    for (Object existingVal : valList) {
-                        if (Objects.equals(val, existingVal)) {
-                            throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                        }
-                    }
-                    valList.add(val);
-                    beanIdList.add(t.getId());
-                }
-
-                if (valList.isEmpty()) {
-                    continue;
-                }
-
-                // 批量IN查询：select id, column from table where column in (?, ?, ...)
-                StringBuilder sql = new StringBuilder();
-                sql.append("select id,");
-                sql.append(fieldInfo.columnName);
-                sql.append(" from ");
-                sql.append(beanInfo.tableName);
-                sql.append(" where ");
-                sql.append(fieldInfo.columnName);
-                sql.append(" in (");
-                StringJoiner sj = new StringJoiner(",");
-                for (int i = 0; i < valList.size(); i++) {
-                    sj.add("?");
-                }
-                sql.append(sj);
-                sql.append(")");
-
-                List<Map<String, Object>> rows = getJdbcTemplate().queryForList(sql.toString(), valList.toArray());
-
-                // 验证每条返回记录：column值必须对应到一个bean，且id一致
-                for (Map<String, Object> row : rows) {
-                    Object dbVal = row.get(fieldInfo.columnName);
-                    Long dbId = ((Number) row.get("id")).longValue();
-
-                    boolean matched = false;
-                    for (int i = 0; i < valList.size(); i++) {
-                        if (Objects.equals(valList.get(i), dbVal)) {
-                            Long beanId = beanIdList.get(i);
-                            if (beanId != null && beanId.equals(dbId)) {
-                                matched = true;
-                            }
-                            break;
-                        }
-                    }
-                    if (!matched) {
-                        throw BaseException.get(uniqueInfo.msg).code(uniqueInfo.code);
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            throw BaseException.get(e);
-        }
     }
 
     private int count(ConvertRes convertRes) {
