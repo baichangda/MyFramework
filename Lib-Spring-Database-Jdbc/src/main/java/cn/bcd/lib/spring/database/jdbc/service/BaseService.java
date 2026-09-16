@@ -516,7 +516,7 @@ public class BaseService<T extends SuperBaseBean> {
         }
         BeanInfo<T> info = getBeanInfo();
         final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        if (convertRes == null) {
+        if (convertRes == null || convertRes.paramList.isEmpty()) {
             return;
         }
         Map<String, Object> newParamMap = new LinkedHashMap<>(paramMap);
@@ -569,7 +569,7 @@ public class BaseService<T extends SuperBaseBean> {
     public void delete(Condition condition) {
         BeanInfo<T> info = getBeanInfo();
         ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        if (convertRes == null) {
+        if (convertRes == null || convertRes.paramList.isEmpty()) {
             return;
         }
         String sql = "delete from " + info.tableName + " where " + convertRes.sql;
