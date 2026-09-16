@@ -197,7 +197,10 @@ public class BaseService<T extends SuperBaseBean> {
      * @param condition
      */
     public void delete(Condition condition) {
-        Query query = ConditionUtil.toQuery(condition);
+        Query query = ConditionUtil.toQueryForUpdate(condition);
+        if (query == null) {
+            return;
+        }
         getMongoTemplate().remove(query, getBeanInfo().clazz);
     }
 
@@ -214,7 +217,10 @@ public class BaseService<T extends SuperBaseBean> {
         if (updates.length == 0) {
             return null;
         } else {
-            Query query = ConditionUtil.toQuery(condition);
+            Query query = ConditionUtil.toQueryForUpdate(condition);
+            if (query == null) {
+                return null;
+            }
             List<Pair<Query, UpdateDefinition>> collect = Arrays.stream(updates).map(e -> Pair.of(query, (UpdateDefinition) e)).toList();
             return getMongoTemplate().bulkOps(BulkOperations.BulkMode.UNORDERED, getBeanInfo().clazz).updateMulti(collect).execute();
         }

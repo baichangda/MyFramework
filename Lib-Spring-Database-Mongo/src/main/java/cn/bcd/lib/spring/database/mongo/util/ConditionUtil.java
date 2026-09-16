@@ -33,6 +33,15 @@ public class ConditionUtil {
         return new Query(criteria);
     }
 
+    public static <T extends Condition> Query toQueryForUpdate(T condition) {
+        Criteria criteria = convertCondition(condition);
+        if (criteria == null) {
+            return null;
+        }
+        return new Query(criteria);
+    }
+
+
     @SuppressWarnings("unchecked")
     public static <T extends Condition> Criteria convertCondition(T condition) {
         if (condition == null) {
