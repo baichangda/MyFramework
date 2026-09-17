@@ -1,9 +1,7 @@
-package ${packagePre}.service;
+package ${packagePre};
 
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import org.springframework.stereotype.Service;
-import ${packagePre}.bean.${moduleName?cap_first}Bean;
-
 @Service
 public class ${moduleName?cap_first}Service extends BaseService<${moduleName?cap_first}Bean> {
 

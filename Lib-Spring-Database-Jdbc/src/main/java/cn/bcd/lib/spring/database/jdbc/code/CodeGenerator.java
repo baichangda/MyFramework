@@ -42,7 +42,7 @@ public class CodeGenerator {
      */
     public void generateBean(BeanData data, String templateDir, String destDir) {
         Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = destDir + "/bean";
+        String fileDir = getModuleDir(destDir, data.moduleName);
         try {
             Files.createDirectories(Paths.get(fileDir));
         } catch (IOException e) {
@@ -70,7 +70,7 @@ public class CodeGenerator {
      */
     public void generateService(ServiceData data, String templateDir, String destDir) {
         Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = destDir + "/service";
+        String fileDir = getModuleDir(destDir, data.moduleName);
         try {
             Files.createDirectories(Paths.get(fileDir));
         } catch (IOException e) {
@@ -98,7 +98,7 @@ public class CodeGenerator {
      */
     public void generateController(ControllerData data, String templateDir, String destDir) {
         Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = destDir + "/controller";
+        String fileDir = getModuleDir(destDir, data.moduleName);
         try {
             Files.createDirectories(Paths.get(fileDir));
         } catch (IOException e) {
@@ -117,6 +117,10 @@ public class CodeGenerator {
         logger.info("{} generate succeed", destBeanPath);
     }
 
+    private String getModuleDir(String destDir, String moduleName) {
+        return Paths.get(destDir, moduleName.substring(0, 1).toLowerCase() + moduleName.substring(1)).toString();
+    }
+
     /**
      * 根据配置和数据库信息初始化bean数据
      *
@@ -127,7 +131,7 @@ public class CodeGenerator {
         BeanData data = new BeanData();
         data.moduleNameCN = context.tableConfig.moduleNameCN;
         data.moduleName = context.tableConfig.moduleName;
-        data.packagePre = context.getPackagePre();
+        data.packagePre = context.getModulePackage();
         data.tableName = context.tableConfig.tableName;
         data.containCreateAndUpdateField = context.getContainCreateAndUpdateField();
         data.fieldList = context.getDeclaredBeanFields();
@@ -145,7 +149,7 @@ public class CodeGenerator {
         ServiceData data = new ServiceData();
         data.moduleNameCN = tableConfig.moduleNameCN;
         data.moduleName = tableConfig.moduleName;
-        data.packagePre = context.getPackagePre();
+        data.packagePre = context.getModulePackage();
         return data;
     }
 
@@ -160,7 +164,7 @@ public class CodeGenerator {
         ControllerData data = new ControllerData();
         data.moduleNameCN = tableConfig.moduleNameCN;
         data.moduleName = tableConfig.moduleName;
-        data.packagePre = context.getPackagePre();
+        data.packagePre = context.getModulePackage();
         data.fieldList = context.getAllBeanFields();
         data.requestMappingPre = context.getRequestMappingPre();
         return data;

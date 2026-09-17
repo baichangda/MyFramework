@@ -1,4 +1,4 @@
-package ${packagePre}.bean;
+package ${packagePre};
 
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;

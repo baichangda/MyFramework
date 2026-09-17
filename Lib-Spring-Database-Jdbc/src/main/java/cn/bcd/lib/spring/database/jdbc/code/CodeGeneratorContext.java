@@ -91,6 +91,14 @@ public class CodeGeneratorContext {
     }
 
     /**
+     * 获取当前功能的包名
+     */
+    public String getModulePackage() {
+        String moduleName = tableConfig.moduleName;
+        return getPackagePre() + "." + moduleName.substring(0, 1).toLowerCase() + moduleName.substring(1);
+    }
+
+    /**
      * 初始化request mapping
      *
      * @return
