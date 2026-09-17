@@ -19,7 +19,7 @@ import java.util.List;
 import org.springframework.validation.annotation.Validated;
 
 @RestController
-@RequestMapping("/permission")
+@RequestMapping("/api/permission")
 @Tag(name = "权限-PermissionController")
 public class PermissionController{
 

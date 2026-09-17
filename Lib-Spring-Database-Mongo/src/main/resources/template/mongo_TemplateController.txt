@@ -19,7 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import ${beanPackage}.${moduleName?cap_first}Bean;
 
 @RestController
-@RequestMapping("/${moduleName?uncap_first}")
+@RequestMapping("/api/${moduleName?uncap_first}")
 @Tag(name = "${moduleNameCN}-${moduleName?cap_first}Controller")
 public class ${moduleName?cap_first}Controller{
 

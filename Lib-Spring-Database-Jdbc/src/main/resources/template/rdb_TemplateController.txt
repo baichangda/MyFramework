@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 import org.springframework.validation.annotation.Validated;
 @RestController
-@RequestMapping("/${moduleName?uncap_first}")
+@RequestMapping("/api/${moduleName?uncap_first}")
 @Tag(name = "${moduleNameCN}-${moduleName?cap_first}Controller")
 public class ${moduleName?cap_first}Controller{
 
