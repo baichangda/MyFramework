@@ -2,7 +2,7 @@
 
 ## 功能
 
-提供基于 Spring JDBC 的通用实体服务、分页与条件转换、动态数据源、SQL 工具、MySQL/PostgreSQL 元数据导出、代码生成和 MySQL 定时备份。
+提供基于 Spring JDBC 的通用实体服务、分页与条件转换、SQL 工具、MySQL/PostgreSQL 元数据导出、代码生成和 MySQL 定时备份。
 
 ## 引入与配置
 

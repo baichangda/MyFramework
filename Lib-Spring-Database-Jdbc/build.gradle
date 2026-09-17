@@ -7,7 +7,6 @@ dependencies {
     implementation libs.jackson.dataformat.yaml
     api libs.spring.boot.starter.data.jdbc
     api libs.spring.boot.starter.validation
-    api libs.caffeine
     api libs.freemarker
     api libs.fesod.sheet
     api libs.mysql
