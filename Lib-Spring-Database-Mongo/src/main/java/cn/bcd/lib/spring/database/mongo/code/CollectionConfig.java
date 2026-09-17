@@ -45,7 +45,7 @@ public class CollectionConfig {
         } else {
             throw BaseException.get("parseTargetDirPath failed,class path[" + classFilePath + "] not support");
         }
-        targetDirPath = Paths.get(beanPath).getParent().toString();
+        targetDirPath = Paths.get(beanPath).toString();
     }
 
     public CollectionConfig setClazz(Class<?> clazz) {

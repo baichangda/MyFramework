@@ -1,4 +1,4 @@
-package cn.bcd.lib.spring.database.mongo.test.bean;
+package cn.bcd.lib.spring.database.mongo.test;
 
 import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.mongo.code.CodeGenerator;

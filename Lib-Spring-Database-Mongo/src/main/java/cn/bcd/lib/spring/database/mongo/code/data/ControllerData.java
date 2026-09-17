@@ -20,9 +20,9 @@ public class ControllerData {
     public String packagePre;
 
     /**
-     * controller映射路径
+     * Bean所在包路径
      */
-    public String requestMappingPre;
+    public String beanPackage;
 
     /**
      * 字段集合

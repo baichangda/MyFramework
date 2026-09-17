@@ -17,4 +17,9 @@ public class ServiceData {
      */
     public String packagePre;
 
+    /**
+     * Bean所在包路径
+     */
+    public String beanPackage;
+
 }

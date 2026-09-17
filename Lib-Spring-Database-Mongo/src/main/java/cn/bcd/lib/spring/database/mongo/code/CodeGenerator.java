@@ -43,7 +43,7 @@ public class CodeGenerator {
      */
     public static void generateService(ServiceData data, String templateDir, String destDir) {
         Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = destDir + "/service";
+        String fileDir = destDir;
         try {
             Files.createDirectories(Paths.get(fileDir));
         } catch (IOException e) {
@@ -71,7 +71,7 @@ public class CodeGenerator {
      */
     public static void generateController(ControllerData data, String templateDir, String destDir) {
         Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = destDir + "/controller";
+        String fileDir = destDir;
         try {
             Files.createDirectories(Paths.get(fileDir));
         } catch (IOException e) {
@@ -101,7 +101,8 @@ public class CodeGenerator {
         ServiceData data = new ServiceData();
         data.moduleNameCN = config.moduleNameCN;
         data.moduleName = config.moduleName;
-        data.packagePre = initPackagePre(config);
+        data.packagePre = initModulePackage(config);
+        data.beanPackage = config.clazz.getPackageName();
         return data;
     }
 
@@ -115,9 +116,9 @@ public class CodeGenerator {
         ControllerData data = new ControllerData();
         data.moduleNameCN = config.moduleNameCN;
         data.moduleName = config.moduleName;
-        data.packagePre = initPackagePre(config);
+        data.packagePre = initModulePackage(config);
+        data.beanPackage = config.clazz.getPackageName();
         data.fieldList = initBeanField(config);
-        data.requestMappingPre = initRequestMappingPre(data.packagePre);
         return data;
     }
 
@@ -192,15 +193,10 @@ public class CodeGenerator {
         }
     }
 
-    /**
-     * 初始化request mapping
-     *
-     * @param packagePre
-     * @return
-     */
-    private static String initRequestMappingPre(String packagePre) {
-        return "/" + packagePre.substring(packagePre.lastIndexOf('.') + 1);
+    private static String initModulePackage(CollectionConfig config) {
+        return initPackagePre(config);
     }
+
 
     /**
      * 初始化config属性
