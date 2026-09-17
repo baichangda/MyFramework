@@ -10,18 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AuthServiceTest {
     @Test
     void detectsApiPathAndRemovesQueryString() {
-        assertTrue(AuthService.isApiRequest("/api/sys/user/list?page=1"));
-        assertEquals("/api/sys/user/list", AuthService.apiPath("/api/sys/user/list?page=1"));
-        assertEquals("/api/backend/sys/user/list", AuthService.apiPath("/api/backend/sys/user/list"));
-        assertEquals("/api/sys/user/list", AuthService.apiPath("/service/backend/api/sys/user/list"));
-    }
-
-    @Test
-    void recognizesSwaggerResourcesBehindServicePrefix() {
-        assertTrue(AuthService.isSwaggerRequest("/api/backend/swagger-ui.html"));
-        assertTrue(AuthService.isSwaggerRequest("/api/backend/swagger-ui/index.html"));
-        assertTrue(AuthService.isSwaggerRequest("/api/backend/v3/api-docs/swagger-config"));
-        assertFalse(AuthService.isSwaggerRequest("/api/backend/sys/user/list"));
+        assertTrue(AuthService.isApiRequest("/backend/api/user/list?page=1"));
+        assertEquals("/api/user/list", AuthService.apiPath("/backend/api/user/list?page=1"));
+        assertEquals("/api/login", AuthService.apiPath("/auth/api/login"));
+        assertEquals("/api/user/list", AuthService.apiPath("/api/user/list"));
     }
 
     @Test

@@ -57,9 +57,6 @@ public class AuthService {
         if (user.id() == ADMIN_ID) {
             return true;
         }
-        if (isSwaggerRequest(requestPath)) {
-            return true;
-        }
         String apiPath = apiPath(requestPath);
         return permissions(user.username()).stream()
                 .anyMatch(permission -> "*".equals(permission) || permission.equals(apiPath));
@@ -76,19 +73,6 @@ public class AuthService {
             return null;
         }
         return path.substring(index);
-    }
-
-    static boolean isSwaggerRequest(String requestUri) {
-        String path = apiPath(requestUri);
-        if (path == null) {
-            return false;
-        }
-        int servicePathIndex = path.indexOf('/', 5);
-        String servicePath = servicePathIndex < 0 ? "/" : path.substring(servicePathIndex);
-        return servicePath.equals("/swagger-ui.html")
-                || servicePath.startsWith("/swagger-ui/")
-                || servicePath.equals("/v3/api-docs")
-                || servicePath.startsWith("/v3/api-docs/");
     }
 
     private AuthAccount findUser(String username) {
