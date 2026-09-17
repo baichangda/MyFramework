@@ -1,9 +1,8 @@
-package cn.bcd.lib.spring.redis.mq.topic;
+package cn.bcd.lib.spring.redis.mq;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import org.slf4j.Logger;

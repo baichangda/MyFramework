@@ -2,7 +2,7 @@ package cn.bcd.lib.spring.monitor.client;
 
 import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
-import cn.bcd.lib.spring.redis.mq.topic.RedisTopicMQ;
+import cn.bcd.lib.spring.redis.mq.RedisTopicMQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

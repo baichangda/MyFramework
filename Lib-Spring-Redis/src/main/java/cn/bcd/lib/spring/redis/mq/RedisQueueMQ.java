@@ -1,9 +1,8 @@
-package cn.bcd.lib.spring.redis.mq.queue;
+package cn.bcd.lib.spring.redis.mq;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 
@@ -22,7 +21,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unchecked")
 public class RedisQueueMQ<V> implements AutoCloseable {
