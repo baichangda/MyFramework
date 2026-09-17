@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
-@RequestMapping("/sys/user")
+@RequestMapping("/user")
 @Tag(name = "用户-UserController")
 public class UserController {
 

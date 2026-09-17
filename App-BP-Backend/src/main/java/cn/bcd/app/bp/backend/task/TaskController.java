@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 
 @RestController
-@RequestMapping("/sys/task")
+@RequestMapping("/task")
 @Tag(name = "任务-TaskController")
 public class TaskController {
 
