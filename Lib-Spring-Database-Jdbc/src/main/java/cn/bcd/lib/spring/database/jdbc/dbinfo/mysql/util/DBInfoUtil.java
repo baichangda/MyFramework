@@ -1,10 +1,10 @@
 package cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.util;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.database.common.util.SpringUtil;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.data.DBInfo;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.ColumnsBean;
 import cn.bcd.lib.spring.database.jdbc.dbinfo.mysql.bean.TablesBean;
+import cn.bcd.lib.spring.database.jdbc.util.ApplicationYamlUtil;
 import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public class DBInfoUtil {
      */
     public static DBInfo getDBInfo() {
         try {
-            final JsonNode[] props = SpringUtil.getSpringPropsInYml(
+            final JsonNode[] props = ApplicationYamlUtil.getSpringPropsInYml(
                     "spring.datasource.url"
                     , "spring.datasource.username"
                     , "spring.datasource.password");

@@ -1,6 +1,0 @@
-dependencies {
-    api platform(libs.spring.boot.dependencies)
-    api platform(libs.jackson.bom)
-    api libs.jackson.databind
-    implementation libs.jackson.dataformat.yaml
-}

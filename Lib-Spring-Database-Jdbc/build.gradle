@@ -4,6 +4,7 @@ dependencies {
     api libs.springdoc.openapi.starter.common
     api project(":Lib-Base-Json")
     api project(":Lib-Spring-Database-Common")
+    implementation libs.jackson.dataformat.yaml
     api libs.spring.boot.starter.data.jdbc
     api libs.spring.boot.starter.validation
     api libs.caffeine

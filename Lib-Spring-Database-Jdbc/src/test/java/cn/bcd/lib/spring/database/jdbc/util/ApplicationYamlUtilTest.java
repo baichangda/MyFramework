@@ -1,4 +1,4 @@
-package cn.bcd.lib.spring.database.common.util;
+package cn.bcd.lib.spring.database.jdbc.util;
 
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -7,13 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class SpringUtilTest {
+class ApplicationYamlUtilTest {
     @Test
     void loadsYamlProfilesInOrder() throws Exception {
         String oldProfiles = System.getProperty("spring.profiles.active");
         System.setProperty("spring.profiles.active", "first, second");
         try {
-            JsonNode[] values = SpringUtil.getSpringPropsInYml(
+            JsonNode[] values = ApplicationYamlUtil.getSpringPropsInYml(
                     "database.host", "database.firstOnly", "database.baseOnly", "database.missing");
             assertEquals("second", values[0].stringValue());
             assertEquals("first", values[1].stringValue());
@@ -30,6 +30,6 @@ class SpringUtilTest {
 
     @Test
     void rejectsBlankKeys() {
-        assertThrows(IllegalArgumentException.class, () -> SpringUtil.getSpringPropsInYml(" "));
+        assertThrows(IllegalArgumentException.class, () -> ApplicationYamlUtil.getSpringPropsInYml(" "));
     }
 }

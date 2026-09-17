@@ -24,12 +24,6 @@ Condition condition = Condition.and(
 
 字段名最终会交给下游转换器处理，只允许来自服务端白名单或固定代码，不要直接接收未经校验的客户端字段名。日期范围可使用 `DateCondition.BETWEEN(...)`，其语义为前闭后开区间。
 
-## Classpath YAML 工具
-
-`SpringUtil.getSpringPropsInYml(...)` 可在 Spring 容器启动前读取 classpath 中的 `application.yml`/`application.yaml` 和 profile 文件。它支持系统属性 `spring.profiles.active`、环境变量 `SPRING_PROFILES_ACTIVE` 以及多个逗号分隔 profile。
-
-该工具不实现 Spring Boot 完整配置优先级，仅适合当前代码生成和数据库元数据工具等轻量场景。
-
 ```shell
 gradle :Lib-Spring-Database-Common:test
 ```

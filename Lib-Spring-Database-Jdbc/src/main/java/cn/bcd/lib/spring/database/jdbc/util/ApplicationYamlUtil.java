@@ -1,4 +1,4 @@
-package cn.bcd.lib.spring.database.common.util;
+package cn.bcd.lib.spring.database.jdbc.util;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.dataformat.yaml.YAMLMapper;
@@ -16,12 +16,12 @@ import java.util.Objects;
  * <p>该工具不替代 Spring Boot 的完整配置加载机制。Spring 容器内应优先使用
  * {@code Environment} 或 {@code Binder}；这里主要用于 Spring 容器启动前的简单读取。</p>
  */
-public final class SpringUtil {
+public final class ApplicationYamlUtil {
     private static final String ACTIVE_PROFILES_PROPERTY = "spring.profiles.active";
     private static final String ACTIVE_PROFILES_ENV = "SPRING_PROFILES_ACTIVE";
     private static final YAMLMapper YAML_MAPPER = YAMLMapper.builder().build();
 
-    private SpringUtil() {
+    private ApplicationYamlUtil() {
     }
 
     /**
@@ -61,7 +61,7 @@ public final class SpringUtil {
 
     private static JsonNode loadConfig(String fileStem) throws IOException {
         for (String extension : List.of(".yml", ".yaml")) {
-            try (InputStream input = SpringUtil.class.getResourceAsStream("/" + fileStem + extension)) {
+            try (InputStream input = ApplicationYamlUtil.class.getResourceAsStream("/" + fileStem + extension)) {
                 if (input != null) {
                     return YAML_MAPPER.readTree(input);
                 }

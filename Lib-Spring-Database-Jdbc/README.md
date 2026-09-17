@@ -26,3 +26,5 @@ spring:
 ## 工具与安全
 
 代码生成模板位于 `src/main/resources/template`。备份功能只有配置 `lib.spring.database.jdbc.backup.mysql.host` 才启用。数据库密码、备份路径和生成输出目录应由环境配置提供；生成代码后必须人工审查。
+
+`ApplicationYamlUtil.getSpringPropsInYml(...)` 可在 Spring 容器启动前读取 classpath 中的 `application.yml`/`application.yaml` 和 profile 文件。它支持系统属性 `spring.profiles.active`、环境变量 `SPRING_PROFILES_ACTIVE` 以及多个逗号分隔 profile。该工具不实现 Spring Boot 的完整配置优先级，仅适合当前代码生成和数据库元数据工具等轻量场景。
