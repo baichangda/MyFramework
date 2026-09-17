@@ -1,8 +1,7 @@
-package cn.bcd.app.bp.backend.sys.service;
+package cn.bcd.app.bp.backend.role;
 
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
-import cn.bcd.app.bp.backend.sys.bean.RoleBean;
-import cn.bcd.app.bp.backend.sys.define.CommonConst;
+import cn.bcd.app.bp.backend.user.UserConst;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,7 +18,7 @@ public class RoleService extends BaseService<RoleBean> {
     JdbcTemplate jdbcTemplate;
 
     public List<RoleBean> findRolesByUserId(Long userId) {
-        if (CommonConst.ADMIN_ID == userId) {
+        if (UserConst.ADMIN_ID == userId) {
             return list();
         } else {
             String sql = """
@@ -32,7 +31,7 @@ public class RoleService extends BaseService<RoleBean> {
     }
 
     public List<RoleBean> findRolesByUsername(String username) {
-        if (CommonConst.ADMIN_USERNAME.equals(username)) {
+        if (UserConst.ADMIN_USERNAME.equals(username)) {
             return list();
         } else {
             String sql = """

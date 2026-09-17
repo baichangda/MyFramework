@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.util;
+package cn.bcd.app.bp.backend.base.util;
 
 import cn.bcd.lib.base.exception.BaseException;
 import jakarta.mail.MessagingException;

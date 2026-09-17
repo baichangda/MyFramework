@@ -1,7 +1,6 @@
 dependencies {
     api platform(libs.spring.boot.dependencies)
     api platform(libs.springdoc.openapi.bom)
-    api libs.springdoc.openapi.starter.common
     api project(":Lib-Base-Json")
     api project(":Lib-Spring-Database-Common")
     api libs.spring.boot.starter.data.mongodb
@@ -9,5 +8,7 @@ dependencies {
     api libs.caffeine
     api libs.freemarker
     api libs.fesod.sheet
+    api libs.springdoc.openapi.starter.webmvc.scalar
+    api libs.spring.boot.starter.web
     testImplementation libs.spring.boot.starter.test
 }

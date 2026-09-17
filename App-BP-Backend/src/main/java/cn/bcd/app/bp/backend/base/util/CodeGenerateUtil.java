@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend;
+package cn.bcd.app.bp.backend.base.util;
 
 import cn.bcd.lib.spring.database.jdbc.code.CodeGenerator;
 import cn.bcd.lib.spring.database.jdbc.code.Config;

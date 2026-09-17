@@ -1,7 +1,6 @@
-package cn.bcd.app.bp.backend.sys.controller;
+package cn.bcd.app.bp.backend.file;
 
 import cn.bcd.lib.base.result.Result;
-import cn.bcd.app.bp.backend.sys.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

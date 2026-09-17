@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.bean;
+package cn.bcd.app.bp.backend.task;
 
 import cn.bcd.lib.base.util.ExceptionUtil;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;

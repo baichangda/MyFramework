@@ -1,8 +1,6 @@
-package cn.bcd.app.bp.backend.sys.controller;
+package cn.bcd.app.bp.backend.user;
 
 import cn.bcd.lib.spring.auth.AuthenticatedUserContext;
-import cn.bcd.app.bp.backend.sys.bean.UserBean;
-import cn.bcd.app.bp.backend.sys.service.UserService;
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;

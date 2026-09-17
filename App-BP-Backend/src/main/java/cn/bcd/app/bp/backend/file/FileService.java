@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.service;
+package cn.bcd.app.bp.backend.file;
 
 import cn.bcd.app.bp.backend.base.util.HttpResponseUtil;
 import cn.bcd.lib.base.exception.BaseException;

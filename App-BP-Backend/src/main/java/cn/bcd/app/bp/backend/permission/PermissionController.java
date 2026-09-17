@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.controller;
+package cn.bcd.app.bp.backend.permission;
 
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.database.common.condition.Condition;
@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Date;
 import java.util.List;
 import org.springframework.validation.annotation.Validated;
-import cn.bcd.app.bp.backend.sys.bean.PermissionBean;
-import cn.bcd.app.bp.backend.sys.service.PermissionService;
 
 @RestController
 @RequestMapping("/sys/permission")

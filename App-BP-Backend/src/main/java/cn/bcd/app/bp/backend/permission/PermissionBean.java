@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.bean;
+package cn.bcd.app.bp.backend.permission;
 
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;

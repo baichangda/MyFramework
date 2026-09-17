@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.sys.controller;
+package cn.bcd.app.bp.backend.task;
 
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.database.common.condition.Condition;
@@ -6,8 +6,6 @@ import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.app.bp.backend.base.support_task.StopResult;
-import cn.bcd.app.bp.backend.sys.bean.TaskBean;
-import cn.bcd.app.bp.backend.sys.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -1,7 +1,7 @@
-package cn.bcd.app.bp.backend.sys.service;
+package cn.bcd.app.bp.backend.user;
 
-import cn.bcd.app.bp.backend.sys.bean.UserBean;
-import cn.bcd.app.bp.backend.sys.define.CommonConst;
+import cn.bcd.app.bp.backend.permission.PermissionService;
+import cn.bcd.app.bp.backend.role.RoleService;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import org.springframework.context.ApplicationListener;
@@ -29,13 +29,13 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        if (get(CommonConst.ADMIN_ID) != null) {
+        if (get(UserConst.ADMIN_ID) != null) {
             return;
         }
         UserBean user = new UserBean();
-        user.id = CommonConst.ADMIN_ID;
-        user.username = CommonConst.ADMIN_USERNAME;
-        user.password = encrypt(CommonConst.INITIAL_PASSWORD);
+        user.id = UserConst.ADMIN_ID;
+        user.username = UserConst.ADMIN_USERNAME;
+        user.password = encrypt(UserConst.INITIAL_PASSWORD);
         user.status = 1;
         insert(user);
     }
@@ -50,12 +50,12 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
     }
 
     public void resetPassword(Long userId) {
-        update(userId, Map.of("password", encrypt(CommonConst.INITIAL_PASSWORD)));
+        update(userId, Map.of("password", encrypt(UserConst.INITIAL_PASSWORD)));
     }
 
     public void saveUser(UserBean user) {
         if (user.id == null) {
-            user.password = encrypt(CommonConst.INITIAL_PASSWORD);
+            user.password = encrypt(UserConst.INITIAL_PASSWORD);
             user.status = 1;
         } else {
             UserBean stored = get(user.id);
@@ -75,7 +75,7 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
     }
 
     private String encrypt(String password) {
-        if (!CommonConst.IS_PASSWORD_ENCODED) {
+        if (!UserConst.IS_PASSWORD_ENCODED) {
             return password;
         }
         return DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8));

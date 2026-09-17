@@ -1,8 +1,7 @@
-package cn.bcd.app.bp.backend.sys.service;
+package cn.bcd.app.bp.backend.menu;
 
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
-import cn.bcd.app.bp.backend.sys.bean.MenuBean;
-import cn.bcd.app.bp.backend.sys.define.CommonConst;
+import cn.bcd.app.bp.backend.user.UserConst;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,7 +39,7 @@ public class MenuService extends BaseService<MenuBean> {
      */
     public List<MenuBean> userMenuTree(Long userId) {
         List<MenuBean> menuBeanList;
-        if (CommonConst.ADMIN_ID == userId) {
+        if (UserConst.ADMIN_ID == userId) {
             String sql = "select * from t_sys_menu";
             menuBeanList = jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(MenuBean.class));
         } else {

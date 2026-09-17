@@ -1,6 +1,5 @@
-package cn.bcd.app.bp.backend.sys.service;
+package cn.bcd.app.bp.backend.user;
 
-import cn.bcd.app.bp.backend.sys.bean.UserBean;
 import cn.bcd.lib.spring.auth.AuthenticatedUserContext;
 import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
 import org.springframework.stereotype.Component;
