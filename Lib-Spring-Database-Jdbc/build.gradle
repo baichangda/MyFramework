@@ -11,5 +11,6 @@ dependencies {
     api libs.fesod.sheet
     api libs.mysql
     api libs.postgresql
+    api libs.sqlite
     testImplementation libs.spring.boot.starter.test
 }
