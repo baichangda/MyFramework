@@ -38,9 +38,9 @@ public class DBInfoUtil {
                     "spring.datasource.url"
                     , "spring.datasource.username"
                     , "spring.datasource.password");
-            String url = props[0].stringValue();
-            String username = props[1].stringValue();
-            String password = props[2].stringValue();
+            String url = props[0].asString();
+            String username = props[1].asString();
+            String password = props[2].asString();
             int index = url.indexOf('?');
             String pre;
             if (index == -1) {

@@ -6,7 +6,7 @@ import cn.bcd.lib.spring.database.jdbc.code.TableConfig;
 
 public class CodeGenerateUtil {
     public static void main(String[] args) {
-        String path = "D:\\work\\bcd\\MyFramework\\App-BP-Backend\\src\\main\\java\\cn\\bcd\\app\\bp\\backend\\test";
+        String path = "D:\\workspace\\MyFramework\\App-BP-Backend\\src\\main\\java\\cn\\bcd\\app\\bp\\backend";
         final TableConfig.Helper helper = TableConfig.newHelper();
         helper.needCreateBeanFile = true;
         helper.needCreateServiceFile = true;
