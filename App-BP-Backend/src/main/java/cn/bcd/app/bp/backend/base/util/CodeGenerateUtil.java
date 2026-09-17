@@ -12,7 +12,7 @@ public class CodeGenerateUtil {
         helper.needCreateServiceFile = true;
         helper.needCreateControllerFile = true;
         helper
-                .addModule("Permission", "权限", "t_sys_permission");
+                .addModule("PermissionTest", "权限", "t_sys_permission");
         Config config = Config.newConfig(path).addTableConfig(helper.toTableConfigs());
         CodeGenerator.MYSQL.generate(config);
 //        CodeGenerator.PGSQL.generate(config);
