@@ -1,6 +1,4 @@
-package cn.bcd.lib.spring.redis.schedule.anno;
-
-import cn.bcd.lib.spring.redis.schedule.handler.SingleFailedScheduleHandler;
+package cn.bcd.lib.spring.redis.schedule;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

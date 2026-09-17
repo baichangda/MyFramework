@@ -1,8 +1,7 @@
-package cn.bcd.lib.spring.redis.schedule.handler;
+package cn.bcd.lib.spring.redis.schedule;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;

@@ -1,8 +1,6 @@
-package cn.bcd.lib.spring.redis.schedule.aop;
+package cn.bcd.lib.spring.redis.schedule;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule;
-import cn.bcd.lib.spring.redis.schedule.handler.SingleFailedScheduleHandler;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -37,7 +35,7 @@ public class RedisScheduleAopConfig {
     /**
      * 定时任务
      */
-    @Pointcut("@annotation(cn.bcd.lib.spring.redis.schedule.anno.SingleFailedSchedule)")
+    @Pointcut("@annotation(cn.bcd.lib.spring.redis.schedule.SingleFailedSchedule)")
     public void methodSchedule() {
 
     }
