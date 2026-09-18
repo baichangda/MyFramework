@@ -53,9 +53,6 @@ public final class JsonUtil {
     public static JsonMapper.Builder withConfig(JsonMapper.Builder builder) {
         SimpleModule simpleModule = new SimpleModule();
 
-        // 设置所有 Number 属性输出为字符串
-        simpleModule.addSerializer(Number.class, ToStringSerializer.instance);
-
         // 设置 byte[] 序列化为数字数组，默认是 base64 字符串
         simpleModule.addSerializer(byte[].class, new ValueSerializer<byte[]>() {
             @Override
