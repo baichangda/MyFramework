@@ -1,4 +1,4 @@
-package cn.bcd.lib.spring.database.jdbc.sql;
+package cn.bcd.lib.spring.database.jdbc.util;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ClassUtil;
