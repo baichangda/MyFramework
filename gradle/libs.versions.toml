@@ -21,6 +21,7 @@ hbase-client = { module = "org.apache.hbase:hbase-client", version = "3.0.0" }
 influxdb3-java = { module = "com.influxdb:influxdb3-java", version = "1.10.0" }
 fesod-sheet = { module = "org.apache.fesod:fesod-sheet", version = "2.0.2-incubating" }
 jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version = "1.37" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version = "1.37" }
 redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version = "4.7.0" }
 xxl-job-core = { module = "com.xuxueli:xxl-job-core", version = "3.4.2" }
 javalin = { module = "io.javalin:javalin", version = "7.2.3" }
@@ -54,6 +55,7 @@ jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataforma
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations" }
 
 junit-bom = { module = "org.junit:junit-bom", version = "6.1.3" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 

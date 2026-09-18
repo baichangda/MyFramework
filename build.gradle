@@ -4,78 +4,59 @@ buildscript {
     }
     repositories {
         mavenLocal()
-        maven { url = "${aliyunPublic}" }
+        maven { url = aliyunPublic }
         mavenCentral()
     }
-
     dependencies {
-        // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-gradle-plugin
         classpath libs.spring.boot.gradle.plugin
     }
 }
 
-subprojects {
-    ext {
-        _jarName = "${project.name}"
-        _mainClass = 'cn.bcd.Application'
-    }
+def catalog = libs
+def libraryProjects = subprojects.findAll { it.name.startsWith('Lib-') }
+def applicationProjects = subprojects.findAll { it.name.startsWith('App-') }
 
+subprojects {
     group = 'cn.bcd'
     version = '1.0'
 
-    apply plugin: 'java-library'
     apply plugin: 'java'
     apply plugin: 'idea'
-//    apply plugin: "io.spring.dependency-management"
-    apply plugin: "org.springframework.boot"
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_25
-        targetCompatibility = JavaVersion.VERSION_25
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+        withSourcesJar()
     }
 
     repositories {
         mavenLocal()
-        maven { url = "${aliyunPublic}" }
+        maven { url = rootProject.aliyunPublic }
         mavenCentral()
     }
 
-    //统一配置排除spring logback包、使用log4j2
     configurations.configureEach {
-        //去除springboot默认的logback
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-        exclude module: 'logback-classic'
-        exclude module: 'logback-core'
-        //指定快照jar的更新策略
-        resolutionStrategy {
-            //缓存依赖时间、0代表不缓存
-            cacheChangingModulesFor 0, 'seconds'
-        }
+        exclude group: 'ch.qos.logback', module: 'logback-classic'
+        exclude group: 'ch.qos.logback', module: 'logback-core'
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
-
-//    configurations.all {
-//        resolutionStrategy.failOnVersionConflict()
-//    }
 
     dependencies {
-        //统一配置lombok
-        compileOnly libs.lombok
-        annotationProcessor libs.lombok
+        compileOnly catalog.lombok
+        annotationProcessor catalog.lombok
 
-        //统一配置mapstruct
-        implementation libs.mapstruct
-        annotationProcessor libs.mapstruct.processor
+        compileOnly catalog.mapstruct
+        annotationProcessor catalog.mapstruct.processor
 
-        //统一配置测试环境
-        implementation platform(libs.junit.bom)
-        testImplementation libs.junit.jupiter.engine
-        testRuntimeOnly libs.junit.platform.launcher
-        testImplementation libs.log4j.slf4j2.impl
-        testImplementation libs.jmh.generator.annprocess
+        testImplementation platform(catalog.junit.bom)
+        testImplementation catalog.junit.jupiter.api
+        testRuntimeOnly catalog.junit.jupiter.engine
+        testRuntimeOnly catalog.junit.platform.launcher
+        testImplementation catalog.log4j.slf4j2.impl
     }
 
-    //下载源码和文档
-    //gradle cleanIdea idea
     idea {
         module {
             downloadSources = true
@@ -83,107 +64,43 @@ subprojects {
         }
     }
 
-    //生成jar时打包源码
-    tasks.register('sourceJar', Jar) {
-        from sourceSets.main.java.srcDirs
-        archiveClassifier = "sources"
-    }
-
-    test {
+    tasks.withType(Test).configureEach {
         useJUnitPlatform()
     }
+}
 
-    springBoot {
-        mainClass = "${_mainClass}"
-    }
+configure(libraryProjects) {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
 
-    afterEvaluate {
-        def isLib = project.name.startsWith("Lib-")
-        if (isLib) {
-            jar {
-                /**
-                 * 默认lib打包采用此方式
-                 * 设置如下属性保证打包出来的jar文件名、去掉名称中的后缀、例如-1.0-plain
-                 */
-                archiveBaseName = "${_jarName}"
-                archiveClassifier = ""
-            }
-            bootJar {
-                enabled = false
-                /**
-                 如果需要使用bootJar打包lib、则首先在模块build.gradle头加入
-                 apply plugin: "org.springframework.boot"
-                 apply plugin: "io.spring.dependency-management"
-                 然后在这里开启bootJar 、 同时设置manifest
-                 */
-//                    enabled = true
-//                    manifest {
-//                        attributes 'Start-Class': ''
-//                    }
-            }
-            bootRun {
-                enabled = false
-            }
-        } else {
-            bootJar {
-                exclude "**/application-local.yml"
-                manifest {
-                    attributes 'Start-Class': 'cn.bcd.Application'
-                }
-                //指定jar文件的名称
-                archiveBaseName = "${_jarName}"
-            }
-
-//            // 将依赖包复制到lib目录
-//            tasks.register('copyJar', Copy) {
-//                // lib目录的清除和复制任务
-//                def dir = getLayout().getBuildDirectory().get()
-//                delete "$dir\\libs\\lib"
-//                from configurations.runtimeClasspath
-//                into "$dir\\libs\\lib"
-//                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-//            }
-//
-//            //分离式打包
-//            bootJar {
-//                var moduleJars = []
-//                var externalJars = []
-//                for (final def e in configurations.runtimeClasspath.files) {
-//                    if (e.name.startsWith("Lib-")) {
-//                        moduleJars.add(e.name)
-//                    } else {
-//                        externalJars.add(e.name)
-//                    }
-//                }
-//                // 排除所有的jar
-//                excludes = ["**/application-local.yml"]
-//                excludes.addAll(externalJars)
-//                // lib目录的清除和复制任务、排除复制的jar
-//                copyJar.exclude(moduleJars)
-//                dependsOn copyJar
-//                // 指定依赖包的路径
-//                manifest {
-//                    attributes 'Start-Class': "${_mainClass}".toString()
-//                    attributes "Manifest-Version": 1.0,
-//                            'Class-Path': externalJars.collect { "lib/$it" }.join(' ')
-//                }
-//                //指定jar文件的名称
-//                archiveBaseName = "${_jarName}"
-//            }
-
-
-            bootRun {
-                //这些参数在bootJar中不会生效、如果需要添加、则在java -jar后面加上、必须紧接着-jar
-                //开启缓存行补齐
-                jvmArgs([
-                        '-XX:-RestrictContended',
-                        '-Dfile.encoding=UTF-8',
-                        '-Dsun.jnu.encoding=UTF-8',
-                        '--add-opens=java.base/java.nio=ALL-UNNAMED',
-                        '--add-opens=java.base/java.lang=ALL-UNNAMED',
-                        '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
-                ])
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
             }
         }
+    }
+}
+
+configure(applicationProjects) {
+    apply plugin: 'org.springframework.boot'
+
+    springBoot {
+        mainClass = 'cn.bcd.Application'
+    }
+
+    tasks.named('bootJar') {
+        exclude '**/application-local.yml'
+    }
+
+    tasks.named('bootRun') {
+        jvmArgs(
+                '-XX:-RestrictContended',
+                '-Dfile.encoding=UTF-8',
+                '-Dsun.jnu.encoding=UTF-8',
+                '--add-opens=java.base/java.nio=ALL-UNNAMED',
+                '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED'
+        )
     }
 }
