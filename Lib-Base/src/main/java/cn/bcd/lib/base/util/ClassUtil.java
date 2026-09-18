@@ -191,49 +191,6 @@ public class ClassUtil {
     }
 
     /**
-     * 判断类型是否是基本类型或基本类型的包装类型
-     *
-     * @param clazz
-     * @return
-     */
-    public static boolean isPrimitiveWrapper(Class<?> clazz) {
-        try {
-            final Field field = clazz.getField("TYPE");
-            field.setAccessible(true);
-            return ((Class<?>) field.get(null)).isPrimitive();
-        } catch (NoSuchFieldException | SecurityException | IllegalAccessException ex) {
-            return false;
-        }
-    }
-
-    /**
-     * 判断是否是实体类
-     * - 非java基础类型及包装类型
-     * - 非接口、抽象类
-     * - 非枚举类
-     * - 非数组类
-     * - 非List、Map及其子类
-     *
-     * @param clazz
-     * @return
-     */
-    public static boolean isBeanType(Class<?> clazz) {
-        if (clazz.isPrimitive() || isPrimitiveWrapper(clazz)) {
-            return false;
-        } else if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-            return false;
-        } else if (clazz.isEnum()) {
-            return false;
-        } else if (clazz.isArray()) {
-            return false;
-        } else if (List.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    /**
      * 获取指定类可用于字段映射的实例字段。
      * <p>
      * 字段范围包括：
@@ -275,8 +232,4 @@ public class ClassUtil {
 
     }
 
-    public static void main(String[] args) {
-        System.out.println(isPrimitiveWrapper(Integer.class));
-        System.out.println(isPrimitiveWrapper(int.class));
-    }
 }
