@@ -94,7 +94,7 @@ public class SqlUtil {
      * @return
      */
     public static <T> InsertSqlResult<T> toInsertSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter) {
-        final List<Field> allFields = ClassUtil.getAllFields(clazz);
+        final List<Field> allFields = ClassUtil.getAllFields(clazz, true);
         final List<Field> insertFieldList = new ArrayList<>();
         for (Field field : allFields) {
             if (!Modifier.isStatic(field.getModifiers()) && (fieldFilter == null || fieldFilter.apply(field))) {
@@ -133,7 +133,7 @@ public class SqlUtil {
      * @return
      */
     public static <T> UpdateSqlResult<T> toUpdateSqlResult(Class<T> clazz, String table, Function<Field, Boolean> fieldFilter, String... whereFieldNames) {
-        final List<Field> allFields = ClassUtil.getAllFields(clazz);
+        final List<Field> allFields = ClassUtil.getAllFields(clazz, true);
         final List<Field> updateFieldList = new ArrayList<>();
         final Map<String, Field> whereMap = new HashMap<>();
         final Set<String> whereColumnSet = Set.of(whereFieldNames);
@@ -184,7 +184,10 @@ public class SqlUtil {
         return new UpdateSqlResult<>(sb.toString(), clazz, updateFieldList.toArray(new Field[0]), whereFieldList.toArray(new Field[0]));
     }
 
-    record Test(long id, String userName, Date createTime) {
+    static class Test {
+        long id;
+        String userName;
+        Date createTime;
     }
 
     public static void main(String[] args) {

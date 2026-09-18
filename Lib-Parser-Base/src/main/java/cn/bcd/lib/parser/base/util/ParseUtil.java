@@ -277,7 +277,7 @@ public class ParseUtil {
     }
 
     public static List<Field> getParseFields(Class<?> clazz) {
-        return ClassUtil.getAllFields(clazz).stream().filter(ParseUtil::needParse).collect(Collectors.toList());
+        return ClassUtil.getAllFields(clazz, true).stream().filter(ParseUtil::needParse).collect(Collectors.toList());
     }
 
     private static String getProcessorSuffix(ByteOrder byteOrder, NumValGetter numValGetter) {

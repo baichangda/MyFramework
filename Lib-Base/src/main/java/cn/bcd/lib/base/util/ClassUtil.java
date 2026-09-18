@@ -234,13 +234,22 @@ public class ClassUtil {
     }
 
     /**
-     * 获取class所有字段、会获取其父类字段
-     * public、非static
+     * 获取指定类可用于字段映射的实例字段。
+     * <p>
+     * 字段范围包括：
+     * <ul>
+     *     <li>指定类自身声明的所有字段，不限制访问级别；</li>
+     *     <li>各级父类声明的 {@code public} 字段。</li>
+     * </ul>
+     * {@code static} 字段和编译器生成的 synthetic 字段始终排除；
+     * {@code final} 字段是否排除由 {@code excludeFinal} 参数决定。
+     * 返回结果按照祖先类到指定类的顺序排列。子类隐藏父类同名字段时，两个字段都会保留。
      *
-     * @param clazz
-     * @return
+     * @param clazz        要获取字段的类
+     * @param excludeFinal 是否排除 {@code final} 字段
+     * @return 符合条件的字段列表
      */
-    public static List<Field> getAllFields(Class<?> clazz) {
+    public static List<Field> getAllFields(Class<?> clazz, boolean excludeFinal) {
         final List<Class<?>> classList = new ArrayList<>();
         classList.add(clazz);
         Class<?> temp = clazz;
@@ -249,15 +258,17 @@ public class ClassUtil {
             if (temp == null || Object.class == temp) {
                 break;
             } else {
-                classList.add(0, temp);
+                classList.addFirst(temp);
             }
         }
         final List<Field> resList = new ArrayList<>();
         for (Class<?> c : classList) {
-            //过滤掉 final、static关键字修饰、且不是public的字段
             final List<Field> fieldList = Arrays.stream(c.getDeclaredFields())
-                    .filter(e -> !Modifier.isStatic(e.getModifiers()) &&
-                            Modifier.isPublic(e.getModifiers())).toList();
+                    .filter(e -> !Modifier.isStatic(e.getModifiers())
+                            && (!excludeFinal || !Modifier.isFinal(e.getModifiers()))
+                            && (c == clazz
+                            || Modifier.isPublic(e.getModifiers()))
+                            && !e.isSynthetic()).toList();
             resList.addAll(fieldList);
         }
         return resList;
