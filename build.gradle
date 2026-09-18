@@ -1,15 +1,5 @@
-buildscript {
-    ext {
-        aliyunPublic = 'https://maven.aliyun.com/repository/public'
-    }
-    repositories {
-        mavenLocal()
-        maven { url = aliyunPublic }
-        mavenCentral()
-    }
-    dependencies {
-        classpath libs.spring.boot.gradle.plugin
-    }
+plugins {
+    alias(libs.plugins.spring.boot) apply false
 }
 
 def catalog = libs
@@ -28,12 +18,6 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(25)
         }
         withSourcesJar()
-    }
-
-    repositories {
-        mavenLocal()
-        maven { url = rootProject.aliyunPublic }
-        mavenCentral()
     }
 
     configurations.configureEach {

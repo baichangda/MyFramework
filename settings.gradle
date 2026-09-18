@@ -1,3 +1,21 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        maven { url = 'https://maven.aliyun.com/repository/gradle-plugin' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenLocal()
+        maven { url = 'https://maven.aliyun.com/repository/public' }
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'MyFramework'
 include 'Lib-Base'
 include 'Lib-Base-Json'
