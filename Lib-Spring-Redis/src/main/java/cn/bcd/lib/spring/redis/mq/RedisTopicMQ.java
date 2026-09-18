@@ -1,9 +1,7 @@
 package cn.bcd.lib.spring.redis.mq;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,16 +12,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import tools.jackson.databind.JavaType;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("unchecked")
 public class RedisTopicMQ<V> implements AutoCloseable{
 
     protected Logger logger = LoggerFactory.getLogger(RedisTopicMQ.class);
@@ -49,14 +44,21 @@ public class RedisTopicMQ<V> implements AutoCloseable{
 
     private volatile boolean consumerAvailable;
 
-    public RedisTopicMQ(RedisConnectionFactory connectionFactory, int subscriptionThreadNum, int taskThreadNum, ValueSerializerType valueSerializerType, String... names) {
+    public RedisTopicMQ(RedisConnectionFactory connectionFactory, int subscriptionThreadNum, int taskThreadNum,
+                        Class<V> valueClass, String... names) {
+        this(connectionFactory, subscriptionThreadNum, taskThreadNum,
+                RedisUtil.getValueSerializer(valueClass), names);
+    }
+
+    private RedisTopicMQ(RedisConnectionFactory connectionFactory, int subscriptionThreadNum, int taskThreadNum,
+                         RedisSerializer<V> redisSerializer, String... names) {
         this.connectionFactory = connectionFactory;
         this.subscriptionThreadNum = subscriptionThreadNum;
         this.taskThreadNum = taskThreadNum;
         this.names = names;
 
         redisTemplate = RedisUtil.newRedisTemplate_string_bytes(connectionFactory);
-        redisSerializer = (RedisSerializer<V>) getDefaultRedisSerializer(valueSerializerType);
+        this.redisSerializer = Objects.requireNonNull(redisSerializer, "redisSerializer");
 
     }
 
@@ -64,31 +66,6 @@ public class RedisTopicMQ<V> implements AutoCloseable{
         return names;
     }
 
-
-    private RedisSerializer<?> getDefaultRedisSerializer(ValueSerializerType valueSerializerType) {
-        switch (valueSerializerType) {
-            case BYTE_ARRAY -> {
-                return RedisUtil.SERIALIZER_VALUE_BYTEARRAY;
-            }
-            case STRING -> {
-                return RedisUtil.SERIALIZER_VALUE_STRING;
-            }
-            case SERIALIZABLE -> {
-                return RedisUtil.SERIALIZER_VALUE_JDK;
-            }
-            case JACKSON -> {
-                return RedisUtil.newJackson2JsonRedisSerializer(parseValueJavaType());
-            }
-            default -> {
-                throw BaseException.get("Not Support");
-            }
-        }
-    }
-
-    private JavaType parseValueJavaType() {
-        Type parentType = ClassUtil.getParentUntil(getClass(), RedisTopicMQ.class);
-        return JsonUtil.getJavaType(((ParameterizedType) parentType).getActualTypeArguments()[0]);
-    }
 
     protected void onMessage(Message message, byte[] pattern) {
         V v = redisSerializer.deserialize(unCompress(message.getBody()));

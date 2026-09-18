@@ -1,9 +1,6 @@
 package cn.bcd.lib.spring.redis.mq;
 
-import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.base.util.ClassUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 
 import org.slf4j.Logger;
@@ -13,16 +10,13 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import tools.jackson.databind.JavaType;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-@SuppressWarnings("unchecked")
 public class RedisQueueMQ<V> implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -47,43 +41,25 @@ public class RedisQueueMQ<V> implements AutoCloseable {
     private volatile boolean consumerAvailable;
 
 
-    public RedisQueueMQ(String name, RedisConnectionFactory connectionFactory, ValueSerializerType valueSerializerType, int consumerThreadNum, int workThreadNum) {
+    public RedisQueueMQ(String name, RedisConnectionFactory connectionFactory, Class<V> valueClass,
+                        int consumerThreadNum, int workThreadNum) {
+        this(name, connectionFactory, RedisUtil.getValueSerializer(valueClass),
+                consumerThreadNum, workThreadNum);
+    }
+
+    private RedisQueueMQ(String name, RedisConnectionFactory connectionFactory, RedisSerializer<V> valueSerializer,
+                         int consumerThreadNum, int workThreadNum) {
         this.name = name;
         this.consumerThreadNum = consumerThreadNum;
         this.workThreadNum = workThreadNum;
 
         this.redisTemplate = RedisUtil.newRedisTemplate_string_bytes(connectionFactory);
         this.boundListOperations = redisTemplate.boundListOps(name);
-        this.valueSerializer = (RedisSerializer<V>) getDefaultRedisSerializer(valueSerializerType);
+        this.valueSerializer = Objects.requireNonNull(valueSerializer, "valueSerializer");
     }
 
     public String getName() {
         return name;
-    }
-
-    private RedisSerializer<?> getDefaultRedisSerializer(ValueSerializerType valueSerializerType) {
-        switch (valueSerializerType) {
-            case BYTE_ARRAY -> {
-                return RedisUtil.SERIALIZER_VALUE_BYTEARRAY;
-            }
-            case STRING -> {
-                return RedisUtil.SERIALIZER_VALUE_STRING;
-            }
-            case SERIALIZABLE -> {
-                return RedisUtil.SERIALIZER_VALUE_JDK;
-            }
-            case JACKSON -> {
-                return RedisUtil.newJackson2JsonRedisSerializer(parseValueJavaType());
-            }
-            default -> {
-                throw BaseException.get("valueSerializerType [{}] not support", valueSerializerType);
-            }
-        }
-    }
-
-    private JavaType parseValueJavaType() {
-        Type parentType = ClassUtil.getParentUntil(getClass(), RedisQueueMQ.class);
-        return JsonUtil.getJavaType(((ParameterizedType) parentType).getActualTypeArguments()[0]);
     }
 
     protected byte[] compress(byte[] data) {

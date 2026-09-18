@@ -20,7 +20,18 @@ spring:
 
 确保 `RedisConfig` 被扫描，可注入 `string_serializable_redisTemplate`、`string_string_redisTemplate` 和 `RedisMessageListenerContainer`。自定义类型模板可通过 `RedisUtil.newRedisTemplate_string_jackson(...)` 创建。
 
-`RedisTopicMQ` 用于广播，`RedisQueueMQ` 用于队列消费；创建后调用 `init()`，关闭时调用 `close()`。使用 `@SingleFailedSchedule` 前需启用 AOP 和调度。服务注册功能通过 `register.host` 启用。
+`RedisTopicMQ` 用于广播，`RedisQueueMQ` 用于队列消费；创建后调用 `init()`，关闭时调用 `close()`。直接实例化并使用 JACKSON 序列化时，需要显式传入值类型，例如：
+
+```java
+RedisQueueMQ<MyMessage> queue = new RedisQueueMQ<>(
+        "my-queue", connectionFactory, MyMessage.class, 1, 4);
+```
+
+传入 `String.class` 或 `byte[].class` 时分别使用字符串和字节数组原生序列化器，其他类型使用 Jackson。
+
+复杂集合或泛型消息应包装为具体 DTO，再通过 DTO 的 `Class` 创建 MQ，避免消息协议依赖运行时泛型信息。
+
+使用 `@SingleFailedSchedule` 前需启用 AOP 和调度。服务注册功能通过 `register.host` 启用。
 
 服务注册配置示例：
 

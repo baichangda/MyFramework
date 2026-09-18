@@ -15,6 +15,7 @@ import tools.jackson.databind.JavaType;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 @SuppressWarnings("unchecked")
 public class RedisUtil {
@@ -26,6 +27,20 @@ public class RedisUtil {
     public final static RedisSerializer<String> SERIALIZER_VALUE_STRING = RedisSerializer.string();
     public final static RedisSerializer<Integer> SERIALIZER_VALUE_INTEGER = new RedisSerializer_value_integer();
     public final static RedisSerializer<byte[]> SERIALIZER_VALUE_BYTEARRAY = RedisSerializer.byteArray();
+
+    /**
+     * 根据值类型选择 Redis 序列化器。String 和 byte[] 使用原生序列化器，其他类型使用 Jackson。
+     */
+    public static <V> RedisSerializer<V> getValueSerializer(Class<V> valueClass) {
+        Objects.requireNonNull(valueClass, "valueClass");
+        if (valueClass == String.class) {
+            return (RedisSerializer<V>) SERIALIZER_VALUE_STRING;
+        } else if (valueClass == byte[].class) {
+            return (RedisSerializer<V>) SERIALIZER_VALUE_BYTEARRAY;
+        } else {
+            return newJackson2JsonRedisSerializer(valueClass);
+        }
+    }
 
     /**
      * 获取对应实体类型的String_Jackson的redisTemplate
