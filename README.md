@@ -82,3 +82,7 @@ REPO_PASSWORD
 ```cmd
 gradle :App-BP-Backend:publishMavenPublicationToMavenRepository
 ```
+
+## Profiling
+
+This project uses [JProfiler, a Java profiler](https://www.ej-technologies.com/jprofiler) for performance analysis.
