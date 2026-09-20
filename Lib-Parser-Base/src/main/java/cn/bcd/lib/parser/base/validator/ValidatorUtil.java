@@ -56,6 +56,28 @@ final class ValidatorUtil {
         }
     }
 
+    static void validateValueExpression(Field field, String property, String expression) {
+        int depth = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (Character.isWhitespace(c) || Character.isDigit(c) || c == 'x'
+                    || c == '.' || c == '+' || c == '-' || c == '*' || c == '/') {
+                continue;
+            }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && --depth < 0) {
+                fail("{} {} has unbalanced parentheses: {}", fieldDescription(field), property, expression);
+            } else if (c != ')') {
+                fail("{} {} only supports variable[x], found[{}]: {}",
+                        fieldDescription(field), property, c, expression);
+            }
+        }
+        if (depth != 0) {
+            fail("{} {} has unbalanced parentheses: {}", fieldDescription(field), property, expression);
+        }
+    }
+
     static String fieldDescription(Field field) {
         return "class[" + field.getDeclaringClass().getName() + "] field[" + field.getName() + "]";
     }

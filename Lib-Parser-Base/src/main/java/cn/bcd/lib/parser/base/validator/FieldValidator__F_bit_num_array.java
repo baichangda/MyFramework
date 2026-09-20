@@ -10,6 +10,7 @@ public final class FieldValidator__F_bit_num_array {
 
     public static void validate(Field field, F_bit_num_array annotation) {
         ValidatorUtil.validateNumericArrayField(field, "@F_bit_num_array");
+        ValidatorUtil.validateValueExpression(field, "@F_bit_num_array singleValExpr", annotation.singleValExpr());
         ValidatorUtil.validateRequiredLengthPair(ValidatorUtil.fieldDescription(field), "@F_bit_num_array",
                 annotation.len(), annotation.lenExpr());
         ValidatorUtil.validateRange(field, "@F_bit_num_array singleLen", annotation.singleLen(), 1, 64);

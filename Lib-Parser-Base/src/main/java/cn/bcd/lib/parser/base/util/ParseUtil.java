@@ -3,6 +3,7 @@ package cn.bcd.lib.parser.base.util;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ClassUtil;
+import cn.bcd.lib.base.util.FloatUtil;
 import cn.bcd.lib.parser.base.Parser;
 import cn.bcd.lib.parser.base.anno.*;
 import cn.bcd.lib.parser.base.builder.BuilderContext;
@@ -30,15 +31,6 @@ import java.util.stream.Collectors;
 
 public class ParseUtil {
     static Logger logger = LoggerFactory.getLogger(ParseUtil.class);
-
-    static final double[] pows;
-
-    static {
-        pows = new double[11];
-        for (int i = 0; i < pows.length; i++) {
-            pows[i] = Math.pow(10, i);
-        }
-    }
 
     public static boolean bigEndian(ByteOrder order, ByteOrder parentOrder) {
         if (parentOrder == null) {
@@ -107,16 +99,19 @@ public class ParseUtil {
         if (expr.isEmpty()) {
             return valExpr;
         }
-        final StringBuilder sb = new StringBuilder();
-        final char[] chars = expr.toCharArray();
-        for (char c : chars) {
-            if (c == ' ') {
+        final StringBuilder sb = new StringBuilder(expr.length() + valExpr.length());
+        for (int i = 0; i < expr.length(); i++) {
+            char c = expr.charAt(i);
+            if (Character.isWhitespace(c)) {
                 continue;
             }
-            if (c != '+' && c != '-' && c != '*' && c != '/' && c != '(' && c != ')' && c != '.' && !Character.isDigit(c)) {
+            if (c == 'x') {
                 sb.append(valExpr);
-            } else {
+            } else if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')'
+                    || c == '.' || Character.isDigit(c)) {
                 sb.append(c);
+            } else {
+                throw BaseException.get("valExpr only supports variable[x], found[{}]: {}", c, expr);
             }
         }
         return sb.toString();
@@ -235,35 +230,15 @@ public class ParseUtil {
 
 
     public static long round(double d) {
-        if (d > 0d) {
-            return (long) (d + 0.5);
-        } else if (d < 0d) {
-            return (long) (d - 0.5);
-        } else {
-            return 0;
-        }
+        return FloatUtil.round(d);
     }
 
     public static int round(float f) {
-        if (f > 0d) {
-            return (int) (f + 0.5);
-        } else if (f < 0d) {
-            return (int) (f - 0.5);
-        } else {
-            return 0;
-        }
+        return FloatUtil.round(f);
     }
 
     public static double round(double d, int i) {
-        if (d == 0) {
-            return 0;
-        } else {
-            if (i == 0) {
-                return round(d);
-            } else {
-                return round(d * pows[i]) / pows[i];
-            }
-        }
+        return FloatUtil.format(d, i);
     }
 
     public static boolean needParse(Field field) {

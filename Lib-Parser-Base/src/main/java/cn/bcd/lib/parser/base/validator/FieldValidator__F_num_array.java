@@ -12,6 +12,7 @@ public final class FieldValidator__F_num_array {
 
     public static void validate(Field field, F_num_array annotation, NumValGetter numValGetter) {
         ValidatorUtil.validateNumericArrayField(field, "@F_num_array");
+        ValidatorUtil.validateValueExpression(field, "@F_num_array singleValExpr", annotation.singleValExpr());
         if (annotation.singleCheckVal()) {
             ValidatorUtil.validateCompanionField(field, "@F_num_array singleCheckVal", byte[].class);
         }

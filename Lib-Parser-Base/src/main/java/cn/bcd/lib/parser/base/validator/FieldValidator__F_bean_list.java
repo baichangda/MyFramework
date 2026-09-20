@@ -21,10 +21,14 @@ public final class FieldValidator__F_bean_list {
             ValidatorUtil.fail("{} @F_bean_list requires an array or List field", ValidatorUtil.fieldDescription(field));
         }
         Type genericType = field.getGenericType();
-        if (!(genericType instanceof ParameterizedType parameterizedType)
-                || parameterizedType.getActualTypeArguments().length != 1
-                || !(parameterizedType.getActualTypeArguments()[0] instanceof Class<?>)) {
+        if (!(genericType instanceof ParameterizedType)) {
             ValidatorUtil.fail("{} @F_bean_list requires a concrete List element type", ValidatorUtil.fieldDescription(field));
         }
+        Type[] elementTypes = ((ParameterizedType) genericType).getActualTypeArguments();
+        if (elementTypes.length != 1 || !(elementTypes[0] instanceof Class<?>)) {
+            ValidatorUtil.fail("{} @F_bean_list requires a concrete List element type",
+                    ValidatorUtil.fieldDescription(field));
+        }
+        ModelClassValidator.validate((Class<?>) elementTypes[0]);
     }
 }

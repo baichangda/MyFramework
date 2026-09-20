@@ -10,6 +10,7 @@ public final class FieldValidator__F_bit_num_easy {
 
     public static void validate(Field field, F_bit_num_easy annotation) {
         ValidatorUtil.validateNumericField(field, "@F_bit_num_easy");
+        ValidatorUtil.validateValueExpression(field, "@F_bit_num_easy valExpr", annotation.valExpr());
         ValidatorUtil.validateVariable(field, "@F_bit_num_easy", annotation.var(), annotation.globalVar());
         ValidatorUtil.validateSkipVariable(field, "@F_bit_num_easy", annotation.skip(), annotation.var(), annotation.globalVar());
         ValidatorUtil.validateRange(field, "@F_bit_num_easy bitStart", annotation.bitStart(), 0, 31);
