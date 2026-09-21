@@ -87,15 +87,6 @@ public final class FloatUtil {
      * @return 舍入后的整数
      */
     public static long round(double value) {
-        if (!Double.isFinite(value)) {
-            return Math.round(value);
-        }
-        if (value >= Long.MAX_VALUE) {
-            return Long.MAX_VALUE;
-        }
-        if (value <= Long.MIN_VALUE) {
-            return Long.MIN_VALUE;
-        }
         return value >= 0 ? Math.round(value) : -Math.round(-value);
     }
 
@@ -107,15 +98,6 @@ public final class FloatUtil {
      * @return 舍入后的整数
      */
     public static int round(float value) {
-        if (!Float.isFinite(value)) {
-            return Math.round(value);
-        }
-        if (value >= Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        if (value <= Integer.MIN_VALUE) {
-            return Integer.MIN_VALUE;
-        }
         return value >= 0 ? Math.round(value) : -Math.round(-value);
     }
 
@@ -129,17 +111,10 @@ public final class FloatUtil {
      * @return 舍入后的 {@code double}
      * @throws IllegalArgumentException 当 {@code scale} 超出支持范围时抛出
      */
-    public static double format(double value, int scale) {
+    public static double round(double value, int scale) {
         validateScale(scale);
-        if (!Double.isFinite(value)) {
-            return value;
-        }
         double factor = FACTORS[scale];
         double scaled = Math.abs(value) * factor;
-        if (!Double.isFinite(scaled) || scaled >= 0x1.0p52) {
-            return value;
-        }
-
         // nextUp 补偿十进制临界值转换为二进制后可能产生的一个 ULP 误差，例如 1.005 * 100。
         double rounded = Math.floor(Math.nextUp(scaled) + 0.5d) / factor;
         return Math.copySign(rounded, value);

@@ -518,9 +518,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         int workExecutorCount = workExecutors.length;
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
-        double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
+        double consumeSpeed = FloatUtil.round(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
-        double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
+        double workSpeed = FloatUtil.round(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
                         "workHandler[{}] " +

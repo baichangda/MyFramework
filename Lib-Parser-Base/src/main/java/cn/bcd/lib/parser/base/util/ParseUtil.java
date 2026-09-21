@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -238,7 +237,7 @@ public class ParseUtil {
     }
 
     public static double round(double d, int i) {
-        return FloatUtil.format(d, i);
+        return FloatUtil.round(d, i);
     }
 
     public static boolean needParse(Field field) {

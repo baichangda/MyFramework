@@ -438,9 +438,9 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
                 groupName,
                 monitorBlockingNum.sum(),
                 monitorEntityNum.sum(),
-                FloatUtil.format(monitorReceiveNum.sumThenReset() / (double) monitorPeriod, 2),
+                FloatUtil.round(monitorReceiveNum.sumThenReset() / (double) monitorPeriod, 2),
                 queueLog,
-                FloatUtil.format(monitorWorkNum.sumThenReset() / (double) monitorPeriod, 2));
+                FloatUtil.round(monitorWorkNum.sumThenReset() / (double) monitorPeriod, 2));
     }
 
     public static class EntityScanner {

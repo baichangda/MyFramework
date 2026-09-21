@@ -51,12 +51,12 @@ public class DataConsumer extends DataDrivenKafkaConsumer {
         int workExecutorCount = workExecutors.length;
         long workHandlerCount = monitor_workHandlerCount.sum();
         long curBlockingNum = blockingNum.sum();
-        double consumeSpeed = FloatUtil.format(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
+        double consumeSpeed = FloatUtil.round(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
         String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
-        double workSpeed = FloatUtil.format(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
-        double sendSpeed = FloatUtil.format(TcpClient.sendNum.sumThenReset() / ((double) monitor_period), 2);
-        double saveSpeed_transfer = FloatUtil.format(SaveUtil.saveCount_transfer.sumThenReset() / ((double) monitor_period), 2);
-        double saveSpeed_transferResponse = FloatUtil.format(SaveUtil.saveCount_transferResponse.sumThenReset() / ((double) monitor_period), 2);
+        double workSpeed = FloatUtil.round(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
+        double sendSpeed = FloatUtil.round(TcpClient.sendNum.sumThenReset() / ((double) monitor_period), 2);
+        double saveSpeed_transfer = FloatUtil.round(SaveUtil.saveCount_transfer.sumThenReset() / ((double) monitor_period), 2);
+        double saveSpeed_transferResponse = FloatUtil.round(SaveUtil.saveCount_transferResponse.sumThenReset() / ((double) monitor_period), 2);
         return StringUtil.format("name[{}] " +
                         "workExecutor[{}] " +
                         "workHandler[{}] " +
