@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.LongAdder;
 public class SaveUtil {
     public final static int queueSize = 100000;
     public static ArrayBlockingQueue<RawData> queue;
-    static ExecutorService pool = Executors.newSingleThreadExecutor();
+    static ExecutorService pool;
     public final static LongAdder saveCount = new LongAdder();
 
     static Logger logger = LoggerFactory.getLogger(SaveUtil.class);
