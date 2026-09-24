@@ -41,7 +41,7 @@ public class Parser {
     /**
      * 禁用 Netty ByteBuf 的可访问性和边界检查，可提高性能，但输入错误时不再提供相同的安全保护。
      * {@link io.netty.buffer.AbstractByteBuf#PROP_CHECK_BOUNDS}
-     * {@link io.netty.buffer.AbstractByteBuf#LEGACY_PROP_CHECK_ACCESSIBLE}
+     * {@link io.netty.buffer.AbstractByteBuf#PROP_CHECK_ACCESSIBLE}
      */
     public static void disableByteBufCheck() {
         System.setProperty("io.netty.buffer.checkBounds", "false");
