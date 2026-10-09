@@ -134,7 +134,19 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
      * 从redis中获取所有的监听信息、更新本地缓存
      */
     private void startUpdateCacheFromRedis() {
-        scheduledPool.scheduleWithFixedDelay(this::checkAndUpdateCache, 1, 1, TimeUnit.MINUTES);
+        scheduledPool.scheduleWithFixedDelay(this::safeCheckAndUpdateCache, 1, 1, TimeUnit.MINUTES);
+    }
+
+    private void safeCheckAndUpdateCache() {
+        try {
+            checkAndUpdateCache().whenComplete((unused, throwable) -> {
+                if (throwable != null) {
+                    logger.error("notify server update cache error type[{}]", type, throwable);
+                }
+            });
+        } catch (Exception e) {
+            logger.error("notify server update cache error type[{}]", type, e);
+        }
     }
 
 
