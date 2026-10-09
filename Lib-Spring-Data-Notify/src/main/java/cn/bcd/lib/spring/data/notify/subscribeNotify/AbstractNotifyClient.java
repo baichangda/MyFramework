@@ -11,10 +11,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +34,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     private final String notifyTopic;
     private final KafkaProperties.Consumer consumerProp;
     private final String type;
+    private final String clientId;
 
     /**
      * @param kafkaBootstrapServers  监听kafka地址
@@ -57,6 +58,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 0,
                 ConsumerParam.get_singleConsumer("_notify_" + type));
         this.type = type;
+        this.clientId = groupId;
         this.consumerProp = new KafkaProperties.Consumer();
         this.consumerProp.setBootstrapServers(kafkaBootstrapServers);
         this.consumerProp.setGroupId(groupId);
@@ -77,7 +79,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
             for (Map.Entry<String, ListenerInfo> entry2 : id_listenerInfo.entrySet()) {
                 ListenerInfo value2 = entry2.getValue();
                 value2.ts = ts;
-                save.put(entry2.getKey(), value2.toString());
+                save.put(value2.redisField(), value2.toString());
             }
             try {
                 boundHashOperations.putAll(save);
@@ -120,13 +122,14 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
      */
     public CompletableFuture<Void> subscribe(String id, Consumer<byte[]> consumer) {
         return CompletableFuture.runAsync(() -> {
-            final ListenerInfo listenerInfo = new ListenerInfo(id, System.currentTimeMillis(), consumer);
+            final ListenerInfo listenerInfo = new ListenerInfo(id, clientId, System.currentTimeMillis(), consumer);
             id_listenerInfo.put(id, listenerInfo);
             try {
                 //添加到redis
-                boundHashOperations.put(id, listenerInfo.toString());
+                boundHashOperations.put(listenerInfo.redisField(), listenerInfo.toString());
                 //发送kafka通知
-                producer.send(new ProducerRecord<>(subscribeTopic, id, ("1" + listenerInfo).getBytes()));
+                producer.send(new ProducerRecord<>(subscribeTopic, id,
+                        ("1" + listenerInfo).getBytes(StandardCharsets.UTF_8)));
                 logger.info("notify client subscribe type[{}] id[{}]", type, id);
             } catch (Exception ex) {
                 logger.error("notify client subscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);
@@ -143,11 +146,13 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         return CompletableFuture.runAsync(() -> {
             //删除缓存
             id_listenerInfo.remove(id);
+            final ListenerInfo listenerInfo = new ListenerInfo(id, clientId, System.currentTimeMillis());
             try {
                 //从redis删除
-                boundHashOperations.delete(id);
+                boundHashOperations.delete(listenerInfo.redisField());
                 //发送kafka通知
-                producer.send(new ProducerRecord<>(subscribeTopic, id, ("2" + id).getBytes()));
+                producer.send(new ProducerRecord<>(subscribeTopic, id,
+                        ("2" + listenerInfo).getBytes(StandardCharsets.UTF_8)));
                 logger.info("notify client unsubscribe type[{}] id[{}]", type, id);
             } catch (Exception ex) {
                 logger.error("notify client unsubscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);

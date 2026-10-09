@@ -14,14 +14,16 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.BoundHashOperations;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
@@ -47,7 +49,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     private final String subscribeTopic;
     private final String notifyTopic;
 
-    private Map<String, ListenerInfo> cache = new HashMap<>();
+    private Map<String, Set<String>> cache = new HashMap<>();
     private final KafkaProperties.Consumer consumerProp;
 
     /**
@@ -109,23 +111,42 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
         final byte[] value = consumerRecord.value();
+        if (value == null || value.length < 2) {
+            logger.warn("notify server invalid subscribe message type[{}]", type);
+            return;
+        }
         final char flag = (char) value[0];
-        final String content = new String(value, 1, value.length - 1);
+        final String content = new String(value, 1, value.length - 1, StandardCharsets.UTF_8);
         try {
+            final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
             if (flag == '1') {
-                final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
-                workPool.execute(() -> {
-                    cache.put(listenerInfo.id, listenerInfo);
-                });
-                logger.info("notify server subscribe type[{}] id[{}]", type, listenerInfo.id);
+                workPool.execute(() -> addListener(cache, listenerInfo));
+                logger.info("notify server subscribe type[{}] id[{}] clientId[{}]",
+                        type, listenerInfo.id, listenerInfo.clientId);
+            } else if (flag == '2') {
+                workPool.execute(() -> removeListener(cache, listenerInfo));
+                logger.info("notify server unsubscribe type[{}] id[{}] clientId[{}]",
+                        type, listenerInfo.id, listenerInfo.clientId);
             } else {
-                workPool.execute(() -> {
-                    cache.remove(content);
-                });
-                logger.info("notify server unsubscribe type[{}] id[{}]", type, content);
+                logger.warn("notify server unknown subscribe flag type[{}] flag[{}]", type, flag);
             }
         } catch (IOException e) {
-            logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, new String(value), e);
+            logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}",
+                    type, new String(value, StandardCharsets.UTF_8), e);
+        }
+    }
+
+    static void addListener(Map<String, Set<String>> cache, ListenerInfo listenerInfo) {
+        cache.computeIfAbsent(listenerInfo.id, ignored -> new HashSet<>()).add(listenerInfo.clientId);
+    }
+
+    static void removeListener(Map<String, Set<String>> cache, ListenerInfo listenerInfo) {
+        Set<String> clientIds = cache.get(listenerInfo.id);
+        if (clientIds != null) {
+            clientIds.remove(listenerInfo.clientId);
+            if (clientIds.isEmpty()) {
+                cache.remove(listenerInfo.id);
+            }
         }
     }
 
@@ -151,7 +172,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
 
 
     private CompletableFuture<Void> checkAndUpdateCache() {
-        Map<String, ListenerInfo> aliveMap = new HashMap<>();
+        Map<String, Set<String>> aliveMap = new HashMap<>();
         Map<String, String> entries = boundHashOperations.entries();
         if (entries != null) {
             for (Map.Entry<String, String> entry : entries.entrySet()) {
@@ -159,7 +180,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                 try {
                     final ListenerInfo listenerInfo = ListenerInfo.fromString(value);
                     if ((System.currentTimeMillis() - listenerInfo.ts) <= SUBSCRIPTION_TIMEOUT_MILLIS) {
-                        aliveMap.put(entry.getKey(), listenerInfo);
+                        addListener(aliveMap, listenerInfo);
                     }
                 } catch (IOException e) {
                     logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, value);
@@ -167,13 +188,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
             }
         }
         return CompletableFuture.runAsync(() -> {
-            boolean update;
-            if (aliveMap.size() == cache.size()) {
-                update = aliveMap.entrySet().stream().anyMatch(e -> !cache.containsKey(e.getKey()));
-            } else {
-                update = true;
-            }
-            if (update) {
+            if (!aliveMap.equals(cache)) {
                 cache = aliveMap;
             }
         }, workPool);

@@ -6,24 +6,33 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.bcd.lib.base.json.JsonUtil;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ListenerInfo {
     public final String id;
+    public final String clientId;
     public long ts;
 
     @JsonIgnore
     public Consumer<byte[]> consumer;
 
     @JsonCreator
-    public ListenerInfo(@JsonProperty("id") String id, @JsonProperty("ts") long ts) {
-        this(id, ts, null);
+    public ListenerInfo(@JsonProperty("id") String id,
+                        @JsonProperty("clientId") String clientId,
+                        @JsonProperty("ts") long ts) {
+        this(id, clientId, ts, null);
     }
 
-    public ListenerInfo(String id, long ts, Consumer<byte[]> consumer) {
-        this.id = id;
+    public ListenerInfo(String id, String clientId, long ts, Consumer<byte[]> consumer) {
+        this.id = Objects.requireNonNull(id, "id");
+        this.clientId = Objects.requireNonNull(clientId, "clientId");
         this.ts = ts;
         this.consumer = consumer;
+    }
+
+    public String redisField() {
+        return clientId.length() + ":" + clientId + id;
     }
 
     public String toString() {
