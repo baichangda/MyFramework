@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -131,6 +133,22 @@ class KafkaLifecycleTest {
                         consumer.workExecutors[0].workHandlers.put(handler.id, handler);
                         assertSame(handler, consumer.getHandler(handler.id));
                     }).get());
+        } finally {
+            consumer.close();
+        }
+    }
+
+    @Test
+    void dataDrivenConsumerReturnsStartupFailureAndCanRetry() {
+        DataDrivenKafkaConsumer consumer = newDataConsumer("data-startup-result");
+
+        try {
+            var firstResult = consumer.startConsume(Map.of());
+            assertThrows(CompletionException.class, firstResult::join);
+
+            var secondResult = consumer.startConsume(Map.of());
+            assertNotSame(firstResult, secondResult);
+            assertThrows(CompletionException.class, secondResult::join);
         } finally {
             consumer.close();
         }

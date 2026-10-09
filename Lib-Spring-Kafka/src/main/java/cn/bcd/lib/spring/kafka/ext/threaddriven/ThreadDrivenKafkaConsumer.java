@@ -4,7 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
-import cn.bcd.lib.spring.kafka.ext.KafkaExtUtil;
+import cn.bcd.lib.spring.kafka.ext.KafkaConsumerGroup;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -74,7 +74,8 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 消费线程
      */
-    public KafkaExtUtil.ConsumerThreadHolder consumerThreadHolder;
+    public KafkaConsumerGroup consumerGroup;
+    private CompletableFuture<Void> startupResult;
 
 
     /**
@@ -235,7 +236,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 开始消费
      */
-    public synchronized void startConsume(Map<String, Object> consumerProp) {
+    public synchronized CompletableFuture<Void> startConsume(Map<String, Object> consumerProp) {
         if (closed) {
             throw new IllegalStateException("consumer already closed");
         }
@@ -243,13 +244,19 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
             running_consume = true;
             try {
                 //启动消费者
-                consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
-                consumerThreadHolder.start();
-            } catch (RuntimeException ex) {
+                consumerGroup = KafkaConsumerGroup.create(name, consumerProp, consumerParam, this::consume);
+                startupResult = consumerGroup.start().whenComplete((ignored, error) -> {
+                    if (error != null) {
+                        running_consume = false;
+                    }
+                });
+            } catch (RuntimeException | Error ex) {
                 running_consume = false;
-                throw ex;
+                logger.error("kafka consumer start error", ex);
+                startupResult = CompletableFuture.failedFuture(ex);
             }
         }
+        return startupResult;
     }
 
     /**
@@ -287,8 +294,8 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     private void closeInternal() {
         //打上退出标记、等待消费线程退出
         running_consume = false;
-        if (consumerThreadHolder != null) {
-            ExecutorUtil.shutdownThenAwait(true, consumerThreadHolder.thread(), consumerThreadHolder.threads());
+        if (consumerGroup != null) {
+            consumerGroup.close();
         }
         ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool, queue, queues);
         //打上退出标记、等待工作线程退出
@@ -322,14 +329,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         if (workThreads != null && Arrays.asList(workThreads).contains(current)) {
             return true;
         }
-        if (consumerThreadHolder == null) {
-            return false;
-        }
-        if (consumerThreadHolder.thread() == current) {
-            return true;
-        }
-        Thread[] threads = consumerThreadHolder.threads();
-        return threads != null && Arrays.asList(threads).contains(current);
+        return consumerGroup != null && consumerGroup.contains(current);
     }
 
     /**
@@ -401,6 +401,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                 }
             }
         } finally {
+            running_consume = false;
             String assignment = "";
             try {
                 assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
