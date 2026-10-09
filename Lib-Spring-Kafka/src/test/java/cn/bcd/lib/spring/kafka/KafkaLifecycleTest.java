@@ -11,11 +11,15 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -112,6 +116,66 @@ class KafkaLifecycleTest {
         });
     }
 
+    @Test
+    void dataDrivenConsumerCanGetHandlerFromItsWorkerThread() {
+        DataDrivenKafkaConsumer consumer = newDataConsumer("data-worker-get-handler");
+        WorkHandler handler = new WorkHandler("id") {
+            @Override
+            public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
+            }
+        };
+
+        try {
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () ->
+                    consumer.workExecutors[0].submit(() -> {
+                        consumer.workExecutors[0].workHandlers.put(handler.id, handler);
+                        assertSame(handler, consumer.getHandler(handler.id));
+                    }).get());
+        } finally {
+            consumer.close();
+        }
+    }
+
+    @Test
+    void scannerDoesNotRemoveHandlerRefreshedAfterScanStarts() {
+        DataDrivenKafkaConsumer consumer = newDataConsumer("data-scanner-race");
+        var executor = consumer.workExecutors[0];
+        CountDownLatch workerEntered = new CountDownLatch(1);
+        CountDownLatch releaseWorker = new CountDownLatch(1);
+        AtomicReference<WorkHandler> activeHandler = new AtomicReference<>();
+
+        try {
+            executor.submit(() -> executor.workHandlers.put("id", newTestHandler("id"))).get();
+            executor.execute(() -> {
+                workerEntered.countDown();
+                try {
+                    releaseWorker.await();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            assertTrue(workerEntered.await(5, TimeUnit.SECONDS));
+
+            consumer.scanAndDestroyWorkHandler(1);
+            Future<?> messageTask = executor.submit(() -> {
+                WorkHandler handler = executor.workHandlers.computeIfAbsent("id", KafkaLifecycleTest::newTestHandler);
+                handler.lastMessageTime = Long.MAX_VALUE;
+                activeHandler.set(handler);
+            });
+            releaseWorker.countDown();
+            messageTask.get();
+            executor.submit(() -> {
+            }).get();
+
+            assertSame(activeHandler.get(), consumer.getHandler("id"));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            releaseWorker.countDown();
+            consumer.close();
+        }
+    }
+
     private static DataDrivenKafkaConsumer newDataConsumer(String name) {
         return new DataDrivenKafkaConsumer(
                 name, 1, 0, true, 0,
@@ -124,6 +188,14 @@ class KafkaLifecycleTest {
                     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
                     }
                 };
+            }
+        };
+    }
+
+    private static WorkHandler newTestHandler(String id) {
+        return new WorkHandler(id) {
+            @Override
+            public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
             }
         };
     }

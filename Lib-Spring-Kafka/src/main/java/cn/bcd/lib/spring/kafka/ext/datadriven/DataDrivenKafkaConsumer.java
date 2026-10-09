@@ -137,7 +137,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
     /**
      * @param name                当前消费者的名称(用于标定线程名称)
-     * @param workExecutorNum     工作任务执行器个数、最好是2的倍数、如果不是向上取整到2的倍数
+     * @param workExecutorNum     工作任务执行器个数、会向上取整到2的幂
      * @param maxBlockingNum      最大阻塞数量(0代表不限制)、当内存中达到最大阻塞数量时候、消费者会停止消费
      *                            当不限制时候、还是会记录{@link #blockingNum}、便于监控阻塞数量
      * @param autoReleaseBlocking 是否自动释放阻塞、适用于工作内容为同步处理的逻辑
@@ -160,6 +160,26 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                                    WorkHandlerScanner workHandlerScanner,
                                    int monitor_period,
                                    ConsumerParam consumerParam) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name cannot be blank");
+        }
+        if (workExecutorNum <= 0 || workExecutorNum > (1 << 30)) {
+            throw new IllegalArgumentException("workExecutorNum must be between 1 and 2^30");
+        }
+        if (maxBlockingNum < 0) {
+            throw new IllegalArgumentException("maxBlockingNum cannot be negative");
+        }
+        if (maxConsumeSpeed < 0) {
+            throw new IllegalArgumentException("maxConsumeSpeed cannot be negative");
+        }
+        if (monitor_period < 0) {
+            throw new IllegalArgumentException("monitor_period cannot be negative");
+        }
+        if (workHandlerScanner != null
+                && (workHandlerScanner.periodInSecond <= 0 || workHandlerScanner.expiredInSecond <= 0)) {
+            throw new IllegalArgumentException("workHandlerScanner periods must be positive");
+        }
+        Objects.requireNonNull(consumerParam, "consumerParam");
         this.name = name;
         this.workExecutorNum = tableSizeFor(workExecutorNum);
         this.maxBlockingNum = maxBlockingNum;
@@ -233,7 +253,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             try {
                 consumerThreadHolder = KafkaExtUtil.startConsumer(name, consumerProp, consumerParam, this::consume);
                 consumerThreadHolder.start();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | Error ex) {
                 running_consume = false;
                 throw ex;
             }
@@ -286,19 +306,25 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     }
 
     private Future<?> removeHandler(String id, WorkExecutor executor) {
-        return executor.submit(() -> {
-            WorkHandler workHandler = executor.workHandlers.remove(id);
-            if (workHandler != null) {
-                try {
-                    workHandler.destroy();
-                } catch (Exception ex) {
-                    logger.error("workHandler destroy error id[{}]", workHandler.id, ex);
-                }
-                if (monitor_period > 0) {
-                    monitor_workHandlerCount.decrement();
-                }
+        if (executor.inEventLoop()) {
+            destroyHandler(id, executor);
+            return CompletableFuture.completedFuture(null);
+        }
+        return executor.submit(() -> destroyHandler(id, executor));
+    }
+
+    private void destroyHandler(String id, WorkExecutor executor) {
+        WorkHandler workHandler = executor.workHandlers.remove(id);
+        if (workHandler != null) {
+            try {
+                workHandler.destroy();
+            } catch (Exception ex) {
+                logger.error("workHandler destroy error id[{}]", workHandler.id, ex);
             }
-        });
+            if (monitor_period > 0) {
+                monitor_workHandlerCount.decrement();
+            }
+        }
     }
 
     /**
@@ -324,6 +350,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public final <V extends WorkHandler> V getHandler(String id) {
         WorkExecutor workExecutor = getWorkExecutor(id);
+        if (workExecutor.inEventLoop()) {
+            return (V) workExecutor.workHandlers.get(id);
+        }
         try {
             return (V) workExecutor.submit(() -> workExecutor.workHandlers.get(id)).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -359,11 +388,14 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         //等待工作执行器退出
         if (workExecutors != null) {
             for (WorkExecutor workExecutor : workExecutors) {
+                if (workExecutor == null) {
+                    continue;
+                }
                 //添加删除任务
                 try {
                     workExecutor.submit(() -> {
-                        for (String id : workExecutor.workHandlers.keySet()) {
-                            removeHandler(id);
+                        for (String id : new ArrayList<>(workExecutor.workHandlers.keySet())) {
+                            destroyHandler(id, workExecutor);
                         }
                     }).get();
                 } catch (InterruptedException | ExecutionException e) {
@@ -373,6 +405,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 workExecutor.shutdownGracefully();
             }
             for (WorkExecutor workExecutor : workExecutors) {
+                if (workExecutor == null) {
+                    continue;
+                }
                 //等待工作执行器退出
                 ExecutorUtil.await(workExecutor);
             }
@@ -487,6 +522,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 }
             }
         } finally {
+            running_consume = false;
             String assignment = "";
             try {
                 assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
@@ -553,7 +589,10 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                     }
                 }
                 for (String id : ids) {
-                    removeHandler(id, workExecutor);
+                    WorkHandler workHandler = workExecutor.workHandlers.get(id);
+                    if (workHandler != null && workHandler.lastMessageTime < ts) {
+                        destroyHandler(id, workExecutor);
+                    }
                 }
             });
         }

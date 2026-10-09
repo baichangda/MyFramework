@@ -29,6 +29,7 @@ public class KafkaExtUtil {
                 }
             }
         }
+
     }
 
 
@@ -105,6 +106,8 @@ public class KafkaExtUtil {
             initializer.accept(consumer);
             seek(consumer, seekTimestamp);
             kafkaConsumerConsumer.accept(consumer);
+        } catch (Exception ex) {
+            logger.error("kafka consumer start or run error", ex);
         }
     }
 

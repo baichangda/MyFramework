@@ -14,6 +14,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.LoggerFormat;
 import io.vertx.ext.web.handler.LoggerHandler;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,7 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
     PlatformStatusSender platformStatusSender;
 
     HttpServer httpServer;
+    DataConsumer dataConsumer;
 
     @Autowired(required = false)
     List<Initializable> initList;
@@ -70,7 +72,7 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
             }
 
             int[] partitions = Arrays.stream(data.kafkaPartition.split(",")).mapToInt(Integer::parseInt).toArray();
-            DataConsumer dataConsumer = new DataConsumer(kafkaProp, "ts-" + data.platCode, partitions, kafkaDataHandlers);
+            dataConsumer = new DataConsumer(kafkaProp, "ts-" + data.platCode, partitions, kafkaDataHandlers);
             //初始化tcp客户端
             TcpClient.init(data, dataConsumer, redisTemplate, platformStatusSender,tcpDataHandlers).join();
             //初始化消费者
@@ -102,6 +104,18 @@ public class Bootstrap implements ApplicationListener<ContextRefreshedEvent> {
             logger.info("http listen on port[{}]", port);
         } catch (Exception ex) {
             logger.error("error", ex);
+            if (dataConsumer != null) {
+                dataConsumer.close();
+                dataConsumer = null;
+            }
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        if (dataConsumer != null) {
+            dataConsumer.close();
+            dataConsumer = null;
         }
     }
 }

@@ -10,6 +10,7 @@ import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
+import jakarta.annotation.PreDestroy;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -123,5 +124,10 @@ public class DataConsumer extends DataDrivenKafkaConsumer implements CommandLine
         //初始化组件
         Initializable.initByOrder(initList);
         startConsume(kafkaProperties.getConsumer().buildProperties());
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        close();
     }
 }
