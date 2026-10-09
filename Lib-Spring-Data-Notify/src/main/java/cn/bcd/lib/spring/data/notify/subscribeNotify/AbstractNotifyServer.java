@@ -36,6 +36,8 @@ import java.util.function.Supplier;
  * 通过调用{@link #notify(String, Supplier)}发送通知
  */
 public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
+    private static final long SUBSCRIPTION_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(3);
+
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String type;
     public final BoundHashOperations<String, String, String> boundHashOperations;
@@ -144,7 +146,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                 String value = entry.getValue();
                 try {
                     final ListenerInfo listenerInfo = ListenerInfo.fromString(value);
-                    if ((System.currentTimeMillis() - listenerInfo.ts) <= 60000) {
+                    if ((System.currentTimeMillis() - listenerInfo.ts) <= SUBSCRIPTION_TIMEOUT_MILLIS) {
                         aliveMap.put(entry.getKey(), listenerInfo);
                     }
                 } catch (IOException e) {
