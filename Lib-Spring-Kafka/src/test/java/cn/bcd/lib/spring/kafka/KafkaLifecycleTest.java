@@ -22,6 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class KafkaLifecycleTest {
 
     @Test
+    void consumerSeekModesUseDocumentedSentinelValues() {
+        assertEquals(-1, ConsumerParam.get_singleConsumer("topic").seekTimestamp);
+        assertEquals(-2, ConsumerParam.get_singleConsumer("topic").seekToBeginning().seekTimestamp);
+        assertEquals(-3, ConsumerParam.get_singleConsumer("topic").seekToEnd().seekTimestamp);
+    }
+
+    @Test
     void kafkaUtilDoesNotMutateImmutableProperties() {
         Map<String, Object> properties = Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"

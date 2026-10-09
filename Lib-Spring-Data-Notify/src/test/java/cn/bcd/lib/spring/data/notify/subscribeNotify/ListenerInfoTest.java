@@ -31,6 +31,8 @@ class ListenerInfoTest {
         ListenerInfo first = new ListenerInfo("bc", "a", 1L);
         ListenerInfo second = new ListenerInfo("c", "ab", 1L);
 
+        assertEquals("a,bc", first.redisField());
+        assertEquals("ab,c", second.redisField());
         assertNotEquals(first.redisField(), second.redisField());
     }
 

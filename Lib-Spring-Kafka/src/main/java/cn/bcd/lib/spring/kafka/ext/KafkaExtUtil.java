@@ -48,7 +48,7 @@ public class KafkaExtUtil {
                                                      Consumer<KafkaConsumer<String, byte[]>> kafkaConsumerConsumer) {
         long seekTimestamp = consumerParam.seekTimestamp;
         Map<String, Object> config = new HashMap<>(consumerProp);
-        if (seekTimestamp == -1) {
+        if (seekTimestamp == -2) {
             config.put("auto.offset.reset", "earliest");
         }
         Thread consumeThread = null;
@@ -109,7 +109,9 @@ public class KafkaExtUtil {
     }
 
     private static void seek(KafkaConsumer<String, byte[]> consumer, long seekTimestamp) {
-        if (seekTimestamp == -1) {
+        if (seekTimestamp == -3) {
+            KafkaUtil.consumerSeekToEnd(consumer);
+        } else if (seekTimestamp == -2) {
             KafkaUtil.consumerSeekToBeginning(consumer);
         } else if (seekTimestamp >= 0) {
             KafkaUtil.consumerSeekToTimestamp(consumer, seekTimestamp);

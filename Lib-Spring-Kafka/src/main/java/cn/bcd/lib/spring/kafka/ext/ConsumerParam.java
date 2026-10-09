@@ -19,11 +19,12 @@ public class ConsumerParam {
 
     /**
      * 控制当前消费者的各个分区从某处开始消费
-     * -2: 不从头开始消费、默认消费模式
-     * -1: 从头开始消费
+     * -3: 从末尾开始消费
+     * -2: 从头开始消费
+     * -1: 默认消费模式
      * 其他: 从指定的时间戳开始消费
      */
-    public long seekTimestamp = -2;
+    public long seekTimestamp = -1;
 
     private ConsumerParam(int mode, String[] topics, TopicPartition[] topicPartitions) {
         this.mode = mode;
@@ -94,7 +95,17 @@ public class ConsumerParam {
      * @return
      */
     public ConsumerParam seekToBeginning() {
-        this.seekTimestamp = -1;
+        this.seekTimestamp = -2;
+        return this;
+    }
+
+    /**
+     * 使所有的{@link KafkaConsumer}从末尾开始消费
+     *
+     * @return
+     */
+    public ConsumerParam seekToEnd() {
+        this.seekTimestamp = -3;
         return this;
     }
 

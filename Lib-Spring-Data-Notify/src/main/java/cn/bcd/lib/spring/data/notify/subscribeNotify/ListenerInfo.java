@@ -32,7 +32,12 @@ public class ListenerInfo {
     }
 
     public String redisField() {
-        return clientId.length() + ":" + clientId + id;
+        return redisFieldPrefix(clientId) + id;
+    }
+
+    public static String redisFieldPrefix(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        return clientId + ",";
     }
 
     public String toString() {

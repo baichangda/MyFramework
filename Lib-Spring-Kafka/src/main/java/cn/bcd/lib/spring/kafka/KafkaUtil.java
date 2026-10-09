@@ -80,6 +80,17 @@ public class KafkaUtil {
         logger.info("finish consumer seekToBeginning");
     }
 
+    public static void consumerSeekToEnd(KafkaConsumer<String, byte[]> consumer) {
+        logger.info("start consumer seekToEnd");
+        Set<TopicPartition> assignment = new HashSet<>();
+        while (assignment.isEmpty()) {
+            consumer.poll(Duration.ofSeconds(1));
+            assignment = consumer.assignment();
+        }
+        consumer.seekToEnd(assignment);
+        logger.info("finish consumer seekToEnd");
+    }
+
     public static void consumerSeekToTimestamp(KafkaConsumer<String, byte[]> consumer, long seekTimestamp) {
         logger.info("start consumer seekToTimestamp[{}]", DateUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
         Set<TopicPartition> assigment = new HashSet<>();

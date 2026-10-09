@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,6 +36,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     private final KafkaProperties.Consumer consumerProp;
     private final String type;
     private final String clientId;
+    private boolean initialized;
 
     /**
      * @param kafkaBootstrapServers  监听kafka地址
@@ -56,7 +58,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 true,
                 0,
                 0,
-                ConsumerParam.get_singleConsumer("_notify_" + type));
+                ConsumerParam.get_singleConsumer("_notify_" + type).seekToEnd());
         this.type = type;
         this.clientId = groupId;
         this.consumerProp = new KafkaProperties.Consumer();
@@ -72,6 +74,11 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
 
 
     public synchronized void init() {
+        if (initialized) {
+            throw new IllegalStateException("notify client already initialized");
+        }
+        clearPreviousSubscriptions();
+        initialized = true;
         workPool = Executors.newSingleThreadScheduledExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();
@@ -89,6 +96,20 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         }, 1, 1, TimeUnit.MINUTES);
         //开始消费
         startConsume(consumerProp.buildProperties());
+    }
+
+    private void clearPreviousSubscriptions() {
+        Set<String> fields = boundHashOperations.keys();
+        if (fields == null || fields.isEmpty()) {
+            return;
+        }
+        String prefix = ListenerInfo.redisFieldPrefix(clientId);
+        Object[] ownedFields = fields.stream().filter(e -> e.startsWith(prefix)).toArray();
+        if (ownedFields.length > 0) {
+            Long deleted = boundHashOperations.delete(ownedFields);
+            logger.info("notify client clear previous subscriptions type[{}] clientId[{}] count[{}]",
+                    type, clientId, deleted);
+        }
     }
 
     public synchronized void close() {
