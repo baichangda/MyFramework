@@ -1,13 +1,10 @@
 package cn.bcd.lib.spring.data.init.transferAccess;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
-import cn.bcd.lib.spring.data.init.nacos.HostData;
-import cn.bcd.lib.spring.data.init.nacos.NacosUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
 import cn.bcd.lib.spring.data.notify.onlyNotify.transferAccess.TransferAccessData;
 import okhttp3.Request;
@@ -24,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @EnableConfigurationProperties(InitProp.class)
-@ConditionalOnProperty("lib.spring.data.init.transferAccess.enable")
+@ConditionalOnProperty("lib.spring.data.init.transferAccess.host")
 @Component
 public class TransferAccessDataInit implements Consumer<TransferAccessData>, Initializable {
     static Logger logger = LoggerFactory.getLogger(TransferAccessDataInit.class);
@@ -57,11 +54,7 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
 
     @Override
     public void init() {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
-        if (hostData == null) {
-            return;
-        }
-        String url = "http://" + hostData.ip + ":" + hostData.port + "/api/transferAccess/list";
+        String url = "http://" + initProp.transferAccessConfig.host + ":" + initProp.transferAccessConfig.port + "/api/transferAccess/list";
         Request request = new Request.Builder()
                 .url(url)
                 .get().build();

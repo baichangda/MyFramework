@@ -1,12 +1,9 @@
 package cn.bcd.lib.spring.data.init.transferConfig;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
-import cn.bcd.lib.spring.data.init.nacos.HostData;
-import cn.bcd.lib.spring.data.init.nacos.NacosUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -18,7 +15,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 
 @EnableConfigurationProperties(InitProp.class)
-@ConditionalOnProperty("lib.spring.data.init.transferConfig.enable")
+@ConditionalOnProperty("lib.spring.data.init.transferConfig.host")
 @Component
 public class TransferConfigDataInit {
     static Logger logger = LoggerFactory.getLogger(TransferConfigDataInit.class);
@@ -30,11 +27,7 @@ public class TransferConfigDataInit {
     }
 
     public static TransferConfigData get(String serverId) {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
-        if (hostData == null) {
-            return null;
-        }
-        String url = "http://" + hostData.ip + ":" + hostData.port + "/api/transferConfig/get?serverId=" + serverId;
+        String url = "http://" + initProp.transferConfig.host + ":" + initProp.transferConfig.port + "/api/transferConfig/get?serverId=" + serverId;
         Request request = new Request.Builder()
                 .url(url)
                 .get().build();

@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class ControlProp {
-    public boolean enable;
+    public String host;
+    public int port = 80;
 }

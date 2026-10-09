@@ -1,13 +1,10 @@
 package cn.bcd.lib.spring.data.init.vehicle;
 
-import cn.bcd.lib.base.common.Const;
 import cn.bcd.lib.base.init.Initializable;
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.data.init.InitProp;
-import cn.bcd.lib.spring.data.init.nacos.HostData;
-import cn.bcd.lib.spring.data.init.nacos.NacosUtil;
 import cn.bcd.lib.spring.data.init.util.OkHttpUtil;
 import cn.bcd.lib.spring.data.notify.onlyNotify.vehicleData.VehicleData;
 import okhttp3.Request;
@@ -24,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @EnableConfigurationProperties(InitProp.class)
-@ConditionalOnProperty("lib.spring.data.init.vehicle.enable")
+@ConditionalOnProperty("lib.spring.data.init.vehicle.host")
 @Component
 public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
 
@@ -44,11 +41,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
     }
 
     public void init() {
-        HostData hostData = NacosUtil.getHostData_business_process_backend(initProp.nacosHost, initProp.nacosPort, Const.service_name_business_process_backend);
-        if (hostData == null) {
-            return;
-        }
-        String url = "http://" + hostData.ip + ":" + hostData.port + "/api/vehicle/list";
+        String url = "http://" + initProp.vehicleConfig.host + ":" + initProp.vehicleConfig.port + "/api/vehicle/list";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             if (!response.isSuccessful()) {

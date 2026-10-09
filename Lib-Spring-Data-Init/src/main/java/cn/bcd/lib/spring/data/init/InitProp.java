@@ -8,10 +8,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 @Data
 @ConfigurationProperties(prefix = "lib.spring.data.init")
 public class InitProp {
-    public String nacosHost;
-    public int nacosPort;
-    @NestedConfigurationProperty
-    public ControlProp permission;
     @NestedConfigurationProperty
     public ControlProp transferConfig;
     @NestedConfigurationProperty
