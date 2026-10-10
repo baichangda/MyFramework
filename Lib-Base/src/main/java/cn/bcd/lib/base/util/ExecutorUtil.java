@@ -285,6 +285,8 @@ public class ExecutorUtil {
                         for (Thread thread : threads) {
                             thread.join();
                         }
+                    } else if (arg instanceof CountDownLatch countDownLatch) {
+                        countDownLatch.await();
                     } else if (arg instanceof BlockingQueue<?> queue) {
                         while (!queue.isEmpty()) {
                             TimeUnit.MILLISECONDS.sleep(100L);
