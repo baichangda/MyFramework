@@ -76,19 +76,29 @@ public class LocalRateControlUnit implements AutoCloseable {
             if (!available) {
                 throw BaseException.get("rate control unit closed");
             }
+
+            // 1. 先读取原子状态
+            long currentState = state.get();
+
+            // 2. 再读取时间
             long now = DateUtil.CacheMillisecond.current();
             long currentWindowId = Math.floorDiv(now, windowInMillis) & WINDOW_MASK;
-            long currentState = state.get();
+
+            // 3. 解析窗口和计数
             long stateWindowId = currentState >>> COUNT_BITS;
             long currentCount = currentState & COUNT_MASK;
 
+            // 4. 判断限流
             if (stateWindowId == currentWindowId && i > maxAccessCount - currentCount) {
                 long retryAfterMillis = windowInMillis - Math.floorMod(now, windowInMillis);
                 return -retryAfterMillis;
             }
 
+            // 5. 计算新状态
             long nextCount = stateWindowId == currentWindowId ? currentCount + i : i;
             long nextState = (currentWindowId << COUNT_BITS) | nextCount;
+
+            // 6. CAS 成功则返回，否则重新读取状态和时间
             if (state.compareAndSet(currentState, nextState)) {
                 return ADD_SUCCEED;
             }
