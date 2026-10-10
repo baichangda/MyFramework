@@ -67,6 +67,9 @@ public class ExecutorUtil {
      * - mayInterruptIfRunning为true时候、打断线程
      * - 等待线程执行完毕
      * <p>
+     * 支持{@link CountDownLatch }
+     * - 等待释放
+     * <p>
      * 支持{@link java.util.Queue}、{@link java.util.Queue[]}
      * - 等待队列为空
      *
@@ -118,6 +121,8 @@ public class ExecutorUtil {
                         }
                         await(thread);
                     }
+                } else if (arg instanceof CountDownLatch countDownLatch) {
+                    await(countDownLatch);
                 } else if (arg instanceof BlockingQueue<?> queue) {
                     await(queue);
                 } else if (arg instanceof BlockingQueue<?>[] queues) {
@@ -140,6 +145,9 @@ public class ExecutorUtil {
      * 支持{@link Thread}、{@link Thread[]}
      * - mayInterruptIfRunning为true时候、打断线程
      * - 等待线程执行完毕
+     * <p>
+     * 支持{@link CountDownLatch }
+     * - 等待释放
      * <p>
      * 支持{@link java.util.Queue}、{@link java.util.Queue[]}
      * - 等待队列为空
@@ -205,6 +213,9 @@ public class ExecutorUtil {
      * <p>
      * 支持{@link Thread}、{@link Thread[]}
      * - 等待线程执行完毕
+     * <p>
+     * 支持{@link CountDownLatch }
+     * - 等待释放
      * <p>
      * 支持{@link java.util.Queue}、{@link java.util.Queue[]}
      * - 等待队列为空
