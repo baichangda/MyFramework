@@ -88,7 +88,7 @@ public class ExecutorUtil {
                     } else {
                         pool.shutdown();
                     }
-
+                    await(pool);
                 } else if (arg instanceof ExecutorService[] pools) {
                     if (mayInterruptIfRunning) {
                         for (ExecutorService pool : pools) {
