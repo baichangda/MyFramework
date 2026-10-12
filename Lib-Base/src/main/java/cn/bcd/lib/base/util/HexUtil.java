@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Base64;
 
 public class HexUtil {
     private static final char[] HEXDUMP_TABLE = new char[256 * 4];
@@ -114,6 +115,10 @@ public class HexUtil {
     }
 
     public static void main(String[] args) throws IOException {
+
+        System.out.println(HexUtil.hexDump(Base64.getDecoder().decode("ai2pGisK+4aj0c8ARAK1tg==")));
+        System.out.println(HexUtil.hexDump(Base64.getDecoder().decode("FYvFwI8xY1MLLJzdw0whGwKZH56Txc8+85xce3G7wYQ=")));
+
         String s = hexDump(new byte[]{1, 2, 3, 4, 0x12});
         System.out.println(s);
         byte[] bytes = decodeHexDump(s);
