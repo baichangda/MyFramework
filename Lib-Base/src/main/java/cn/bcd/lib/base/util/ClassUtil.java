@@ -20,37 +20,6 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class ClassUtil {
     /**
-     * 从指定类开始向上找，直到指定类结束
-     *
-     * @param startClass
-     * @param endClasses
-     * @return
-     */
-    public static Type getParentUntil(Class<?> startClass, Class<?>... endClasses) {
-        Type parentType = startClass.getGenericSuperclass();
-        while (true) {
-            if (parentType instanceof ParameterizedType) {
-                Class<?> rawType = (Class<?>) ((ParameterizedType) parentType).getRawType();
-                boolean isMatch = false;
-                for (Class<?> endClass : endClasses) {
-                    if (rawType.equals(endClass)) {
-                        isMatch = true;
-                        break;
-                    }
-                }
-                if (isMatch) {
-                    break;
-                } else {
-                    parentType = rawType.getGenericSuperclass();
-                }
-            } else {
-                parentType = ((Class<?>) parentType).getGenericSuperclass();
-            }
-        }
-        return parentType;
-    }
-
-    /**
      * 找出所有带注解的类
      *
      * @param annoClass
