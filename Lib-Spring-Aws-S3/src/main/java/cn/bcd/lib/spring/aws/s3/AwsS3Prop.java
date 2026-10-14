@@ -11,6 +11,6 @@ public class AwsS3Prop {
     public String region = Region.US_EAST_1.id();
     public String accessKey;
     public String secretKey;
-    public boolean forcePathStyle = false;
+    public boolean forcePathStyle = true;
     public String bucket;
 }

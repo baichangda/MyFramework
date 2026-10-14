@@ -31,3 +31,20 @@ byte[] content = AwsS3Util.getObject("reports/report.csv");
 ```
 
 大文件使用 `putObjectLarge`。凭据只应通过环境变量或密钥服务提供。
+
+`getObject(key)` 会将整个对象读入内存，仅适用于小对象。大对象请使用输入流回调或文件下载：
+
+```java
+boolean downloaded = AwsS3Util.getObject("reports/report.csv", "report.csv");
+AwsS3Util.listObjects("reports/", true, key -> System.out.println(key));
+```
+
+文件下载返回 `true` 表示成功，返回 `false` 表示对象不存在；其他错误仍抛出异常。该返回类型由 `void` 改为 `boolean`，已有调用源码可继续忽略返回值，但依赖该接口的模块需要重新编译。
+
+带回调的 `listObjects` 逐个处理 key，避免收集完整对象列表。目录上传边遍历边上传，不跟随目录符号链接，也不上传符号链接文件。分片上传复用一个缓冲区，支持空流，并为每次重试提供独立输入流；分片仍按顺序上传，默认缓冲区为 16 MiB。
+
+离线回归测试：
+
+```text
+gradle :Lib-Spring-Aws-S3:test --tests cn.bcd.lib.spring.aws.s3.AwsS3UtilTest --no-daemon
+```

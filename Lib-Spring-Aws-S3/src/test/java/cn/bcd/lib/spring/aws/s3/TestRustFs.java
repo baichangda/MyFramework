@@ -20,9 +20,9 @@ public class TestRustFs {
         AwsS3Util.awsS3Prop.bucket = "test";
         AwsS3Util.s3Client = S3Client.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        "yyLJJhWYR5oSSTgGXwgP"
-                        , "tDe7I9vHaxP2pg0NgmmRLTtx7arGKZZ4G4PX8E9O")))
-                .endpointOverride(URI.create("https://www.baicd.fun:19000"))
+                        "mOnEOwWeBFfUos1hwevK"
+                        , "OS7ty60Oimp0fybJAdl3MyO90lf7kXkIwXsyRguo")))
+                .endpointOverride(URI.create("https://www.baicd.fun:9000"))
                 .region(Region.of(AwsS3Util.awsS3Prop.region))
                 .forcePathStyle(true)
                 .build();

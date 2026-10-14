@@ -21,7 +21,7 @@ public class AwsS3Config {
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(awsS3Prop.accessKey, awsS3Prop.secretKey)))
                 .endpointOverride(URI.create(awsS3Prop.endpoint))
                 .region(Region.of(awsS3Prop.region))
-                .forcePathStyle(true)
+                .forcePathStyle(awsS3Prop.forcePathStyle)
                 .build();
     }
 }
