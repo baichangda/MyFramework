@@ -26,11 +26,24 @@ lib:
 配置 `endpoint` 后组件才会启用。确保应用扫描 `cn.bcd.lib.spring.aws.s3`。
 
 ```java
-AwsS3Util.putObject(Path.of("report.csv"), "reports/report.csv");
+AwsS3Util.putObject("reports/report.csv", RequestBody.fromFile(Path.of("report.csv")));
 byte[] content = AwsS3Util.getObject("reports/report.csv");
 ```
 
 大文件使用 `putObjectLarge`。凭据只应通过环境变量或密钥服务提供。
+
+普通上传仅保留 `putObject(String key, RequestBody body)`，key 为完整对象路径，不会自动追加文件名。
+`RequestBody` 位于 `software.amazon.awssdk.core.sync` 包，常见数据来源写法如下：
+
+```java
+AwsS3Util.putObject("reports/report.csv", RequestBody.fromFile(Path.of("report.csv")));
+AwsS3Util.putObject("data.bin", RequestBody.fromBytes(bytes));
+try (InputStream is = Files.newInputStream(file)) {
+    AwsS3Util.putObject("uploads/data.bin", RequestBody.fromInputStream(is, Files.size(file)));
+}
+```
+
+原文件、前缀批量文件、输入流重载已删除，调用方需迁移并重新编译；多个文件请循环调用并明确每个文件的完整 key。
 
 `getObject(key)` 会将整个对象读入内存，仅适用于小对象。大对象请使用输入流回调或文件下载：
 

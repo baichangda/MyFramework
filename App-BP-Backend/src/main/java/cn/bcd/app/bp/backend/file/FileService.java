@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,18 +44,18 @@ public class FileService {
     }
 
     public void upload(String path, long contentLength, InputStream is) {
-        AwsS3Util.putObject(is, contentLength, path);
+        AwsS3Util.putObject(path, RequestBody.fromInputStream(is, contentLength));
     }
 
     public void upload(String path, Path file) {
-        AwsS3Util.putObject(file, path);
+        AwsS3Util.putObject(path, RequestBody.fromFile(file));
     }
 
     public void upload(String dirPath, MultipartFile file) {
         String filename = file.getOriginalFilename();
         try (InputStream is = file.getInputStream()) {
             String path = dirPath == null ? filename : dirPath + "/" + filename;
-            AwsS3Util.putObject(is, file.getSize(), path);
+            AwsS3Util.putObject(path, RequestBody.fromInputStream(is, file.getSize()));
         } catch (Exception ex) {
             throw BaseException.get(ex);
         }

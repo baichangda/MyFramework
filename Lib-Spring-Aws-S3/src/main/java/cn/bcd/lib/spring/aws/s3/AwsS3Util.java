@@ -208,7 +208,7 @@ public class AwsS3Util {
                             String key = root.relativize(file).toString()
                                     // 将 Windows 等平台的路径分隔符统一为 S3 key 使用的 /。
                                     .replace(file.getFileSystem().getSeparator(), "/");
-                            putObject(file, joinKey(prefix, key));
+                            putObject(joinKey(prefix, key), RequestBody.fromFile(file));
                         }
                         return FileVisitResult.CONTINUE;
                     }
@@ -231,67 +231,27 @@ public class AwsS3Util {
     }
 
     /**
-     * 将本地文件通过单次 PutObject 请求上传到指定 key。
+     * 将请求体通过单次 PutObject 请求上传到指定完整 key。
      * <p>
-     * 不自动选择分片上传；大文件可通过输入流调用 {@link #putObjectLarge(InputStream, String)}。
+     * 统一使用 RequestBody 表达数据来源：文件使用 {@link RequestBody#fromFile(Path)}，
+     * 字节数组使用 {@link RequestBody#fromBytes(byte[])}，已知长度输入流使用
+     * {@link RequestBody#fromInputStream(InputStream, long)}。
+     * key 始终为完整对象路径，不自动追加文件名或解释为目录前缀。
+     * <p>
+     * 输入流请求体的长度必须准确，调用方负责关闭原始输入流；SDK 重试要求请求体能够重新读取。
+     * 不自动选择分片上传；大文件或未知长度输入流请调用 {@link #putObjectLarge(InputStream, String)}。
      *
-     * @param filePath 可读取的本地文件路径
-     * @param path     目标对象的完整 key
-     * @throws BaseException 文件读取或上传失败
+     * @param key  目标对象的完整 key
+     * @param body 要上传的数据，不能为 null
+     * @throws BaseException 数据读取或上传失败
      */
-    public static void putObject(Path filePath, String path) {
+    public static void putObject(String key, RequestBody body) {
         try {
             PutObjectRequest request = PutObjectRequest.builder()
                     .bucket(awsS3Prop.bucket)
-                    .key(path)
+                    .key(key)
                     .build();
-            s3Client.putObject(request, filePath);
-        } catch (Exception e) {
-            throw BaseException.get(e);
-        }
-    }
-
-    /**
-     * 依次上传多个本地文件，key 为前缀与文件名的拼接，不保留本地父目录层级。
-     * <p>
-     * 空前缀时直接使用文件名。不同目录中的同名文件会映射到同一个 key。
-     * 任一文件失败后停止，已上传对象不会回滚；每个文件使用单次 PutObject 请求。
-     *
-     * @param pathPrefix 对象 key 前缀，不应以 / 开头或结尾，可以为 null 或空字符串
-     * @param filePaths  可读取的本地文件，数组和文件元素不能为 null
-     * @throws BaseException 文件读取或上传失败
-     */
-    public static void putObject(String pathPrefix, Path... filePaths) {
-        for (Path filePath : filePaths) {
-            String prefix;
-            if (pathPrefix == null || pathPrefix.isEmpty()) {
-                prefix = filePath.getFileName().toString();
-            } else {
-                prefix = pathPrefix + "/" + filePath.getFileName().toString();
-            }
-            putObject(filePath, prefix);
-        }
-    }
-
-    /**
-     * 使用单次 PutObject 请求上传已知长度的输入流。
-     * <p>
-     * contentLength 必须与输入流剩余数据的字节数一致，长度不正确可能导致数据截断或请求失败。
-     * 本方法不负责关闭调用方输入流；调用方应在同步调用完成后关闭流。
-     * 重试能否重新读取数据取决于输入流的可重置能力，非可重置的大流建议使用分片上传。
-     *
-     * @param is            位于待上传数据起始位置的输入流
-     * @param contentLength 待上传数据的准确字节数，必须非负
-     * @param path          目标对象的完整 key
-     * @throws BaseException 输入流读取或上传失败
-     */
-    public static void putObject(InputStream is, long contentLength, String path) {
-        try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(awsS3Prop.bucket)
-                    .key(path)
-                    .build();
-            s3Client.putObject(request, RequestBody.fromInputStream(is, contentLength));
+            s3Client.putObject(request, body);
         } catch (Exception e) {
             throw BaseException.get(e);
         }
@@ -337,7 +297,7 @@ public class AwsS3Util {
             // 先探测空流，避免创建无法用零个分片完成的 multipart upload。
             int firstByte = is.read();
             if (firstByte == -1) {
-                putObject(new ByteArrayInputStream(new byte[0]), 0, path);
+                putObject(path, RequestBody.empty());
                 return;
             }
             // 只分配一次；补齐首片时保留前瞻读取的第一个字节。

@@ -2,6 +2,7 @@ package cn.bcd.lib.spring.aws.s3;
 
 import cn.bcd.lib.base.util.FileUtil;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -22,7 +23,7 @@ public class TestRustFs {
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
                         "mOnEOwWeBFfUos1hwevK"
                         , "OS7ty60Oimp0fybJAdl3MyO90lf7kXkIwXsyRguo")))
-                .endpointOverride(URI.create("https://www.baicd.fun:9000"))
+                .endpointOverride(URI.create("https://www.baicd.fun:9001"))
                 .region(Region.of(AwsS3Util.awsS3Prop.region))
                 .forcePathStyle(true)
                 .build();
@@ -38,7 +39,7 @@ public class TestRustFs {
 
     @Test
     public void testPutObject() {
-        AwsS3Util.putObject("", Paths.get("d:/file/test1.xlsx"));
+        AwsS3Util.putObject("test1.xlsx", RequestBody.fromFile(Paths.get("d:/file/test1.xlsx")));
     }
 
     @Test
@@ -47,17 +48,11 @@ public class TestRustFs {
     }
 
     @Test
-    public void test1() throws IOException {
-        Files.copy(Paths.get("d:/file/test1.png"),Paths.get("d:/file/test2.png"));
-        Files.copy(Paths.get("d:/file/test1.pdf"),Paths.get("d:/file/test2.pdf"));
-    }
-
-    @Test
     public void testPutObjectAndGetObject() {
         String dir = "d:/file";
         List<Path> fileList = FileUtil.listDir(false, dir);
         for (Path path : fileList) {
-            AwsS3Util.putObject("", path);
+            AwsS3Util.putObject(path.getFileName().toString(), RequestBody.fromFile(path));
         }
         for (Path path : fileList) {
             String fileName = path.getFileName().toString();

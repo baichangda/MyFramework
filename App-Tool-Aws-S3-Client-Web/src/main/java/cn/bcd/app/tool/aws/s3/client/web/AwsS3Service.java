@@ -13,8 +13,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.core.sync.RequestBody;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -35,8 +37,8 @@ public class AwsS3Service {
             logger.info("path is null, use file name[{}]", fileName);
             path = fileName;
         }
-        try {
-            AwsS3Util.putObject(file.getInputStream(), file.getSize(), path);
+        try (InputStream is = file.getInputStream()) {
+            AwsS3Util.putObject(path, RequestBody.fromInputStream(is, file.getSize()));
             String res = "upload file[" + fileName + "] to path[" + path + "] succeed";
             logger.info(res);
             return res;

@@ -51,6 +51,33 @@ class AwsS3UtilTest {
     }
 
     @Test
+    void ordinaryUploadSupportsFileBytesAndStreamWithExactKey() throws Exception {
+        byte[] expected = new byte[]{1, 2, 3};
+        Path file = tempDir.resolve("source.bin");
+        Files.write(file, expected);
+        AtomicInteger calls = new AtomicInteger();
+        client((method, args) -> {
+            assertEquals("putObject", method);
+            PutObjectRequest request = (PutObjectRequest) args[0];
+            assertEquals("test", request.bucket());
+            assertEquals("target/custom.bin", request.key());
+            RequestBody body = (RequestBody) args[1];
+            assertEquals(3L, body.contentLength());
+            try (var stream = body.contentStreamProvider().newStream()) {
+                assertArrayEquals(expected, stream.readAllBytes());
+            }
+            calls.incrementAndGet();
+            return PutObjectResponse.builder().build();
+        });
+        AwsS3Util.putObject("target/custom.bin", RequestBody.fromFile(file));
+        AwsS3Util.putObject("target/custom.bin", RequestBody.fromBytes(expected));
+        try (var stream = new ByteArrayInputStream(expected)) {
+            AwsS3Util.putObject("target/custom.bin", RequestBody.fromInputStream(stream, expected.length));
+        }
+        assertEquals(3, calls.get());
+    }
+
+    @Test
     void directoryKeysRespectPrefixAndOuterDirectory() throws Exception {
         Files.writeString(tempDir.resolve("root.txt"), "root");
         Files.createDirectories(tempDir.resolve("sub/deep"));
