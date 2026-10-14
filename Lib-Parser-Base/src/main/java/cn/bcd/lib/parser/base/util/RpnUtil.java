@@ -71,10 +71,14 @@ public class RpnUtil {
         }
         List<String> operateList = new ArrayList<>();
         final Ele[] eles = toRpn(str);
+        int variableCount = 0;
         //将其中的变量替换为x
         for (int i = 0; i < eles.length; i++) {
             final Ele ele = eles[i];
             if (ele.s != null && !("+").equals(ele.s) && !("-").equals(ele.s) && !("*").equals(ele.s) && !("/").equals(ele.s) && !("!").equals(ele.s)) {
+                if (++variableCount > 1) {
+                    throw BaseException.get("reverseExpr requires a single variable occurrence: {}", str);
+                }
                 eles[i] = new Ele("x");
             }
         }
@@ -342,13 +346,16 @@ public class RpnUtil {
         int operatorStackIndex = -1;
         //用于收集一个个字符、整理成一个变量
         final StringBuilder temp = new StringBuilder();
+        char previous = '\0';
 
         for (int i = 0; i <= chars.length - 1; i++) {
             final char c = chars[i];
+            if (Character.isWhitespace(c)) {
+                continue;
+            }
+            final char previousChar = previous;
+            previous = c;
             switch (c) {
-                case ' ':{
-                    continue;
-                }
                 case '+':
                 case '*':
                 case '/': {
@@ -372,7 +379,7 @@ public class RpnUtil {
                     //两种情况下表示不是取负
                     //1、temp里面有数据、代表有变量
                     //2、上一个字符是)、代表刚处理完一个()表达式
-                    if (temp.isEmpty() && (i == 0 || chars[i - 1] != ')')) {
+                    if (temp.isEmpty() && previousChar != ')') {
                         //此时取负号
                         operatorStack[++operatorStackIndex] = '!';
                     } else {

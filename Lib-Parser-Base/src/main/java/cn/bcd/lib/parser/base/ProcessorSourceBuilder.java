@@ -241,9 +241,13 @@ final class ProcessorSourceBuilder {
             String lengthCode = direction == Direction.PARSE
                     ? ParseUtil.replaceExprToCode(skip.lenExpr(), context)
                     : ParseUtil.replaceExprToCode_class(skip.lenExpr(), context);
-            String paddingCode = "(" + lengthCode + "-" + modelLength + ")";
+            String paddingCode = FieldBuilder.varNameShouldSkip;
+            ParseUtil.append(context.method_body, "final int {}=({})-{};\n",
+                    paddingCode, lengthCode, modelLength);
+            ParseUtil.append(context.method_body, "if({}>0){\n", paddingCode);
             appendPadding(context.method_body, paddingCode, direction);
             appendClassSkipLog(context.method_body, paddingCode, direction);
+            context.method_body.append("}\n");
             return;
         }
         int padding = skip.len() - modelLength;

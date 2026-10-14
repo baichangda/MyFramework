@@ -58,8 +58,13 @@ final class ValidatorUtil {
 
     static void validateValueExpression(Field field, String property, String expression) {
         int depth = 0;
+        int variableCount = 0;
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);
+            if (c == 'x' && ++variableCount > 1) {
+                fail("{} {} requires a single variable occurrence: {}",
+                        fieldDescription(field), property, expression);
+            }
             if (Character.isWhitespace(c) || Character.isDigit(c) || c == 'x'
                     || c == '.' || c == '+' || c == '-' || c == '*' || c == '/') {
                 continue;

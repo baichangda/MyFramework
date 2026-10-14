@@ -563,7 +563,9 @@ public class ParseUtil {
             }
 
         }
-        return all;
+        // Explicit not_ignore may leave complete bytes unaccounted for above.
+        // A partial byte may be shared with the caller, so its standalone length is unknown.
+        return bit % 8 == 0 ? all + bit / 8 : -1;
     }
 
     public static void appendSkip_parse(int len, String lenExpr, BuilderContext context) {
