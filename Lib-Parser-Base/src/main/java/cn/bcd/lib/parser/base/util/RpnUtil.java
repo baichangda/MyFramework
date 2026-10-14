@@ -59,151 +59,157 @@ public class RpnUtil {
     }
 
     /**
-     * 对单变量算术表达式推导求解、例如
-     * y=a*x+b、求x对y的推导
-     * 结果位 y=(x-b)/a
-     *
-     * @param str
+     * 对变量只出现一次的表达式逐层移项求解。
+     * 例如输入 x*10+3，输出 ((x-3)/10)，输出中的 x 代表原等式的 y。
+     * 保留数字原文和运算括号，不改变调用方的数值类型和舍入规则。
      */
     public static String reverseExpr(String str) {
+        if (str == null) {
+            throw new IllegalArgumentException("param[str] must not be null");
+        }
         if (str.isEmpty()) {
             return "";
         }
-        List<String> operateList = new ArrayList<>();
-        final Ele[] eles = toRpn(str);
-        int variableCount = 0;
-        //将其中的变量替换为x
-        for (int i = 0; i < eles.length; i++) {
-            final Ele ele = eles[i];
-            if (ele.s != null && !("+").equals(ele.s) && !("-").equals(ele.s) && !("*").equals(ele.s) && !("/").equals(ele.s) && !("!").equals(ele.s)) {
-                if (++variableCount > 1) {
+        ReverseNode expression = parseReverseExpression(str);
+        if (expression.variableCount != 1) {
+            throw BaseException.get("reverseExpr requires a single variable occurrence: {}", str);
+        }
+
+        ReverseNode result = new ReverseNode("x", null, null, 1, 0);
+        while (expression.left != null) {
+            if (expression.token.equals("!")) {
+                result = ReverseNode.negate(result);
+                expression = expression.left;
+                continue;
+            }
+            boolean variableOnLeft = expression.left.variableCount == 1;
+            ReverseNode constant = variableOnLeft ? expression.right : expression.left;
+            result = switch (expression.token) {
+                case "+" -> ReverseNode.binary("-", result, constant);
+                case "-" -> variableOnLeft
+                        ? ReverseNode.binary("+", result, constant)
+                        : ReverseNode.binary("-", constant, result);
+                case "*" -> ReverseNode.binary("/", result, constant);
+                case "/" -> variableOnLeft
+                        ? ReverseNode.binary("*", result, constant)
+                        : ReverseNode.binary("/", constant, result);
+                default -> throw BaseException.get("unsupported operator[{}]", expression.token);
+            };
+            expression = variableOnLeft ? expression.left : expression.right;
+        }
+        StringBuilder resultCode = new StringBuilder();
+        result.appendCode(resultCode);
+        return resultCode.toString();
+    }
+
+    private static ReverseNode parseReverseExpression(String str) {
+        int depth = 0;
+        char previous = '\0';
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (Character.isWhitespace(c)) {
+                continue;
+            }
+            if (c == '(') {
+                if (previous != '\0' && "+-*/(".indexOf(previous) < 0) {
+                    throw BaseException.get("invalid expression, missing operator before parentheses: {}", str);
+                }
+                depth++;
+            } else if (c == ')' && --depth < 0) {
+                throw BaseException.get("invalid expression, unbalanced parentheses: {}", str);
+            }
+            previous = c;
+        }
+        if (depth != 0) {
+            throw BaseException.get("invalid expression, unbalanced parentheses: {}", str);
+        }
+
+        Ele[] elements = toRpn(str);
+        ReverseNode[] stack = new ReverseNode[elements.length];
+        int size = 0;
+        for (Ele element : elements) {
+            if (element.s == null) {
+                if (!Double.isFinite(element.d)) {
+                    throw BaseException.get("non-finite constant in expression: {}", str);
+                }
+                stack[size++] = new ReverseNode(element.ds, null, null, 0, element.d);
+            } else if (element.s.equals("!")) {
+                if (size < 1) {
+                    throw BaseException.get("invalid expression, missing operand: {}", str);
+                }
+                stack[size - 1] = ReverseNode.negate(stack[size - 1]);
+            } else if (element.s.equals("+") || element.s.equals("-")
+                    || element.s.equals("*") || element.s.equals("/")) {
+                if (size < 2) {
+                    throw BaseException.get("invalid expression, missing operand: {}", str);
+                }
+                ReverseNode right = stack[--size];
+                ReverseNode left = stack[size - 1];
+                if (left.variableCount + right.variableCount > 1) {
                     throw BaseException.get("reverseExpr requires a single variable occurrence: {}", str);
                 }
-                eles[i] = new Ele("x");
+                stack[size - 1] = ReverseNode.binary(element.s, left, right);
+            } else {
+                stack[size++] = new ReverseNode("x", null, null, 1, 0);
             }
         }
-        final String[] stack = new String[eles.length];
-        int stackIndex = -1;
-        for (Ele ele : eles) {
-            if (ele.s == null) {
-                stack[++stackIndex] = ele.ds;
-            } else {
-                switch (ele.s) {
-                    case "!": {
-                        if (stack[stackIndex].contains("x")) {
-                            operateList.add("x,!");
-                        }
-                        stack[stackIndex] = "(-" + stack[stackIndex] + ")";
-                        break;
-                    }
-                    case "+": {
-                        if (stack[stackIndex - 1].contains("x")) {
-                            operateList.add("x," + stack[stackIndex] + ",+");
-                        } else if (stack[stackIndex].contains("x")) {
-                            operateList.add("x," + stack[stackIndex - 1] + ",+");
-                        }
-                        stack[stackIndex - 1] = "(" + stack[stackIndex - 1] + "+" + stack[stackIndex] + ")";
-                        stackIndex--;
+        if (size != 1) {
+            throw BaseException.get("invalid expression: {}", str);
+        }
+        return stack[0];
+    }
 
-                        break;
-                    }
-                    case "-": {
-                        if (stack[stackIndex - 1].contains("x")) {
-                            operateList.add("x," + stack[stackIndex] + ",-");
-                        } else if (stack[stackIndex].contains("x")) {
-                            operateList.add(stack[stackIndex - 1] + ",x,-");
-                        }
-                        stack[stackIndex - 1] = "(" + stack[stackIndex - 1] + "-" + stack[stackIndex] + ")";
-                        stackIndex--;
+    /** 只在处理器构建阶段使用；constantValue 仅用于检测不可逆的零常量，不用于生成代码。 */
+    private record ReverseNode(String token, ReverseNode left, ReverseNode right,
+                               int variableCount, double constantValue) {
+        static ReverseNode negate(ReverseNode operand) {
+            return new ReverseNode("!", operand, null, operand.variableCount, -operand.constantValue);
+        }
 
-                        break;
-                    }
-                    case "*": {
-                        if (stack[stackIndex - 1].contains("x")) {
-                            operateList.add("x," + stack[stackIndex] + ",*");
-                        } else if (stack[stackIndex].contains("x")) {
-                            operateList.add("x," + stack[stackIndex - 1] + ",*");
-                        }
-                        stack[stackIndex - 1] = stack[stackIndex - 1] + "*" + stack[stackIndex];
-                        stackIndex--;
-                        break;
-                    }
-                    case "/": {
-                        if (stack[stackIndex - 1].contains("x")) {
-                            operateList.add("x," + stack[stackIndex] + ",/");
-                        } else if (stack[stackIndex].contains("x")) {
-                            operateList.add(stack[stackIndex - 1] + ",x,/");
-                        }
-                        stack[stackIndex - 1] = stack[stackIndex - 1] + "/" + stack[stackIndex];
-                        stackIndex--;
-                        break;
-                    }
-                    default: {
-                        stack[++stackIndex] = ele.s;
-                    }
+        static ReverseNode binary(String operator, ReverseNode left, ReverseNode right) {
+            int variableCount = left.variableCount + right.variableCount;
+            if (operator.equals("/") && right.variableCount == 0 && right.constantValue == 0) {
+                throw BaseException.get("expression divides by zero");
+            }
+            if (variableCount == 1) {
+                ReverseNode constant = left.variableCount == 0 ? left : right;
+                if (constant.constantValue == 0 && (operator.equals("*")
+                        || operator.equals("/") && left.variableCount == 0)) {
+                    throw BaseException.get("expression is not invertible: zero factor or numerator");
                 }
             }
-        }
-
-//        System.out.println(operateList.stream().reduce((e1, e2) -> e1 + "\n" + e2).get());
-
-        StringBuilder sb = new StringBuilder("x");
-        for (int i = operateList.size() - 1; i >= 0; i--) {
-            final String op = operateList.get(i);
-            final String[] split = op.split(",");
-            if (split.length == 2) {
-                sb.insert(0, "-");
-            } else {
-                final String s0 = split[0];
-                final String s1 = split[1];
-                final String s2 = split[2];
-                switch (s2) {
-                    case "+": {
-                        sb.insert(0, "(").append("-");
-                        if ("x".equals(s0)) {
-                            //y=x+expr
-                            sb.append(s1);
-                        } else {
-                            //y=expr+x
-                            sb.append(s0);
-                        }
-                        sb.append(")");
-                        break;
-                    }
-                    case "-": {
-                        if ("x".equals(s0)) {
-                            //y=x-expr
-                            sb.insert(0, "(").append("+").append(s1).append(")");
-                        } else {
-                            //y=expr-x
-                            sb.insert(0, "(" + s0 + "-").append(")");
-                        }
-                        break;
-                    }
-                    case "*": {
-                        if ("x".equals(s0)) {
-                            //y=x*expr
-                            sb.append("/").append(s1);
-                        } else {
-                            //y=expr*x
-                            sb.append("/").append(s0);
-                        }
-                        break;
-                    }
-                    case "/": {
-                        if ("x".equals(s0)) {
-                            //y=x/expr
-                            sb.append("*").append(s1);
-                        } else {
-                            //y=expr/x
-                            sb.insert(0, s0 + "/");
-                        }
-                        break;
-                    }
+            double constantValue = 0;
+            if (variableCount == 0) {
+                constantValue = switch (operator) {
+                    case "+" -> left.constantValue + right.constantValue;
+                    case "-" -> left.constantValue - right.constantValue;
+                    case "*" -> left.constantValue * right.constantValue;
+                    case "/" -> left.constantValue / right.constantValue;
+                    default -> throw BaseException.get("unsupported operator[{}]", operator);
+                };
+                if (!Double.isFinite(constantValue)) {
+                    throw BaseException.get("non-finite constant expression");
                 }
             }
+            return new ReverseNode(operator, left, right, variableCount, constantValue);
         }
-        return sb.toString();
+
+        void appendCode(StringBuilder code) {
+            if (left == null) {
+                code.append(token);
+            } else {
+                code.append('(');
+                if (token.equals("!")) {
+                    code.append('-');
+                    left.appendCode(code);
+                } else {
+                    left.appendCode(code);
+                    code.append(token);
+                    right.appendCode(code);
+                }
+                code.append(')');
+            }
+        }
     }
 
     public static String toExpr(Ele[] eles) {
