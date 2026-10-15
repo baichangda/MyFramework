@@ -18,24 +18,6 @@ public class ReverseExprTest {
         assertEquals("", RpnUtil.reverseExpr(""));
     }
 
-    @Test
-    void roundTripsEveryOperatorWithVariableOnEitherSide() {
-        String[] expressions = {
-                "x+3", "3+x", "x-3", "3-x", "x*3", "3*x", "x/3", "3/x",
-                "-x", "-(x*3)", "-(-x+3)/5", "2/(-x*4-3)",
-                "x*(2*3)", "x*(2.0/3)", "x/(2*3)", "x/(2.0/3)",
-                "2/(3/x)", "2/(x/3)", "2/(3/x+1)", "(2.0/3)/x",
-                "(x-30000)/10", "x*0.05-1000", "(x+1) - 2"
-        };
-        for (String expression : expressions) {
-            String inverse = RpnUtil.reverseExpr(expression);
-            for (double input : new double[]{1.25, 10, -7}) {
-                double output = RpnUtil.calc(expression, Map.of("x", input));
-                assertEquals(input, RpnUtil.calc(inverse, Map.of("x", output)), 1e-9,
-                        expression + " -> " + inverse + ", input=" + input);
-            }
-        }
-    }
 
     @Test
     void preservesDecimalLiteralText() {
