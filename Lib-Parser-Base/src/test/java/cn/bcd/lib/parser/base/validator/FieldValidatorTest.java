@@ -41,6 +41,31 @@ public class FieldValidatorTest {
     }
 
     @Test
+    void rejectsVariablesOnEnumNumericFields() {
+        assertFailure(EnumVariableField.class, "enum field cannot set var or globalVar");
+        assertFailure(EnumGlobalVariableField.class, "enum field cannot set var or globalVar");
+    }
+
+    @Test
+    void rejectsVariablesOnEnumBitFields() {
+        assertFailure(EnumBitVariableField.class, "@F_bit_num enum field cannot set var or globalVar");
+        assertFailure(EnumBitGlobalVariableField.class, "@F_bit_num enum field cannot set var or globalVar");
+        assertFailure(EnumBitEasyVariableField.class, "@F_bit_num_easy enum field cannot set var or globalVar");
+        assertFailure(EnumBitEasyGlobalVariableField.class, "@F_bit_num_easy enum field cannot set var or globalVar");
+    }
+
+    public static class EnumVariableField {
+        @F_num(type = NumType.uint8, var = 'a')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
+    }
+
+    public static class EnumGlobalVariableField {
+        @F_num(type = NumType.uint8, checkVal = true, globalVar = 'A')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
+        public byte value__v;
+    }
+
+    @Test
     void rejectsUnsupportedValueExpressionVariables() {
         assertFailure(InvalidNumValueExpression.class, "only supports variable[x]");
         assertFailure(InvalidNumArrayValueExpression.class, "only supports variable[x]");
@@ -134,6 +159,26 @@ public class FieldValidatorTest {
     public static class InvalidBitNumEasyValueExpression {
         @F_bit_num_easy(bitStart = 7, bitEnd = 0, valExpr = "y + 1")
         public int value;
+    }
+
+    public static class EnumBitVariableField {
+        @F_bit_num(len = 8, var = 'a')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
+    }
+
+    public static class EnumBitGlobalVariableField {
+        @F_bit_num(len = 8, globalVar = 'A')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
+    }
+
+    public static class EnumBitEasyVariableField {
+        @F_bit_num_easy(bitStart = 7, bitEnd = 0, var = 'a')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
+    }
+
+    public static class EnumBitEasyGlobalVariableField {
+        @F_bit_num_easy(bitStart = 7, bitEnd = 0, globalVar = 'A')
+        public cn.bcd.lib.parser.base.anno.FNumTest.Mode value;
     }
 
     public interface ChildContract {

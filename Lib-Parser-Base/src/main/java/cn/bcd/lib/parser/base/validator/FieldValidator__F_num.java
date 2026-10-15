@@ -12,6 +12,10 @@ public final class FieldValidator__F_num {
 
     public static void validate(Field field, F_num annotation, NumValGetter numValGetter) {
         ValidatorUtil.validateNumericField(field, "@F_num");
+        if (field.getType().isEnum() && (annotation.var() != '0' || annotation.globalVar() != '0')) {
+            ValidatorUtil.fail("{} @F_num enum field cannot set var or globalVar",
+                    ValidatorUtil.fieldDescription(field));
+        }
         ValidatorUtil.validateValueExpression(field, "@F_num valExpr", annotation.valExpr());
         ValidatorUtil.validateVariable(field, "@F_num", annotation.var(), annotation.globalVar());
         ValidatorUtil.validateSkipVariable(field, "@F_num", annotation.skip(), annotation.var(), annotation.globalVar());

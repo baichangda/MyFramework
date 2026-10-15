@@ -85,6 +85,7 @@ public @interface F_bit_num_easy {
 
     /**
      * 变量名称、仅作用于当前类
+     * 枚举字段不允许设置。
      * 取值a-z、A-Z、0表示不作为变量
      * 标注此标记的会在解析时候将值缓存,供其他注解长度表达式使用
      */
@@ -92,6 +93,7 @@ public @interface F_bit_num_easy {
 
     /**
      * 全局变量名称、作用于一个对象解析的生命周期中
+     * 枚举字段不允许设置。
      * 要求标注字段必须为数字类型
      * 此变量值会在{@link ProcessContext#globalVars}中、跟随解析参数传递
      * 取值a-z、A-Z、0表示不作为变量

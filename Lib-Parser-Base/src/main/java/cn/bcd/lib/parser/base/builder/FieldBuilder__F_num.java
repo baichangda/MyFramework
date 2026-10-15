@@ -128,13 +128,17 @@ public class FieldBuilder__F_num extends FieldBuilder {
             }
             ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), sourceValTypeName, valCode);
         }
+        String cachedValCode = varNameInstance + "." + field.getName();
         final char var = anno.var();
         if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+            String varNameCachedVal = varNameField + "_cachedVal";
+            ParseUtil.append(body, "final {} {}={};\n", sourceValTypeName, varNameCachedVal, cachedValCode);
+            cachedValCode = varNameCachedVal;
+            context.method_varToFieldName.put(var, cachedValCode);
         }
         final char globalVar = anno.globalVar();
         if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+            ParseUtil.appendPutGlobalVar(context, globalVar, cachedValCode);
         }
     }
 
@@ -147,7 +151,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
         String fieldName__v = field.getName() + "__v";
         final Class<?> fieldTypeClass = field.getType();
-        final String fieldTypeName = fieldTypeClass.getName();
+        final String fieldTypeName = fieldTypeClass.isEnum() ? "int" : fieldTypeClass.getName();
         final StringBuilder body = context.method_body;
         final String varNameInstance = FieldBuilder.varNameInstance;
         final String varNameField = ParseUtil.getFieldVarName(context);
@@ -323,7 +327,12 @@ public class FieldBuilder__F_num extends FieldBuilder {
         }
 
         //设置值
-        ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameExprVal);
+        if (fieldTypeClass.isEnum()) {
+            ParseUtil.append(body, "{}.{}={}.fromInteger({});\n",
+                    varNameInstance, field.getName(), fieldTypeClass.getName(), varNameExprVal);
+        } else {
+            ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameExprVal);
+        }
 
         ParseUtil.append(body, "}else{\n");
 
@@ -389,7 +398,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
 
         //最后判断是否用了值表达式、如果用了、进行表达式处理
         if (!anno.valExpr().isEmpty()) {
-            if (isFloat) {
+            if (isFloat && anno.type() != NumType.float32 && anno.type() != NumType.float64) {
                 valCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(anno.valExpr()), valCode);
             } else {
                 valCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), valCode);
@@ -415,7 +424,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         final String fieldName = field.getName();
         final String varNameField = ParseUtil.getFieldVarName(context);
         final Class<?> fieldTypeClass = field.getType();
-        String fieldTypeName = fieldTypeClass.getName();
+        String fieldTypeName = fieldTypeClass.isEnum() ? "int" : fieldTypeClass.getName();
 
         final char var = anno.var();
         final char globalVar = anno.globalVar();
@@ -438,7 +447,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, "if({}==0){\n", varNameNumValType);
 
         //取出值
-        ParseUtil.append(body, "{}={}.{};\n", varExprValDefineInIfCode, FieldBuilder.varNameInstance, fieldName);
+        ParseUtil.append(body, "{}={}.{}{};\n", varExprValDefineInIfCode, FieldBuilder.varNameInstance,
+                fieldName, fieldTypeClass.isEnum() ? ".toInteger()" : "");
 
         //设置变量
         if (var != '0') {
@@ -469,7 +479,8 @@ public class FieldBuilder__F_num extends FieldBuilder {
             } else {
                 exprValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), varNameRawVal);
             }
-            ParseUtil.append(body, "final {} {}=({}){};\n", funcSuffix, varNameExprVal, funcSuffix, exprValCode);
+            String exprValType = type == NumType.uint32 ? "long" : funcSuffix;
+            ParseUtil.append(body, "final {} {}=({})({});\n", exprValType, varNameExprVal, exprValType, exprValCode);
         }
 
         //写入
@@ -485,7 +496,7 @@ public class FieldBuilder__F_num extends FieldBuilder {
         ParseUtil.append(body, getWriteCode(type, bigEndian, valCode));
 
         if (var != '0') {
-            ParseUtil.append(body, "{}=({})0;\n", varNameExprVal, fieldTypeName);
+            ParseUtil.append(body, "{}=({})0;\n", varNameRawVal, fieldTypeName);
         }
 
         //设置全局变量
@@ -524,7 +535,11 @@ public class FieldBuilder__F_num extends FieldBuilder {
                 String funcName = "writeMedium" + (bigEndian ? "" : "LE");
                 return ParseUtil.format("{}.{}((int)({}));\n", varNameByteBuf, funcName, valCode);
             }
-            case uint32, int32 -> {
+            case uint32 -> {
+                String funcName = "writeInt" + (bigEndian ? "" : "LE");
+                return ParseUtil.format("{}.{}((int)(long)({}));\n", varNameByteBuf, funcName, valCode);
+            }
+            case int32 -> {
                 String funcName = "writeInt" + (bigEndian ? "" : "LE");
                 return ParseUtil.format("{}.{}((int)({}));\n", varNameByteBuf, funcName, valCode);
             }

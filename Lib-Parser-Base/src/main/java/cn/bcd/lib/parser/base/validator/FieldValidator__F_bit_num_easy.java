@@ -10,6 +10,10 @@ public final class FieldValidator__F_bit_num_easy {
 
     public static void validate(Field field, F_bit_num_easy annotation) {
         ValidatorUtil.validateNumericField(field, "@F_bit_num_easy");
+        if (field.getType().isEnum() && (annotation.var() != '0' || annotation.globalVar() != '0')) {
+            ValidatorUtil.fail("{} @F_bit_num_easy enum field cannot set var or globalVar",
+                    ValidatorUtil.fieldDescription(field));
+        }
         ValidatorUtil.validateValueExpression(field, "@F_bit_num_easy valExpr", annotation.valExpr());
         ValidatorUtil.validateVariable(field, "@F_bit_num_easy", annotation.var(), annotation.globalVar());
         ValidatorUtil.validateSkipVariable(field, "@F_bit_num_easy", annotation.skip(), annotation.var(), annotation.globalVar());
