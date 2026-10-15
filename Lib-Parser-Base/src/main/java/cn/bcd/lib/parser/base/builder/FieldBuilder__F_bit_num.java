@@ -68,7 +68,7 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
 
         String valCode = ParseUtil.replaceValExprToCode(anno.valExpr(), varNameField);
         if (fieldTypeClass.isEnum()) {
-            ParseUtil.append(body, "{}.{}={}.fromInteger((int){});\n", varNameInstance, field.getName(), fieldTypeName, valCode);
+            ParseUtil.append(body, "{}.{}={}.fromInteger((int)({}));\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         } else {
             int precision = anno.precision();
             //格式化精度
@@ -90,13 +90,17 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
             ParseUtil.append(body, "{}.finish();\n", varNameBitBuf);
         }
 
+        String cachedValCode = varNameInstance + "." + field.getName();
         final char var = anno.var();
         if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+            String varNameCachedVal = varNameField + "_cachedVal";
+            ParseUtil.append(body, "final {} {}={};\n", sourceValTypeName, varNameCachedVal, cachedValCode);
+            cachedValCode = varNameCachedVal;
+            context.method_varToFieldName.put(var, cachedValCode);
         }
         final char globalVar = anno.globalVar();
         if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+            ParseUtil.appendPutGlobalVar(context, globalVar, cachedValCode);
         }
 
     }
@@ -152,7 +156,8 @@ public class FieldBuilder__F_bit_num extends FieldBuilder {
         //最后判断是否用了值表达式、如果用了、进行表达式处理
         if (!anno.valExpr().isEmpty()) {
             if (isFloat) {
-                valCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(anno.valExpr()), valCode);
+                valCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), valCode));
             } else {
                 valCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), valCode);
             }

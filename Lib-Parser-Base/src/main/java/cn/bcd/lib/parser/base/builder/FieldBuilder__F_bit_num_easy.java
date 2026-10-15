@@ -15,7 +15,7 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
     private Info getInfo(BuilderContext context) {
         Map<String, Object> cache = context.method_cache;
         Object object = cache.get(F_bit_num_easy.class.getName());
-        if (object == null) {
+        if (object == null || context.fieldIndex > ((Info) object).endFieldIndex()) {
             final String varNameField = ParseUtil.getFieldVarName(context);
             int startFieldIndex = context.fieldIndex;
             int endFieldIndex = 0;
@@ -76,11 +76,11 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         if (info.startFieldIndex == context.fieldIndex) {
             int maxBit = info.maxBit();
             final String funcName;
-            if (maxBit > 0 && maxBit <= 8) {
+            if (maxBit <= 7) {
                 funcName = "readByte";
-            } else if (maxBit <= 16) {
+            } else if (maxBit <= 15) {
                 funcName = "readShort";
-            } else if (maxBit <= 24) {
+            } else if (maxBit <= 23) {
                 funcName = "readMedium";
             } else {
                 funcName = "readInt";
@@ -105,7 +105,7 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         String valCode = ParseUtil.replaceValExprToCode(anno.valExpr(), varNameField);
 
         if (fieldTypeClass.isEnum()) {
-            ParseUtil.append(body, "{}.{}={}.fromInteger((int){});\n", varNameInstance, field.getName(), fieldTypeName, valCode);
+            ParseUtil.append(body, "{}.{}={}.fromInteger((int)({}));\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         } else {
             //格式化精度
             int precision = anno.precision();
@@ -119,13 +119,17 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
             ParseUtil.append(body, "{}.{}=({})({});\n", varNameInstance, field.getName(), fieldTypeName, valCode);
         }
 
+        String cachedValCode = varNameInstance + "." + field.getName();
         final char var = anno.var();
         if (var != '0') {
-            context.method_varToFieldName.put(var, varNameField);
+            String varNameCachedVal = varNameField + "_cachedVal";
+            ParseUtil.append(body, "final {} {}={};\n", sourceValTypeName, varNameCachedVal, cachedValCode);
+            cachedValCode = varNameCachedVal;
+            context.method_varToFieldName.put(var, cachedValCode);
         }
         final char globalVar = anno.globalVar();
         if (globalVar != '0') {
-            ParseUtil.appendPutGlobalVar(context, globalVar, varNameField);
+            ParseUtil.appendPutGlobalVar(context, globalVar, cachedValCode);
         }
     }
 
@@ -175,12 +179,13 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
             varNameVal = valCode;
         } else {
             if (isFloat) {
-                valCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(anno.valExpr()), valCode);
+                valCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(),
+                        ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), valCode));
             } else {
                 valCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.valExpr()), valCode);
             }
             varNameVal = varNameField + "_val";
-            ParseUtil.append(body, "final {} {}={};\n", fieldType.getName(), varNameVal, valCode);
+            ParseUtil.append(body, "final long {}=(long)({});\n", varNameVal, valCode);
         }
 
         Info info = getInfo(context);
@@ -192,11 +197,11 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
 
         ParseUtil.append(body, "{};\n", getBitNumCode_write(varNameNum, varNameVal, anno.bitStart(), anno.bitEnd()));
         if (info.endFieldIndex == context.fieldIndex) {
-            if (maxBitEnd > 0 && maxBitEnd <= 8) {
+            if (maxBitEnd <= 7) {
                 ParseUtil.append(body, "{}.writeByte({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBitEnd <= 16) {
+            } else if (maxBitEnd <= 15) {
                 ParseUtil.append(body, "{}.writeShort({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBitEnd <= 24) {
+            } else if (maxBitEnd <= 23) {
                 ParseUtil.append(body, "{}.writeMedium({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else {
                 ParseUtil.append(body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
@@ -212,11 +217,11 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
         }
         if (info.endFieldIndex() == context.fieldIndex) {
             int maxBit = info.maxBit();
-            if (maxBit > 0 && maxBit <= 8) {
+            if (maxBit <= 7) {
                 ParseUtil.append(context.method_body, "{}.writeByte({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBit <= 16) {
+            } else if (maxBit <= 15) {
                 ParseUtil.append(context.method_body, "{}.writeShort({});\n", FieldBuilder.varNameByteBuf, varNameNum);
-            } else if (maxBit <= 24) {
+            } else if (maxBit <= 23) {
                 ParseUtil.append(context.method_body, "{}.writeMedium({});\n", FieldBuilder.varNameByteBuf, varNameNum);
             } else {
                 ParseUtil.append(context.method_body, "{}.writeInt({});\n", FieldBuilder.varNameByteBuf, varNameNum);
@@ -225,19 +230,13 @@ public class FieldBuilder__F_bit_num_easy extends FieldBuilder {
     }
 
     private static String getBitNumCode_read(String varNameNum, int startBit, int endBit) {
-        if (endBit == 0) {
-            return ParseUtil.format("{}&{}", varNameNum, (1 << (startBit - endBit + 1)) - 1);
-        } else {
-            return ParseUtil.format("({}>>{})&{}", varNameNum, endBit, (1 << (startBit - endBit + 1)) - 1);
-        }
+        long mask = (1L << (startBit - endBit + 1)) - 1;
+        return ParseUtil.format("({}>>>{})&{}L", varNameNum, endBit, mask);
     }
 
     private static String getBitNumCode_write(String varNameNum, String varVal, int startBit, int endBit) {
-        if (endBit == 0) {
-            return ParseUtil.format("{}|=({}&{})", varNameNum, varVal, (1 << (startBit - endBit + 1)) - 1);
-        } else {
-            return ParseUtil.format("{}|=(({}&{})<<{})", varNameNum, varVal, (1 << (startBit - endBit + 1)) - 1, endBit);
-        }
+        long mask = (1L << (startBit - endBit + 1)) - 1;
+        return ParseUtil.format("{}|=(int)(((long)({})&{}L)<<{})", varNameNum, varVal, mask, endBit);
     }
 
 }

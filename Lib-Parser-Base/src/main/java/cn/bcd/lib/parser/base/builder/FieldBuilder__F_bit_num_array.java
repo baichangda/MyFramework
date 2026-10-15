@@ -38,6 +38,7 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         final Class<?> fieldTypeClass = field.getType();
         final Class<?> arrayElementType = fieldTypeClass.componentType();
         final String arrayElementTypeName = arrayElementType.getName();
+        final String sourceValTypeName = arrayElementType.isEnum() ? "int" : arrayElementTypeName;
         final Class<F_bit_num_array> annoClass = F_bit_num_array.class;
         final F_bit_num_array anno = context.field.getAnnotation(annoClass);
         if (anno.skip()) {
@@ -76,7 +77,7 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         ParseUtil.append(body, "{}=new {}[{}];\n", arrVarName, arrayElementTypeName, arrLenVarName);
         ParseUtil.append(body, "}\n");
         ParseUtil.append(body, "for(int i=0;i<{};i++){\n", arrLenVarName);
-        ParseUtil.append(body, "final {} {}=({}){}.read({},{});\n", arrayElementTypeName, varNameArrayElement, arrayElementTypeName, varNameBitBuf, singleLen, unsigned);
+        ParseUtil.append(body, "final {} {}=({}){}.read({},{});\n", sourceValTypeName, varNameArrayElement, sourceValTypeName, varNameBitBuf, singleLen, unsigned);
 
         if (singleSkip > 0) {
             ParseUtil.append(body, "{}.skip({});\n", varNameBitBuf, singleSkip);
@@ -91,7 +92,11 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
                 valCode = ParseUtil.format("{}.round((double){},{})", ParseUtil.class.getName(), valCode, singlePrecision);
             }
         }
-        ParseUtil.append(body, "{}[i]=({})({});\n", arrVarName, arrayElementTypeName, valCode);
+        if (arrayElementType.isEnum()) {
+            ParseUtil.append(body, "{}[i]={}.fromInteger((int)({}));\n", arrVarName, arrayElementTypeName, valCode);
+        } else {
+            ParseUtil.append(body, "{}[i]=({})({});\n", arrVarName, arrayElementTypeName, valCode);
+        }
         ParseUtil.append(body, "}\n");
         ParseUtil.append(body, "{}.{}={};\n", FieldBuilder.varNameInstance, field.getName(), arrVarName);
         if (skipAfter > 0) {
@@ -131,16 +136,16 @@ public class FieldBuilder__F_bit_num_array extends FieldBuilder {
         }
         ParseUtil.append(body, "if({}!=null){\n", valCode);
         final String varNameFieldArr = varNameField + "_arr";
-        ParseUtil.append(body, "final {}[] {}={};\n", arrElementType, varNameFieldArr, valCode);
+        ParseUtil.append(body, "final {}[] {}={};\n", arrElementType.getName(), varNameFieldArr, valCode);
         ParseUtil.append(body, "for(int i=0;i<{}.length;i++){\n", varNameFieldArr);
-        String writeValCode;
-        if (anno.singleValExpr().isEmpty()) {
-            writeValCode = varNameFieldArr + "[i]";
-        } else {
+        String writeValCode = varNameFieldArr + "[i]";
+        if (arrElementType.isEnum()) {
+            writeValCode += ".toInteger()";
+        }
+        if (!anno.singleValExpr().isEmpty()) {
+            writeValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.singleValExpr()), writeValCode);
             if (isFloat) {
-                writeValCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(anno.singleValExpr()), varNameFieldArr + "[i]");
-            } else {
-                writeValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(anno.singleValExpr()), varNameFieldArr + "[i]");
+                writeValCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(), writeValCode);
             }
         }
         ParseUtil.append(body, "{}.write((long)({}),{});\n", varNameBitBuf, writeValCode, singleLen);
