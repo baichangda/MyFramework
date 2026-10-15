@@ -219,36 +219,28 @@ public class RpnUtil {
         final String[] stack = new String[eles.length];
         int stackIndex = -1;
         for (Ele ele : eles) {
+            if (ele == null) {
+                throw new IllegalArgumentException("param[eles] must not contain null elements");
+            }
             if (ele.s == null) {
-                if (ele.d == (int) ele.d) {
-                    stack[++stackIndex] = ((int) ele.d) + "";
-                } else {
-                    stack[++stackIndex] = ele.d + "";
-                }
-
+                stack[++stackIndex] = ele.ds != null ? ele.ds : Double.toString(ele.d);
             } else {
                 switch (ele.s) {
                     case "!": {
+                        if (stackIndex < 0) {
+                            throw new IllegalArgumentException("invalid RPN: missing operand for !");
+                        }
                         stack[stackIndex] = "(-" + stack[stackIndex] + ")";
                         break;
                     }
-                    case "+": {
-                        stack[stackIndex - 1] = "(" + stack[stackIndex - 1] + "+" + stack[stackIndex] + ")";
-                        stackIndex--;
-                        break;
-                    }
-                    case "-": {
-                        stack[stackIndex - 1] = "(" + stack[stackIndex - 1] + "-" + stack[stackIndex] + ")";
-                        stackIndex--;
-                        break;
-                    }
-                    case "*": {
-                        stack[stackIndex - 1] = stack[stackIndex - 1] + "*" + stack[stackIndex];
-                        stackIndex--;
-                        break;
-                    }
+                    case "+":
+                    case "-":
+                    case "*":
                     case "/": {
-                        stack[stackIndex - 1] = stack[stackIndex - 1] + "/" + stack[stackIndex];
+                        if (stackIndex < 1) {
+                            throw new IllegalArgumentException("invalid RPN: missing operands for " + ele.s);
+                        }
+                        stack[stackIndex - 1] = "(" + stack[stackIndex - 1] + ele.s + stack[stackIndex] + ")";
                         stackIndex--;
                         break;
                     }
@@ -257,6 +249,9 @@ public class RpnUtil {
                     }
                 }
             }
+        }
+        if (stackIndex != 0) {
+            throw new IllegalArgumentException("invalid RPN: expected exactly one result");
         }
         return stack[0];
     }
