@@ -5,6 +5,7 @@ import cn.bcd.lib.parser.base.util.ParseUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,9 @@ public class FieldBuilder__F_bean_list extends FieldBuilder {
                 ParseUtil.append(body, "{}.{}=null;\n",
                         FieldBuilder.varNameInstance, field.getName());
                 ParseUtil.append(body, "}else{\n");
-                ParseUtil.append(body, "{}.{}={}.asList({});\n",
+                Class<?> listType = fieldType.isAssignableFrom(ArrayList.class) ? ArrayList.class : fieldType;
+                ParseUtil.append(body, "{}.{}=new {}();\n", FieldBuilder.varNameInstance, field.getName(), listType.getName());
+                ParseUtil.append(body, "{}.{}.addAll({}.asList({}));\n",
                         FieldBuilder.varNameInstance, field.getName(), Arrays.class.getName(), varNameField);
                 ParseUtil.append(body, "}\n");
             }

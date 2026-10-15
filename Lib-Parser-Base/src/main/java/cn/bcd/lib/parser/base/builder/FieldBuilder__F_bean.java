@@ -1,18 +1,16 @@
 package cn.bcd.lib.parser.base.builder;
 
-import cn.bcd.lib.base.util.ClassUtil;
+import cn.bcd.lib.parser.base.util.BeanTypeUtil;
 import cn.bcd.lib.parser.base.anno.C_impl;
 import cn.bcd.lib.parser.base.anno.F_bean;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.*;
 
 public class FieldBuilder__F_bean extends FieldBuilder {
 
-    final Map<Class<?>, List<Class<?>>> interfaceClassToImplClass = new HashMap<>();
 
     @Override
     public void buildParse(BuilderContext context) {
@@ -29,19 +27,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
             String varNameField_implClassVal = varNameField + "_implClassVal";
             ParseUtil.append(body, "int {}={};\n", varNameField_implClassVal, implClassValCode);
             //找到其实现类子类
-            String pkg = fieldTypeName.substring(0, fieldTypeName.lastIndexOf("."));
-            List<Class<?>> implClassList = interfaceClassToImplClass.get(fieldType);
-            if (implClassList == null) {
-                try {
-                    implClassList = ClassUtil.getClassesByParentClass(fieldType, pkg).stream()
-                            .filter(e2 -> e2.isAnnotationPresent(C_impl.class))
-                            .sorted(Comparator.comparing(Class::getName))
-                            .toList();
-                    interfaceClassToImplClass.put(fieldType, implClassList);
-                }catch (IOException | ClassNotFoundException e){
-                    throw BaseException.get(e);
-                }
-            }
+            List<Class<?>> implClassList = BeanTypeUtil.getImplementations(fieldType);
             ParseUtil.append(body, "switch({}){\n", varNameField_implClassVal);
             Class<?> defaultClass = null;
             for (Class<?> implClass : implClassList) {
@@ -65,7 +51,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                     implProcessorVarName = context.getCustomizeProcessorVarName(c_impl.processorClass(), c_impl.processorArgs());
                 }
                 for (int i = 0; i < filterValue.size() - 1; i++) {
-                    ParseUtil.append(body, "case {}:{}\n", filterValue.get(i));
+                    ParseUtil.append(body, "case {}: { }\n", filterValue.get(i));
                 }
                 ParseUtil.append(body, "case {}:{\n{}.{}=({}){}.process({},{});\nbreak;\n}\n",
                         filterValue.get(filterValue.size()-1),
@@ -125,19 +111,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
             String implClassValCode = ParseUtil.replaceExprToCode(implClassExpr, context);
             String varNameField_implClassVal = varNameField + "_implClassVal";
             ParseUtil.append(body, "int {}={};\n", varNameField_implClassVal, implClassValCode);
-            String pkg = fieldTypeName.substring(0, fieldTypeName.lastIndexOf("."));
-            List<Class<?>> implClassList = interfaceClassToImplClass.get(fieldType);
-            if (implClassList == null) {
-                try {
-                    implClassList = ClassUtil.getClassesByParentClass(fieldType, pkg).stream()
-                            .filter(e2 -> e2.isAnnotationPresent(C_impl.class))
-                            .sorted(Comparator.comparing(Class::getName))
-                            .toList();
-                    interfaceClassToImplClass.put(fieldType, implClassList);
-                }catch (IOException | ClassNotFoundException e){
-                    throw BaseException.get(e);
-                }
-            }
+            List<Class<?>> implClassList = BeanTypeUtil.getImplementations(fieldType);
             ParseUtil.append(body, "switch({}){\n", varNameField_implClassVal);
             Class<?> defaultClass = null;
             for (Class<?> implClass : implClassList) {
@@ -161,7 +135,7 @@ public class FieldBuilder__F_bean extends FieldBuilder {
                     implProcessorVarName = context.getCustomizeProcessorVarName(c_impl.processorClass(), c_impl.processorArgs());
                 }
                 for (int i = 0; i < filterValue.size() - 1; i++) {
-                    ParseUtil.append(body, "case {}:{}\n", filterValue.get(i));
+                    ParseUtil.append(body, "case {}: { }\n", filterValue.get(i));
                 }
                 ParseUtil.append(body, "case {}:{\n{}.deProcess({},{},({})({}));\nbreak;\n}\n",
                         filterValue.get(filterValue.size()-1),

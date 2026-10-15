@@ -103,6 +103,7 @@ public class Parser {
 
     private static <T> Class<T> buildClass(Class<T> clazz, ByteOrder byteOrder, NumValGetter numValGetter) {
         validateModel(clazz, numValGetter);
+        BeanDependencyValidator.validate(clazz);
         return (Class<T>) ProcessorSourceBuilder.build(clazz, byteOrder, numValGetter,
                 parseLogEnabled,
                 deParseLogEnabled,

@@ -10,9 +10,10 @@ import java.lang.annotation.Target;
  *
  * 适用于实体类集合字段、支持如下类型
  * T[] 数组
- * List<T> 集合、默认实例是ArrayList类型
- * {@link #listLen()}和{@link #listLenExpr()} 二选一、代表字段所占用总字节数
+ * List<T> 集合、默认实例是ArrayList类型；具体List类型需要公开无参构造器
+ * {@link #listLen()}和{@link #listLenExpr()} 二选一、代表集合元素个数
  * 解析时集合长度为0、T[]和List<T>字段值都为null
+ * F_bean、F_bean_list 的依赖不允许形成直接或间接循环
  * <p>
  * 反解析中
  * 值可以为null、此时代表空集合
