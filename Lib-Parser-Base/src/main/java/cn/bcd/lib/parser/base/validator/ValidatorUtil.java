@@ -135,6 +135,13 @@ final class ValidatorUtil {
     }
 
     static void validateVariable(Field field, String annotation, char var, char globalVar) {
+        if (var != '0' || globalVar != '0') {
+            Class<?> type = field.getType();
+            if (type != byte.class && type != short.class && type != int.class && type != long.class) {
+                fail("{} {} var/globalVar requires byte, short, int or long field, found[{}]",
+                        fieldDescription(field), annotation, type.getTypeName());
+            }
+        }
         if (var != '0' && (var < 'a' || var > 'z')) {
             fail("{} {} var[{}] must be in [a-z]", fieldDescription(field), annotation, var);
         }

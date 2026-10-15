@@ -17,13 +17,12 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         final String processorClassVarName = context.getCustomizeProcessorVarName(processorClass, anno.processorArgs());
         final String varNameInstance = FieldBuilder.varNameInstance;
         final Class<?> fieldType = field.getType();
-        final String fieldTypeClassName = fieldType.getName();
+        final String fieldTypeClassName = fieldType.getTypeName();
         final String processContextVarName = context.getProcessContextVarName();
         final String unBoxing = ParseUtil.unBoxing(ParseUtil.format("{}.process({},{})", processorClassVarName, FieldBuilder.varNameByteBuf, processContextVarName), fieldType);
         ParseUtil.append(body, "final {} {}={};\n", fieldTypeClassName, varNameField, unBoxing);
         ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
         if (anno.var() != '0') {
-            ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameField);
             context.method_varToFieldName.put(anno.var(), varNameField);
         }
 
@@ -47,8 +46,9 @@ public class FieldBuilder__F_customize extends FieldBuilder {
         if (var == '0') {
             valCode = varInstanceName + "." + field.getName();
         } else {
-            ParseUtil.append(body, "final {} {}={};\n", field.getType().getName(), varNameField, varInstanceName + "." + field.getName());
+            ParseUtil.append(body, "final {} {}={};\n", field.getType().getTypeName(), varNameField, varInstanceName + "." + field.getName());
             valCode = varNameField;
+            context.method_varToFieldName.put(var, varNameField);
         }
 
         //判断是否用到全局变量中、如果用到了、添加进去

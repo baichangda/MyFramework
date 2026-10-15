@@ -57,6 +57,7 @@ public @interface F_num {
 
     /**
      * 变量名称、仅作用于当前类
+     * 仅允许byte、short、int、long字段，不支持浮点数、包装类型和枚举。
      * 取值a-z、0表示不作为变量
      * 缓存表达式和精度处理后的字段值，供其他注解长度表达式使用；反解析使用相同值。
      * 枚举字段不允许设置；checkVal 检测到异常时使用 0。
@@ -65,7 +66,7 @@ public @interface F_num {
 
     /**
      * 全局变量名称、作用于一个对象解析的生命周期中
-     * 要求标注字段必须为数字类型
+     * 要求标注字段必须为byte、short、int、long
      * 此变量值会在{@link ProcessContext#globalVars}中、跟随解析参数传递。
      * 缓存值与 var 相同，转换为 int 后保存；枚举字段不允许设置。
      * 取值A-Z、0表示不作为变量

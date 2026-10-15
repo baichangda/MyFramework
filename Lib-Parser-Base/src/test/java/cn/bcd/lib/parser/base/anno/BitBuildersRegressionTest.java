@@ -108,7 +108,7 @@ public class BitBuildersRegressionTest {
     }
 
     @Test
-    public void scalarAndEasyVariablesUseTransformedValuesIncludingPrecision() {
+    public void scalarAndEasyVariablesUseTransformedValues() {
         var processor = Parser.getProcessor(Variables.class);
         byte[] bytes = {3, 10, 20, 3, 30, 40, 16};
         ByteBuf input = Unpooled.wrappedBuffer(bytes);
@@ -121,14 +121,12 @@ public class BitBuildersRegressionTest {
         assertArrayEquals(new int[]{30, 40}, bean.easyValues);
         assertEquals(2, readContext.getGlobalVar('A'));
         assertEquals(2, readContext.getGlobalVar('B'));
-        assertEquals(2, readContext.getGlobalVar('C'));
         ByteBuf output = Unpooled.buffer();
         ProcessContext writeContext = new ProcessContext(output);
         processor.deProcess(output, writeContext, bean);
         assertArrayEquals(new byte[]{3, 10, 20, 3, 30, 40, 20}, ParserTestSupport.readAll(output));
         assertEquals(2, writeContext.getGlobalVar('A'));
         assertEquals(2, writeContext.getGlobalVar('B'));
-        assertEquals(2, writeContext.getGlobalVar('C'));
     }
 
     public enum Mode {
@@ -217,7 +215,7 @@ public class BitBuildersRegressionTest {
         public int easyLength;
         @F_num_array(lenExpr = "b", singleType = NumType.uint8)
         public int[] easyValues;
-        @F_bit_num_easy(bitStart = 7, bitEnd = 0, valExpr = "x/10", precision = 0, globalVar = 'C')
+        @F_bit_num_easy(bitStart = 7, bitEnd = 0, valExpr = "x/10", precision = 0)
         public double rounded;
     }
 }

@@ -137,19 +137,23 @@ public class ParseUtil {
 
     public static String unBoxing(final String num, final Class<?> clazz) {
         if (clazz == byte.class) {
-            return num + ".byteValue()";
+            return "((java.lang.Number)(" + num + ")).byteValue()";
         } else if (clazz == short.class) {
-            return num + ".shortValue()";
+            return "((java.lang.Number)(" + num + ")).shortValue()";
         } else if (clazz == int.class) {
-            return num + ".intValue()";
+            return "((java.lang.Number)(" + num + ")).intValue()";
         } else if (clazz == long.class) {
-            return num + ".longValue()";
+            return "((java.lang.Number)(" + num + ")).longValue()";
         } else if (clazz == float.class) {
-            return num + ".floatValue()";
+            return "((java.lang.Number)(" + num + ")).floatValue()";
         } else if (clazz == double.class) {
-            return num + ".doubleValue()";
+            return "((java.lang.Number)(" + num + ")).doubleValue()";
+        } else if (clazz == boolean.class) {
+            return "((java.lang.Boolean)(" + num + ")).booleanValue()";
+        } else if (clazz == char.class) {
+            return "((java.lang.Character)(" + num + ")).charValue()";
         } else {
-            return num;
+            return "((" + clazz.getTypeName() + ")(" + num + "))";
         }
     }
 
@@ -166,6 +170,10 @@ public class ParseUtil {
             return "Float.valueOf(" + num + ")";
         } else if (clazz == double.class) {
             return "Double.valueOf(" + num + ")";
+        } else if (clazz == boolean.class) {
+            return "Boolean.valueOf(" + num + ")";
+        } else if (clazz == char.class) {
+            return "Character.valueOf(" + num + ")";
         } else {
             return num;
         }
