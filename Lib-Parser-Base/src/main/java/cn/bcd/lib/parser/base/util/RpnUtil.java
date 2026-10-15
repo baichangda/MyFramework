@@ -1,129 +1,234 @@
 package cn.bcd.lib.parser.base.util;
 
-
 import cn.bcd.lib.base.exception.BaseException;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Map;
 
-public class RpnUtil {
+/** 算术表达式的逆波兰转换与单变量求逆工具。 */
+public final class RpnUtil {
+    private static final char NEGATE = '!';
+
+    private RpnUtil() {
+    }
 
     /**
-     * 对变量只出现一次的表达式逐层移项求解。
-     * 例如输入 x*10+3，输出 ((x-3)/10)，输出中的 x 代表原等式的 y。
-     * 保留数字原文和运算括号，不改变调用方的数值类型和舍入规则。
+     * 对变量仅出现一次的表达式逐层移项求逆，例如 x*10+3 转为 ((x-3)/10)。
+     * 输入变量名可以不同，输出统一以 x 表示原表达式的计算结果；空串仍返回空串。
+     * 保留数字原文和运算分组，不替调用方决定数值类型及舍入方式。
+     *
+     * @param expression 中缀表达式
+     * @return 带显式运算括号的逆表达式，单独的变量返回 x
+     * @throws IllegalArgumentException 输入为 null
+     * @throws BaseException 表达式非法、变量出现次数不为一，或存在零因子、零分母等不可逆运算
      */
-    public static String reverseExpr(String str) {
-        if (str == null) {
-            throw new IllegalArgumentException("param[str] must not be null");
+    public static String reverseExpr(String expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression must not be null");
         }
-        if (str.isEmpty()) {
+        if (expression.isEmpty()) {
             return "";
         }
-        ReverseNode expression = parseReverseExpression(str);
-        if (expression.variableCount != 1) {
-            throw BaseException.get("reverseExpr requires a single variable occurrence: {}", str);
+        ExpressionNode node = parseExpressionTree(expression);
+        if (node.variableCount != 1) {
+            throw BaseException.get("reverseExpr requires a single variable occurrence: {}", expression);
         }
-
-        ReverseNode result = new ReverseNode("x", null, null, 1, 0);
-        while (expression.left != null) {
-            if (expression.token.equals("!")) {
-                result = ReverseNode.negate(result);
-                expression = expression.left;
+        ExpressionNode result = ExpressionNode.variable();
+        while (node.left != null) {
+            if (node.text.equals("!")) {
+                result = ExpressionNode.negate(result);
+                node = node.left;
                 continue;
             }
-            boolean variableOnLeft = expression.left.variableCount == 1;
-            ReverseNode constant = variableOnLeft ? expression.right : expression.left;
-            result = switch (expression.token) {
-                case "+" -> ReverseNode.binary("-", result, constant);
+            boolean variableOnLeft = node.left.variableCount == 1;
+            ExpressionNode constant = variableOnLeft ? node.right : node.left;
+            result = switch (node.text) {
+                case "+" -> ExpressionNode.binary("-", result, constant);
                 case "-" -> variableOnLeft
-                        ? ReverseNode.binary("+", result, constant)
-                        : ReverseNode.binary("-", constant, result);
-                case "*" -> ReverseNode.binary("/", result, constant);
+                        ? ExpressionNode.binary("+", result, constant)
+                        : ExpressionNode.binary("-", constant, result);
+                case "*" -> ExpressionNode.binary("/", result, constant);
                 case "/" -> variableOnLeft
-                        ? ReverseNode.binary("*", result, constant)
-                        : ReverseNode.binary("/", constant, result);
-                default -> throw BaseException.get("unsupported operator[{}]", expression.token);
+                        ? ExpressionNode.binary("*", result, constant)
+                        : ExpressionNode.binary("/", constant, result);
+                default -> throw BaseException.get("unsupported operator[{}]", node.text);
             };
-            expression = variableOnLeft ? expression.left : expression.right;
+            node = variableOnLeft ? node.left : node.right;
         }
-        StringBuilder resultCode = new StringBuilder();
-        result.appendCode(resultCode);
-        return resultCode.toString();
+        StringBuilder code = new StringBuilder();
+        result.appendCode(code);
+        return code.toString();
     }
 
-    private static ReverseNode parseReverseExpression(String str) {
-        int depth = 0;
-        char previous = '\0';
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (Character.isWhitespace(c)) {
+    /**
+     * 将中缀表达式转换为逆波兰序列，支持变量、数字、括号及 +、-、*、/。
+     * 一元负号输出为 !，连续负号按奇偶抵消；二元运算遵循优先级并按左结合处理。
+     * 空白仅用作 token 分隔，不能连接两个操作数；不支持隐式乘法和一元正号。
+     *
+     * @param expression 非空中缀表达式
+     * @return 按求值顺序排列的 token；数字同时保留原文与 double 值
+     * @throws IllegalArgumentException 输入为 null 或空串
+     * @throws BaseException 操作数缺失、括号不匹配或数字非法
+     */
+    public static Token[] toRpn(String expression) {
+        if (expression == null || expression.isEmpty()) {
+            throw new IllegalArgumentException("expression must not be null or empty");
+        }
+        List<Token> output = new ArrayList<>();
+        Deque<Character> operators = new ArrayDeque<>();
+        boolean expectingOperand = true;
+        for (int index = 0; index < expression.length(); index++) {
+            char current = expression.charAt(index);
+            if (Character.isWhitespace(current)) {
                 continue;
             }
-            if (c == '(') {
-                if (previous != '\0' && "+-*/(".indexOf(previous) < 0) {
-                    throw BaseException.get("invalid expression, missing operator before parentheses: {}", str);
+            switch (current) {
+                case '(' -> {
+                    require(expectingOperand, expression, index);
+                    operators.push(current);
                 }
-                depth++;
-            } else if (c == ')' && --depth < 0) {
-                throw BaseException.get("invalid expression, unbalanced parentheses: {}", str);
-            }
-            previous = c;
-        }
-        if (depth != 0) {
-            throw BaseException.get("invalid expression, unbalanced parentheses: {}", str);
-        }
-
-        Ele[] elements = toRpn(str);
-        ReverseNode[] stack = new ReverseNode[elements.length];
-        int size = 0;
-        for (Ele element : elements) {
-            if (element.s == null) {
-                if (!Double.isFinite(element.d)) {
-                    throw BaseException.get("non-finite constant in expression: {}", str);
+                case ')' -> {
+                    require(!expectingOperand, expression, index);
+                    while (!operators.isEmpty() && operators.peek() != '(') {
+                        appendOperator(output, operators.pop());
+                    }
+                    require(!operators.isEmpty(), expression, index);
+                    operators.pop();
                 }
-                stack[size++] = new ReverseNode(element.ds, null, null, 0, element.d);
-            } else if (element.s.equals("!")) {
-                if (size < 1) {
-                    throw BaseException.get("invalid expression, missing operand: {}", str);
+                case '+', '-', '*', '/' -> {
+                    if (current == '-' && expectingOperand) {
+                        operators.push(NEGATE);
+                        continue;
+                    }
+                    require(!expectingOperand, expression, index);
+                    while (!operators.isEmpty() && operators.peek() != '('
+                            && operatorPrecedence(operators.peek()) >= operatorPrecedence(current)) {
+                        appendOperator(output, operators.pop());
+                    }
+                    operators.push(current);
+                    expectingOperand = true;
                 }
-                stack[size - 1] = ReverseNode.negate(stack[size - 1]);
-            } else if (element.s.equals("+") || element.s.equals("-")
-                    || element.s.equals("*") || element.s.equals("/")) {
-                if (size < 2) {
-                    throw BaseException.get("invalid expression, missing operand: {}", str);
+                default -> {
+                    require(expectingOperand, expression, index);
+                    int start = index;
+                    while (index + 1 < expression.length() && !isDelimiter(expression.charAt(index + 1))) {
+                        index++;
+                    }
+                    output.add(parseOperand(expression.substring(start, index + 1)));
+                    expectingOperand = false;
                 }
-                ReverseNode right = stack[--size];
-                ReverseNode left = stack[size - 1];
-                if (left.variableCount + right.variableCount > 1) {
-                    throw BaseException.get("reverseExpr requires a single variable occurrence: {}", str);
-                }
-                stack[size - 1] = ReverseNode.binary(element.s, left, right);
-            } else {
-                stack[size++] = new ReverseNode("x", null, null, 1, 0);
             }
         }
-        if (size != 1) {
-            throw BaseException.get("invalid expression: {}", str);
+        require(!expectingOperand, expression, expression.length());
+        while (!operators.isEmpty()) {
+            char operator = operators.pop();
+            require(operator != '(', expression, expression.length());
+            appendOperator(output, operator);
         }
-        return stack[0];
+        return output.toArray(Token[]::new);
     }
 
-    /** 只在处理器构建阶段使用；constantValue 仅用于检测不可逆的零常量，不用于生成代码。 */
-    private record ReverseNode(String token, ReverseNode left, ReverseNode right,
-                               int variableCount, double constantValue) {
-        static ReverseNode negate(ReverseNode operand) {
-            return new ReverseNode("!", operand, null, operand.variableCount, -operand.constantValue);
+    /** 在解析入口统一校验语法，异常包含原表达式与出错位置。 */
+    private static void require(boolean valid, String expression, int index) {
+        if (!valid) {
+            throw BaseException.get("invalid expression at index[{}]: {}", index, expression);
+        }
+    }
+
+    private static boolean isDelimiter(char character) {
+        return Character.isWhitespace(character) || "+-*/()".indexOf(character) >= 0;
+    }
+
+    /** 数字保留原文；变量采用 Java 标识符命名，避免将非法数字当成变量。 */
+    private static Token parseOperand(String text) {
+        try {
+            double number = Double.parseDouble(text);
+            if (!Double.isFinite(number)) {
+                throw BaseException.get("non-finite constant: {}", text);
+            }
+            return new Token(text, number);
+        } catch (NumberFormatException ignored) {
+            if (!Character.isJavaIdentifierStart(text.charAt(0))
+                    || !text.chars().allMatch(Character::isJavaIdentifierPart)) {
+                throw BaseException.get("invalid operand: {}", text);
+            }
+            return new Token(text, null);
+        }
+    }
+
+    /** 相邻的一元负号作用于同一个操作数，两个负号可直接抵消。 */
+    private static void appendOperator(List<Token> output, char operator) {
+        if (operator == NEGATE && !output.isEmpty() && output.getLast().text.equals("!")) {
+            output.removeLast();
+        } else {
+            output.add(new Token(String.valueOf(operator), null));
+        }
+    }
+
+    private static int operatorPrecedence(char operator) {
+        return switch (operator) {
+            case '+', '-' -> 1;
+            case '*', '/' -> 2;
+            case NEGATE -> 3;
+            default -> throw BaseException.get("unsupported operator[{}]", operator);
+        };
+    }
+
+    /** 已由 toRpn 校验语法，这里只构建求逆所需的树并检查变量次数。 */
+    private static ExpressionNode parseExpressionTree(String expression) {
+        Deque<ExpressionNode> nodes = new ArrayDeque<>();
+        for (Token token : toRpn(expression)) {
+            if (token.isNumber()) {
+                nodes.push(new ExpressionNode(token.text, null, null, 0, token.number));
+            } else if (token.text.equals("!")) {
+                nodes.push(ExpressionNode.negate(nodes.pop()));
+            } else if (token.text.length() == 1 && "+-*/".contains(token.text)) {
+                ExpressionNode right = nodes.pop();
+                ExpressionNode left = nodes.pop();
+                if (left.variableCount + right.variableCount > 1) {
+                    throw BaseException.get("reverseExpr requires a single variable occurrence: {}", expression);
+                }
+                nodes.push(ExpressionNode.binary(token.text, left, right));
+            } else {
+                nodes.push(ExpressionNode.variable());
+            }
+        }
+        return nodes.pop();
+    }
+
+    /**
+     * 逆波兰序列元素。
+     * @param text 数字原文、变量名或操作符；! 代表一元负号
+     * @param number 数字值；变量和操作符为 null
+     */
+    public record Token(String text, Double number) {
+        /** 是否为数字常量。 */
+        public boolean isNumber() {
+            return number != null;
+        }
+    }
+
+    /** constantValue 仅用于检查零常量和溢出，不参与输出代码的常量折叠。 */
+    private record ExpressionNode(String text, ExpressionNode left, ExpressionNode right,
+                                  int variableCount, double constantValue) {
+        static ExpressionNode variable() {
+            return new ExpressionNode("x", null, null, 1, 0);
         }
 
-        static ReverseNode binary(String operator, ReverseNode left, ReverseNode right) {
+        static ExpressionNode negate(ExpressionNode operand) {
+            return new ExpressionNode("!", operand, null, operand.variableCount, -operand.constantValue);
+        }
+
+        /** 检查除零及不可逆运算，同时计算纯常量子树的值。 */
+        static ExpressionNode binary(String operator, ExpressionNode left, ExpressionNode right) {
             int variableCount = left.variableCount + right.variableCount;
             if (operator.equals("/") && right.variableCount == 0 && right.constantValue == 0) {
                 throw BaseException.get("expression divides by zero");
             }
             if (variableCount == 1) {
-                ReverseNode constant = left.variableCount == 0 ? left : right;
+                ExpressionNode constant = left.variableCount == 0 ? left : right;
                 if (constant.constantValue == 0 && (operator.equals("*")
                         || operator.equals("/") && left.variableCount == 0)) {
                     throw BaseException.get("expression is not invertible: zero factor or numerator");
@@ -142,227 +247,25 @@ public class RpnUtil {
                     throw BaseException.get("non-finite constant expression");
                 }
             }
-            return new ReverseNode(operator, left, right, variableCount, constantValue);
+            return new ExpressionNode(operator, left, right, variableCount, constantValue);
         }
 
+        /** 每层运算显式加括号，防止生成代码时优先级发生变化。 */
         void appendCode(StringBuilder code) {
             if (left == null) {
-                code.append(token);
+                code.append(text);
+                return;
+            }
+            code.append('(');
+            if (text.equals("!")) {
+                code.append('-');
+                left.appendCode(code);
             } else {
-                code.append('(');
-                if (token.equals("!")) {
-                    code.append('-');
-                    left.appendCode(code);
-                } else {
-                    left.appendCode(code);
-                    code.append(token);
-                    right.appendCode(code);
-                }
-                code.append(')');
+                left.appendCode(code);
+                code.append(text);
+                right.appendCode(code);
             }
+            code.append(')');
         }
     }
-
-    private static Ele[] toRpn(String[] rpn) {
-        final Ele[] eles = new Ele[rpn.length];
-        for (int i = 0; i < rpn.length; i++) {
-            try {
-                final double v = Double.parseDouble(rpn[i]);
-                eles[i] = new Ele(v, rpn[i]);
-            } catch (NumberFormatException ex) {
-                eles[i] = new Ele(rpn[i]);
-            }
-        }
-        return eles;
-    }
-
-    /**
-     * 算术表达式转换为 逆波兰表达式形式
-     * 支持 ( + - * / ) 和 负号
-     * 支持变量
-     * 结果中
-     * 负号将会被翻译成!
-     * 所有的数字没有负数、因为负号被提出来为!后置
-     *
-     * @param str
-     * @return
-     */
-    public static Ele[] toRpn(String str) {
-        if (str == null || str.isEmpty()) {
-            throw new IllegalArgumentException("param[str] must not be null or empty");
-        }
-        final char[] chars = str.toCharArray();
-        //存储rpn结果
-        final List<String> output = new ArrayList<>();
-        //存储操作符的栈
-        final char[] operatorStack = new char[chars.length];
-        int operatorStackIndex = -1;
-        //用于收集一个个字符、整理成一个变量
-        final StringBuilder temp = new StringBuilder();
-        char previous = '\0';
-
-        for (int i = 0; i <= chars.length - 1; i++) {
-            final char c = chars[i];
-            if (Character.isWhitespace(c)) {
-                continue;
-            }
-            final char previousChar = previous;
-            previous = c;
-            switch (c) {
-                case '+':
-                case '*':
-                case '/': {
-                    if (!temp.isEmpty()) {
-                        //当遇到符号、收集变量
-                        output.add(temp.toString());
-                        temp.delete(0, temp.length());
-                    }
-                    //开始回溯符号栈、将优先级高于当前符号的符号弹出、视为优先运算
-                    if (operatorStackIndex >= 0) {
-                        while (operatorStackIndex >= 0 && operatorStack[operatorStackIndex] != '(' &&
-                                getSymbolPriority(operatorStack[operatorStackIndex]) >= getSymbolPriority(c)) {
-                            output.add(String.valueOf(operatorStack[operatorStackIndex--]));
-                        }
-                    }
-                    //符号入栈
-                    operatorStack[++operatorStackIndex] = c;
-                    break;
-                }
-                case '-': {
-                    //两种情况下表示不是取负
-                    //1、temp里面有数据、代表有变量
-                    //2、上一个字符是)、代表刚处理完一个()表达式
-                    if (temp.isEmpty() && previousChar != ')') {
-                        //此时取负号
-                        operatorStack[++operatorStackIndex] = '!';
-                    } else {
-                        //当遇到符号、收集变量
-                        if (!temp.isEmpty()) {
-                            output.add(temp.toString());
-                            temp.delete(0, temp.length());
-                        }
-                        //开始回溯符号栈、将优先级高于当前符号的符号弹出、视为优先运算
-                        if (operatorStackIndex >= 0) {
-                            while (operatorStackIndex >= 0 && operatorStack[operatorStackIndex] != '(' &&
-                                    getSymbolPriority(operatorStack[operatorStackIndex]) >= getSymbolPriority(c)) {
-                                output.add(String.valueOf(operatorStack[operatorStackIndex--]));
-                            }
-                        }
-                        //符号入栈
-                        operatorStack[++operatorStackIndex] = c;
-                    }
-                    break;
-                }
-                case '(': {
-                    //符号入栈
-                    operatorStack[++operatorStackIndex] = c;
-                    break;
-                }
-                case ')': {
-                    if (!temp.isEmpty()) {
-                        //当遇到)、收集变量
-                        output.add(temp.toString());
-                        temp.delete(0, temp.length());
-                    }
-                    //处理括号内
-                    //开始回溯符号栈、将优先级高于当前符号的符号弹出、视为优先运算
-                    if (operatorStackIndex >= 0) {
-                        while (operatorStackIndex >= 0 && operatorStack[operatorStackIndex] != '(') {
-                            output.add(String.valueOf(operatorStack[operatorStackIndex--]));
-                        }
-                        //弹出(
-                        if (operatorStackIndex != -1) {
-                            operatorStackIndex--;
-                        }
-                    }
-                    break;
-                }
-
-                default: {
-                    temp.append(c);
-                }
-            }
-        }
-
-        if (!temp.isEmpty()) {
-            output.add(temp.toString());
-        }
-
-        for (int i = operatorStackIndex; i >= 0; i--) {
-            output.add(String.valueOf(operatorStack[i]));
-        }
-
-        //去除重复的!、负负得正
-        final List<String> newOutput = new ArrayList<>();
-        int count = 0;
-        for (final String s : output) {
-            if ("!".equals(s)) {
-                count++;
-            } else {
-                if (count % 2 == 1) {
-                    newOutput.add("!");
-                }
-                count = 0;
-                newOutput.add(s);
-            }
-        }
-        if (count % 2 == 1) {
-            newOutput.add("!");
-        }
-
-        return toRpn(newOutput.toArray(new String[0]));
-    }
-
-    /**
-     * 获取字符优先级
-     *
-     * @param c
-     * @return
-     */
-    private static int getSymbolPriority(char c) {
-        switch (c) {
-            case '+':
-            case '-': {
-                return 1;
-            }
-            case '*':
-            case '/': {
-                return 2;
-            }
-            case '!': {
-                return 3;
-            }
-            default: {
-                throw BaseException.get("symbol[" + c + "] not support");
-            }
-        }
-    }
-
-    static class Ele {
-        //存储变量名称、null代表是数字
-        final String s;
-        //存储数字值
-        final double d;
-        //存储浮点数的字符串表达式、因为d会默认转换为科学计数法表示
-        final String ds;
-
-        public Ele(String s) {
-            this.s = s;
-            this.d = 0d;
-            this.ds = null;
-        }
-
-        public Ele(double d, String ds) {
-            this.s = null;
-            this.d = d;
-            this.ds = ds;
-        }
-
-        @Override
-        public String toString() {
-            return s == null ? ("num[" + d + "]") : "str[" + s + "]";
-        }
-    }
-
-
 }
