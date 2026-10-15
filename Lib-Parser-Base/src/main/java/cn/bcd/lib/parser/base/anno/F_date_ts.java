@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  *
  * 适用于如下类型
  * long 此时代表时间戳毫秒
- * {@link java.util.Date}
+ * {@link java.util.Date}（不支持其子类）
  * {@link java.time.Instant}
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}

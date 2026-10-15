@@ -52,7 +52,7 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
         } else {
             final String zoneDateTimeClassName = ZonedDateTime.class.getName();
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "{}.{}={}.ofInstant({}.ofEpochMilli({}),{}).format({});\n",
                     varNameInstance,
                     field.getName(),
@@ -100,7 +100,7 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
         }
 
@@ -108,11 +108,11 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
     }
 
     public static long read(final ByteBuf data, final ZoneId zoneId, final int baseYear) {
-        return ZonedDateTime.of(data.readByte() + baseYear, data.readByte(), data.readByte(), data.readByte(), data.readByte(), data.readByte(), 0, zoneId).toEpochSecond() * 1000;
+        return ZonedDateTime.of(data.readUnsignedByte() + baseYear, data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte(), 0, zoneId).toEpochSecond() * 1000;
     }
 
     public static long read(final ByteBuf data, final ZoneOffset zoneOffset, final int baseYear) {
-        return LocalDateTime.of(data.readByte() + baseYear, data.readByte(), data.readByte(), data.readByte(), data.readByte(), data.readByte()).toEpochSecond(zoneOffset) * 1000;
+        return LocalDateTime.of(data.readUnsignedByte() + baseYear, data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte(), data.readUnsignedByte()).toEpochSecond(zoneOffset) * 1000;
     }
 
     public static void write(final ByteBuf data, final long ts, final ZoneId zoneId, final int baseYear) {
@@ -134,8 +134,9 @@ public class FieldBuilder__F_date_bytes_6 extends FieldBuilder {
                 dateTime[3], dateTime[4], dateTime[5]);
     }
 
-    private static void write(final ByteBuf data, int year, int month, int day,
+    private static void write(final ByteBuf data, int yearOffset, int month, int day,
                               int hour, int minute, int second) {
+        int year = ParseUtil.checkDateYear(yearOffset, 255);
         data.writeInt((year & 0xff) << 24
                         | (month & 0xff) << 16
                         | (day & 0xff) << 8

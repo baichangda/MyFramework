@@ -46,7 +46,7 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameLongField);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "{}.{}={}.ofInstant({}.ofEpochMilli({}),{}).format({});\n",
                     varNameInstance,
                     field.getName(),
@@ -89,7 +89,7 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
         }
         ParseUtil.append(body, "{}.write({},{},{},{});\n", FieldBuilder__F_date_bcd.class.getName()
@@ -120,6 +120,9 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
 
     private static int readBcd(ByteBuf byteBuf) {
         int value = byteBuf.readUnsignedByte();
+        if ((value >>> 4) > 9 || (value & 0x0f) > 9) {
+            throw new IllegalArgumentException("invalid BCD date byte: " + value);
+        }
         return (value >>> 4) * 10 + (value & 0x0f);
     }
 
@@ -139,8 +142,9 @@ public class FieldBuilder__F_date_bcd extends FieldBuilder {
                 dateTime.getMinute(), dateTime.getSecond());
     }
 
-    private static void write(ByteBuf byteBuf, int year, int month, int day,
+    private static void write(ByteBuf byteBuf, int yearOffset, int month, int day,
                               int hour, int minute, int second) {
+        int year = ParseUtil.checkDateYear(yearOffset, 99);
         byteBuf.writeInt(toBcd(year) << 24
                         | toBcd(month) << 16
                         | toBcd(day) << 8

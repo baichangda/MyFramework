@@ -44,7 +44,7 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
             }
             case float64_s -> {
                 final String readFuncName = bigEndian ? "readDouble" : "readDoubleLE";
-                ParseUtil.append(body, "final long {}=(long)({}.{}()*1000);\n", varNameLongField, varNameByteBuf, readFuncName);
+                ParseUtil.append(body, "final long {}={}.round({}.{}()*1000);\n", varNameLongField, ParseUtil.class.getName(), varNameByteBuf, readFuncName);
             }
         }
         //根据字段类型格式化
@@ -66,7 +66,7 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameLongField);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "{}.{}={}.ofInstant({}.ofEpochMilli({}),{}).format({});\n",
                     varNameInstance,
                     field.getName(),
@@ -109,7 +109,7 @@ public class FieldBuilder__F_date_ts extends FieldBuilder {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
         }
 

@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  *
  * 适用于如下类型
  * long 此时代表时间戳毫秒
- * {@link java.util.Date}
+ * {@link java.util.Date}（不支持其子类）
  * {@link java.time.Instant}
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}
@@ -36,7 +36,7 @@ public @interface F_date_bcd {
     String zoneId() default "+8";
 
     /**
-     * 年份偏移量、结果年份=baseYear+原始值
+     * 年份偏移量、结果年份=baseYear+原始值；原始值范围为0-99，写入超出范围时抛出异常
      */
     int baseYear() default 2000;
 

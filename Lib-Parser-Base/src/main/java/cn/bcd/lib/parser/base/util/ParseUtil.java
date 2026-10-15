@@ -90,6 +90,21 @@ public class ParseUtil {
     }
 
 
+    /** Converts a value to a Java string literal for generated source. */
+    public static String javaStringLiteral(String value) {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\b", "\\b").replace("\t", "\\t").replace("\n", "\\n")
+                .replace("\f", "\\f").replace("\r", "\\r") + "\"";
+    }
+
+    /** Checks the year or year offset against the encoded range. */
+    public static int checkDateYear(int year, int maxYear) {
+        if (year < 0 || year > maxYear) {
+            throw new IllegalArgumentException("date year value[" + year + "] must be in [0," + maxYear + "]");
+        }
+        return year;
+    }
+
     public static String getFieldVarName(final BuilderContext context) {
         return context.field.getName();
     }

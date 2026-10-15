@@ -126,7 +126,7 @@ final class ValidatorUtil {
 
     static void validateDateField(Field field, String annotation) {
         Class<?> type = field.getType();
-        if (!Date.class.isAssignableFrom(type) && !Instant.class.isAssignableFrom(type)
+        if (type != Date.class && !Instant.class.isAssignableFrom(type)
                 && !LocalDateTime.class.isAssignableFrom(type) && !OffsetDateTime.class.isAssignableFrom(type)
                 && !ZonedDateTime.class.isAssignableFrom(type) && type != long.class
                 && !String.class.isAssignableFrom(type)) {

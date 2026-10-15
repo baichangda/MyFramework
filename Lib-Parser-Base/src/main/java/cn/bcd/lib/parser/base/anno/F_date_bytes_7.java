@@ -9,11 +9,12 @@ import java.lang.annotation.Target;
 
 /**
  * 用于原始数据是7个字节分别表示 年(2字节)、月、日、时、分、秒
+ * 年份范围为0-65535，写入超出范围时抛出异常
  *
  * 适用于如下类型
  * int[6] 此时分别代表(年、月、日、时、分、秒)
  * long 此时代表时间戳毫秒
- * {@link java.util.Date}
+ * {@link java.util.Date}（不支持其子类）
  * {@link java.time.Instant}
  * {@link java.time.LocalDateTime}
  * {@link java.time.OffsetDateTime}

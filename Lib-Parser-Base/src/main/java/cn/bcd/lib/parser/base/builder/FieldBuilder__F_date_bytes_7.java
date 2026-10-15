@@ -58,7 +58,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
             ParseUtil.append(body, "{}.{}={};\n", varNameInstance, field.getName(), varNameLongField);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "{}.{}={}.ofInstant({}.ofEpochMilli({}),{}).format({});\n",
                     varNameInstance,
                     field.getName(),
@@ -85,7 +85,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
         final boolean bigEndian = ParseUtil.bigEndian(anno.yearByteOrder(), context.byteOrder);
         if (fieldTypeClass == int[].class) {
             final String writeFuncName = bigEndian ? "writeShort" : "writeShortLE";
-            ParseUtil.append(body, "{}.{}({}[0]);\n", varNameByteBuf, writeFuncName, valCode);
+            ParseUtil.append(body, "{}.{}({}.checkDateYear({}[0],65535));\n", varNameByteBuf, writeFuncName, ParseUtil.class.getName(), valCode);
             ParseUtil.append(body, "{}.writeInt(({}[1]&255)<<24|({}[2]&255)<<16|({}[3]&255)<<8|{}[4]&255).writeByte({}[5]);\n",
                     varNameByteBuf, valCode, valCode, valCode, valCode, valCode);
             return;
@@ -109,7 +109,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
             ParseUtil.append(body, "final long {}={};\n", varNameLongField, valCode);
         } else {
             final String varNameValueZoneId = ParseUtil.defineClassVar(context, ZoneId.class, "{}.of(\"{}\")", ZoneId.class.getName(), anno.valueZoneId());
-            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern(\"{}\").withZone({})", DateTimeFormatter.class.getName(), anno.stringFormat(), varNameValueZoneId);
+            final String dateTimeFormatterVarName = ParseUtil.defineClassVar(context, DateTimeFormatter.class, "{}.ofPattern({}).withZone({})", DateTimeFormatter.class.getName(), ParseUtil.javaStringLiteral(anno.stringFormat()), varNameValueZoneId);
             ParseUtil.append(body, "final long {}={}.parse({},{}).toInstant().toEpochMilli();\n", varNameLongField, zoneDateTimeClassName, valCode, dateTimeFormatterVarName);
         }
 
@@ -122,7 +122,7 @@ public class FieldBuilder__F_date_bytes_7 extends FieldBuilder {
                 Instant.class.getName(),
                 varNameLongField,
                 varNameZoneId);
-        ParseUtil.append(body, "{}.{}((short){}.getYear());\n", varNameByteBuf, writeFuncName, varNameZoneDateTimeField);
+        ParseUtil.append(body, "{}.{}({}.checkDateYear({}.getYear(),65535));\n", varNameByteBuf, writeFuncName, ParseUtil.class.getName(), varNameZoneDateTimeField);
         ParseUtil.append(body, "{}.writeInt(({}.getMonthValue()&255)<<24|({}.getDayOfMonth()&255)<<16|({}.getHour()&255)<<8|{}.getMinute()&255).writeByte({}.getSecond());\n",
                 varNameByteBuf,
                 varNameZoneDateTimeField,
