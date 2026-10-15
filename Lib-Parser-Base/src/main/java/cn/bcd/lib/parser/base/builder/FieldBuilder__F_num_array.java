@@ -358,7 +358,11 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         }
 
         //设置值
-        ParseUtil.append(body, "{}[i]={};\n", varNameArr, varNameArrEleExprVal);
+        if (arrEleType.isEnum()) {
+            ParseUtil.append(body, "{}[i]={}.fromInteger({});\n", varNameArr, arrEleTypeName, varNameArrEleExprVal);
+        } else {
+            ParseUtil.append(body, "{}[i]={};\n", varNameArr, varNameArrEleExprVal);
+        }
 
         ParseUtil.append(body, "}else{\n");
 
@@ -421,10 +425,9 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
                 arrEleValCode = ParseUtil.format("({}).toInteger()", arrEleValCode);
             }
             if (!singleValExpr.isEmpty()) {
-                if (isFloat) {
-                    arrEleValCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(singleValExpr), arrEleValCode);
-                } else {
-                    arrEleValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(singleValExpr), arrEleValCode);
+                arrEleValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(singleValExpr), arrEleValCode);
+                if (isFloat && singleType != NumType.float32 && singleType != NumType.float64) {
+                    arrEleValCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(), arrEleValCode);
                 }
             }
             final boolean bigEndian = ParseUtil.bigEndian(anno.singleOrder(), context.byteOrder);
@@ -489,7 +492,8 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
 
         //取出值
         String varNameArrEleRawVal = varNameField + "_arrEleRawVal";
-        ParseUtil.append(body, "final {} {}={};\n", arrEleRawValTypeName, varNameArrEleRawVal, varNameArrEle);
+        ParseUtil.append(body, "final {} {}={}{};\n", arrEleRawValTypeName, varNameArrEleRawVal,
+                varNameArrEle, arrEleType.isEnum() ? ".toInteger()" : "");
 
         //判断最后write的类型
         String funcSuffix = switch (singleType) {
@@ -503,14 +507,13 @@ public class FieldBuilder__F_num_array extends FieldBuilder {
         if (singleValExpr.isEmpty()) {
             varNameArrEleExprVal = varNameArrEleRawVal;
         } else {
-            String arrEleExprValCode;
+            String arrEleExprValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(singleValExpr), varNameArrEleRawVal);
             if (isFloat) {
-                arrEleExprValCode = ParseUtil.replaceValExprToCode_round(RpnUtil.reverseExpr(singleValExpr), varNameArrEleRawVal);
-            } else {
-                arrEleExprValCode = ParseUtil.replaceValExprToCode(RpnUtil.reverseExpr(singleValExpr), varNameArrEleRawVal);
+                arrEleExprValCode = ParseUtil.format("{}.round((double)({}))", ParseUtil.class.getName(), arrEleExprValCode);
             }
             varNameArrEleExprVal = varNameField + "_arrEleExprVal";
-            ParseUtil.append(body, "final {} {}=({}){};\n", funcSuffix, varNameArrEleExprVal, funcSuffix, arrEleExprValCode);
+            String exprValType = singleType == NumType.uint32 ? "long" : funcSuffix;
+            ParseUtil.append(body, "final {} {}=({})({});\n", exprValType, varNameArrEleExprVal, exprValType, arrEleExprValCode);
         }
 
         //写入
