@@ -2,6 +2,7 @@
 spring-boot = "4.1.1"
 
 [libraries]
+californium-core = { module = "org.eclipse.californium:californium-core", version = "3.14.0" }
 guava = { module = "com.google.guava:guava", version = "33.7.1-jre" }
 lombok = { module = "org.projectlombok:lombok", version = "1.18.46" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version = "2.0.18" }

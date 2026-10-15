@@ -58,3 +58,5 @@ include 'Lib-Spring-Aws-S3'
 
 include 'App-BP-Auth'
 include 'Lib-Spring-Auth'
+
+include 'Lib-Spring-Coap'
