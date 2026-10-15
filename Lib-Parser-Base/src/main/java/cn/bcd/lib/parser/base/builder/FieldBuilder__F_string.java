@@ -5,7 +5,6 @@ import cn.bcd.lib.parser.base.anno.F_string;
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.util.ParseUtil;
 import io.netty.buffer.ByteBuf;
-import io.netty.util.ByteProcessor;
 
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
@@ -59,7 +58,6 @@ public class FieldBuilder__F_string extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final String varNameFieldVal = varNameField + "_val";
         ParseUtil.append(body, "final String {}={};\n", varNameFieldVal, valCode);
-        ParseUtil.append(body, "if({}!=null){\n", varNameFieldVal);
         final String lenRes;
         if (anno.len() == 0) {
             lenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
@@ -80,35 +78,28 @@ public class FieldBuilder__F_string extends FieldBuilder {
                 ParseUtil.append(body, "{}.write_highAddressAppend({},{},{},{});\n", FieldBuilder__F_string.class.getName(), varNameByteBuf, varNameFieldVal, lenRes, charsetVarName);
             }
         }
-        ParseUtil.append(body, "}\n", valCode);
     }
 
     public static String read_lowAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
-        final int readerIndex = byteBuf.readerIndex();
-        byteBuf.skipBytes(len);
-        int valueStartIndex = byteBuf.forEachByte(
-                readerIndex, len, ByteProcessor.FIND_NON_NUL);
-        if (valueStartIndex == -1) {
-            return "";
+        String value = byteBuf.readCharSequence(len, charset).toString();
+        int first = 0;
+        while (first < value.length() && value.charAt(first) == '\0') {
+            first++;
         }
-        return byteBuf.toString(valueStartIndex,
-                readerIndex + len - valueStartIndex, charset);
+        return first == 0 ? value : value.substring(first);
     }
 
     public static String read_highAddressAppend(ByteBuf byteBuf, int len, Charset charset) {
-        final int readerIndex = byteBuf.readerIndex();
-        byteBuf.skipBytes(len);
-        int valueEndIndex = byteBuf.forEachByteDesc(
-                readerIndex, len, ByteProcessor.FIND_NON_NUL);
-        if (valueEndIndex == -1) {
-            return "";
+        String value = byteBuf.readCharSequence(len, charset).toString();
+        int end = value.length();
+        while (end > 0 && value.charAt(end - 1) == '\0') {
+            end--;
         }
-        return byteBuf.toString(readerIndex,
-                valueEndIndex - readerIndex + 1, charset);
+        return end == value.length() ? value : value.substring(0, end);
     }
 
     public static void write_noAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
-        byte[] bytes = str.getBytes(charset);
+        byte[] bytes = (str == null ? "" : str).getBytes(charset);
         if (bytes.length != len) {
             throw BaseException.get("encoded string byte length[{}] must equal configured length[{}]", bytes.length, len);
         }
@@ -116,7 +107,7 @@ public class FieldBuilder__F_string extends FieldBuilder {
     }
 
     public static void write_lowAddressAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
-        byte[] bytes = str.getBytes(charset);
+        byte[] bytes = (str == null ? "" : str).getBytes(charset);
         checkMaxEncodedLength(bytes.length, len);
         int leaveLen = len - bytes.length;
         if (leaveLen > 0) {
@@ -126,7 +117,7 @@ public class FieldBuilder__F_string extends FieldBuilder {
     }
 
     public static void write_highAddressAppend(ByteBuf byteBuf, String str, int len, Charset charset) {
-        byte[] bytes = str.getBytes(charset);
+        byte[] bytes = (str == null ? "" : str).getBytes(charset);
         checkMaxEncodedLength(bytes.length, len);
         byteBuf.writeBytes(bytes);
         int leaveLen = len - bytes.length;

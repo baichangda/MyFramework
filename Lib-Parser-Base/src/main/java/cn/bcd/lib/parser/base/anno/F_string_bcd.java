@@ -9,12 +9,13 @@ import java.lang.annotation.Target;
 
 /**
  * 用于原始数据是字节数组以bcd编码方式代表字符串
+ * 写入字符串应为ASCII数字0-9，不执行字符校验；读取时拒绝非法BCD半字节
  *
  * 用于如下类型字段
  * String
  * <p>
  * 反解析中
- * 值可以为null、此时null代表空字符串
+ * 值可以为null、此时按空字符串处理；补齐模式写入指定长度的零字节，noAppend模式仍检查编码长度
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)

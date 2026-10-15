@@ -13,7 +13,7 @@ import java.lang.annotation.Target;
  * 用于如下类型字段
  * String
  * 反解析中
- * 值可以为null、此时null代表空字符串
+ * 值可以为null、此时按空字符串处理；补齐模式写入指定长度的零字节，noAppend模式仍检查编码长度
  */
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -46,13 +46,14 @@ public @interface F_string {
     String lenExpr() default "";
 
     /**
-     * 字符串编码
+     * 字符串编码，面向UTF-8、GBK、ASCII等编码，不考虑UTF-16、UTF-32
      */
     String charset() default "UTF-8";
 
     /**
      * 在写入时候
-     * 当字符串长度小于指定长度时候、需要填充0
+     * 按编码后的字节数计算长度，小于指定长度时根据策略补零，超长时抛出异常
+     * 解析时先解码，再按对应方向移除首尾的NUL字符；noAppend不移除
      * 填充模式如下
      * {@link StringAppendMode#noAppend} 不补
      * {@link StringAppendMode#lowAddressAppend} 低内存地址补

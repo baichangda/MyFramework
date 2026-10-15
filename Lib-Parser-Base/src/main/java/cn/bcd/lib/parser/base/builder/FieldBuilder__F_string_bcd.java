@@ -55,7 +55,6 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
         final String varNameField = ParseUtil.getFieldVarName(context);
         final String varNameFieldVal = varNameField + "_val";
         ParseUtil.append(body, "final String {}={};\n", varNameFieldVal, valCode);
-        ParseUtil.append(body, "if({}!=null){\n", varNameFieldVal);
         final String lenRes;
         if (anno.len() == 0) {
             lenRes = ParseUtil.replaceExprToCode(anno.lenExpr(), context);
@@ -74,7 +73,6 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
                 ParseUtil.append(body, "{}.write_highAddressAppend({},{},{});\n", FieldBuilder__F_string_bcd.class.getName(), varNameByteBuf, varNameFieldVal, lenRes);
             }
         }
-        ParseUtil.append(body, "}\n", valCode);
     }
 
 
@@ -119,12 +117,16 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
     }
 
     private static void dumpByte(int value, char[] chars, int targetIndex) {
+        if ((value >>> 4) > 9 || (value & 0x0f) > 9) {
+            throw BaseException.get("invalid BCD byte[{}]", value);
+        }
         int sourceIndex = value << 1;
         chars[targetIndex] = BcdUtil.BCD_8421_DUMP_TABLE[sourceIndex];
         chars[targetIndex + 1] = BcdUtil.BCD_8421_DUMP_TABLE[sourceIndex + 1];
     }
 
     public static int write_noAppend(ByteBuf byteBuf, String s, int len) {
+        s = s == null ? "" : s;
         int byteLen = (s.length() + 1) >> 1;
         if (byteLen != len) {
             throw BaseException.get("encoded bcd byte length[{}] must equal configured length[{}]", byteLen, len);
@@ -138,22 +140,24 @@ public class FieldBuilder__F_string_bcd extends FieldBuilder {
     }
 
     public static void write_lowAddressAppend(ByteBuf byteBuf, String s, int len) {
+        s = s == null ? "" : s;
         checkMaxCharLength(s, len);
         int byteLen = (s.length() + 1) >> 1;
         byteBuf.writeZero(len - byteLen);
         int charIndex = 0;
         if ((s.length() & 1) == 1) {
-            byteBuf.writeByte(Character.getNumericValue(s.charAt(charIndex++)));
+            byteBuf.writeByte(s.charAt(charIndex++) - '0');
         }
         writePairs(byteBuf, s, charIndex, s.length());
     }
 
     public static void write_highAddressAppend(ByteBuf byteBuf, String s, int len) {
+        s = s == null ? "" : s;
         checkMaxCharLength(s, len);
         int pairEnd = s.length() & ~1;
         writePairs(byteBuf, s, 0, pairEnd);
         if (pairEnd != s.length()) {
-            byteBuf.writeByte(Character.getNumericValue(s.charAt(pairEnd)) << 4);
+            byteBuf.writeByte((s.charAt(pairEnd) - '0') << 4);
         }
         byteBuf.writeZero(len - ((s.length() + 1) >> 1));
     }
