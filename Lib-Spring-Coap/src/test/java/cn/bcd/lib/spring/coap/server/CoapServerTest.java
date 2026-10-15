@@ -2,16 +2,12 @@ package cn.bcd.lib.spring.coap.server;
 
 import cn.bcd.lib.spring.coap.server.resource.EchoResource;
 import cn.bcd.lib.spring.coap.server.resource.HealthResource;
-import org.eclipse.californium.core.CoapClient;
+import cn.bcd.lib.spring.coap.client.CoapClient;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
-import org.eclipse.californium.core.config.CoapConfig;
-import org.eclipse.californium.core.network.CoapEndpoint;
-import org.eclipse.californium.elements.config.Configuration;
-import org.eclipse.californium.elements.config.UdpConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
@@ -42,14 +38,8 @@ class CoapServerTest {
             port = server.getEndpoints().getFirst().getAddress().getPort();
             assertTrue(port > 0);
             String base = "coap://127.0.0.1:" + port;
-            Configuration configuration = new Configuration(CoapConfig.DEFINITIONS, UdpConfig.DEFINITIONS);
-            CoapEndpoint endpoint = new CoapEndpoint.Builder()
-                    .setConfiguration(configuration)
-                    .setInetSocketAddress(new InetSocketAddress("127.0.0.1", 0))
-                    .build();
-            CoapClient client = new CoapClient().setEndpoint(endpoint).setTimeout(3_000L);
-            try {
-                endpoint.start();
+            try (CoapClient client = CoapClient.builder(base + "/health")
+                    .timeoutMillis(3_000).localAddress("127.0.0.1", 0).build()) {
                 CoapResponse health = client.setURI(base + "/health").get();
                 assertNotNull(health);
                 assertEquals(ResponseCode.CONTENT, health.getCode());
@@ -79,9 +69,6 @@ class CoapServerTest {
                 assertNotNull(discovery);
                 assertTrue(discovery.getResponseText().contains("</health>"));
                 assertTrue(discovery.getResponseText().contains("</echo>"));
-            } finally {
-                client.shutdown();
-                endpoint.destroy();
             }
         }
         assertFalse(server.isRunning());

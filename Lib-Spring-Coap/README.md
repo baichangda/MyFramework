@@ -47,3 +47,17 @@ public class HelloResource extends CoapResource {
 ```shell
 gradle :Lib-Spring-Coap:build
 ```
+
+客户端使用 `cn.bcd.lib.spring.coap.client.CoapClient`，可独立于 Spring 和服务端配置使用：
+
+```java
+try (CoapClient client = CoapClient.builder("coap://127.0.0.1:5683/hello")
+        .timeoutMillis(3000)
+        .build()) {
+    CoapResponse response = client.get();
+}
+```
+
+客户端保留原生同步、异步、Observe 和请求配置 API。默认超时 5 秒、发送 Confirmable 请求，使用独立的 UDP endpoint 和临时本地端口。可通过 `localAddress(host, port)` 指定本地地址、`confirmable(false)` 使用 NON 请求、`configure(configuration -> ...)` 调整 Californium 参数。
+
+`build()` 会启动 endpoint，端口绑定失败直接抛出 IOException。`close()` 和 `shutdown()` 均释放客户端内部资源及其独立 endpoint，支持重复调用。建议复用客户端，结束使用时关闭；本封装仅构造 UDP coap:// 客户端。
