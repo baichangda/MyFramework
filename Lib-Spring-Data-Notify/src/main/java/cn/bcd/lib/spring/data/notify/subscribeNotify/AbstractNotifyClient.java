@@ -1,10 +1,11 @@
 package cn.bcd.lib.spring.data.notify.subscribeNotify;
 
-import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import cn.bcd.lib.spring.redis.RedisUtil;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -20,15 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final Producer<String, byte[]> producer;
-    public ScheduledExecutorService workPool;
+    public SingleThreadEventExecutor workPool;
     public final BoundHashOperations<String, String, String> boundHashOperations;
     public final Map<String, ListenerInfo> id_listenerInfo = new HashMap<>();
     private final String subscribeTopic;
@@ -55,7 +54,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
                 1,
                 100,
                 1000,
-                true,
+                false,
                 0,
                 0,
                 ConsumerParam.get_singleConsumer("_notify_" + type).seekToEnd());
@@ -79,7 +78,7 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         }
         clearPreviousSubscriptions();
         initialized = true;
-        workPool = Executors.newSingleThreadScheduledExecutor();
+        workPool = new DefaultEventExecutor();
         workPool.scheduleWithFixedDelay(() -> {
             final long ts = System.currentTimeMillis();
             Map<String, String> save = new HashMap<>();
@@ -121,23 +120,33 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         //停止消费
         super.close();
         //停止工作线程池
-        ExecutorUtil.shutdownThenAwait(true, workPool);
+        SingleThreadEventExecutor executor = workPool;
+        if (executor != null) {
+            executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+            if (!executor.inEventLoop()) {
+                executor.terminationFuture().syncUninterruptibly();
+            }
+        }
         workPool = null;
     }
 
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
         String id = consumerRecord.key();
-        CompletableFuture.runAsync(() -> {
-            ListenerInfo listenerInfo = id_listenerInfo.get(id);
-            if (listenerInfo != null) {
-                try {
-                    listenerInfo.consumer.accept(consumerRecord.value());
-                } catch (Exception e) {
-                    logger.error("notify client consumer error type[{}] id[{}]", type, id, e);
+        workPool.submit(() -> {
+            try {
+                ListenerInfo listenerInfo = id_listenerInfo.get(id);
+                if (listenerInfo != null) {
+                    try {
+                        listenerInfo.consumer.accept(consumerRecord.value());
+                    } catch (Exception e) {
+                        logger.error("notify client consumer error type[{}] id[{}]", type, id, e);
+                    }
                 }
+            } finally {
+                blockingNum.decrement();
             }
-        }, workPool);
+        });
     }
 
     /**

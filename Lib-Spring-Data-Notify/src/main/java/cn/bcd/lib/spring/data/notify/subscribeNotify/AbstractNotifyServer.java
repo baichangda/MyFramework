@@ -5,6 +5,8 @@ import cn.bcd.lib.spring.kafka.KafkaUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import cn.bcd.lib.spring.redis.RedisUtil;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -43,7 +45,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     public final String type;
     public final BoundHashOperations<String, String, String> boundHashOperations;
-    public ExecutorService workPool;
+    public SingleThreadEventExecutor workPool;
     public ScheduledExecutorService scheduledPool;
     private final Producer<String, byte[]> producer;
     private final String subscribeTopic;
@@ -69,7 +71,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                 1,
                 100,
                 1000,
-                true,
+                false,
                 0,
                 0,
                 ConsumerParam.get_singleConsumer("_subscribe_" + type));
@@ -89,7 +91,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
 
 
     public void init() {
-        workPool = Executors.newSingleThreadExecutor();
+        workPool = new DefaultEventExecutor();
         scheduledPool = Executors.newSingleThreadScheduledExecutor();
         //初始化redis订阅数据到缓存
         checkAndUpdateCache().join();
@@ -108,37 +110,50 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         //停止消费
         super.close();
         //停止工作线程池
-        ExecutorUtil.shutdownAllThenAwait(true, workPool, scheduledPool);
+        ExecutorUtil.shutdownThenAwait(true, scheduledPool);
+        SingleThreadEventExecutor executor = workPool;
+        if (executor != null) {
+            executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+            if (!executor.inEventLoop()) {
+                executor.terminationFuture().syncUninterruptibly();
+            }
+        }
         workPool = null;
         scheduledPool = null;
     }
 
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
-        final byte[] value = consumerRecord.value();
-        if (value == null || value.length < 2) {
-            logger.warn("notify server invalid subscribe message type[{}]", type);
-            return;
-        }
-        final char flag = (char) value[0];
-        final String content = new String(value, 1, value.length - 1, StandardCharsets.UTF_8);
-        try {
-            final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
-            if (flag == '1') {
-                workPool.execute(() -> addListener(cache, listenerInfo));
-                logger.info("notify server subscribe type[{}] id[{}] clientId[{}]",
-                        type, listenerInfo.id, listenerInfo.clientId);
-            } else if (flag == '2') {
-                workPool.execute(() -> removeListener(cache, listenerInfo));
-                logger.info("notify server unsubscribe type[{}] id[{}] clientId[{}]",
-                        type, listenerInfo.id, listenerInfo.clientId);
-            } else {
-                logger.warn("notify server unknown subscribe flag type[{}] flag[{}]", type, flag);
+        workPool.submit(() -> {
+            try {
+                final byte[] value = consumerRecord.value();
+                if (value == null || value.length < 2) {
+                    logger.warn("notify server invalid subscribe message type[{}]", type);
+                    return;
+                }
+                final char flag = (char) value[0];
+                final String content = new String(value, 1, value.length - 1, StandardCharsets.UTF_8);
+                try {
+                    final ListenerInfo listenerInfo = ListenerInfo.fromString(content);
+                    if (flag == '1') {
+                        addListener(cache, listenerInfo);
+                        logger.info("notify server subscribe type[{}] id[{}] clientId[{}]",
+                                type, listenerInfo.id, listenerInfo.clientId);
+                    } else if (flag == '2') {
+                        removeListener(cache, listenerInfo);
+                        logger.info("notify server unsubscribe type[{}] id[{}] clientId[{}]",
+                                type, listenerInfo.id, listenerInfo.clientId);
+                    } else {
+                        logger.warn("notify server unknown subscribe flag type[{}] flag[{}]", type, flag);
+                    }
+                } catch (Exception e) {
+                    logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}",
+                            type, new String(value, StandardCharsets.UTF_8), e);
+                }
+            } finally {
+                blockingNum.decrement();
             }
-        } catch (IOException e) {
-            logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}",
-                    type, new String(value, StandardCharsets.UTF_8), e);
-        }
+        });
     }
 
     static void addListener(Map<String, Set<String>> cache, ListenerInfo listenerInfo) {
