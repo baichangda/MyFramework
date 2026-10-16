@@ -30,3 +30,5 @@ KafkaProducer<String, byte[]> producer =
 ```shell
 gradle :Lib-Spring-Kafka:test
 ```
+
+ThreadDrivenKafkaConsumer 将消息轮询提交到各个 SingleThreadEventExecutor，并通过 onMessage(record, executor) 传入当前执行回调的执行器。执行器使用自身的任务队列，maxBlockingNum 控制尚未处理完成的消息积压。
