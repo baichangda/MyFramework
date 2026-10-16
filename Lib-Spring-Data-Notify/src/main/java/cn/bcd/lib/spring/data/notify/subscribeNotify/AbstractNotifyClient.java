@@ -95,7 +95,12 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
             }
         }, 1, 1, TimeUnit.MINUTES);
         //开始消费
-        startConsume(consumerProp.buildProperties());
+        try {
+            startConsume(consumerProp.buildProperties()).join();
+        } catch (Exception ex) {
+            close();
+            logger.error("error", ex);
+        }
     }
 
     private void clearPreviousSubscriptions() {
@@ -178,6 +183,6 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
             } catch (Exception ex) {
                 logger.error("notify client unsubscribe error type[{}] id[{}] topic[{}]", type, id, subscribeTopic, ex);
             }
-        },workPool);
+        }, workPool);
     }
 }

@@ -88,6 +88,10 @@ public class KafkaUtil {
             assignment = consumer.assignment();
         }
         consumer.seekToEnd(assignment);
+        // Resolve the lazy seek before reporting startup completion.
+        for (TopicPartition partition : assignment) {
+            consumer.position(partition);
+        }
         logger.info("finish consumer seekToEnd");
     }
 

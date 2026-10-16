@@ -5,12 +5,19 @@ import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -32,6 +39,54 @@ class KafkaLifecycleTest {
         assertEquals(-1, ConsumerParam.get_singleConsumer("topic").seekTimestamp);
         assertEquals(-2, ConsumerParam.get_singleConsumer("topic").seekToBeginning().seekTimestamp);
         assertEquals(-3, ConsumerParam.get_singleConsumer("topic").seekToEnd().seekTimestamp);
+    }
+
+    @Test
+    void seekToEndResolvesOffsetBeforeReturning() {
+        var partition = new TopicPartition("topic", 0);
+        class LazySeekConsumer extends KafkaConsumer<String, byte[]> {
+            long endOffset = 5;
+            long offset;
+            boolean pendingSeek;
+
+            LazySeekConsumer() {
+                super(Map.of("bootstrap.servers", "localhost:9092"),
+                        new StringDeserializer(),
+                        new ByteArrayDeserializer());
+            }
+
+            @Override
+            public Set<TopicPartition> assignment() {
+                return Set.of(partition);
+            }
+
+            @Override
+            public ConsumerRecords<String, byte[]> poll(Duration timeout) {
+                return ConsumerRecords.empty();
+            }
+
+            @Override
+            public void seekToEnd(Collection<TopicPartition> partitions) {
+                pendingSeek = true;
+            }
+
+            @Override
+            public long position(TopicPartition topicPartition) {
+                if (pendingSeek) {
+                    offset = endOffset;
+                    pendingSeek = false;
+                }
+                return offset;
+            }
+        }
+
+        try (LazySeekConsumer consumer = new LazySeekConsumer()) {
+            KafkaUtil.consumerSeekToEnd(consumer);
+            consumer.endOffset++;
+
+            assertEquals(5, consumer.position(partition),
+                    "Messages published after startup must not be skipped by a deferred seek");
+        }
     }
 
     @Test
