@@ -20,7 +20,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.Pair;
 
-import java.lang.reflect.ParameterizedType;
+import org.springframework.core.ResolvableType;
 import java.util.*;
 
 /**
@@ -55,7 +55,10 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     public BaseService() {
-        final Class<T> beanClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        final Class<T> beanClass = (Class<T>) ResolvableType.forClass(getClass()).as(BaseService.class).getGeneric(0).resolve();
+        if (beanClass == null || beanClass == SuperBaseBean.class) {
+            throw new IllegalArgumentException("Cannot resolve entity type for " + getClass().getName());
+        }
         beanInfo = new BeanInfo<>(beanClass);
     }
 
@@ -98,7 +101,11 @@ public class BaseService<T extends SuperBaseBean> {
     public Page<T> page(Condition condition, Pageable pageable) {
         Query query = ConditionUtil.toQuery(condition);
         final long total = getMongoTemplate().count(query, getBeanInfo().clazz);
-        final int offset = pageable.getPageNumber() * pageable.getPageSize();
+        if (pageable.isUnpaged()) {
+            query.with(pageable.getSort());
+            return new PageImpl<>(getMongoTemplate().find(query, getBeanInfo().clazz), pageable, total);
+        }
+        final long offset = pageable.isPaged() ? pageable.getOffset() : 0;
         if (total > offset) {
             query.with(pageable);
             List<T> list = getMongoTemplate().find(query, getBeanInfo().clazz);

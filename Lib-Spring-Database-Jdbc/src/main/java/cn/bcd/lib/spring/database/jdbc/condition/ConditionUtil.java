@@ -24,7 +24,7 @@ public class ConditionUtil {
 
     public static <T extends Condition> ConvertRes convertCondition(T condition, BeanInfo<?> beanInfo) {
         ConvertRes convertRes = convertCondition(condition, beanInfo, true);
-        if (convertRes != null && convertRes.paramList.isEmpty()) {
+        if (convertRes != null && (convertRes.sql == null || convertRes.sql.isBlank())) {
             return null;
         }
         return convertRes;

@@ -34,7 +34,7 @@ public class BatchIterable<T extends SuperBaseBean> implements Iterable<List<T>>
 
     static class BatchIterator<T extends SuperBaseBean> implements Iterator<List<T>> {
         private boolean hasNext;
-        private int offset;
+        private long offset;
 
         private final BaseService<T> baseService;
         private final ConvertRes convertRes;

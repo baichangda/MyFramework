@@ -24,7 +24,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.lang.reflect.ParameterizedType;
+import org.springframework.core.ResolvableType;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
@@ -66,7 +66,10 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     public BaseService() {
-        final Class<T> beanClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        final Class<T> beanClass = (Class<T>) ResolvableType.forClass(getClass()).as(BaseService.class).getGeneric(0).resolve();
+        if (beanClass == null || beanClass == SuperBaseBean.class) {
+            throw new IllegalArgumentException("Cannot resolve entity type for " + getClass().getName());
+        }
         beanInfo = new BeanInfo<>(beanClass);
     }
 
@@ -127,7 +130,7 @@ public class BaseService<T extends SuperBaseBean> {
      */
     public T get(Condition condition) {
         final ConvertRes convertRes = ConditionUtil.convertCondition(condition, getBeanInfo());
-        final List<T> list = list(convertRes, null, -1, -1);
+        final List<T> list = list(convertRes, null, 0, 1);
         if (list.isEmpty()) {
             return null;
         } else {
@@ -213,7 +216,10 @@ public class BaseService<T extends SuperBaseBean> {
     public Page<T> page(Condition condition, Pageable pageable) {
         final ConvertRes convertRes = ConditionUtil.convertCondition(condition, getBeanInfo());
         final int total = count(convertRes);
-        final int offset = pageable.getPageNumber() * pageable.getPageSize();
+        if (pageable.isUnpaged()) {
+            return new PageImpl<>(list(convertRes, pageable.getSort(), -1, -1), pageable, total);
+        }
+        final long offset = pageable.isPaged() ? pageable.getOffset() : 0;
         if (total > offset) {
             final List<T> content = list(convertRes, pageable.getSort(), offset, pageable.getPageSize());
             return new PageImpl<>(content, pageable, total);
@@ -383,7 +389,7 @@ public class BaseService<T extends SuperBaseBean> {
 
     /**
      * 批量新增
-     * 根据第一个元素来判断新增的sql语句是否包含id字段
+     * 按id是否为空分组、分别批量新增
      * 所有属性都会作为参数设置、即使是null
      * <p>
      * 会设置创建信息
@@ -395,18 +401,25 @@ public class BaseService<T extends SuperBaseBean> {
             return;
         }
         BeanInfo<T> info = getBeanInfo();
-        if (info.autoSetCreateInfo) {
-            for (T t : list) {
+        List<T> withId = new ArrayList<>();
+        List<T> withoutId = new ArrayList<>();
+        for (T t : list) {
+            if (info.autoSetCreateInfo) {
                 setCreateInfo(t);
             }
+            if (t.getId() == null) {
+                withoutId.add(t);
+            } else {
+                withId.add(t);
+            }
         }
-        T t = list.getFirst();
-        if (t.getId() == null) {
-            final List<Object[]> argList = list.stream().map(e1 -> info.getInsertValues_noId(e1).toArray()).collect(Collectors.toList());
-            getJdbcTemplate().batchUpdate(info.insertSql_noId, argList);
-        } else {
-            final List<Object[]> argList = list.stream().map(e1 -> info.getInsertValues(e1).toArray()).collect(Collectors.toList());
+        if (!withId.isEmpty()) {
+            final List<Object[]> argList = withId.stream().map(t -> info.getInsertValues(t).toArray()).collect(Collectors.toList());
             getJdbcTemplate().batchUpdate(info.insertSql, argList);
+        }
+        if (!withoutId.isEmpty()) {
+            final List<Object[]> argList = withoutId.stream().map(t -> info.getInsertValues_noId(t).toArray()).collect(Collectors.toList());
+            getJdbcTemplate().batchUpdate(info.insertSql_noId, argList);
         }
     }
 
@@ -497,7 +510,7 @@ public class BaseService<T extends SuperBaseBean> {
         }
         BeanInfo<T> info = getBeanInfo();
         final ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        if (convertRes == null || convertRes.paramList.isEmpty()) {
+        if (convertRes == null) {
             return;
         }
         Map<String, Object> newParamMap = new LinkedHashMap<>(paramMap);
@@ -550,7 +563,7 @@ public class BaseService<T extends SuperBaseBean> {
     public void delete(Condition condition) {
         BeanInfo<T> info = getBeanInfo();
         ConvertRes convertRes = ConditionUtil.convertCondition(condition, info);
-        if (convertRes == null || convertRes.paramList.isEmpty()) {
+        if (convertRes == null) {
             return;
         }
         String sql = "delete from " + info.tableName + " where " + convertRes.sql;
@@ -577,7 +590,7 @@ public class BaseService<T extends SuperBaseBean> {
         }
     }
 
-    List<T> list(ConvertRes convertRes, Sort sort, int offset, int limit) {
+    List<T> list(ConvertRes convertRes, Sort sort, long offset, int limit) {
         BeanInfo<T> info = getBeanInfo();
         final StringBuilder sql = new StringBuilder();
         sql.append("select * from ");

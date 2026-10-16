@@ -9,6 +9,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.Date;
+import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +25,45 @@ class BaseServiceTest {
     }
 
     static class Service extends BaseService<Bean> {
+    }
+
+    static class DerivedService extends Service {
+    }
+
+    static class GenericService<T extends cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean> extends BaseService<T> {
+    }
+
+    static class ConcreteService extends GenericService<Bean> {
+    }
+
+    @Test
+    void resolvesEntityThroughInheritance() {
+        assertEquals(Bean.class, new DerivedService().getBeanInfo().clazz);
+        assertEquals(Bean.class, new ConcreteService().getBeanInfo().clazz);
+    }
+
+    @Test
+    void largePageDoesNotOverflowAndQueryEarlierRows() {
+        when(mongoTemplate.count(any(Query.class), eq(Bean.class))).thenReturn(1L);
+        assertTrue(service.page(PageRequest.of(Integer.MAX_VALUE, 2)).isEmpty());
+        verify(mongoTemplate, never()).find(any(Query.class), eq(Bean.class));
+    }
+
+    @Test
+    void largeOffsetIsPassedToMongoAsLong() {
+        when(mongoTemplate.count(any(Query.class), eq(Bean.class))).thenReturn(5_000_000_000L);
+        when(mongoTemplate.find(any(Query.class), eq(Bean.class))).thenReturn(List.of(new Bean()));
+        service.page(PageRequest.of(Integer.MAX_VALUE, 2));
+        ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
+        verify(mongoTemplate).find(query.capture(), eq(Bean.class));
+        assertEquals(4_294_967_294L, query.getValue().getSkip());
+    }
+
+    @Test
+    void unpagedRequestReturnsContent() {
+        when(mongoTemplate.count(any(Query.class), eq(Bean.class))).thenReturn(1L);
+        when(mongoTemplate.find(any(Query.class), eq(Bean.class))).thenReturn(List.of(new Bean()));
+        assertEquals(1, service.page(Pageable.unpaged()).getNumberOfElements());
     }
 
     private MongoTemplate mongoTemplate;
