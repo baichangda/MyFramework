@@ -31,4 +31,4 @@ KafkaProducer<String, byte[]> producer =
 gradle :Lib-Spring-Kafka:test
 ```
 
-ThreadDrivenKafkaConsumer 将消息轮询提交到各个 SingleThreadEventExecutor，并通过 onMessage(record, executor) 传入当前执行回调的执行器。执行器使用自身的任务队列，maxBlockingNum 控制尚未处理完成的消息积压。
+ThreadDrivenKafkaConsumer 通过 `id(record)` 获取业务 ID（默认为消息 key），调用 `getWorkExecutor(id)` 选择执行器，再提交处理任务。默认相同 ID 串行处理，空 ID 使用第一个执行器；两个方法均可重写以自定义路由。`onMessage(record, executor)` 接收当前执行回调的执行器，`maxBlockingNum` 控制尚未处理完成的消息积压。

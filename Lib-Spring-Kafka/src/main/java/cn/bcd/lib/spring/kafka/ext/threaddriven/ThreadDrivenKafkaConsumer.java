@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 /**
- * Kafka 消费线程拉取消息，轮询提交到单线程工作执行器。
+ * Kafka 消费线程拉取消息，按业务 ID 提交到对应的单线程工作执行器。
  * 限速重置和监控共用独立调度线程；工作回调可以通过传入的执行器提交后续任务。
  * 关闭时先停止消费，再等待工作任务完成；从内部线程关闭时转交独立线程处理。
  */
@@ -54,7 +54,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      * 工作执行器数组
      */
     public final SingleThreadEventExecutor[] workPool;
-    private final AtomicInteger nextWorkerIndex = new AtomicInteger();
 
 
     /**
@@ -266,9 +265,27 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         }
     }
 
+    /**
+     * 获取消息的业务 ID，默认使用消息 key，子类可重写。
+     */
+    protected String id(ConsumerRecord<String, byte[]> consumerRecord) {
+        return consumerRecord.key();
+    }
+
+    /**
+     * 根据 ID 选择工作执行器，相同 ID 始终映射到同一个执行器，空 ID 使用第一个执行器。
+     */
+    public SingleThreadEventExecutor getWorkExecutor(String id) {
+        if (id == null) {
+            return workPool[0];
+        }
+        int h = id.hashCode();
+        h = h ^ (h >>> 16);
+        return workPool[h & (workThreadNum - 1)];
+    }
+
     protected final void submitRecord(ConsumerRecord<String, byte[]> record) {
-        int workerIndex = nextWorkerIndex.getAndIncrement() & (workThreadNum - 1);
-        SingleThreadEventExecutor executor = workPool[workerIndex];
+        SingleThreadEventExecutor executor = getWorkExecutor(id(record));
         blockingNum.increment();
         if (monitor_period > 0) {
             monitor_consumeCount.increment();

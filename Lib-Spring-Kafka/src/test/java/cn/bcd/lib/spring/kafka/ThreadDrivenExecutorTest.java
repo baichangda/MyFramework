@@ -6,14 +6,15 @@ import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.LongStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,7 +51,7 @@ class ThreadDrivenExecutorTest {
     }
 
     @Test
-    void roundRobinUsesMultipleExecutorsConcurrently() throws Exception {
+    void differentIdsUseDifferentExecutorsConcurrently() throws Exception {
         CountDownLatch entered = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
         Set<SingleThreadEventExecutor> executors = ConcurrentHashMap.newKeySet();
@@ -60,8 +61,9 @@ class ThreadDrivenExecutorTest {
             await(release);
         })) {
             try {
-                consumer.enqueue(record(0));
-                consumer.enqueue(record(1));
+                assertNotSame(consumer.getWorkExecutor("a"), consumer.getWorkExecutor("b"));
+                consumer.enqueue(record(0, "a"));
+                consumer.enqueue(record(1, "b"));
                 assertTrue(entered.await(5, TimeUnit.SECONDS));
                 assertEquals(2, executors.size());
             } finally {
@@ -71,21 +73,57 @@ class ThreadDrivenExecutorTest {
     }
 
     @Test
-    void roundRobinDistributesSameKeyAndNullKeyRecordsEvenly() {
-        Map<SingleThreadEventExecutor, AtomicInteger> counts = new ConcurrentHashMap<>();
-        try (TestConsumer consumer = new TestConsumer((record, executor) ->
-                counts.computeIfAbsent(executor, ignored -> new AtomicInteger()).incrementAndGet())) {
+    void sameIdMessagesUseOneExecutorAndKeepTheirOrder() {
+        Set<SingleThreadEventExecutor> executors = ConcurrentHashMap.newKeySet();
+        ConcurrentLinkedQueue<Long> offsets = new ConcurrentLinkedQueue<>();
+        try (TestConsumer consumer = new TestConsumer((record, executor) -> {
+            executors.add(executor);
+            offsets.add(record.offset());
+        })) {
             for (int i = 0; i < 100; i++) {
                 consumer.enqueue(record(i));
             }
-            consumer.enqueue(new ConsumerRecord<>("topic", 0, 100, null, new byte[0]));
-            consumer.enqueue(new ConsumerRecord<>("topic", 0, 101, null, new byte[0]));
             consumer.close();
-            assertEquals(2, counts.size());
-            for (SingleThreadEventExecutor executor : consumer.workPool) {
-                assertEquals(51, counts.get(executor).get());
-            }
+            assertEquals(Set.of(consumer.getWorkExecutor("same-key")), executors);
+            assertEquals(LongStream.range(0, 100).boxed().toList(), List.copyOf(offsets));
             assertEquals(0, consumer.blockingNum.sum());
+        }
+    }
+
+    @Test
+    void nullIdUsesFirstExecutor() {
+        ConcurrentLinkedQueue<SingleThreadEventExecutor> executors = new ConcurrentLinkedQueue<>();
+        try (TestConsumer consumer = new TestConsumer((record, executor) -> executors.add(executor))) {
+            assertSame(consumer.workPool[0], consumer.getWorkExecutor(null));
+            consumer.enqueue(record(0, null));
+            consumer.close();
+            assertEquals(List.of(consumer.workPool[0]), List.copyOf(executors));
+            assertEquals(0, consumer.blockingNum.sum());
+        }
+    }
+
+    @Test
+    void customIdAndExecutorSelectionAreUsedForMessageRouting() {
+        Map<Long, SingleThreadEventExecutor> executors = new ConcurrentHashMap<>();
+        try (TestConsumer consumer = new TestConsumer((record, executor) ->
+                executors.put(record.offset(), executor)) {
+            @Override
+            protected String id(ConsumerRecord<String, byte[]> record) {
+                return record.offset() % 2 == 0 ? "even" : "odd";
+            }
+
+            @Override
+            public SingleThreadEventExecutor getWorkExecutor(String id) {
+                return workPool["even".equals(id) ? 1 : 0];
+            }
+        }) {
+            consumer.enqueue(record(0));
+            consumer.enqueue(record(1));
+            consumer.enqueue(record(2));
+            consumer.close();
+            assertSame(consumer.workPool[1], executors.get(0L));
+            assertSame(consumer.workPool[0], executors.get(1L));
+            assertSame(consumer.workPool[1], executors.get(2L));
         }
     }
 
@@ -144,7 +182,11 @@ class ThreadDrivenExecutorTest {
     }
 
     private static ConsumerRecord<String, byte[]> record(long offset) {
-        return new ConsumerRecord<>("topic", 0, offset, "same-key", new byte[0]);
+        return record(offset, "same-key");
+    }
+
+    private static ConsumerRecord<String, byte[]> record(long offset, String key) {
+        return new ConsumerRecord<>("topic", 0, offset, key, new byte[0]);
     }
 
     private static void await(CountDownLatch latch) {
