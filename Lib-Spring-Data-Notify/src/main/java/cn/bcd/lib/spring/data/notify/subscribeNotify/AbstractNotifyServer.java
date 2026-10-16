@@ -177,22 +177,22 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
 
 
     private CompletableFuture<Void> checkAndUpdateCache() {
-        Map<String, Set<String>> aliveMap = new HashMap<>();
-        Map<String, String> entries = boundHashOperations.entries();
-        if (entries != null) {
-            for (Map.Entry<String, String> entry : entries.entrySet()) {
-                String value = entry.getValue();
-                try {
-                    final ListenerInfo listenerInfo = ListenerInfo.fromString(value);
-                    if ((System.currentTimeMillis() - listenerInfo.ts) <= SUBSCRIPTION_TIMEOUT_MILLIS) {
-                        addListener(aliveMap, listenerInfo);
+        return CompletableFuture.runAsync(() -> {
+            Map<String, Set<String>> aliveMap = new HashMap<>();
+            Map<String, String> entries = boundHashOperations.entries();
+            if (entries != null) {
+                for (Map.Entry<String, String> entry : entries.entrySet()) {
+                    String value = entry.getValue();
+                    try {
+                        final ListenerInfo listenerInfo = ListenerInfo.fromString(value);
+                        if ((System.currentTimeMillis() - listenerInfo.ts) <= SUBSCRIPTION_TIMEOUT_MILLIS) {
+                            addListener(aliveMap, listenerInfo);
+                        }
+                    } catch (IOException e) {
+                        logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, value);
                     }
-                } catch (IOException e) {
-                    logger.error("notify server ListenerInfo.fromString error type[{}] value:\n{}", type, value);
                 }
             }
-        }
-        return CompletableFuture.runAsync(() -> {
             if (!aliveMap.equals(cache)) {
                 cache = aliveMap;
             }
