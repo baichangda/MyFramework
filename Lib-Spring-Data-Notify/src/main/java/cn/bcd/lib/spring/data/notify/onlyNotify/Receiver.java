@@ -5,6 +5,7 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,9 +29,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
     @SuppressWarnings("unchecked")
     public Receiver(String name, String topic, String groupId, KafkaProperties kafkaProp) {
         super(name,
-                false,
                 1,
-                1000,
                 1000,
                 true,
                 0,
@@ -47,7 +46,7 @@ public class Receiver<T> extends ThreadDrivenKafkaConsumer implements Initializa
 
 
     @Override
-    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
+    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) throws Exception {
         logger.info("receive message---------->:\n{}", new String(consumerRecord.value()));
         byte[] value = consumerRecord.value();
         T t = JsonUtil.MAPPER.readValue(value, clazz);

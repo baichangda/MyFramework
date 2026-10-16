@@ -1,5 +1,6 @@
 package cn.bcd.lib.spring.data.notify.subscribeNotify;
 
+import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import io.netty.util.concurrent.DefaultEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.Producer;
@@ -67,12 +68,12 @@ class AbstractNotifyServerTest {
             Thread worker = server.workPool.submit(Thread::currentThread).get(5, TimeUnit.SECONDS);
             if (unsubscribe) {
                 server.blockingNum.increment();
-                server.onMessage(message('1', listener));
+                server.onMessage(message('1', listener), ((ThreadDrivenKafkaConsumer) server).workPool[0]);
                 server.workPool.submit(() -> {}).get(5, TimeUnit.SECONDS);
             }
             duringRead.set(() -> {
                 server.blockingNum.increment();
-                server.onMessage(message(unsubscribe ? '2' : '1', listener));
+                server.onMessage(message(unsubscribe ? '2' : '1', listener), ((ThreadDrivenKafkaConsumer) server).workPool[0]);
                 // Force the old race: a change finishes while the scheduler is reading Redis.
                 // With the fix, the read owns the worker and the change remains queued.
                 if (Thread.currentThread() != worker) {

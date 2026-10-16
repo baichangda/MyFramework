@@ -67,9 +67,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
                                 String type,
                                 String groupId) {
         super("notifyServer(" + type + ")",
-                false,
                 1,
-                100,
                 1000,
                 false,
                 0,
@@ -123,7 +121,7 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
     }
 
     @Override
-    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
+    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) {
         workPool.submit(() -> {
             try {
                 final byte[] value = consumerRecord.value();

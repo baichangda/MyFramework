@@ -4,6 +4,7 @@ import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +32,7 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
     public CommandRequestConsumer(CommandProp commandProp,
                                   KafkaProperties kafkaProp) {
         super("commandResponse",
-                false,
                 1,
-                1000,
                 1000,
                 true,
                 0,
@@ -49,7 +48,7 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
     }
 
     @Override
-    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception {
+    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) throws Exception {
         logger.info("receive command request:\n{}", new String(consumerRecord.value()));
         Request request = JsonUtil.MAPPER.readValue(consumerRecord.value(), Request.class);
         commandReceiver.onRequest(request);

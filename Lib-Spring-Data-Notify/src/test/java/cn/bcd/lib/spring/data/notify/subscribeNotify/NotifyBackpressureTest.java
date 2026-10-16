@@ -34,7 +34,10 @@ class NotifyBackpressureTest {
                 try {
                     assertTrue(entered.await(5, TimeUnit.SECONDS));
                     fixture.consumer.blockingNum.increment();
-                    fixture.consumer.queue.put(record("1" + listener()));
+                    fixture.consumer.workPool[0].submit(() -> {
+                        fixture.consumer.onMessage(record("1" + listener()), fixture.consumer.workPool[0]);
+                        return null;
+                    });
                     assertTrue(fixture.dispatched.await(5, TimeUnit.SECONDS));
                     assertEquals(1, fixture.consumer.blockingNum.sum());
                 } finally {
@@ -59,7 +62,10 @@ class NotifyBackpressureTest {
             }));
             try {
                 client.blockingNum.increment();
-                client.queue.put(record("data"));
+                fixture.consumer.workPool[0].submit(() -> {
+                    client.onMessage(record("data"), fixture.consumer.workPool[0]);
+                    return null;
+                });
                 assertTrue(fixture.dispatched.await(5, TimeUnit.SECONDS));
                 assertTrue(entered.await(5, TimeUnit.SECONDS));
                 assertEquals(1, client.blockingNum.sum());
@@ -77,7 +83,7 @@ class NotifyBackpressureTest {
             for (String content : new String[]{null, "", "1", "1invalid", "3" + listener(),
                     "1" + listener(), "2" + listener()}) {
                 fixture.consumer.blockingNum.increment();
-                fixture.consumer.onMessage(record(content));
+                fixture.consumer.onMessage(record(content), fixture.consumer.workPool[0]);
                 fixture.drain();
                 assertEquals(0, fixture.consumer.blockingNum.sum(), "content: " + content);
             }
@@ -148,9 +154,9 @@ class NotifyBackpressureTest {
                 AbstractNotifyClient value = new AbstractNotifyClient(
                         List.of("localhost:9092"), factory, "test", "client") {
                     @Override
-                    public void onMessage(ConsumerRecord<String, byte[]> record) throws Exception {
+                    public void onMessage(ConsumerRecord<String, byte[]> record, SingleThreadEventExecutor executor) throws Exception {
                         try {
-                            super.onMessage(record);
+                            super.onMessage(record, executor);
                         } finally {
                             dispatched.countDown();
                         }
@@ -163,9 +169,9 @@ class NotifyBackpressureTest {
                 AbstractNotifyServer value = new AbstractNotifyServer(
                         List.of("localhost:9092"), factory, "test", "server") {
                     @Override
-                    public void onMessage(ConsumerRecord<String, byte[]> record) {
+                    public void onMessage(ConsumerRecord<String, byte[]> record, SingleThreadEventExecutor executor) {
                         try {
-                            super.onMessage(record);
+                            super.onMessage(record, executor);
                         } finally {
                             dispatched.countDown();
                         }

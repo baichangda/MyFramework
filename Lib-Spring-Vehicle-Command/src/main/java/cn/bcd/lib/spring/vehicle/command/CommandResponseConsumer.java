@@ -3,6 +3,7 @@ package cn.bcd.lib.spring.vehicle.command;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,9 +24,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
 
     public CommandResponseConsumer(CommandProp commandProp) {
         super("commandResponse",
-                false,
                 1,
-                1000,
                 1000,
                 true,
                 0,
@@ -39,7 +38,7 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
     }
 
     @Override
-    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
+    public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) {
         byte[] value = consumerRecord.value();
         String str = new String(value);
         logger.info("receive command response:\n{}", str);

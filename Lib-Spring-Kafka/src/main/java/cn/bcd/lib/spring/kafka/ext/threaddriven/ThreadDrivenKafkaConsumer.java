@@ -5,6 +5,8 @@ import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.KafkaConsumerGroup;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -26,7 +28,6 @@ import java.util.stream.Collectors;
  * 此类要求提供 kafka-client即可、不依赖spring-kafka
  * 采用如下逻辑模型
  * - 消费线程
- * - 阻塞队列
  * - 工作线程
  * <p>
  * 此类会产生如下线程
@@ -52,14 +53,11 @@ import java.util.stream.Collectors;
  * 例如test-reset
  * <p>
  */
-@SuppressWarnings("unchecked")
 public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public final String name;
-    public final boolean oneWorkThreadOneQueue;
     public final int workThreadNum;
-    public final int workThreadQueueSize;
     public final int maxBlockingNum;
     public final boolean autoReleaseBlocking;
     public final int maxConsumeSpeed;
@@ -79,16 +77,10 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
 
     /**
-     * 工作线程队列
+     * 工作执行器数组
      */
-    public final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-    public final BlockingQueue<ConsumerRecord<String, byte[]>>[] queues;
-
-
-    /**
-     * 工作线程数组
-     */
-    public final Thread[] workThreads;
+    public final SingleThreadEventExecutor[] workPool;
+    private final AtomicInteger nextWorkerIndex = new AtomicInteger();
 
 
     /**
@@ -113,7 +105,6 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      * 控制退出线程标志
      */
     volatile boolean running_consume;
-    volatile boolean running_work;
 
     /**
      * 是否暂停消费
@@ -123,16 +114,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
     /**
      * @param name                  当前消费者的名称(用于标定线程名称、消费组id)
-     * @param oneWorkThreadOneQueue 一个工作线程一个队列
-     *                              true时候
-     *                              每个工作线程都有自己的队列
-     *                              消费时候会根据 {@link #index(ConsumerRecord)} 将消息定位到指定线程、然后提交到对应线程的队列中
-     *                              实现记录关联work线程、这在某些场景可以避免线程竞争
-     *                              false时候 共享一个队列
      * @param workThreadNum         工作线程个数、最好是2的倍数、如果不是向上取整到2的倍数
-     * @param workThreadQueueSize   工作线程队列大小
-     *                              <=0代表不限制、此时使用{@link LinkedBlockingQueue}
-     *                              其他情况、则使用{@link ArrayBlockingQueue}
      * @param maxBlockingNum        最大阻塞数量、当内存中达到最大阻塞数量时候、消费者会停止消费
      * @param autoReleaseBlocking   是否自动释放阻塞、适用于工作内容为同步处理的逻辑
      * @param maxConsumeSpeed       最大消费速度每秒(0代表不限制)、kafka一次消费一批数据、设置过小会导致不起作用、此时会每秒处理一批数据
@@ -144,28 +126,21 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
      *                              主要用于设置消费的topic、分区、消费线程、消费者开始消费的位置
      *                              具体参考{@link ConsumerParam}中静态方法
      */
-    @SuppressWarnings("unchecked")
     public ThreadDrivenKafkaConsumer(String name,
-                                     boolean oneWorkThreadOneQueue,
                                      int workThreadNum,
-                                     int workThreadQueueSize,
                                      int maxBlockingNum,
                                      boolean autoReleaseBlocking,
                                      int maxConsumeSpeed,
                                      int monitor_period,
                                      ConsumerParam consumerParam) {
         this.name = name;
-        this.oneWorkThreadOneQueue = oneWorkThreadOneQueue;
         this.workThreadNum = tableSizeFor(workThreadNum);
-        this.workThreadQueueSize = workThreadQueueSize;
         this.maxBlockingNum = maxBlockingNum;
         this.autoReleaseBlocking = autoReleaseBlocking;
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.monitor_period = monitor_period;
         this.consumerParam = consumerParam;
         try {
-            running_work = true;
-
             //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
             if (maxConsumeSpeed == 0) {
                 consumeCount = null;
@@ -178,35 +153,10 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                 }, 1, 1, TimeUnit.SECONDS);
             }
 
-            //初始化工作队列、工作线程池
-            workThreads = new Thread[this.workThreadNum];
-            if (oneWorkThreadOneQueue) {
-                this.queue = null;
-                this.queues = new BlockingQueue[this.workThreadNum];
-                for (int i = 0; i < this.workThreadNum; i++) {
-                    final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-                    if (workThreadQueueSize <= 0) {
-                        queue = new LinkedBlockingQueue<>();
-                    } else {
-                        queue = new ArrayBlockingQueue<>(workThreadQueueSize);
-                    }
-                    this.queues[i] = queue;
-                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + this.workThreadNum + ")");
-                    workThreads[i].start();
-                }
-            } else {
-                this.queues = null;
-                final BlockingQueue<ConsumerRecord<String, byte[]>> queue;
-                if (workThreadQueueSize <= 0) {
-                    queue = new LinkedBlockingQueue<>();
-                } else {
-                    queue = new ArrayBlockingQueue<>(workThreadQueueSize);
-                }
-                this.queue = queue;
-                for (int i = 0; i < this.workThreadNum; i++) {
-                    workThreads[i] = new Thread(() -> work(queue), name + "-worker" + "(" + (i + 1) + "/" + this.workThreadNum + ")");
-                    workThreads[i].start();
-                }
+            workPool = new SingleThreadEventExecutor[this.workThreadNum];
+            for (int i = 0; i < this.workThreadNum; i++) {
+                final String workerName = name + "-worker(" + (i + 1) + "/" + this.workThreadNum + ")";
+                workPool[i] = new DefaultEventExecutor((ThreadFactory) r -> new Thread(r, workerName));
             }
 
             //启动监控
@@ -297,37 +247,31 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         if (consumerGroup != null) {
             consumerGroup.close();
         }
-        ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool, queue, queues);
-        //打上退出标记、等待工作线程退出
-        running_work = false;
-        ExecutorUtil.shutdownThenAwait(true, workThreads, monitor_pool);
-    }
-
-    /**
-     * 当{@link #oneWorkThreadOneQueue}为true时候生效
-     * 可以根据数据内容绑定到对应的工作线程上、避免线程竞争
-     *
-     * @param consumerRecord
-     * @return [0-{@link #workThreadNum})中某个值
-     */
-    protected int index(ConsumerRecord<String, byte[]> consumerRecord) {
-        if (workThreadNum == 1) {
-            return 0;
-        } else {
-            String key = consumerRecord.key();
-            if (key == null) {
-                return 0;
+        ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool);
+        //关闭工作执行器，等待已提交任务执行完毕
+        if (workPool != null) {
+            for (SingleThreadEventExecutor executor : workPool) {
+                if (executor != null) {
+                    executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+                }
             }
-            int h = key.hashCode();
-            h = h ^ (h >>> 16);
-            return h & (workThreadNum - 1);
+            for (SingleThreadEventExecutor executor : workPool) {
+                if (executor != null && !executor.inEventLoop()) {
+                    executor.terminationFuture().syncUninterruptibly();
+                }
+            }
         }
+        ExecutorUtil.shutdownThenAwait(true, monitor_pool);
     }
 
     private boolean isCurrentOwnedThread() {
         Thread current = Thread.currentThread();
-        if (workThreads != null && Arrays.asList(workThreads).contains(current)) {
-            return true;
+        if (workPool != null) {
+            for (SingleThreadEventExecutor executor : workPool) {
+                if (executor != null && executor.inEventLoop(current)) {
+                    return true;
+                }
+            }
         }
         return consumerGroup != null && consumerGroup.contains(current);
     }
@@ -357,7 +301,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                             consumer.resume(consumer.assignment());
                             paused = false;
                         }
-                        pollDuration = oneWorkThreadOneQueue ? Duration.ofSeconds(1) : Duration.ofSeconds(3);
+                        pollDuration = Duration.ofSeconds(3);
                     }
 
                     ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(pollDuration);
@@ -368,23 +312,10 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                         consumeCount.addAndGet(consumerRecords.count());
                     }
                     for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
-                        BlockingQueue<ConsumerRecord<String, byte[]>> targetQueue = oneWorkThreadOneQueue
-                                ? queues[index(consumerRecord)] : queue;
-                        while (running_consume && !targetQueue.offer(consumerRecord, 100, TimeUnit.MILLISECONDS)) {
-                            Set<TopicPartition> assignment = consumer.assignment();
-                            if (!assignment.isEmpty()) {
-                                consumer.pause(assignment);
-                                paused = true;
-                            }
-                            consumer.poll(Duration.ZERO);
-                        }
                         if (!running_consume) {
                             break;
                         }
-                        blockingNum.increment();
-                        if (monitor_period > 0) {
-                            monitor_consumeCount.increment();
-                        }
+                        submitRecord(consumerRecord);
                     }
                 } catch (Exception ex) {
                     if (!running_consume && ex instanceof InterruptedException) {
@@ -417,55 +348,52 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
     }
 
-    /**
-     * 工作线程
-     *
-     * @param queue
-     */
-    private void work(final BlockingQueue<ConsumerRecord<String, byte[]>> queue) {
+    protected final void submitRecord(ConsumerRecord<String, byte[]> record) {
+        int workerIndex = nextWorkerIndex.getAndIncrement() & (workThreadNum - 1);
+        SingleThreadEventExecutor executor = workPool[workerIndex];
+        blockingNum.increment();
+        if (monitor_period > 0) {
+            monitor_consumeCount.increment();
+        }
+        executor.submit(() -> work(record, executor));
+    }
+
+    private void work(ConsumerRecord<String, byte[]> record, SingleThreadEventExecutor executor) {
         try {
-            while (running_work) {
-                final ConsumerRecord<String, byte[]> poll = queue.poll(1, TimeUnit.SECONDS);
-                if (poll != null) {
-                    try {
-                        onMessage(poll);
-                    } catch (Exception ex) {
-                        logger.error("onMessage error", ex);
-                    }
-                    if (monitor_period > 0) {
-                        monitor_workCount.increment();
-                    }
-                    if (autoReleaseBlocking) {
-                        blockingNum.decrement();
-                    }
-                }
+            onMessage(record, executor);
+        } catch (Exception ex) {
+            logger.error("onMessage error", ex);
+        } finally {
+            if (monitor_period > 0) {
+                monitor_workCount.increment();
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
+            if (autoReleaseBlocking) {
+                blockingNum.decrement();
+            }
         }
     }
 
-
-    public abstract void onMessage(ConsumerRecord<String, byte[]> consumerRecord) throws Exception;
-
-    private String getQueueLog(BlockingQueue<ConsumerRecord<String, byte[]>> queue) {
-        return queue.size() + (workThreadQueueSize > 0 ? ("/" + workThreadQueueSize) : "");
-    }
+    /**
+     * @param consumerRecord 接收到的消息
+     * @param executor 当前执行回调的执行器，可向其提交后续任务
+     */
+    public abstract void onMessage(ConsumerRecord<String, byte[]> consumerRecord,
+                                   SingleThreadEventExecutor executor) throws Exception;
 
     /**
      * 监控日志
      * 如果需要修改日志、可以重写此方法
      * blocking 当前阻塞数量/最大阻塞数量
      * consume 周期内所有的消费者合计消费数量
-     * queues 所有执行器的队列情况、每个执行器 当前队列大小/最大队列大小(如果有最大队列大小)
+     * workPool 各执行器等待执行的任务数量
      * work 周期内所有的任务执行器合计处理数量
      */
     public String monitor_log() {
-        return StringUtil.format("name[{}] blocking[{}/{}] consume[{}/{}s] queues[{}] work[{}/{}s]",
+        return StringUtil.format("name[{}] blocking[{}/{}] consume[{}/{}s] workPool[{}] work[{}/{}s]",
                 name,
                 blockingNum.sum(), maxBlockingNum,
                 monitor_consumeCount.sumThenReset(), monitor_period,
-                oneWorkThreadOneQueue ? Arrays.stream(queues).map(this::getQueueLog).collect(Collectors.joining(",")) : getQueueLog(queue),
+                Arrays.stream(workPool).map(executor -> Integer.toString(executor.pendingTasks())).collect(Collectors.joining(",")),
                 monitor_workCount.sumThenReset(), monitor_period);
     }
 }

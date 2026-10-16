@@ -4,6 +4,7 @@ import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.datadriven.DataDrivenKafkaConsumer;
 import cn.bcd.lib.spring.kafka.ext.datadriven.WorkHandler;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -123,11 +124,11 @@ class KafkaLifecycleTest {
     @Test
     void threadDrivenConsumerCanCloseBeforeStart() {
         ThreadDrivenKafkaConsumer consumer = new ThreadDrivenKafkaConsumer(
-                "thread-test", false, 1, 1, 0,
+                "thread-test", 1, 0,
                 true, 0, 0, ConsumerParam.get_singleConsumer("topic")
         ) {
             @Override
-            public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
+            public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) {
             }
         };
 
@@ -136,28 +137,11 @@ class KafkaLifecycleTest {
     }
 
     @Test
-    void consumersRouteNullKeysWithoutFailing() {
-        var threadConsumer = new ThreadDrivenKafkaConsumer(
-                "thread-null-key", true, 2, 1, 0,
-                true, 0, 0, ConsumerParam.get_singleConsumer("topic")
-        ) {
-            @Override
-            public int index(ConsumerRecord<String, byte[]> consumerRecord) {
-                return super.index(consumerRecord);
-            }
-
-            @Override
-            public void onMessage(ConsumerRecord<String, byte[]> consumerRecord) {
-            }
-        };
+    void dataDrivenConsumerRoutesNullKeysWithoutFailing() {
         DataDrivenKafkaConsumer dataConsumer = newDataConsumer("data-null-key");
-        ConsumerRecord<String, byte[]> record = new ConsumerRecord<>("topic", 0, 0, null, new byte[0]);
-
         try {
-            assertEquals(0, threadConsumer.index(record));
             assertSame(dataConsumer.workExecutors[0], dataConsumer.getWorkExecutor(null));
         } finally {
-            threadConsumer.close();
             dataConsumer.close();
         }
     }
