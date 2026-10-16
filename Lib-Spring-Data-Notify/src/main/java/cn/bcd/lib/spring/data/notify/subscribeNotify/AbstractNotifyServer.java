@@ -94,7 +94,12 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         //初始化redis订阅数据到缓存
         checkAndUpdateCache().join();
         //开始消费
-        super.startConsume(consumerProp.buildProperties());
+        try {
+            startConsume(consumerProp.buildProperties()).join();
+        } catch (Exception ex) {
+            close();
+            logger.error("error", ex);
+        }
         //启动线程定时更新缓存
         startUpdateCacheFromRedis();
     }
