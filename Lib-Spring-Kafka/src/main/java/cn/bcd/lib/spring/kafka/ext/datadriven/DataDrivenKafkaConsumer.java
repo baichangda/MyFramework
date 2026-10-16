@@ -1,7 +1,10 @@
 package cn.bcd.lib.spring.kafka.ext.datadriven;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.base.util.*;
+import cn.bcd.lib.base.util.DateUtil;
+import cn.bcd.lib.base.util.ExecutorUtil;
+import cn.bcd.lib.base.util.FloatUtil;
+import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.KafkaConsumerGroup;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -19,38 +22,9 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 /**
- * 此类要求提供 kafka-client即可、不依赖spring-kafka
- * 数据驱动模型
- * 即消费到数据后、每一个数据将会根据{@link #id(ConsumerRecord)}、{@link #getWorkExecutor(String)}分配到固定的{@link WorkExecutor}
- * 同时会通过{@link #newHandler(String, ConsumerRecord)}构造数据对象
- * 后续{@link WorkHandler}中所有的操作都会由分配的{@link WorkExecutor}来执行
- * 这样做的好处是能保证{@link WorkHandler}所有方法都是线程安全的
- * <p>
- * 此类会产生如下线程
- * <p>
- * 消费者线程可能有多个、开头为 {name}-consumer
- * 例如test-consumer(1/3)-partition(0)
- * consumer(1/3)代表有3个消费线程、这是第一个
- * partition(0)代表这个消费线程消费哪个分区
- * <p>
- * 工作任务执行器线程可能有多个、和工作任务执行器数量有关、开头为 {name}-worker
- * 例如test-worker(1/3)
- * worker(1/3)代表有3个工作线程、这是第一个
- * <p>
- * 监控信息线程只有一个、开头为 {name}-monitor
- * 需要开启{@link #monitor_period}才会有
- * 例如test-monitor
- * <p>
- * 工作任务执行器支持计划任务、计划任务由对应的工作线程执行、不额外创建线程
- * <p>
- * 限速重置消费计数线程只有一个、开头为 {name}-reset
- * 需要开启{@link #maxConsumeSpeed}才会有
- * 例如test-reset
- * <p>
- * 定时扫描过期workHandler线程只有一个、开头为 {name}-scanner
- * 需要开启{@link #workHandlerScanner}才会有
- * 例如test-scanner
- * <p>
+ * 按业务 ID 将消息路由到固定的工作执行器，并为每个 ID 维护一个 WorkHandler。
+ * Handler 的创建、初始化、消息处理和销毁均在所属执行器内串行执行。
+ * 限速重置、监控和过期扫描共用独立调度线程；关闭时先停止消费，再清理 Handler。
  */
 public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -84,22 +58,15 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 重置消费计数
      */
-    public final AtomicInteger consumeCount;
-    public final ScheduledExecutorService resetConsumeCountPool;
-
-    /**
-     * 扫描过期线程池
-     */
-    public final ScheduledExecutorService scannerPool;
+    public final AtomicInteger consumeCount = new AtomicInteger();
+    public final ScheduledExecutorService scheduledPool;
 
     /**
      * 监控信息
      */
-    public final LongAdder monitor_workHandlerCount;
-    public final LongAdder monitor_consumeCount;
-    //处理数据数量(无论是否发生异常)
-    public final LongAdder monitor_workCount;
-    public final ScheduledExecutorService monitor_pool;
+    public final LongAdder monitor_workHandlerCount = new LongAdder();
+    public final LongAdder monitor_consumeCount = new LongAdder();
+    public final LongAdder monitor_workCount = new LongAdder();
 
     /**
      * 是否关闭
@@ -114,7 +81,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 是否暂停消费
      */
-    volatile boolean pause_consume = false;
+    volatile boolean pause_consume;
 
 
     public static class WorkHandlerScanner {
@@ -180,7 +147,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 && (workHandlerScanner.periodInSecond <= 0 || workHandlerScanner.expiredInSecond <= 0)) {
             throw new IllegalArgumentException("workHandlerScanner periods must be positive");
         }
-        Objects.requireNonNull(consumerParam, "consumerParam");
         this.name = name;
         this.workExecutorNum = tableSizeFor(workExecutorNum);
         this.maxBlockingNum = maxBlockingNum;
@@ -188,51 +154,30 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         this.maxConsumeSpeed = maxConsumeSpeed;
         this.workHandlerScanner = workHandlerScanner;
         this.monitor_period = monitor_period;
-        this.consumerParam = consumerParam;
+        this.consumerParam = Objects.requireNonNull(consumerParam, "consumerParam");
 
+        workExecutors = new WorkExecutor[this.workExecutorNum];
+        scheduledPool = maxConsumeSpeed == 0 && monitor_period == 0 && workHandlerScanner == null ? null
+                : Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-schedule"));
         try {
-            //初始化重置消费计数线程池(如果有限制最大消费速度)、提交工作任务、每秒重置消费数量
-            if (maxConsumeSpeed == 0) {
-                consumeCount = null;
-                resetConsumeCountPool = null;
-            } else {
-                consumeCount = new AtomicInteger();
-                resetConsumeCountPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-reset"));
-                resetConsumeCountPool.scheduleAtFixedRate(() -> {
-                    consumeCount.set(0);
-                }, 1, 1, TimeUnit.SECONDS);
-            }
-            //启动监控
-            if (monitor_period == 0) {
-                monitor_workHandlerCount = null;
-                monitor_consumeCount = null;
-                monitor_workCount = null;
-                monitor_pool = null;
-            } else {
-                monitor_workHandlerCount = new LongAdder();
-                monitor_consumeCount = new LongAdder();
-                monitor_workCount = new LongAdder();
-                monitor_pool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-monitor"));
-                monitor_pool.scheduleAtFixedRate(() -> logger.info(monitor_log()), monitor_period, monitor_period, TimeUnit.SECONDS);
-            }
-
-            //启动扫描过期数据
-            if (workHandlerScanner == null) {
-                scannerPool = null;
-            } else {
-                scannerPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, name + "-scanner"));
-                scannerPool.scheduleAtFixedRate(() -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond), workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
-            }
-
-            //启动任务执行器
-            this.workExecutors = new WorkExecutor[this.workExecutorNum];
             for (int i = 0; i < this.workExecutorNum; i++) {
-                String workThreadName = name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")";
-                this.workExecutors[i] = new WorkExecutor(r -> new Thread(r, workThreadName));
+                String workerName = name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")";
+                workExecutors[i] = new WorkExecutor(r -> new Thread(r, workerName));
             }
-
+            if (maxConsumeSpeed > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> consumeCount.set(0), 1, 1, TimeUnit.SECONDS);
+            }
+            if (monitor_period > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> logger.info(monitor_log()),
+                        monitor_period, monitor_period, TimeUnit.SECONDS);
+            }
+            if (workHandlerScanner != null) {
+                scheduledPool.scheduleAtFixedRate(
+                        () -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond),
+                        workHandlerScanner.periodInSecond, workHandlerScanner.periodInSecond, TimeUnit.SECONDS);
+            }
         } catch (Exception ex) {
-            close();
+            closeInternal();
             throw BaseException.get(ex);
         }
     }
@@ -251,20 +196,21 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         if (closed) {
             throw new IllegalStateException("consumer already closed");
         }
-        if (!running_consume) {
-            running_consume = true;
-            try {
-                consumerGroup = KafkaConsumerGroup.create(name, consumerProp, consumerParam, this::consume);
-                startupResult = consumerGroup.start().whenComplete((ignored, error) -> {
-                    if (error != null) {
-                        running_consume = false;
-                    }
-                });
-            } catch (RuntimeException | Error ex) {
-                running_consume = false;
-                logger.error("kafka consumer start error", ex);
-                startupResult = CompletableFuture.failedFuture(ex);
-            }
+        if (running_consume) {
+            return startupResult;
+        }
+        running_consume = true;
+        try {
+            consumerGroup = KafkaConsumerGroup.create(name, consumerProp, consumerParam, this::consume);
+            startupResult = consumerGroup.start().whenComplete((ignored, error) -> {
+                if (error != null) {
+                    running_consume = false;
+                }
+            });
+        } catch (RuntimeException | Error ex) {
+            running_consume = false;
+            logger.error("kafka consumer start error", ex);
+            startupResult = CompletableFuture.failedFuture(ex);
         }
         return startupResult;
     }
@@ -310,11 +256,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * @return
      */
     public final Future<?> removeHandler(String id) {
-        WorkExecutor workExecutor = getWorkExecutor(id);
-        return removeHandler(id, workExecutor);
-    }
-
-    private Future<?> removeHandler(String id, WorkExecutor executor) {
+        WorkExecutor executor = getWorkExecutor(id);
         if (executor.inEventLoop()) {
             destroyHandler(id, executor);
             return CompletableFuture.completedFuture(null);
@@ -388,137 +330,56 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     }
 
     private void closeInternal() {
-        //打上退出标记、等待消费线程退出
         running_consume = false;
         if (consumerGroup != null) {
             consumerGroup.close();
         }
-        ExecutorUtil.shutdownThenAwait(true, resetConsumeCountPool);
-        //等待工作执行器退出
-        if (workExecutors != null) {
-            for (WorkExecutor workExecutor : workExecutors) {
-                if (workExecutor == null) {
-                    continue;
-                }
-                //添加删除任务
-                try {
-                    workExecutor.submit(() -> {
-                        for (String id : new ArrayList<>(workExecutor.workHandlers.keySet())) {
-                            destroyHandler(id, workExecutor);
-                        }
-                    }).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    logger.error("error", e);
-                }
-                //关闭线程池
-                workExecutor.shutdownGracefully();
-            }
-            for (WorkExecutor workExecutor : workExecutors) {
-                if (workExecutor == null) {
-                    continue;
-                }
-                //等待工作执行器退出
-                ExecutorUtil.await(workExecutor);
+        ExecutorUtil.shutdownThenAwait(true, scheduledPool);
+        for (WorkExecutor executor : workExecutors) {
+            if (executor != null) {
+                executor.addShutdownHook(() -> {
+                    for (String id : new ArrayList<>(executor.workHandlers.keySet())) {
+                        destroyHandler(id, executor);
+                    }
+                });
+                executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
             }
         }
-        //取消监控、扫描过期线程
-        ExecutorUtil.shutdownAllThenAwait(false, monitor_pool, scannerPool);
+        for (WorkExecutor executor : workExecutors) {
+            if (executor != null) {
+                executor.terminationFuture().syncUninterruptibly();
+            }
+        }
     }
 
     private boolean isCurrentOwnedThread() {
-        if (consumerGroup != null && consumerGroup.contains(Thread.currentThread())) {
-            return true;
-        }
-        if (workExecutors == null) {
-            return false;
-        }
-        for (WorkExecutor workExecutor : workExecutors) {
-            if (workExecutor != null && workExecutor.inEventLoop()) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.stream(workExecutors).anyMatch(executor -> executor.inEventLoop())
+                || (consumerGroup != null && consumerGroup.contains(Thread.currentThread()));
     }
 
-
-    /**
-     * 消费
-     */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
         try {
-            boolean paused = false;
             while (running_consume) {
                 try {
                     boolean throttled = pause_consume
                             || (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum)
                             || (maxConsumeSpeed > 0 && consumeCount.get() >= maxConsumeSpeed);
-                    Duration pollDuration;
                     if (throttled) {
-                        Set<org.apache.kafka.common.TopicPartition> assignment = consumer.assignment();
-                        if (!assignment.isEmpty()) {
-                            consumer.pause(assignment);
-                            paused = true;
-                        }
-                        // pause() only stops fetching; poll must continue to keep group membership alive.
-                        pollDuration = Duration.ofMillis(100);
+                        consumer.pause(consumer.assignment());
                     } else {
-                        if (paused) {
-                            consumer.resume(consumer.assignment());
-                            paused = false;
-                        }
-                        pollDuration = Duration.ofSeconds(1);
+                        consumer.resume(consumer.paused());
                     }
-
-                    ConsumerRecords<String, byte[]> consumerRecords = consumer.poll(pollDuration);
-                    if (consumerRecords.isEmpty()) {
-                        continue;
-                    }
+                    // 暂停拉取时仍需 poll，维持消费组成员身份。
+                    ConsumerRecords<String, byte[]> records = consumer.poll(
+                            throttled ? Duration.ofMillis(100) : Duration.ofSeconds(1));
                     if (maxConsumeSpeed > 0) {
-                        consumeCount.addAndGet(consumerRecords.count());
+                        consumeCount.addAndGet(records.count());
                     }
-                    for (ConsumerRecord<String, byte[]> consumerRecord : consumerRecords) {
-                        final String id = id(consumerRecord);
-                        WorkExecutor workExecutor = getWorkExecutor(id);
-                        blockingNum.increment();
-                        if (monitor_period > 0) {
-                            monitor_consumeCount.increment();
+                    for (ConsumerRecord<String, byte[]> record : records) {
+                        if (!running_consume) {
+                            break;
                         }
-                        try {
-                            workExecutor.execute(() -> {
-                                WorkHandler workHandler = workExecutor.workHandlers.computeIfAbsent(id, k -> {
-                                    try {
-                                        WorkHandler temp = newHandler(id, consumerRecord);
-                                        temp.afterConstruct(workExecutor, this);
-                                        temp.init(consumerRecord);
-                                        if (monitor_period > 0) {
-                                            monitor_workHandlerCount.increment();
-                                        }
-                                        return temp;
-                                    } catch (Exception ex) {
-                                        blockingNum.decrement();
-                                        logger.error("workHandler init error id[{}]", id, ex);
-                                        return null;
-                                    }
-                                });
-                                if (workHandler != null) {
-                                    workHandler.lastMessageTime = DateUtil.CacheSecond.current();
-                                    try {
-                                        workHandler.onMessage(consumerRecord);
-                                    } catch (Exception ex) {
-                                        logger.error("workHandler onMessage error id[{}]", id, ex);
-                                    }
-                                    if (autoReleaseBlocking) {
-                                        blockingNum.decrement();
-                                    }
-                                    if (monitor_period > 0) {
-                                        monitor_workCount.increment();
-                                    }
-                                }
-                            });
-                        } catch (RuntimeException ex) {
-                            blockingNum.decrement();
-                            throw ex;
-                        }
+                        submitRecord(record);
                     }
                 } catch (Exception ex) {
                     if (!running_consume) {
@@ -535,19 +396,53 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             }
         } finally {
             running_consume = false;
-            String assignment = "";
-            try {
-                assignment = consumer.assignment().stream().map(e -> e.topic() + ":" + e.partition()).collect(Collectors.joining(","));
-            } catch (Exception ex) {
-                logger.debug("get consumer assignment before close error", ex);
+        }
+    }
+
+    protected final void submitRecord(ConsumerRecord<String, byte[]> record) {
+        String id = id(record);
+        WorkExecutor executor = getWorkExecutor(id);
+        blockingNum.increment();
+        if (monitor_period > 0) {
+            monitor_consumeCount.increment();
+        }
+        executor.submit(() -> work(id, record, executor));
+    }
+
+    private void work(String id, ConsumerRecord<String, byte[]> record, WorkExecutor executor) {
+        WorkHandler handler = null;
+        try {
+            handler = executor.workHandlers.computeIfAbsent(id, ignored -> createHandler(id, record, executor));
+            if (handler != null) {
+                handler.lastMessageTime = DateUtil.CacheSecond.current();
+                handler.onMessage(record);
             }
-            try {
-                consumer.close();
-            } finally {
-                logger.info("consumer[{}] assignment[{}] close", this.getClass().getName(), assignment);
+        } catch (Exception ex) {
+            logger.error("workHandler onMessage error id[{}]", id, ex);
+        } finally {
+            // 初始化失败的消息也必须释放计数，即使正常消息由业务异步释放。
+            if (autoReleaseBlocking || handler == null) {
+                blockingNum.decrement();
+            }
+            if (monitor_period > 0 && handler != null) {
+                monitor_workCount.increment();
             }
         }
+    }
 
+    private WorkHandler createHandler(String id, ConsumerRecord<String, byte[]> first, WorkExecutor executor) {
+        try {
+            WorkHandler handler = newHandler(id, first);
+            handler.afterConstruct(executor, this);
+            handler.init(first);
+            if (monitor_period > 0) {
+                monitor_workHandlerCount.increment();
+            }
+            return handler;
+        } catch (Exception ex) {
+            logger.error("workHandler init error id[{}]", id, ex);
+            return null;
+        }
     }
 
     /**
@@ -558,31 +453,18 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      * workHandler 任务处理器个数
      * blocking 当前阻塞数量/最大阻塞数量
      * consumeSpeed 每秒消费速度
-     * workQueueTaskNum 消费任务和工作任务之间所有执行器的队列中任务总和
-     * queues 所有执行器的队列情况、每个执行器 当前队列大小/最大队列大小(如果有最大队列大小)
+     * queues 各执行器等待执行的任务数量
      * workSpeed 每秒工作速度
      */
     public String monitor_log() {
-        int workExecutorCount = workExecutors.length;
-        long workHandlerCount = monitor_workHandlerCount.sum();
-        long curBlockingNum = blockingNum.sum();
-        double consumeSpeed = FloatUtil.round(monitor_consumeCount.sumThenReset() / ((double) monitor_period), 2);
-        String workQueueStatus = Arrays.stream(workExecutors).map(e -> e.pendingTasks() + "").collect(Collectors.joining(" "));
-        double workSpeed = FloatUtil.round(monitor_workCount.sumThenReset() / ((double) monitor_period), 2);
-        return StringUtil.format("name[{}] " +
-                        "workExecutor[{}] " +
-                        "workHandler[{}] " +
-                        "blocking[{}/{}] " +
-                        "consumeSpeed[{}/s] " +
-                        "queues[{}] " +
-                        "workSpeed[{}/s]",
-                name,
-                workExecutorCount,
-                workHandlerCount,
-                curBlockingNum, maxBlockingNum,
-                consumeSpeed,
-                workQueueStatus,
-                workSpeed);
+        double consumeSpeed = FloatUtil.round(monitor_consumeCount.sumThenReset() / (double) monitor_period, 2);
+        double workSpeed = FloatUtil.round(monitor_workCount.sumThenReset() / (double) monitor_period, 2);
+        String queues = Arrays.stream(workExecutors)
+                .map(executor -> Integer.toString(executor.pendingTasks())).collect(Collectors.joining(" "));
+        return StringUtil.format("name[{}] workExecutor[{}] workHandler[{}] blocking[{}/{}] "
+                        + "consumeSpeed[{}/s] queues[{}] workSpeed[{}/s]",
+                name, workExecutorNum, monitor_workHandlerCount.sum(), blockingNum.sum(), maxBlockingNum,
+                consumeSpeed, queues, workSpeed);
     }
 
     /**
@@ -592,22 +474,15 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      */
     public final void scanAndDestroyWorkHandler(int expiredInSecond) {
         long ts = DateUtil.CacheSecond.current() - expiredInSecond;
-        for (WorkExecutor workExecutor : workExecutors) {
-            workExecutor.execute(() -> {
-                List<String> ids = new ArrayList<>();
-                for (WorkHandler workHandler : workExecutor.workHandlers.values()) {
-                    if (workHandler.lastMessageTime < ts) {
-                        ids.add(workHandler.id);
-                    }
-                }
-                for (String id : ids) {
-                    WorkHandler workHandler = workExecutor.workHandlers.get(id);
-                    if (workHandler != null && workHandler.lastMessageTime < ts) {
-                        destroyHandler(id, workExecutor);
+        for (WorkExecutor executor : workExecutors) {
+            executor.submit(() -> {
+                for (String id : new ArrayList<>(executor.workHandlers.keySet())) {
+                    WorkHandler handler = executor.workHandlers.get(id);
+                    if (handler != null && handler.lastMessageTime < ts) {
+                        destroyHandler(id, executor);
                     }
                 }
             });
         }
     }
 }
-
