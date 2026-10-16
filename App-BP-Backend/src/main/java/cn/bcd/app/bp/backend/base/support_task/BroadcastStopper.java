@@ -2,7 +2,6 @@ package cn.bcd.app.bp.backend.base.support_task;
 
 import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.spring.redis.mq.RedisTopicMQ;
 import cn.bcd.lib.base.util.DateUtil;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -22,7 +21,7 @@ public class BroadcastStopper extends RedisTopicMQ<BroadcastStopper.StopCmd> {
     final long waitInSecond;
 
     public BroadcastStopper(RedisConnectionFactory connectionFactory, int waitInSecond) {
-        super(connectionFactory, 1, 1, ValueSerializerType.JACKSON, topic);
+        super(connectionFactory, 1, 1, StopCmd.class, topic);
         this.waitInSecond = waitInSecond;
     }
 

@@ -1,7 +1,6 @@
 package cn.bcd.lib.spring.monitor.client;
 
 import cn.bcd.lib.spring.redis.RedisUtil;
-import cn.bcd.lib.spring.redis.mq.ValueSerializerType;
 import cn.bcd.lib.spring.redis.mq.RedisTopicMQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ public class MonitorRedisTopicMQ extends RedisTopicMQ<String> {
     final MonitorProp monitorProp;
 
     public MonitorRedisTopicMQ(RedisConnectionFactory connectionFactory, MonitorProp monitorProp) {
-        super(connectionFactory, 1, 1, ValueSerializerType.STRING,
+        super(connectionFactory, 1, 1, String.class,
                 monitorProp.requestTopic);
         this.monitorProp = monitorProp;
         if (monitorProp.serverId != null) {
