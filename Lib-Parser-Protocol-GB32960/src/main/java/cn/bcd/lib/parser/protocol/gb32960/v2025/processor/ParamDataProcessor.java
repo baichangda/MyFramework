@@ -1,13 +1,10 @@
 package cn.bcd.lib.parser.protocol.gb32960.v2025.processor;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.parser.base.data.DefaultNumValGetter;
 import cn.bcd.lib.parser.base.data.NumValGetter;
 import cn.bcd.lib.parser.base.processor.ProcessContext;
 import cn.bcd.lib.parser.base.processor.Processor;
 import cn.bcd.lib.parser.protocol.gb32960.v2025.data.ParamData;
-import cn.bcd.lib.parser.protocol.gb32960.v2025.data.ParamQueryResponse;
-import cn.bcd.lib.parser.protocol.gb32960.v2025.data.ParamSetRequest;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
@@ -18,9 +15,14 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public ParamData process(ByteBuf data, ProcessContext processContext) {
-        int num = (short) processContext.getCache(3);
         ParamData paramData = new ParamData();
-        for (int i = 0; i < num; i++) {
+        short num = data.readUnsignedByte();
+        paramData.num__v = numValGetter.getType8(num);
+        if (paramData.num__v != 0) {
+            return paramData;
+        }
+        paramData.num = num;
+        for (int i = 0; i < paramData.num; i++) {
             byte paramId = data.readByte();
             switch (paramId) {
                 case 0x01 -> {
@@ -120,7 +122,16 @@ public class ParamDataProcessor implements Processor<ParamData> {
 
     @Override
     public void deProcess(ByteBuf data, ProcessContext processContext, ParamData instance) {
-        if (instance.localStorageTimeCycle != null) {
+        if (instance.num__v != 0) {
+            instance.num = 0;
+            data.writeByte(numValGetter.getVal_int8(instance.num__v));
+            return;
+        }
+        int numIndex = data.writerIndex();
+        data.writeByte(0);
+        short num = 0;
+        if (instance.localStorageTimeCycle != null || instance.localStorageTimeCycle__v != 0) {
+            num++;
             data.writeByte(0x01);
             if (instance.localStorageTimeCycle__v == 0) {
                 data.writeShort(instance.localStorageTimeCycle);
@@ -128,7 +139,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeShort(numValGetter.getVal_int16(instance.localStorageTimeCycle__v));
             }
         }
-        if (instance.normalReportTime != null) {
+        if (instance.normalReportTime != null || instance.normalReportTime__v != 0) {
+            num++;
             data.writeByte(0x02);
             if (instance.normalReportTime__v == 0) {
                 data.writeByte(instance.normalReportTime);
@@ -136,7 +148,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeByte(numValGetter.getVal_int8(instance.normalReportTime__v));
             }
         }
-        if (instance.alarmReportTime != null) {
+        if (instance.alarmReportTime != null || instance.alarmReportTime__v != 0) {
+            num++;
             data.writeByte(0x03);
             if (instance.alarmReportTime__v == 0) {
                 data.writeByte(instance.alarmReportTime);
@@ -145,12 +158,14 @@ public class ParamDataProcessor implements Processor<ParamData> {
             }
         }
         if (instance.remotePlatformName != null) {
+            num += 2;
             data.writeByte(0x04);
             data.writeByte(instance.remotePlatformName.length());
             data.writeByte(0x05);
             data.writeCharSequence(instance.remotePlatformName, StandardCharsets.UTF_8);
         }
-        if (instance.remotePlatformPort != null) {
+        if (instance.remotePlatformPort != null || instance.remotePlatformPort__v != 0) {
+            num++;
             data.writeByte(0x06);
             if (instance.remotePlatformPort__v == 0) {
                 data.writeShort(instance.remotePlatformPort);
@@ -159,14 +174,17 @@ public class ParamDataProcessor implements Processor<ParamData> {
             }
         }
         if (instance.terminalHardwareData != null) {
+            num++;
             data.writeByte(0x07);
             data.writeCharSequence(instance.terminalHardwareData.substring(0, 5), StandardCharsets.UTF_8);
         }
         if (instance.terminalSoftwareData != null) {
+            num++;
             data.writeByte(0x08);
             data.writeCharSequence(instance.terminalSoftwareData.substring(0, 5), StandardCharsets.UTF_8);
         }
-        if (instance.heartbeatSendCycleData != null) {
+        if (instance.heartbeatSendCycleData != null || instance.heartbeatSendCycleData__v != 0) {
+            num++;
             data.writeByte(0x09);
             if (instance.heartbeatSendCycleData__v == 0) {
                 data.writeByte(instance.heartbeatSendCycleData);
@@ -174,7 +192,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeByte(numValGetter.getVal_int8(instance.heartbeatSendCycleData__v));
             }
         }
-        if (instance.terminalResponseTimeoutData != null) {
+        if (instance.terminalResponseTimeoutData != null || instance.terminalResponseTimeoutData__v != 0) {
+            num++;
             data.writeByte(0x0A);
             if (instance.terminalResponseTimeoutData__v == 0) {
                 data.writeShort(instance.terminalResponseTimeoutData);
@@ -182,7 +201,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeShort(numValGetter.getVal_int16(instance.terminalResponseTimeoutData__v));
             }
         }
-        if (instance.domainResponseTimeoutData != null) {
+        if (instance.domainResponseTimeoutData != null || instance.domainResponseTimeoutData__v != 0) {
+            num++;
             data.writeByte(0x0B);
             if (instance.domainResponseTimeoutData__v == 0) {
                 data.writeShort(instance.domainResponseTimeoutData);
@@ -190,7 +210,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeShort(numValGetter.getVal_int16(instance.domainResponseTimeoutData__v));
             }
         }
-        if (instance.loginFailureData != null) {
+        if (instance.loginFailureData != null || instance.loginFailureData__v != 0) {
+            num++;
             data.writeByte(0x0C);
             if (instance.loginFailureData__v == 0) {
                 data.writeByte(instance.loginFailureData);
@@ -199,12 +220,14 @@ public class ParamDataProcessor implements Processor<ParamData> {
             }
         }
         if (instance.publicPlatformName != null) {
+            num += 2;
             data.writeByte(0x0D);
             data.writeByte(instance.publicPlatformName.length());
             data.writeByte(0x0E);
             data.writeCharSequence(instance.publicPlatformName, StandardCharsets.UTF_8);
         }
-        if (instance.publicPlatformPort != null) {
+        if (instance.publicPlatformPort != null || instance.publicPlatformPort__v != 0) {
+            num++;
             data.writeByte(0x0F);
             if (instance.publicPlatformPort__v == 0) {
                 data.writeShort(instance.publicPlatformPort);
@@ -212,7 +235,8 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeShort(numValGetter.getVal_int16(instance.publicPlatformPort__v));
             }
         }
-        if (instance.samplingDetectionData != null) {
+        if (instance.samplingDetectionData != null || instance.samplingDetectionData__v != 0) {
+            num++;
             data.writeByte(0x10);
             if (instance.samplingDetectionData__v == 0) {
                 data.writeByte(instance.samplingDetectionData);
@@ -220,5 +244,7 @@ public class ParamDataProcessor implements Processor<ParamData> {
                 data.writeByte(numValGetter.getVal_int8(instance.samplingDetectionData__v));
             }
         }
+        instance.num = num;
+        data.setByte(numIndex, num);
     }
 }

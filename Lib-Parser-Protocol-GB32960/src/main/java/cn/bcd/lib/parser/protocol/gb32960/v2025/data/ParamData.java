@@ -2,6 +2,10 @@ package cn.bcd.lib.parser.protocol.gb32960.v2025.data;
 
 
 public class ParamData {
+    // 参数数量；正常状态下编码时根据实际输出更新
+    public short num;
+    public byte num__v;
+
     // 本地存储时间周期（ms）
     public Integer localStorageTimeCycle;
     public byte localStorageTimeCycle__v;
