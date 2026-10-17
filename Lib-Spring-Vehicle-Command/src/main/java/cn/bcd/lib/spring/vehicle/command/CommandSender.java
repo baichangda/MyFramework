@@ -6,7 +6,7 @@ import cn.bcd.lib.spring.kafka.KafkaUtil;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.base.util.HexUtil;
 import cn.bcd.lib.parser.protocol.gb32960.ProtocolVersion;
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public class CommandSender {
 
     static RedisTemplate<String, String> redisTemplate;
 
-    static KafkaProducer<String, byte[]> kafkaProducer;
+    static Producer<String, byte[]> kafkaProducer;
 
     static ScheduledExecutorService workExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -111,33 +111,51 @@ public class CommandSender {
         try {
             request = Request.create(vin, command, timeout, callback, waitVehicleResponse);
         } catch (Exception ex) {
-            logger.error("error", ex);
-            releaseLock(vin, flag);
+            logger.error("command encoding failed", ex);
+            notifyAndUnlock(vin, flag, version, callback, ResponseStatus.program_error);
             return;
         }
-        request.setTimeoutFuture(
-                workExecutor.schedule(() -> {
-                    Request<?, ?> remove = requestMap.remove(request.getId());
-                    if (remove != null) {
-                        try {
-                            remove.callback.callback(new Response<>(remove.getVin(), remove.flag, ResponseStatus.timeout, version, null));
-                        } catch (Exception ex) {
-                            logger.error("error", ex);
-                        } finally {
-                            releaseLock(remove.vin, remove.flag);
-                        }
-                    }
-                }, timeout, TimeUnit.SECONDS)
-        );
         workExecutor.execute(() -> {
+            requestMap.put(request.id, request);
             try {
-                ProducerRecord<String, byte[]> record = new ProducerRecord<>(commandProp.requestTopic, request.getId(), JsonUtil.toJsonAsBytes(request));
-                kafkaProducer.send(record);
-                requestMap.put(request.getId(), request);
+                request.timeoutFuture = workExecutor.schedule(
+                        () -> complete(request.id, ResponseStatus.timeout), timeout, TimeUnit.SECONDS);
+                ProducerRecord<String, byte[]> record = new ProducerRecord<>(commandProp.requestTopic, request.id, JsonUtil.toJsonAsBytes(request));
+                kafkaProducer.send(record, (metadata, exception) -> {
+                    if (exception != null) {
+                        workExecutor.execute(() -> {
+                            logger.error("command send failed, id[{}]", request.id, exception);
+                            complete(request.id, ResponseStatus.program_error);
+                        });
+                    }
+                });
             } catch (Exception ex) {
-                logger.error("error", ex);
-                callback.callback(new Response<>(vin, flag, ResponseStatus.program_error, version, null));
+                logger.error("command send failed, id[{}]", request.id, ex);
+                complete(request.id, ResponseStatus.program_error);
             }
         });
+    }
+
+    // 仅在 workExecutor 中调用，与响应处理串行竞争同一条请求。
+    private static void complete(String id, ResponseStatus status) {
+        Request<?, ?> request = requestMap.remove(id);
+        if (request == null) {
+            return;
+        }
+        if (request.timeoutFuture != null) {
+            request.timeoutFuture.cancel(false);
+        }
+        notifyAndUnlock(request.vin, request.flag, request.version, request.callback, status);
+    }
+
+    private static <T, R> void notifyAndUnlock(String vin, int flag, ProtocolVersion version,
+                                              CommandCallback<T, R> callback, ResponseStatus status) {
+        try {
+            callback.callback(new Response<>(vin, flag, status, version, null));
+        } catch (Exception ex) {
+            logger.error("command callback failed", ex);
+        } finally {
+            releaseLock(vin, flag);
+        }
     }
 }
