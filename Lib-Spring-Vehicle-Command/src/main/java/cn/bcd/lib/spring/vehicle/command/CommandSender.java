@@ -114,6 +114,7 @@ public class CommandSender {
         } catch (Exception ex) {
             logger.error("error", ex);
             releaseLock(vin, flag);
+            return;
         }
         request.setFlag(flag);
         request.setVin(vin);
