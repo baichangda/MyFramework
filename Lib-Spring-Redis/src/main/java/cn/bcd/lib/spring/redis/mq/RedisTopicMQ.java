@@ -129,13 +129,13 @@ public class RedisTopicMQ<V> implements AutoCloseable{
         if (consumerAvailable) {
             synchronized (this) {
                 if (consumerAvailable) {
-                    this.redisMessageListenerContainer.removeMessageListener(this.messageListener);
+                    // Stop subscriptions before draining callbacks; retain listener mappings.
                     try {
                         redisMessageListenerContainer.destroy();
                     } catch (Exception ex) {
                         throw BaseException.get(ex);
                     }
-                    ExecutorUtil.shutdownThenAwait(true, subscriptionExecutor, taskExecutor);
+                    ExecutorUtil.shutdownThenAwait(false, subscriptionExecutor, taskExecutor);
                     consumerAvailable = false;
                 }
             }

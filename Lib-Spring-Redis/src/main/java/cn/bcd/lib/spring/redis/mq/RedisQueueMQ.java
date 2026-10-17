@@ -98,7 +98,8 @@ public class RedisQueueMQ<V> implements AutoCloseable {
             synchronized (this) {
                 if (consumerAvailable) {
                     this.stop = true;
-                    ExecutorUtil.shutdownThenAwait(true, consumeExecutor, workExecutor);
+                    // Let in-progress pops submit their messages before draining workers.
+                    ExecutorUtil.shutdownThenAwait(false, consumeExecutor, workExecutor);
                     consumerAvailable = false;
                 }
             }
