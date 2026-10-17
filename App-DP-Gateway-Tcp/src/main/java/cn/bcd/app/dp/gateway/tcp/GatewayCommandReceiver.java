@@ -60,7 +60,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
             });
         } catch (Exception ex) {
             cache.invalidate(request.id);
-            CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
+            CommandReceiver.response(request, ResponseStatus.program_error, null);
         }
     }
 

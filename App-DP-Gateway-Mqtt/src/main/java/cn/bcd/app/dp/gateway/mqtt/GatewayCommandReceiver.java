@@ -68,7 +68,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
             logger.error("GatewayCommandReceiver --> command request error", e);
             //删除redis中的数据
             redisTemplate.delete(redisKey);
-            CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
+            CommandReceiver.response(request, ResponseStatus.program_error, null);
         }
     }
 
