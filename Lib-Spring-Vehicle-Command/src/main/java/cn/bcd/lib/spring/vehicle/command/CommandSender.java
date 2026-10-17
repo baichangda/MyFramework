@@ -137,7 +137,7 @@ public class CommandSender {
     }
 
     // 仅在 workExecutor 中调用，与响应处理串行竞争同一条请求。
-    private static void complete(String id, ResponseStatus status) {
+    static void complete(String id, ResponseStatus status) {
         Request<?, ?> request = requestMap.remove(id);
         if (request == null) {
             return;

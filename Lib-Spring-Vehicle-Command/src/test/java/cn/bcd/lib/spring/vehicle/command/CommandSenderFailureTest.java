@@ -14,6 +14,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -136,6 +137,67 @@ class CommandSenderFailureTest {
             assertTrue(producer.errorNext(new IllegalStateException("late send failure")));
             awaitWork();
             assertCompleted(ResponseStatus.success);
+        } finally {
+            consumer.close();
+        }
+    }
+
+    @Test
+    void malformedResponseNotifiesErrorAndIgnoresLaterResults() throws Exception {
+        assertInvalidResponseCompletes("{".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void jsonNullResponseNotifiesError() throws Exception {
+        assertInvalidResponseCompletes("null".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void nullResponseValueNotifiesError() throws Exception {
+        assertInvalidResponseCompletes(null);
+    }
+
+    @Test
+    void throwingParseErrorCallbackStillUnlocks() throws Exception {
+        CommandSender.send(VIN, command(false), 30, response -> {
+            results.add(response.status);
+            throw new IllegalStateException("callback failed");
+        }, true);
+        awaitWork();
+        String id = producer.history().getFirst().key();
+        ScheduledFuture<?> timeout = pendingTimeout();
+        CommandResponseConsumer consumer = new CommandResponseConsumer(new CommandProp());
+        try {
+            consumer.onMessage(new ConsumerRecord<>("responses", 0, 0, id,
+                    "{".getBytes(StandardCharsets.UTF_8)), null);
+            awaitWork();
+            assertTrue(timeout.isCancelled());
+            assertCompleted(ResponseStatus.program_error);
+        } finally {
+            consumer.close();
+        }
+    }
+
+    private void assertInvalidResponseCompletes(byte[] invalid) throws Exception {
+        send(30);
+        awaitWork();
+        String id = producer.history().getFirst().key();
+        ScheduledFuture<?> timeout = pendingTimeout();
+        CommandResponseConsumer consumer = new CommandResponseConsumer(new CommandProp());
+        try {
+            consumer.onMessage(new ConsumerRecord<>("responses", 0, 0, id, invalid), null);
+            awaitWork();
+            assertTrue(timeout.isCancelled());
+            assertCompleted(ResponseStatus.program_error);
+
+            byte[] response = JsonUtil.toJsonAsBytes(new Response<>(VIN, FLAG, ResponseStatus.success,
+                    ProtocolVersion.v_2016, null));
+            consumer.onMessage(new ConsumerRecord<>("responses", 0, 1, id, response), null);
+            awaitWork();
+            assertCompleted(ResponseStatus.program_error);
+            assertTrue(producer.errorNext(new IllegalStateException("late send failure")));
+            awaitWork();
+            assertCompleted(ResponseStatus.program_error);
         } finally {
             consumer.close();
         }

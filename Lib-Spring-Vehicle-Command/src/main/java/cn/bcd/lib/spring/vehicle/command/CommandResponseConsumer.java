@@ -13,6 +13,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+
 @EnableConfigurationProperties(CommandProp.class)
 @ConditionalOnProperty("lib.spring.vehicle.command.senderGroupId")
 @Component
@@ -40,20 +42,31 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) {
         byte[] value = consumerRecord.value();
-        String str = new String(value);
+        String str = value == null ? null : new String(value, StandardCharsets.UTF_8);
         logger.info("receive command response:\n{}", str);
         String id = consumerRecord.key();
         CommandSender.workExecutor.execute(() -> {
-            Request<?, ?> request = CommandSender.requestMap.remove(id);
+            Request<?, ?> request = CommandSender.requestMap.get(id);
             if (request == null) {
                 logger.info("command response failed、request not found、id[{}]", id);
             } else {
+                Response response;
+                try {
+                    response = JsonUtil.MAPPER.readValue(value, Response.class);
+                    if (response == null) {
+                        throw new IllegalArgumentException("Command response must not be null");
+                    }
+                } catch (Exception ex) {
+                    logger.error("command response parse failed, id[{}]", id, ex);
+                    CommandSender.complete(id, ResponseStatus.program_error);
+                    return;
+                }
+                CommandSender.requestMap.remove(id);
                 try {
                     logger.info("command response succeed、id[{}]", id);
                     //取消超时任务
                     request.timeoutFuture.cancel(false);
                     //执行回调
-                    Response response = JsonUtil.MAPPER.readValue(value, Response.class);
                     response.setCommand(request.getCommand());
                     request.callback.callback(response);
                 } catch (Exception ex) {
