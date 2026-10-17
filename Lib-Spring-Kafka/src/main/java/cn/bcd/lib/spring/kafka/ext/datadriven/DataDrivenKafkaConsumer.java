@@ -47,6 +47,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
      */
     public KafkaConsumerGroup consumerGroup;
     private CompletableFuture<Void> startupResult;
+    private CompletableFuture<Void> closeResult;
 
 
     /**
@@ -312,20 +313,28 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     }
 
 
+    /**
+     * 所属工作或消费线程只发起关闭；其他线程始终等待同一次关闭完成，包括重复调用。
+     */
     @Override
     public void close() {
-        boolean async;
+        boolean async = isCurrentOwnedThread();
+        CompletableFuture<Void> result;
         synchronized (this) {
-            if (closed) {
-                return;
+            if (!closed) {
+                closed = true;
+                closeResult = CompletableFuture.runAsync(this::closeInternal,
+                        task -> new Thread(task, name + "-shutdown").start())
+                        .whenComplete((ignored, error) -> {
+                            if (error != null) {
+                                logger.error("kafka consumer close error", error);
+                            }
+                        });
             }
-            closed = true;
-            async = isCurrentOwnedThread();
+            result = closeResult;
         }
-        if (async) {
-            new Thread(this::closeInternal, name + "-shutdown").start();
-        } else {
-            closeInternal();
+        if (!async) {
+            result.join();
         }
     }
 
