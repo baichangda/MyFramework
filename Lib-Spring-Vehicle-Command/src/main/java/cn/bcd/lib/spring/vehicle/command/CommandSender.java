@@ -107,22 +107,14 @@ public class CommandSender {
             callback.callback(new Response<>(vin, flag, ResponseStatus.busy, version, null));
             return;
         }
-        Request<T, R> request = new Request<>();
-        request.setId(Request.toId(vin, flag));
+        Request<T, R> request;
         try {
-            request.setContent(command.toRequestBytes());
+            request = Request.create(vin, command, timeout, callback, waitVehicleResponse);
         } catch (Exception ex) {
             logger.error("error", ex);
             releaseLock(vin, flag);
             return;
         }
-        request.setFlag(flag);
-        request.setVin(vin);
-        request.setVersion(version);
-        request.setCommand(command);
-        request.setWaitVehicleResponse(waitVehicleResponse);
-        request.setTimeout(timeout);
-        request.setCallback(callback);
         request.setTimeoutFuture(
                 workExecutor.schedule(() -> {
                     Request<?, ?> remove = requestMap.remove(request.getId());
@@ -139,7 +131,7 @@ public class CommandSender {
         );
         workExecutor.execute(() -> {
             try {
-                ProducerRecord<String, byte[]> record = new ProducerRecord<>(commandProp.requestTopic, vin, JsonUtil.toJsonAsBytes(request));
+                ProducerRecord<String, byte[]> record = new ProducerRecord<>(commandProp.requestTopic, request.getId(), JsonUtil.toJsonAsBytes(request));
                 kafkaProducer.send(record);
                 requestMap.put(request.getId(), request);
             } catch (Exception ex) {

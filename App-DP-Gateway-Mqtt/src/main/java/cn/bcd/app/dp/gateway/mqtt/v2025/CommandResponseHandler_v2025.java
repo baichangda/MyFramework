@@ -19,8 +19,6 @@ public class CommandResponseHandler_v2025 implements DataHandler_v2025 {
 
     @Override
     public void handle(String vin, PacketFlag flag, byte[] data, Context_v2025 context) {
-        byte[] content = new byte[data.length - 25];
-        System.arraycopy(data, 24, content, 0, content.length);
-        gatewayCommandReceiver.onResponse(vin, flag.type, content);
+        gatewayCommandReceiver.onResponse(vin, flag.type, data);
     }
 }

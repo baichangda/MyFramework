@@ -64,16 +64,14 @@ public class GatewayCommandReceiver implements CommandReceiver {
         }
     }
 
-    public void onResponse(String vin, int flag, byte[] bytes) {
-        String id = Request.toId(vin, flag);
-        Request<?, ?> request = cache.getIfPresent(id);
+    public void onResponse(String vin, int flag, byte[] packetBytes) {
+        String id = Request.toIdFromPacket(vin, flag, packetBytes);
+        Request<?, ?> request = cache.asMap().remove(id);
         if (request == null) {
             return;
         }
-        //清除缓存
-        cache.invalidate(id);
         //响应
-        CommandReceiver.response(request, ResponseStatus.success, bytes);
+        CommandReceiver.response(request, ResponseStatus.success, packetBytes);
     }
 
 }

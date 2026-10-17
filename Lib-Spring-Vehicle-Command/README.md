@@ -25,4 +25,8 @@ lib:
 
 自定义命令继承 `Command<R>`，实现 `toRequestBytes()` 与 `toResponse(byte[])`，再通过 `CommandSender.send(...)` 提交并处理 `CommandCallback`。发送前可调用 `CommandSender.online(vin)`。
 
+请求 ID 和 Kafka 请求/响应 key 使用“报文秒级时间戳,VIN,flag”。时间取自指令数据单元前 6 字节；网关从响应报文中读取相同时间，匹配对应请求。调用方须保证同一秒内不重复发送相同 VIN、flag 的指令。Redis 指令锁仍仅按 VIN、flag 互斥。
+
+发送端与 TCP/MQTT 网关需同步更新，以使用相同的请求 ID 和缓存键格式。
+
 同一车辆并发指令涉及分布式锁和超时，调用方必须处理失败状态、重复响应及幂等性。

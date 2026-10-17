@@ -1,7 +1,6 @@
 package cn.bcd.app.dp.gateway.mqtt;
 
 import cn.bcd.lib.base.json.JsonUtil;
-import cn.bcd.lib.base.util.HexUtil;
 import cn.bcd.lib.spring.vehicle.command.CommandReceiver;
 import cn.bcd.lib.spring.vehicle.command.Request;
 import cn.bcd.lib.spring.vehicle.command.ResponseStatus;
@@ -33,14 +32,14 @@ public class GatewayCommandReceiver implements CommandReceiver {
     public static String redisKeyPre_commandRequest = "commandRequest:";
 
 
-    public static String getRedisKey(String vin, byte flag) {
-        return GatewayCommandReceiver.redisKeyPre_commandRequest + vin + "," + HexUtil.hexDump(flag);
+    public static String getRedisKey(String requestId) {
+        return redisKeyPre_commandRequest + requestId;
     }
 
     @Override
     public void onRequest(Request<?, ?> request) {
         String vin = request.getVin();
-        String redisKey = getRedisKey(vin, (byte) request.flag);
+        String redisKey = getRedisKey(request.id);
         try {
             //存储请求到redis中
             if (request.waitVehicleResponse) {
@@ -67,8 +66,8 @@ public class GatewayCommandReceiver implements CommandReceiver {
         }
     }
 
-    public void onResponse(String vin, int flag, byte[] bytes) {
-        String redisKey = getRedisKey(vin, (byte) flag);
+    public void onResponse(String vin, int flag, byte[] packetBytes) {
+        String redisKey = getRedisKey(Request.toIdFromPacket(vin, flag, packetBytes));
         String val = redisTemplate.opsForValue().get(redisKey);
         if (val == null) {
             return;
@@ -76,7 +75,7 @@ public class GatewayCommandReceiver implements CommandReceiver {
         try {
             Request<?, ?> request = JsonUtil.MAPPER.readValue(val, Request.class);
             //响应
-            CommandReceiver.response(request, ResponseStatus.success, bytes);
+            CommandReceiver.response(request, ResponseStatus.success, packetBytes);
         } catch (Exception ex) {
             logger.error("error", ex);
         } finally {
