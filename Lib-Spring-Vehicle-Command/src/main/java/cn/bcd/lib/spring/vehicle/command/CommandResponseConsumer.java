@@ -13,8 +13,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-
 @EnableConfigurationProperties(CommandProp.class)
 @ConditionalOnProperty("lib.spring.vehicle.command.senderGroupId")
 @Component
@@ -41,39 +39,31 @@ public class CommandResponseConsumer extends ThreadDrivenKafkaConsumer implement
 
     @Override
     public void onMessage(ConsumerRecord<String, byte[]> consumerRecord, SingleThreadEventExecutor executor) {
-        byte[] value = consumerRecord.value();
-        String str = value == null ? null : new String(value, StandardCharsets.UTF_8);
-        logger.info("receive command response:\n{}", str);
-        String id = consumerRecord.key();
         CommandSender.workExecutor.execute(() -> {
-            Request<?, ?> request = CommandSender.requestMap.get(id);
+            String id = consumerRecord.key();
+            Request<?, ?> request = CommandSender.requestMap.remove(id);
             if (request == null) {
-                logger.info("command response failed、request not found、id[{}]", id);
-            } else {
+                logger.debug("command response ignored, request not found, id[{}]", id);
+                return;
+            }
+            try {
+                request.timeoutFuture.cancel(false);
                 Response response;
                 try {
-                    response = JsonUtil.MAPPER.readValue(value, Response.class);
+                    response = JsonUtil.MAPPER.readValue(consumerRecord.value(), Response.class);
                     if (response == null) {
                         throw new IllegalArgumentException("Command response must not be null");
                     }
                 } catch (Exception ex) {
                     logger.error("command response parse failed, id[{}]", id, ex);
-                    CommandSender.complete(id, ResponseStatus.program_error);
-                    return;
+                    response = new Response<>(request.vin, request.flag, ResponseStatus.program_error, request.version, null);
                 }
-                CommandSender.requestMap.remove(id);
-                try {
-                    logger.info("command response succeed、id[{}]", id);
-                    //取消超时任务
-                    request.timeoutFuture.cancel(false);
-                    //执行回调
-                    response.setCommand(request.getCommand());
-                    request.callback.callback(response);
-                } catch (Exception ex) {
-                    logger.error("error", ex);
-                } finally {
-                    CommandSender.releaseLock(request.vin, request.flag);
-                }
+                response.setCommand(request.command);
+                request.callback.callback(response);
+            } catch (Exception ex) {
+                logger.error("command response callback failed, id[{}]", id, ex);
+            } finally {
+                CommandSender.releaseLock(request.vin, request.flag);
             }
         });
     }
