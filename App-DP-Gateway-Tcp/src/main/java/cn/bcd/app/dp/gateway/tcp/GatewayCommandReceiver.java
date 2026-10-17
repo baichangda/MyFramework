@@ -55,12 +55,12 @@ public class GatewayCommandReceiver implements CommandReceiver {
                     }
                 } else {
                     cache.invalidate(request.id);
-                    CommandReceiver.response(request, ResponseStatus.program_error, null);
+                    CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
                 }
             });
         } catch (Exception ex) {
             cache.invalidate(request.id);
-            CommandReceiver.response(request, ResponseStatus.program_error, null);
+            CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
         }
     }
 

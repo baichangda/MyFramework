@@ -6,7 +6,7 @@ import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
 import cn.bcd.lib.spring.kafka.ext.threaddriven.ThreadDrivenKafkaConsumer;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,7 +26,7 @@ public class CommandRequestConsumer extends ThreadDrivenKafkaConsumer implements
     @Autowired
     CommandReceiver commandReceiver;
 
-    static KafkaProducer<String, byte[]> kafkaProducer;
+    static Producer<String, byte[]> kafkaProducer;
     static CommandProp commandProp;
 
     public CommandRequestConsumer(CommandProp commandProp,

@@ -28,7 +28,10 @@ public enum ResponseStatus {
     /**
      * 程序出错
      */
-    program_error(4, "程序出错");
+    program_error(4, "程序出错"),
+
+    /** 网关向车端发送指令失败。 */
+    send_vehicle_error(5, "发送到车端失败");
 
     public final int code;
 

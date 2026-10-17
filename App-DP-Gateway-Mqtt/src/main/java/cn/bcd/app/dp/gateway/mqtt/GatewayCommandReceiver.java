@@ -51,7 +51,13 @@ public class GatewayCommandReceiver implements CommandReceiver {
                             .topic(gatewayProp.getMqttProduceTopicPrefix() + vin)
                             .payload(packetBytes)
                             .build())
-                    .whenComplete((e1, e2) -> {
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            logger.error("command send to MQTT failed, id[{}]", request.id, error);
+                            redisTemplate.delete(redisKey);
+                            CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
+                            return;
+                        }
                         logger.info("GatewayCommandReceiver --> command request send to MQTT, Request flag：{}, message：{}", request.flag, ByteBufUtil.hexDump(packetBytes));
                         //判断直接响应
                         if (!request.waitVehicleResponse) {
@@ -60,9 +66,9 @@ public class GatewayCommandReceiver implements CommandReceiver {
                     });
         } catch (Exception e) {
             logger.error("GatewayCommandReceiver --> command request error", e);
-            CommandReceiver.response(request, ResponseStatus.program_error, null);
             //删除redis中的数据
             redisTemplate.delete(redisKey);
+            CommandReceiver.response(request, ResponseStatus.send_vehicle_error, null);
         }
     }
 
