@@ -22,7 +22,6 @@ public class ParamDataProcessor implements Processor<ParamData> {
         ParamData paramData = new ParamData();
         for (int i = 0; i < num; i++) {
             byte paramId = data.readByte();
-            DefaultNumValGetter.instance.getType16(data.readUnsignedByte());
             switch (paramId) {
                 case 0x01 -> {
                     int v = data.readUnsignedShort();
