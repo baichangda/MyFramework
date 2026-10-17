@@ -22,7 +22,7 @@ public @interface F_cache {
     int index() default -1;
 
     /**
-     * {@link cn.bcd.lib.parser.base.processor.ProcessContext} 中的缓存键。
+     * {@link cn.bcd.lib.parser.base.processor.ProcessContext} 中的缓存键，仅允许英文字母、数字和下划线。
      */
     String key() default "";
 }

@@ -132,6 +132,11 @@ public class Parser {
                                 "F_cache must specify exactly one of index or key on class[{}] field[{}]",
                                 field.getDeclaringClass().getName(), field.getName());
                     }
+                    if (hasKey && !cache.key().matches("[A-Za-z0-9_]+")) {
+                        throw BaseException.get(
+                                "F_cache key must contain only ASCII letters, digits or underscores on class[{}] field[{}]",
+                                field.getDeclaringClass().getName(), field.getName());
+                    }
                 }
                 Annotation annotation = ModelFieldValidator.validate(field, anno_fieldBuilder);
                 if (cache != null && annotation == null) {
