@@ -35,6 +35,7 @@ public class Response<T, R> {
         this.vin = vin;
         this.flag = flag;
         this.status = status;
+        this.version = version;
         if (packetBytes != null) {
             if (version == ProtocolVersion.v_2016) {
                 this.replyFlag = cn.bcd.lib.parser.protocol.gb32960.v2016.util.PacketUtil.getReplyFlag(packetBytes);

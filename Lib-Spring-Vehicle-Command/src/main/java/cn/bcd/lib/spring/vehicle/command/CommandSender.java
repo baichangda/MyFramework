@@ -109,8 +109,13 @@ public class CommandSender {
         }
         Request<T, R> request = new Request<>();
         request.setId(Request.toId(vin, flag));
+        try {
+            request.setContent(command.toRequestBytes());
+        } catch (Exception ex) {
+            logger.error("error", ex);
+            releaseLock(vin, flag);
+        }
         request.setFlag(flag);
-        request.setContent(command.toRequestBytes());
         request.setVin(vin);
         request.setVersion(version);
         request.setCommand(command);
