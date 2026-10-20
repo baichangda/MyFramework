@@ -187,6 +187,8 @@ public class AwsS3Util {
      * appendOuterDirToPath 为 false 的 key 为 {@code backup/sub/a.txt}，为 true 时为
      * {@code backup/data/sub/a.txt}。多个根目录映射到相同 key 时可能覆盖对象。
      *
+     * 文件系统根目录的目录名视为空，不追加外层目录名前缀。
+     *
      * @param pathPrefix           对象 key 前缀，不应以 / 开头或结尾，可以为 null 或空字符串
      * @param appendOuterDirToPath 是否在前缀后追加每个根目录的名称
      * @param dirPaths             待上传的本地目录，数组和目录元素不能为 null
@@ -196,11 +198,12 @@ public class AwsS3Util {
         try {
             for (Path dirPath : dirPaths) {
                 Path root = dirPath.toAbsolutePath().normalize();
+                Path rootName = root.getFileName();
                 if (!Files.isDirectory(root)) {
                     throw new IOException("Not a directory: " + root);
                 }
-                String prefix = appendOuterDirToPath
-                        ? joinKey(pathPrefix, root.getFileName().toString()) : pathPrefix;
+                String prefix = appendOuterDirToPath && rootName != null
+                        ? joinKey(pathPrefix, rootName.toString()) : pathPrefix;
                 Files.walkFileTree(root, new SimpleFileVisitor<>() {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {

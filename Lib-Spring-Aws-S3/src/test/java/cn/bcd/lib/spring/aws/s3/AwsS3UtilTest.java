@@ -12,11 +12,13 @@ import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Proxy;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,6 +96,33 @@ class AwsS3UtilTest {
         AwsS3Util.putDir("prefix", true, tempDir);
         String prefix = "prefix/" + tempDir.getFileName() + "/";
         assertEquals(List.of(prefix + "root.txt", prefix + "sub/deep/file.txt"), keys.stream().sorted().toList());
+    }
+
+    @Test
+    void filesystemRootHasNoOuterDirectoryPrefix() throws Exception {
+        try (var fileSystem = FileSystems.newFileSystem(tempDir.resolve("root.zip"), Map.of("create", "true"))) {
+            Path root = fileSystem.getPath("/");
+            Files.writeString(root.resolve("root.txt"), "root");
+            Files.createDirectory(root.resolve("sub"));
+            Files.writeString(root.resolve("sub/file.txt"), "nested");
+            List<String> keys = new ArrayList<>();
+            client((method, args) -> {
+                assertEquals("putObject", method);
+                keys.add(((PutObjectRequest) args[0]).key());
+                return PutObjectResponse.builder().build();
+            });
+            for (Path path : List.of(root, root.resolve("."))) {
+                for (boolean append : new boolean[]{false, true}) {
+                    for (String prefix : new String[]{null, "", "backup"}) {
+                        keys.clear();
+                        AwsS3Util.putDir(prefix, append, path);
+                        String expectedPrefix = prefix == null || prefix.isEmpty() ? "" : prefix + "/";
+                        assertEquals(List.of(expectedPrefix + "root.txt", expectedPrefix + "sub/file.txt"),
+                                keys.stream().sorted().toList());
+                    }
+                }
+            }
+        }
     }
 
     @Test
