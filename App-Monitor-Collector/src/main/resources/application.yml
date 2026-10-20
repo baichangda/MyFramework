@@ -7,6 +7,7 @@ spring:
   # 允许循环依赖
   main:
     allow-circular-references: true
+    keep-alive: true
   profiles:
     active: dev
   freemarker:
@@ -75,6 +76,6 @@ lib:
   spring:
     monitor:
       client:
-        requestTopic: monitorRequest
-        responseList: monitorResponse
-        collectCron: 0/15 * * * * *
+        request-topic: monitorRequest
+        response-list: monitorResponse
+        collect-cron: "0/15 * * * * *"

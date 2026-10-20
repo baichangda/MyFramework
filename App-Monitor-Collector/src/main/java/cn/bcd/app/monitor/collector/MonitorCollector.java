@@ -1,11 +1,10 @@
 package cn.bcd.app.monitor.collector;
 
-import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.redis.RedisUtil;
 import cn.bcd.lib.base.util.DateUtil;
 import cn.bcd.lib.spring.monitor.client.MonitorData;
 import cn.bcd.lib.spring.monitor.client.MonitorProp;
 import cn.bcd.lib.spring.monitor.client.MonitorRedisTopicMQ;
+import cn.bcd.lib.spring.redis.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,72 +18,87 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @EnableConfigurationProperties(MonitorProp.class)
 @Component
 public class MonitorCollector {
+    static Logger logger = LoggerFactory.getLogger(MonitorCollector.class);
 
     @Autowired
     MonitorProp monitorProp;
-
     @Autowired
     MonitorRedisTopicMQ monitorRedisTopicMQ;
-
-    RedisTemplate<String, MonitorData> redisTemplate;
-
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    RedisTemplate<String, MonitorData> redisTemplate;
 
-    static Logger logger = LoggerFactory.getLogger(MonitorCollector.class);
-
-    public MonitorCollector(RedisConnectionFactory redisConnectionFactory) {
-        redisTemplate = RedisUtil.newRedisTemplate_string_jackson(redisConnectionFactory, MonitorData.class);
+    public MonitorCollector(RedisConnectionFactory connectionFactory) {
+        redisTemplate = RedisUtil.newRedisTemplate_string_jackson(connectionFactory, MonitorData.class);
     }
 
-    @Scheduled(cron = "${monitor.collectCron}")
-    public void collect() {
-        String dateStr = DateUtil.dateToStr_yyyyMMddHHmmss(new Date());
-        long batch = Long.parseLong(dateStr);
+    // 同一个监控域只运行一个 Collector；不同域应使用不同的 topic 和 responseList。
+    @Scheduled(cron = "${lib.spring.monitor.client.collect-cron:${lib.spring.monitor.client.collectCron:0/15 * * * * *}}")
+    public synchronized void collect() {
+        // 先读取监控名单，再广播采集请求。
+        List<ServerData> servers = jdbcTemplate.query("select * from t_server_data",
+                new BeanPropertyRowMapper<>(ServerData.class));
+        String request = DateUtil.dateToStr_yyyyMMddHHmmss(new Date());
+        long batch = Long.parseLong(request);
         logger.info("start batch[{}]", batch);
-        monitorRedisTopicMQ.send(dateStr);
+        monitorRedisTopicMQ.send(request);
         try {
-            TimeUnit.SECONDS.sleep(10);
+            awaitResponses();
         } catch (InterruptedException e) {
-            throw BaseException.get(e);
+            Thread.currentThread().interrupt();
+            return;
         }
-        //等待10s
-        List<MonitorData> list = redisTemplate.opsForList().range(monitorProp.getResponseList(), 0, -1);
-        if (list == null) {
-            list = new ArrayList<>();
-        }else{
-            redisTemplate.delete(monitorProp.getResponseList());
-        }
-        logger.info("receive batch[{}] serverIds[{}]", batch, list.stream().map(e -> e.serverId).collect(Collectors.joining(",")));
-        List<SaveData> saveDataList = new ArrayList<>();
-        List<ServerData> serverDataList = getAllServerData();
-        Map<String, MonitorData> serverId_monitorData = list.stream().collect(Collectors.toMap(e -> e.serverId, e -> e));
-        for (ServerData serverData : serverDataList) {
-            SaveData saveData = new SaveData(serverData, batch, serverId_monitorData.get(serverData.serverId));
-            logger.info("batch[{}] serverId[{}] status[{}]", saveData.batch, saveData.serverId, saveData.status);
-            saveDataList.add(saveData);
-        }
-        insert(saveDataList);
+        List<MonitorData> responses = redisTemplate.opsForList().range(monitorProp.responseKey(batch), 0, -1);
+        List<SaveData> rows = buildSaveData(servers, batch, responses);
+        // 每批只处理一次；迟到响应仅进入原批次队列，遗留队列由 TTL 清理。
+        redisTemplate.delete(monitorProp.responseKey(batch));
+        insert(rows);
+        logger.info("saved batch[{}] servers[{}]", batch, rows.size());
     }
 
-    private void insert(List<SaveData> list) {
-        List<Object[]> args = list.stream().map(e -> new Object[]{e.serverId, e.serverType, e.batch, e.status, e.systemData, e.extData}).toList();
+    protected void awaitResponses() throws InterruptedException {
+        TimeUnit.SECONDS.sleep(10);
+    }
+
+    static List<SaveData> buildSaveData(List<ServerData> servers, long batch, List<MonitorData> responses) {
+        Map<String, MonitorData> byServer = new HashMap<>();
+        if (responses != null) {
+            // LPUSH + LRANGE 返回新响应在前，重复 ID 只保留最新有效响应。
+            for (MonitorData response : responses) {
+                if (response == null || response.batch != batch || response.serverId == null
+                        || response.serverId.isBlank() || response.systemData == null) {
+                    logger.warn("ignore invalid or mismatched response for batch[{}]", batch);
+                    continue;
+                }
+                byServer.putIfAbsent(response.serverId, response);
+            }
+        }
+        List<SaveData> result = new ArrayList<>();
+        for (ServerData server : servers) {
+            result.add(new SaveData(server, batch, byServer.get(server.serverId)));
+        }
+        return result;
+    }
+
+    private void insert(List<SaveData> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        List<Object[]> args = rows.stream()
+                .map(e -> new Object[]{e.serverId, e.serverType, e.batch, e.status, e.systemData, e.extData})
+                .toList();
         jdbcTemplate.batchUpdate("""
                 insert into t_monitor_data(server_id,server_type,batch,status,system_data,ext_data)
                 values(?,?,?,?,?,?)
                 """, args);
-    }
-
-    private List<ServerData> getAllServerData() {
-        return jdbcTemplate.query("select * from t_server_data", new BeanPropertyRowMapper<>(ServerData.class));
     }
 }

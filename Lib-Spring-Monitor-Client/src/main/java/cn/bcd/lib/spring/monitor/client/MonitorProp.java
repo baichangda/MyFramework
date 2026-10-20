@@ -8,8 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "lib.spring.monitor.client")
 public class MonitorProp {
-    public String requestTopic;
-    public String responseList;
+    public String requestTopic = "monitorRequest";
+    public String responseList = "monitorResponse";
 
     //客户端属性
     public String serverId;
@@ -17,4 +17,8 @@ public class MonitorProp {
 
     //服务端属性
     public String collectCron;
+
+    public String responseKey(long batch) {
+        return responseList + ":" + batch;
+    }
 }
