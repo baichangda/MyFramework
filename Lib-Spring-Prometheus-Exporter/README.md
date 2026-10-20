@@ -2,7 +2,7 @@
 
 ## 功能
 
-启动 Prometheus HTTP 指标服务并注册 JVM 指标。一个 `MetricCollector` 可以在一次采集中暴露多个相互独立、没有标签的 Gauge 指标。
+启动 Prometheus HTTP 指标服务，仅导出业务 Collector 提供的指标，不内置 JVM 指标采集。一个 `MetricCollector` 可以在一次采集中暴露多个相互独立、没有标签的 Gauge 指标。
 
 ## 引入与配置
 
@@ -48,4 +48,8 @@ ready_queue_depth 12.0
 retry_queue_depth 3.0
 ```
 
-一次 Prometheus 抓取只会调用一次 `collectValues()`。返回值数量必须与声明的 `Metric` 数量一致，否则本次抓取会失败并报告明确错误。指标名称必须唯一、稳定并符合 Prometheus 命名规范。
+一次 Prometheus 抓取只会调用一次 `collectValues()`。返回值数量必须与声明的 `Metric` 数量一致。采集抛出异常、返回 null 或数量不匹配时，会记录包含 Collector 和指标名称的警告日志，并仅跳过该 Collector 的全部指标；其他业务指标仍正常返回。下次抓取会重新尝试，不使用旧值或零值代替失败结果。指标名称必须唯一、稳定并符合 Prometheus 命名规范。
+
+## 生命周期
+
+业务 Collector 只注册到各 Exporter 独立的 registry，不注册内置 JVM 指标或 GC 监听器。关闭时清理实例 registry；启动失败时也清理已注册指标，支持同一实例关闭后重新启动或失败后重试。

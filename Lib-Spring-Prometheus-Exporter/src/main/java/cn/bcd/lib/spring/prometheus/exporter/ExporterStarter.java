@@ -1,7 +1,6 @@
 package cn.bcd.lib.spring.prometheus.exporter;
 
 import io.prometheus.metrics.exporter.httpserver.HTTPServer;
-import io.prometheus.metrics.instrumentation.jvm.JvmMetrics;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,18 +27,25 @@ class ExporterStarter implements CommandLineRunner, AutoCloseable {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public synchronized void run(String... args) throws Exception {
         exporterProp.validate();
         if (server != null) {
             throw new IllegalStateException("prometheus exporter is already running");
         }
-        JvmMetrics.builder().register(registry);
-        collectors.forEach(e -> e.register(registry));
-        server = HTTPServer.builder()
-                .hostname(exporterProp.getHost())
-                .port(exporterProp.getPort())
-                .registry(registry)
-                .buildAndStart();
+        boolean started = false;
+        try {
+            collectors.forEach(e -> e.register(registry));
+            server = HTTPServer.builder()
+                    .hostname(exporterProp.getHost())
+                    .port(exporterProp.getPort())
+                    .registry(registry)
+                    .buildAndStart();
+            started = true;
+        } finally {
+            if (!started) {
+                registry.clear();
+            }
+        }
         logger.info("prometheus exporter started, listening on http://{}:{}/metrics, found {} collectors: {}",
                 exporterProp.getHost(),
                 server.getPort(),
@@ -47,7 +53,7 @@ class ExporterStarter implements CommandLineRunner, AutoCloseable {
                 collectors.stream().map(e -> e.getClass().getName()).toList());
     }
 
-    int getPort() {
+    synchronized int getPort() {
         if (server == null) {
             throw new IllegalStateException("prometheus exporter is not running");
         }
@@ -55,11 +61,15 @@ class ExporterStarter implements CommandLineRunner, AutoCloseable {
     }
 
     @Override
-    public void close() {
-        if (server != null) {
-            server.close();
+    public synchronized void close() {
+        try {
+            if (server != null) {
+                server.close();
+                logger.info("prometheus exporter stopped");
+            }
+        } finally {
             server = null;
-            logger.info("prometheus exporter stopped");
+            registry.clear();
         }
     }
 }

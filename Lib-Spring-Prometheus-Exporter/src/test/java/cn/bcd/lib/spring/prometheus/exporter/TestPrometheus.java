@@ -40,7 +40,6 @@ class TestPrometheus {
             assertEquals(200, response.statusCode());
             assertTrue(response.body().contains("ready_queue_depth 12.0"));
             assertTrue(response.body().contains("retry_queue_depth 3.0"));
-            assertTrue(response.body().contains("jvm_threads_current"));
             assertEquals(1, collectionCount.get());
         } finally {
             starter.close();

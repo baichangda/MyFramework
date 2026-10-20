@@ -2,7 +2,6 @@ dependencies {
     implementation platform(libs.spring.boot.dependencies)
     api platform(libs.prometheus.bom)
     api libs.prometheus.metrics.model
-    implementation libs.prometheus.metrics.instrumentation.jvm
     implementation libs.prometheus.metrics.exporter.httpserver
     implementation libs.spring.boot.starter
     implementation libs.slf4j.api

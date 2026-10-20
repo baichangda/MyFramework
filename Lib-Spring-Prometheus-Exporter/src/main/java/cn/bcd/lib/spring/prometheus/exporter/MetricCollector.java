@@ -6,6 +6,8 @@ import io.prometheus.metrics.model.snapshots.GaugeSnapshot;
 import io.prometheus.metrics.model.snapshots.Labels;
 import io.prometheus.metrics.model.snapshots.MetricFamilyDescriptor;
 import io.prometheus.metrics.model.snapshots.MetricSnapshots;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,6 +43,7 @@ import java.util.Objects;
  * {@code collectValues()} 返回值数量必须与声明的指标数量相同。</p>
  */
 public abstract class MetricCollector implements MultiCollector {
+    private static final Logger logger = LoggerFactory.getLogger(MetricCollector.class);
     private final List<Metric> metrics;
     private final List<MetricFamilyDescriptor> descriptors;
 
@@ -68,6 +71,16 @@ public abstract class MetricCollector implements MultiCollector {
 
     @Override
     public final MetricSnapshots collect() {
+        try {
+            return collectSnapshots();
+        } catch (Exception e) {
+            logger.warn("skip failed metric collector[{}], metrics[{}]",
+                    getClass().getName(), metrics.stream().map(Metric::name).toList(), e);
+            return MetricSnapshots.builder().build();
+        }
+    }
+
+    private MetricSnapshots collectSnapshots() {
         double[] values = collectValues();
         if (values == null || values.length != metrics.size()) {
             throw new IllegalStateException("collector returned "
@@ -93,6 +106,7 @@ public abstract class MetricCollector implements MultiCollector {
 
     /**
      * 按构造参数中 Metric 的声明顺序返回每个独立指标的当前值。
+     * 采集异常或返回值不合法时，记录日志并跳过本 Collector 的所有指标，下次抓取仍会重试。
      */
     protected abstract double[] collectValues();
 
