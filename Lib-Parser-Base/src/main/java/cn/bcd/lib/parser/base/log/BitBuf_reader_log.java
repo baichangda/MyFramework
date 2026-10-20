@@ -45,88 +45,41 @@ public final class BitBuf_reader_log extends BitBuf_reader {
 
     }
 
+    @Override
     public long read(int bit, boolean unsigned) {
-        final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
-        byte b;
-        if (bitOffset == 0) {
-            b = byteBuf.readByte();
-        } else {
-            b = this.b;
-        }
-
-        final int temp = bit + bitOffset;
-        final int finalBitOffset = temp & 7;
-        final int byteLen;
-        long l;
-        if (finalBitOffset == 0) {
-            byteLen = temp >> 3;
-            l = (b & 0xFFL) << (temp - 8);
-        } else {
-            byteLen = (temp >> 3) + 1;
-            l = (b & 0xFFL) << (temp - finalBitOffset);
-        }
-
-        final ReadLog log = new ReadLog(byteLen, bitOffset, bit, unsigned);
-        log.bytes[0] = b;
-
-        for (int i = 1; i < byteLen; i++) {
-            b = byteBuf.readByte();
-            log.bytes[i] = b;
-            l |= (b & 0xFFL) << ((byteLen - 1 - i) << 3);
-        }
-
-        this.bitOffset = finalBitOffset;
-        this.b = b;
-
-
-        final long cRight = l >>> ((byteLen << 3) - bitOffset - bit);
-
-        log.val1 = cRight & BitBuf_reader.mask(bit);
-        log.val2 = BitBuf_reader.valueOf(cRight, bit, unsigned);
+        final int readerIndex = byteBuf.readerIndex();
+        final byte cached = b;
+        final long value = super.read(bit, unsigned);
+        final ReadLog log = new ReadLog((bitOffset + bit + 7) >>> 3, bitOffset, bit, unsigned);
+        copyReadBytes(log.bytes, readerIndex, bitOffset, cached);
+        log.val1 = value & BitBuf_reader.mask(bit);
+        log.val2 = value;
         logs.add(log);
-        return log.val2;
+        return value;
     }
 
+    @Override
     public void skip(int bit) {
-        final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
-        byte b = this.b;
-
-        final int temp = bit + bitOffset;
-        final boolean newBitOffsetZero = (temp & 7) == 0;
-        final int byteLen = (temp >> 3) + (newBitOffsetZero ? 0 : 1);
-
-        final SkipLog log = new SkipLog(byteLen, bitOffset, bit);
-
-        if (byteLen == 1) {
-            if (bitOffset == 0) {
-                b = byteBuf.readByte();
-            }
-            log.bytes[0] = b;
-        } else {
-            if (bitOffset == 0) {
-                byteBuf.getBytes(byteBuf.readerIndex(), log.bytes);
-                if (newBitOffsetZero) {
-                    byteBuf.skipBytes(byteLen);
-                } else {
-                    byteBuf.skipBytes(byteLen - 1);
-                    b = byteBuf.readByte();
-                }
-            } else {
-                log.bytes[0] = b;
-                byteBuf.getBytes(byteBuf.readerIndex(), log.bytes, 1, byteLen - 1);
-                if (newBitOffsetZero) {
-                    byteBuf.skipBytes(byteLen - 1);
-                } else {
-                    byteBuf.skipBytes(byteLen - 2);
-                    b = byteBuf.readByte();
-                }
-            }
+        final int readerIndex = byteBuf.readerIndex();
+        final byte cached = b;
+        super.skip(bit);
+        if (bit == 0) {
+            return;
         }
-        this.bitOffset = temp & 7;
-        this.b = b;
+        final int byteLen = (int) (((long) bitOffset + bit + 7) >>> 3);
+        final SkipLog log = new SkipLog(byteLen, bitOffset, bit);
+        copyReadBytes(log.bytes, readerIndex, bitOffset, cached);
         logs.add(log);
+    }
+
+    private void copyReadBytes(byte[] bytes, int readerIndex, int bitOffset, byte cached) {
+        final int start = bitOffset == 0 ? 0 : 1;
+        if (start != 0) {
+            bytes[0] = cached;
+        }
+        byteBuf.getBytes(readerIndex, bytes, start, bytes.length - start);
     }
 
     public void finish() {

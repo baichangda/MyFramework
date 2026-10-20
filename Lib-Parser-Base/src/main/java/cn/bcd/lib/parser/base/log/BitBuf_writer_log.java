@@ -35,85 +35,37 @@ public final class BitBuf_writer_log extends BitBuf_writer {
         System.out.println(System.currentTimeMillis() - t1);
     }
 
+    @Override
     public void write(long l, int bit) {
-        l = l & BitBuf_writer.mask(bit);
-        final ByteBuf byteBuf = this.byteBuf;
-        int bitOffset = this.bitOffset;
-        byte b = this.b;
-
-        final int temp = bit + bitOffset;
-        final int finalBitOffset = temp & 7;
-        final int byteLen;
-        if (finalBitOffset == 0) {
-            byteLen = temp >> 3;
-        } else {
-            byteLen = (temp >> 3) + 1;
-        }
-
-        final WriteLog log = new WriteLog(byteLen, bitOffset, bit);
-
-        log.val1 = l;
-
-        final long newL;
-        if (finalBitOffset == 0) {
-            newL = l;
-        } else {
-            newL = l << (8 - finalBitOffset);
-        }
-        b |= (byte) (newL >> ((byteLen - 1) << 3));
-        log.bytes[0] = b;
-        for (int i = 1; i < byteLen; i++) {
-            byteBuf.writeByte(b);
-            b = (byte) (newL >> ((byteLen - i - 1) << 3));
-            log.bytes[i] = b;
-        }
-        if (finalBitOffset == 0) {
-            byteBuf.writeByte(b);
-            this.bitOffset = 0;
-            this.b = 0;
-        } else {
-            this.bitOffset = finalBitOffset;
-            this.b = b;
-        }
+        final int bitOffset = this.bitOffset;
+        final int writerIndex = byteBuf.writerIndex();
+        super.write(l, bit);
+        final WriteLog log = new WriteLog((bitOffset + bit + 7) >>> 3, bitOffset, bit);
+        log.val1 = l & BitBuf_writer.mask(bit);
+        copyWrittenBytes(log.bytes, writerIndex);
         logs.add(log);
     }
 
+    @Override
     public void skip(int bit) {
-        final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
-        byte b = this.b;
-        final int temp = bit + bitOffset;
-        final boolean newBitOffsetZero = (temp & 7) == 0;
-        final int byteLen = (temp >> 3) + (newBitOffsetZero ? 0 : 1);
-        final SkipLog log = new SkipLog(byteLen, bitOffset, bit);
-
-        log.bytes[0] = b;
-        if (byteLen == 1) {
-            if (newBitOffsetZero) {
-                byteBuf.writeByte(b);
-                b = 0;
-            }
-        } else {
-            if (bitOffset == 0) {
-                if (newBitOffsetZero) {
-                    byteBuf.writeZero(byteLen);
-                } else {
-                    byteBuf.writeZero(byteLen - 1);
-                }
-            } else {
-                byteBuf.writeByte(b);
-                if (newBitOffsetZero) {
-                    byteBuf.writeZero(byteLen - 1);
-                } else {
-                    byteBuf.writeZero(byteLen - 2);
-                }
-            }
-            b = 0;
+        final int writerIndex = byteBuf.writerIndex();
+        super.skip(bit);
+        if (bit == 0) {
+            return;
         }
-
-        this.bitOffset = temp & 7;
-        this.b = b;
+        final int byteLen = (int) (((long) bitOffset + bit + 7) >>> 3);
+        final SkipLog log = new SkipLog(byteLen, bitOffset, bit);
+        copyWrittenBytes(log.bytes, writerIndex);
         logs.add(log);
+    }
+
+    private void copyWrittenBytes(byte[] bytes, int writerIndex) {
+        final int written = byteBuf.writerIndex() - writerIndex;
+        byteBuf.getBytes(writerIndex, bytes, 0, written);
+        if (bitOffset != 0) {
+            bytes[written] = b;
+        }
     }
 
     public void finish() {

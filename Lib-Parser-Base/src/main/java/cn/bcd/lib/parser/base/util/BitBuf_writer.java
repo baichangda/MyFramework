@@ -70,6 +70,9 @@ public class BitBuf_writer {
 
     @SuppressWarnings("deprecation")
     public void write(long l, int bit) {
+        if (bit < 1 || bit > 64) {
+            throw new IllegalArgumentException("bit must be between 1 and 64: " + bit);
+        }
         l = l & mask(bit);
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
@@ -124,6 +127,12 @@ public class BitBuf_writer {
     }
 
     public void skip(int bit) {
+        if (bit < 0) {
+            throw new IllegalArgumentException("bit must be non-negative: " + bit);
+        }
+        if (bit == 0) {
+            return;
+        }
         final ByteBuf byteBuf = this.byteBuf;
         final int bitOffset = this.bitOffset;
         byte b = this.b;
