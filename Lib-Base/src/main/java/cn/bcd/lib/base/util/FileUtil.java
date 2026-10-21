@@ -7,9 +7,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.FileVisitResult;
+import java.nio.file.LinkOption;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -21,10 +24,28 @@ public class FileUtil {
      * @param dirs
      */
     public static void deleteDirRecursion(String... dirs) {
-        List<Path> fileList = listDir(true, dirs);
         try {
-            for (Path path : fileList) {
-                Files.deleteIfExists(path);
+            for (String dir : dirs) {
+                Path root = Paths.get(dir);
+                if (Files.notExists(root, LinkOption.NOFOLLOW_LINKS)) {
+                    continue;
+                }
+                Files.walkFileTree(root, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        Files.deleteIfExists(file);
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path directory, IOException error) throws IOException {
+                        if (error != null) {
+                            throw error;
+                        }
+                        Files.deleteIfExists(directory);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -33,7 +54,7 @@ public class FileUtil {
 
     public static List<Path> listDir(boolean recursion, String... dirs) {
         List<Path> fileList = new ArrayList<>();
-        List<Path> dirList = Arrays.stream(dirs).map(Paths::get).toList();
+        List<Path> dirList = new ArrayList<>(Arrays.stream(dirs).map(Paths::get).toList());
         try {
             for (int i = 0; i < dirList.size(); i++) {
                 Path dir = dirList.get(i);

@@ -308,8 +308,8 @@ public final class GeoUtil {
     public static double[] decodeGeoHashCenter(String geohash) {
         double[] box = decodeGeoHashBox(geohash);
 
-        double centerLon = (box[0] + box[1]) / 2.0;
-        double centerLat = (box[2] + box[3]) / 2.0;
+        double centerLon = (box[0] + box[2]) / 2.0;
+        double centerLat = (box[1] + box[3]) / 2.0;
 
         return new double[]{centerLon, centerLat};
     }
@@ -368,8 +368,8 @@ public final class GeoUtil {
         double[] box = decodeGeoHashBox(geohash);
 
         double minLon = box[0];
-        double maxLon = box[1];
-        double minLat = box[2];
+        double maxLon = box[2];
+        double minLat = box[1];
         double maxLat = box[3];
 
         return lon >= minLon

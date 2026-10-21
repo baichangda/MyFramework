@@ -4,6 +4,7 @@ package cn.bcd.lib.base.util;
 import cn.bcd.lib.base.exception.BaseException;
 
 import java.util.ArrayList;
+import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -123,9 +124,9 @@ public class ExecutorUtil {
                     }
                 } else if (arg instanceof CountDownLatch countDownLatch) {
                     await(countDownLatch);
-                } else if (arg instanceof BlockingQueue<?> queue) {
+                } else if (arg instanceof Queue<?> queue) {
                     await(queue);
-                } else if (arg instanceof BlockingQueue<?>[] queues) {
+                } else if (arg instanceof Queue<?>[] queues) {
                     await((Object) queues);
                 } else {
                     throw BaseException.get("arg type[{}] not support", arg.getClass().getName());
@@ -192,6 +193,8 @@ public class ExecutorUtil {
                             thread.interrupt();
                         }
                     }
+                } else if (arg instanceof CountDownLatch || arg instanceof Queue<?> || arg instanceof Queue<?>[]) {
+                    // These resources only need to be awaited in the second phase.
                 } else {
                     throw BaseException.get("arg type[{}] not support", arg.getClass().getName());
                 }
@@ -240,10 +243,10 @@ public class ExecutorUtil {
                             }
                         }
                     } else if (arg instanceof Future future) {
-                        future.get();
+                        awaitFuture(future);
                     } else if (arg instanceof Future[] futures) {
                         for (Future future : futures) {
-                            future.get();
+                            awaitFuture(future);
                         }
                     } else if (arg instanceof Thread thread) {
                         thread.join();
@@ -253,12 +256,12 @@ public class ExecutorUtil {
                         }
                     } else if (arg instanceof CountDownLatch countDownLatch) {
                         countDownLatch.await();
-                    } else if (arg instanceof BlockingQueue<?> queue) {
+                    } else if (arg instanceof Queue<?> queue) {
                         while (!queue.isEmpty()) {
                             TimeUnit.MILLISECONDS.sleep(100L);
                         }
-                    } else if (arg instanceof BlockingQueue<?>[] queues) {
-                        for (BlockingQueue<?> queue : queues) {
+                    } else if (arg instanceof Queue<?>[] queues) {
+                        for (Queue<?> queue : queues) {
                             while (!queue.isEmpty()) {
                                 TimeUnit.MILLISECONDS.sleep(100L);
                             }
@@ -271,6 +274,14 @@ public class ExecutorUtil {
             }
         } catch (InterruptedException | ExecutionException e) {
             throw BaseException.get(e);
+        }
+    }
+
+    private static void awaitFuture(Future<?> future) throws InterruptedException, ExecutionException {
+        try {
+            future.get();
+        } catch (CancellationException ignored) {
+            // Cancellation is a terminal state; continue awaiting other resources.
         }
     }
 

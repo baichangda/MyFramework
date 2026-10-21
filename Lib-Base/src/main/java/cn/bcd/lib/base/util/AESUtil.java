@@ -140,7 +140,7 @@ public final class AESUtil {
         try {
             checkAesKey(key);
 
-            if (encrypted == null || encrypted.length <= GCM_IV_LENGTH + 16) {
+            if (encrypted == null || encrypted.length < GCM_IV_LENGTH + GCM_TAG_LENGTH_BIT / 8) {
                 throw new IllegalArgumentException("Invalid AES-GCM encrypted data");
             }
 
