@@ -58,7 +58,7 @@ public class ConsumeExecutor<T> extends SingleThreadEventExecutor {
         for (; ; ) {
             Runnable task = takeTask();
             if (task != null) {
-                runTask(task);
+                safeExecute(task);
                 updateLastExecutionTime();
             }
             if (confirmShutdown()) {

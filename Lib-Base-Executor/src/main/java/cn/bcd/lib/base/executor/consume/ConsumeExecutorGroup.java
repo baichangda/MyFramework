@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * </p>
  * <p>
  * 可选功能包括实体过期扫描和吞吐、积压监控。调用 {@link #close()} 后不再接受新任务，
- * 所有存量实体会在其所属执行器线程中执行销毁回调。
+ * 已入队消息会继续消费，随后所有存量实体会在其所属执行器线程中执行销毁回调。
  * </p>
  *
  * @param <T> 消息类型
@@ -151,7 +151,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     /**
-     * 停止扫描和监控，销毁全部实体，并关闭所有消费执行器。
+     * 停止扫描和监控，消费已入队消息后销毁全部实体，并关闭所有消费执行器。
      * <p>
      * 允许从任意线程调用，包括某个消费执行器自身的线程；重复调用不会重复关闭。
      * 消费执行器线程内调用时只发起关闭，调用方可通过 {@link #closeAsync()} 观察完成状态。
@@ -166,7 +166,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     /**
-     * 发起优雅关闭并返回所有资源完全终止时完成的 Future。
+     * 发起优雅关闭，继续消费已入队消息，并返回所有资源完全终止时完成的 Future。
      * <p>
      * 重复或并发调用返回同一个 Future。实体由各自的 {@link ConsumeExecutor} 在执行器
      * 线程退出阶段销毁。
@@ -343,9 +343,7 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
 
     private void consumeMessage(ConsumeExecutor<T> executor, String id, T message) {
         try {
-            if (state != State.OPEN) {
-                return;
-            }
+            // 关闭检查在提交入口执行，已入队消息在关闭过程中仍需消费。
             ConsumeEntity<T> entity = executor.entityMap.get(id);
             if (entity == null) {
                 entity = createEntity(executor, id, message);
