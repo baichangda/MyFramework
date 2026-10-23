@@ -330,36 +330,4 @@ public class CompressUtil {
             throw BaseException.get(e);
         }
     }
-
-    public static void main(String[] args) throws IOException {
-//        GzipSplitter gzipSplitter = new GzipSplitter(300 * 1024);
-//        byte[] bytes = Files.readAllBytes(Paths.get("D:\\testBackup.txt"));
-//        String s = new String(bytes);
-//        String[] split = s.split("\n");
-//        int index = 0;
-//        for (String string : split) {
-//            byte[] arr = new byte[string.length() + 1];
-//            arr[arr.length - 1] = '\n';
-//            System.arraycopy(string.getBytes(), 0, arr, 0, string.length());
-//            byte[] bs = gzipSplitter.write(arr);
-//            if (bs != null) {
-//                Files.write(Paths.get("test-" + index + ".txt"), bs);
-//                index++;
-//            }
-//        }
-//        byte[] finish = gzipSplitter.finish();
-//        if (finish != null) {
-//            Files.write(Paths.get("test-" + index + ".txt"), finish);
-//        }
-//
-//        byte[] bs = Files.readAllBytes(Paths.get("test-3.txt"));
-//        byte[] unGzip = CompressUtil.unGzip(bs);
-//        Files.write(Paths.get("test-3-json.txt"), unGzip);
-
-        InputStream is = Files.newInputStream(Paths.get("d:/testBackup.txt.gz"));
-        unGzip(is,'\n',e->{
-            System.out.println(new String(e));
-            return true;
-        });
-    }
 }
