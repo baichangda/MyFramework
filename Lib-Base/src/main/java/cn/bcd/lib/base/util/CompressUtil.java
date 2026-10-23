@@ -1,12 +1,12 @@
 package cn.bcd.lib.base.util;
 
 import cn.bcd.lib.base.exception.BaseException;
-import com.google.common.primitives.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ public class CompressUtil {
      * @return
      */
     public static byte[] gzip(byte[] data) {
-        if (data == null || data.length == 0) {
+        if (data == null) {
             return new byte[0];
         }
         try (ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -47,7 +47,7 @@ public class CompressUtil {
      * @return
      */
     public static byte[] gzip(byte[] data, int off, int len) {
-        if (data == null || data.length == 0) {
+        if (data == null) {
             return new byte[0];
         }
         try (ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -61,9 +61,9 @@ public class CompressUtil {
     }
 
     /**
-     * gzip压缩分割器
-     * 根据{@link #maxGzipSize}限制、在压缩的过程中、压缩数据大小一旦大于{@link #maxGzipSize}时，生成一个压缩数据块，并返回
-     * 确保每个压缩后的文件接近{@link #maxGzipSize}
+     * Flushes compressed data after each write and returns a complete GZIP block
+     * when the emitted size reaches {@link GzipSplitter#maxGzipSize}.
+     * Splits only between writes; a large write or the GZIP footer can exceed the threshold.
      */
     public static class GzipSplitter implements AutoCloseable {
         public final int maxGzipSize;
@@ -72,13 +72,16 @@ public class CompressUtil {
         public GZIPOutputStream gos;
 
         public GzipSplitter(int maxGzipSize) {
+            if (maxGzipSize <= 0) {
+                throw new IllegalArgumentException("maxGzipSize must be positive");
+            }
             this.maxGzipSize = maxGzipSize;
         }
 
         private void checkAndNewOs() throws IOException {
             if (baos == null) {
                 baos = new ByteArrayOutputStream();
-                gos = new GZIPOutputStream(baos);
+                gos = new GZIPOutputStream(baos, true);
             }
         }
 
@@ -103,6 +106,7 @@ public class CompressUtil {
         }
 
         private byte[] checkRes() throws IOException {
+            gos.flush();
             if (baos.size() >= maxGzipSize) {
                 gos.finish();
                 byte[] res = baos.toByteArray();
@@ -215,14 +219,16 @@ public class CompressUtil {
      * 根据指定的分隔符、分割为byte[]供消费
      *
      * @param is
-     * @param splitChar
+     * @param splitChar ASCII delimiter (0-127)
      * @param function
      */
     public static void unGzip(InputStream is, char splitChar, Function<byte[], Boolean> function) {
+        if (splitChar > 0x7f) {
+            throw new IllegalArgumentException("splitChar must be ASCII (0-127)");
+        }
         try (GZIPInputStream gis = new GZIPInputStream(is)) {
             int count;
             byte[] buffer = null;
-            Bytes.concat();
             byte[] bytes = new byte[unGzipBufferSize];
             while ((count = gis.read(bytes, 0, bytes.length)) != -1) {
                 //根据分割符分割数据块
@@ -320,12 +326,21 @@ public class CompressUtil {
      * 解压文件到指定文件
      *
      * @param source 压缩文件
+     * @throws IllegalArgumentException if source and target refer to the same file
      * @param target 解压后的文件
      */
     public static void unGzip(String source, String target) {
-        try (InputStream is = Files.newInputStream(Paths.get(source));
-             OutputStream os = Files.newOutputStream(Paths.get(target))) {
-            unGzip(is, os);
+        Path sourcePath = Paths.get(source).toAbsolutePath().normalize();
+        Path targetPath = Paths.get(target).toAbsolutePath().normalize();
+        try {
+            if (sourcePath.equals(targetPath)
+                    || (Files.exists(targetPath) && Files.isSameFile(sourcePath, targetPath))) {
+                throw new IllegalArgumentException("source and target must be different files");
+            }
+            try (InputStream is = Files.newInputStream(sourcePath);
+                 OutputStream os = Files.newOutputStream(targetPath)) {
+                unGzip(is, os);
+            }
         } catch (IOException e) {
             throw BaseException.get(e);
         }
