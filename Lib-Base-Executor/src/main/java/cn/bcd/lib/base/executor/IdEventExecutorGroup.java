@@ -34,10 +34,26 @@ public class IdEventExecutorGroup implements AutoCloseable {
     public IdEventExecutorGroup(int nThreads) {
         int executorNum = tableSizeFor(nThreads);
         executors = new EventExecutor[executorNum];
-        for (int i = 0; i < executorNum; i++) {
-            executors[i] = Objects.requireNonNull(
-                    newEventExecutor(i),
-                    "newEventExecutor returned null");
+        try {
+            for (int i = 0; i < executorNum; i++) {
+                executors[i] = Objects.requireNonNull(
+                        newEventExecutor(i),
+                        "newEventExecutor returned null");
+            }
+        } catch (RuntimeException | Error failure) {
+            for (EventExecutor executor : executors) {
+                if (executor == null) {
+                    break;
+                }
+                try {
+                    executor.shutdownGracefully(0, 0, TimeUnit.SECONDS);
+                } catch (RuntimeException | Error cleanupFailure) {
+                    if (cleanupFailure != failure) {
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+            throw failure;
         }
     }
 
@@ -87,17 +103,20 @@ public class IdEventExecutorGroup implements AutoCloseable {
 
     /**
      * 优雅关闭全部执行器，并等待已有任务执行完成。
-     * 从某个内部执行器线程调用时，不等待该执行器自身终止，以避免死锁。
+     * 从任意内部执行器线程调用时，只发起关闭，不等待执行器终止，以避免相互等待。
      */
     @Override
     public void close() {
+        boolean inEventLoop = false;
         for (EventExecutor executor : executors) {
+            inEventLoop |= executor.inEventLoop();
             executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
         }
+        if (inEventLoop) {
+            return;
+        }
         for (EventExecutor executor : executors) {
-            if (!executor.inEventLoop()) {
-                executor.terminationFuture().syncUninterruptibly();
-            }
+            executor.terminationFuture().syncUninterruptibly();
         }
     }
 }
