@@ -8,6 +8,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Administrator on 2017/7/27.
@@ -47,24 +53,26 @@ public class ExceptionUtil {
             return null;
         }
         Throwable temp = throwable;
-        while (true) {
+        Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        while (visited.add(temp)) {
+            Throwable target;
             if (temp instanceof BaseException ex) {
-                Throwable t = ex.getTargetException();
-                if (t == null) {
-                    return temp;
-                } else {
-                    temp = t;
-                }
+                target = ex.getTargetException();
             } else if (temp instanceof InvocationTargetException ex) {
-                Throwable t = ex.getTargetException();
-                if (t == null) {
-                    return temp;
-                } else {
-                    temp = t;
-                }
+                target = ex.getTargetException();
+            } else if (temp instanceof UndeclaredThrowableException ex) {
+                target = ex.getUndeclaredThrowable();
+            } else if (temp instanceof CompletionException || temp instanceof ExecutionException) {
+                target = temp.getCause();
             } else {
                 return temp;
             }
+            if (target == null) {
+                return temp;
+            }
+            temp = target;
         }
+        // A repeated object marks a cycle; return the first repeated exception.
+        return temp;
     }
 }
