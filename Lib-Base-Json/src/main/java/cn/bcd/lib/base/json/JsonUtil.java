@@ -14,7 +14,6 @@ import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
-import tools.jackson.databind.ser.std.ToStringSerializer;
 import tools.jackson.databind.type.TypeFactory;
 
 import java.lang.reflect.Type;
@@ -56,6 +55,11 @@ public final class JsonUtil {
         // 设置 byte[] 序列化为数字数组，默认是 base64 字符串
         simpleModule.addSerializer(byte[].class, new ValueSerializer<byte[]>() {
             @Override
+            public boolean isEmpty(SerializationContext serializers, byte[] value) {
+                return value == null || value.length == 0;
+            }
+
+            @Override
             public void serialize(byte[] value,
                                   JsonGenerator gen,
                                   SerializationContext serializers) {
@@ -65,6 +69,7 @@ public final class JsonUtil {
                 }
                 gen.writeEndArray();
             }
+
         });
 
         return builder
