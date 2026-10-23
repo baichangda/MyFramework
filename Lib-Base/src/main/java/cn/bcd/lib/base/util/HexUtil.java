@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 public class HexUtil {
     private static final char[] HEXDUMP_TABLE = new char[256 * 4];
@@ -60,11 +61,30 @@ public class HexUtil {
         return hexDump(new byte[]{(byte) (l >> 56), (byte) (l >> 48), (byte) (l >> 40), (byte) (l >> 32), (byte) (l >> 24), (byte) (l >> 16), (byte) (l >> 8), (byte) l});
     }
 
+    /**
+     * 将完整字节数组转换为小写十六进制字符串。
+     *
+     * @param array 待编码的字节数组，不能为null
+     * @return 每个字节对应两个十六进制字符的字符串
+     */
     public static String hexDump(byte[] array) {
         return hexDump(array, 0, array.length);
     }
 
+    /**
+     * 将指定范围内的字节转换为小写十六进制字符串。
+     * 长度为0时仍校验起点，允许起点恰好位于数组末尾。
+     *
+     * @param array 待编码的字节数组，不能为null
+     * @param fromIndex 起始字节下标，从0开始
+     * @param length 待编码的字节数
+     * @return 指定范围对应的十六进制字符串
+     * @throws IllegalArgumentException 长度为负数或编码后的字符数超出整数范围时抛出
+     * @throws IndexOutOfBoundsException 指定范围超出数组边界时抛出
+     */
     public static String hexDump(byte[] array, int fromIndex, int length) {
+        // 先校验范围再相加，避免下标溢出后跳过编码循环。
+        Objects.checkFromIndexSize(fromIndex, length, array.length);
         if (length == 0) {
             return "";
         }
@@ -80,14 +100,33 @@ public class HexUtil {
         return new String(buf);
     }
 
+    /**
+     * 解码完整十六进制字符序列，支持ASCII数字及大小写字母A到F。
+     *
+     * @param hexDump 待解码的字符序列，不能为null
+     * @return 解码后的字节数组
+     */
     public static byte[] decodeHexDump(CharSequence hexDump) {
         return decodeHexDump(hexDump, 0, hexDump.length());
     }
 
+    /**
+     * 解码指定范围内的十六进制字符，每两个字符对应一个字节。
+     * 长度为0时仍校验起点，允许起点恰好位于字符序列末尾。
+     *
+     * @param hexDump 待解码的字符序列，不能为null
+     * @param fromIndex 起始字符下标，从0开始
+     * @param length 待解码的字符数，必须为非负偶数
+     * @return 解码后的字节数组
+     * @throws IllegalArgumentException 长度为负数、奇数或存在非法十六进制字符时抛出
+     * @throws IndexOutOfBoundsException 指定范围超出字符序列边界时抛出
+     */
     public static byte[] decodeHexDump(CharSequence hexDump, int fromIndex, int length) {
         if (length < 0 || (length & 1) != 0) {
             throw new IllegalArgumentException("length: " + length);
         }
+        // 包括空范围在内都先校验，避免越界参数被接受或提前分配过大的数组。
+        Objects.checkFromIndexSize(fromIndex, length, hexDump.length());
         if (length == 0) {
             return new byte[0];
         }
@@ -109,8 +148,7 @@ public class HexUtil {
     }
 
     private static int decodeHexNibble(final char c) {
-        // Character.digit() is not used here, as it addresses a larger
-        // set of characters (both ASCII and full-width latin letters).
+        // 仅接受ASCII十六进制字符，不使用会同时接受全角字符的Character.digit()。
         return HEX2B[c];
     }
 
