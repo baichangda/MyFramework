@@ -2,6 +2,7 @@ package cn.bcd.app.tool.kafka.client.web;
 
 import cn.bcd.lib.base.result.Result;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
+import io.netty.util.concurrent.CompleteFuture;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -11,8 +12,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 
 @RestController
@@ -36,8 +41,12 @@ public class ProducerController {
                     messages = param.data.split(param.msgSplit);
                 }
             }
+            List<Future<?>> futureList = new ArrayList<>();
             for (String s : messages) {
-                producer.send(new ProducerRecord<>(param.kafkaTopic, s));
+                futureList.add(producer.send(new ProducerRecord<>(param.kafkaTopic, s)));
+            }
+            for (Future<?> future : futureList) {
+                future.get();
             }
             return Result.successMessage("发送{}条数据到kafka成功", messages.length);
         } catch (Exception ex) {
