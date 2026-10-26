@@ -29,7 +29,6 @@ public class ProducerController {
         try (KafkaProducer<String, String> producer = KafkaUtil.newKafkaProducer_string_string(prop)) {
             if (param.msgSplitType == null || param.msgSplitType.isEmpty()) {
                 messages = new String[]{param.data};
-                producer.send(new ProducerRecord<>(param.kafkaTopic, param.data));
             } else {
                 if ("1".equals(param.msgSplitType)) {
                     messages = param.data.split("\n");
