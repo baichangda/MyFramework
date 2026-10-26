@@ -53,8 +53,7 @@ public class ConsumerWebSocketHandler extends PathTextWebSocketHandler {
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         logger.error("handleTransportError", exception);
-        KafkaConsumer<String, byte[]> remove = session_consumer.remove(session);
-        remove.close();
+        session_consumer.remove(session);
     }
 
 

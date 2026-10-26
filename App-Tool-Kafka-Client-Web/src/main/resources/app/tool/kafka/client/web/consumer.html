@@ -121,6 +121,7 @@
             }
             case 102: {
                 appendToOutput("kafka消费错误:\n" + parse.data, 2)
+                ws.close()
                 break
             }
         }
