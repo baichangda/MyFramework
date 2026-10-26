@@ -77,7 +77,7 @@ public class MongoUtil {
         return documents.stream().map(document -> {
             QueryData<T> queryData = new QueryData<>();
             queryData.id = document.getString("id");
-            queryData.value = document.get("value", clazz);
+            queryData.value = JsonUtil.fromJson(document.getString("value"), clazz);
             return queryData;
         }).toList();
     }
@@ -91,13 +91,13 @@ public class MongoUtil {
      * @return
      */
     public static <T extends MongoData> QueryData<T> get(String partitionId, String id, Class<T> clazz, String collection) {
-        Document document = getMongoTemplate(partitionId).findById(id, Document.class, collection);
+        Document document = getMongoTemplate(partitionId).findOne(Query.query(Criteria.where("id").is(id)), Document.class, collection);
         if (document == null) {
             return null;
         } else {
             QueryData<T> queryData = new QueryData<>();
             queryData.id = document.getString("id");
-            queryData.value = document.get("value", clazz);
+            queryData.value = JsonUtil.fromJson(document.getString("value"), clazz);
             return queryData;
         }
     }
