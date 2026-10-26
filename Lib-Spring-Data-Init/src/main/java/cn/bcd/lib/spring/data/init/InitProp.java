@@ -11,7 +11,7 @@ public class InitProp {
     @NestedConfigurationProperty
     public ControlProp transferConfig;
     @NestedConfigurationProperty
-    public ControlProp vehicleConfig;
+    public ControlProp vehicle;
     @NestedConfigurationProperty
-    public ControlProp transferAccessConfig;
+    public ControlProp transferAccess;
 }

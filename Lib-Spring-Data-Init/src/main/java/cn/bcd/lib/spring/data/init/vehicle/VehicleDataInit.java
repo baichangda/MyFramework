@@ -41,7 +41,7 @@ public class VehicleDataInit implements Consumer<VehicleData>, Initializable {
     }
 
     public void init() {
-        String url = "http://" + initProp.vehicleConfig.host + ":" + initProp.vehicleConfig.port + "/api/vehicle/list";
+        String url = "http://" + initProp.vehicle.host + ":" + initProp.vehicle.port + "/api/vehicle/list";
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = OkHttpUtil.client.newCall(request).execute()) {
             if (!response.isSuccessful()) {

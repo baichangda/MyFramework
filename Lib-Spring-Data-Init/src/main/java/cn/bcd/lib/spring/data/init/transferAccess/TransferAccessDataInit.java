@@ -54,7 +54,7 @@ public class TransferAccessDataInit implements Consumer<TransferAccessData>, Ini
 
     @Override
     public void init() {
-        String url = "http://" + initProp.transferAccessConfig.host + ":" + initProp.transferAccessConfig.port + "/api/transferAccess/list";
+        String url = "http://" + initProp.transferAccess.host + ":" + initProp.transferAccess.port + "/api/transferAccess/list";
         Request request = new Request.Builder()
                 .url(url)
                 .get().build();
