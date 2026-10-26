@@ -1,6 +1,8 @@
 package cn.bcd.app.simulator.singleVehicle.tcp.v2016;
 
 import cn.bcd.app.simulator.singleVehicle.tcp.VehicleData;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.Const;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.Packet;
 import cn.bcd.lib.parser.protocol.gb32960.v2016.data.PacketFlag;
@@ -16,7 +18,8 @@ public class VehicleData_v2016 extends VehicleData {
     //车辆运行数据
     public VehicleRunData vehicleRunData;
 
-    public VehicleData_v2016(String vin) {
+    @JsonCreator
+    public VehicleData_v2016(@JsonProperty("vin") String vin) {
         super(vin);
     }
 

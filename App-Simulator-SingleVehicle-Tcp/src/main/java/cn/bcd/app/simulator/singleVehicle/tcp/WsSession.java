@@ -140,13 +140,21 @@ public class WsSession implements Vehicle.Listener {
     }
 
     private void executeTask(Runnable task) {
-        executor.execute(() -> {
+        Runnable guardedTask = () -> {
+            if (closed) {
+                return;
+            }
             try {
                 task.run();
             } catch (Exception ex) {
                 logger.error("execute session task vin[{}] failed", vin, ex);
             }
-        });
+        };
+        if (executor.inEventLoop()) {
+            guardedTask.run();
+        } else {
+            executor.execute(guardedTask);
+        }
     }
 
     static TcpAddress parseTcpAddress(String address) {

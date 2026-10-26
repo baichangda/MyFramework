@@ -99,12 +99,11 @@ public class Vehicle {
 
         ChannelFuture connectFuture = bootstrap.connect(host, port);
         channel = connectFuture.channel();
-        connectFuture.addListener(future -> {
-            if (!future.isSuccess()) {
-                clearChannel(connectFuture.channel());
+        connectFuture.addListener(future -> scheduler.execute(() -> {
+            if (!future.isSuccess() && clearChannel(connectFuture.channel())) {
                 listener.onTcpConnectFailed(future.cause());
             }
-        });
+        }));
     }
 
     public void updateVehicleData(VehicleData newVehicleData) {
@@ -116,21 +115,28 @@ public class Vehicle {
     }
 
     void onConnected(Channel connectedChannel) {
-        if (connectedChannel == channel) {
-            listener.onTcpConnected();
-        }
+        // Defer to the session executor so connect() assigns channel before callbacks run.
+        scheduler.execute(() -> {
+            if (connectedChannel == channel && connectedChannel.isActive()) {
+                listener.onTcpConnected();
+            }
+        });
     }
 
     void onDisconnected(Channel disconnectedChannel) {
-        if (clearChannel(disconnectedChannel)) {
-            listener.onTcpDisconnected();
-        }
+        scheduler.execute(() -> {
+            if (clearChannel(disconnectedChannel)) {
+                listener.onTcpDisconnected();
+            }
+        });
     }
 
     void onMessage(Channel sourceChannel, byte[] data) {
-        if (sourceChannel == channel) {
-            listener.onTcpReceive(data);
-        }
+        scheduler.execute(() -> {
+            if (sourceChannel == channel) {
+                listener.onTcpReceive(data);
+            }
+        });
     }
 
     public void startSending() {
@@ -165,14 +171,17 @@ public class Vehicle {
             byte[] data = vehicleData.onSend_vehicleRunDataToBytes();
             logger.info("send message vin[{}] type[{}]:\n{}",
                     PacketUtil.getVin(data), PacketUtil.getPacketFlag(data), ByteBufUtil.hexDump(data));
-            current.writeAndFlush(Unpooled.wrappedBuffer(data)).addListener(future -> {
+            current.writeAndFlush(Unpooled.wrappedBuffer(data)).addListener(future -> scheduler.execute(() -> {
+                if (current != channel) {
+                    return;
+                }
                 if (future.isSuccess()) {
                     listener.onTcpSend(data);
                 } else {
                     logger.error("send message vin[{}] failed", vin, future.cause());
                     current.close();
                 }
-            });
+            }));
         } catch (Exception ex) {
             logger.error("build vehicle run data vin[{}] failed", vin, ex);
         }
