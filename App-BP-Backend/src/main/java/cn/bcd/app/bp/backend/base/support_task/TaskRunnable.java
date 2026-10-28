@@ -37,9 +37,7 @@ public class TaskRunnable<T extends Task<K>, K extends Serializable> implements 
         boolean removed = executor.remove(this);
         if (removed) {
             //取消成功
-            executor.execute(() -> {
-                taskBuilder.onCanceled(task);
-            });
+            Thread.ofVirtual().start(() -> taskBuilder.onCanceled(task));
             return StopResult.CANCEL_SUCCEED;
         } else {
             //正在执行中、尝试停止

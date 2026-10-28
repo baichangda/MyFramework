@@ -83,9 +83,15 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
     public final K register(T task, TaskFunction<T, K> function, Object... params) {
         final T t = onCreated(task);
         //初始化
-        TaskRunnable<T, K> runnable = new TaskRunnable<>(task, function, params, this);
-        taskIdToRunnable.put(task.getId().toString(), runnable);
-        runnable.executor.execute(runnable);
+        TaskRunnable<T, K> runnable = new TaskRunnable<>(t, function, params, this);
+        taskIdToRunnable.put(t.getId().toString(), runnable);
+        try {
+            runnable.executor.execute(runnable);
+        } catch (Exception ex) {
+            logger.error("error", ex);
+            taskIdToRunnable.remove(t.getId().toString());
+            throw ex;
+        }
         return t.getId();
 
     }
@@ -127,6 +133,7 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
                     stopResults[i] = StopResult.WAIT_OR_IN_EXECUTING_NOT_FOUND;
                 } else {
                     logger.info("stop[{},{}]", ids[i], runnable.executor);
+                    taskIdToRunnable.remove(ids[i]);
                     stopResults[i] = runnable.stop();
                 }
             }
@@ -135,42 +142,61 @@ public class TaskBuilder<T extends Task<K>, K extends Serializable> {
     }
 
     T onCreated(T task) {
+        T t;
         try {
             task.setStatus(TaskStatus.WAITING.getStatus());
-            task.onCreated();
+            try {
+                task.onCreated();
+            } catch (Exception ex) {
+                logger.error("task[{}] execute onCreated error", task.getId(), ex);
+            }
+            t = taskDao.doCreate(task);
         } catch (Exception e) {
-            logger.error("task[{}] execute onCreate error", task.getId(), e);
+            logger.error("task[{}] execute doCreate error", task.getId(), e);
+            throw e;
         }
-        return taskDao.doCreate(task);
+        return t;
     }
 
     void onStarted(T task) {
         try {
             task.setStatus(TaskStatus.EXECUTING.getStatus());
-            task.onStarted();
+            try {
+                task.onStarted();
+            } catch (Exception ex) {
+                logger.error("task[{}] execute onStarted error", task.getId(), ex);
+            }
             taskDao.doUpdate(task);
         } catch (Exception e) {
-            logger.error("task[{}] execute onStart error", task.getId(), e);
+            logger.error("task[{}] execute doUpdate error", task.getId(), e);
         }
     }
 
     void onSucceed(T task) {
         try {
             task.setStatus(TaskStatus.SUCCEED.getStatus());
-            task.onSucceed();
+            try {
+                task.onSucceed();
+            } catch (Exception ex) {
+                logger.error("task[{}] execute onSucceed error", task.getId(), ex);
+            }
             taskDao.doUpdate(task);
         } catch (Exception e) {
-            logger.error("task[{}] execute onSucceed error", task.getId(), e);
+            logger.error("task[{}] execute doUpdate error", task.getId(), e);
         }
     }
 
     void onFailed(T task, Exception ex) {
         try {
             task.setStatus(TaskStatus.FAILED.getStatus());
-            task.onFailed(ex);
+            try {
+                task.onFailed(ex);
+            } catch (Exception e) {
+                logger.error("task[{}] execute onFailed error", task.getId(), e);
+            }
             taskDao.doUpdate(task);
         } catch (Exception e) {
-            logger.error("task[{}] execute onFailed error", task.getId(), e);
+            logger.error("task[{}] execute doUpdate error", task.getId(), e);
         }
     }
 
