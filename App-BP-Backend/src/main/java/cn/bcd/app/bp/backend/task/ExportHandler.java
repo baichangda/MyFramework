@@ -18,6 +18,9 @@ import java.util.List;
 /**
  * 通用导出流程。子类注册为 Spring Bean，提供任务类型、查询参数类型和数据 Service。
  * payload 仅包含业务查询参数；Condition、排序和查询结果都在领取任务后由执行线程生成。
+ * 子类是共享单例，查询参数、计数等单次执行数据应保存在局部变量中。
+ *
+ * @param <P> 可持久化为 JSON 的业务查询参数 DTO
  */
 public abstract class ExportHandler<P> implements TaskHandler<P> {
     private static final Logger logger = LoggerFactory.getLogger(ExportHandler.class);
@@ -27,17 +30,25 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
         this.fileService = fileService;
     }
 
-    /** 返回子类注入的数据 Service，不通过 Bean 名称或反射寻找服务。 */
+    /** 返回子类注入的共享数据 Service；单次查询参数通过 condition/sort 传递。 */
     protected abstract BaseService<?> service();
 
-    /** 根据持久化的业务参数构造条件，返回 null 表示不限制。 */
+    /** 执行时根据参数构造查询条件，返回 null 表示不限制；此处只准备条件，不预取结果。 */
     protected abstract Condition condition(P payload);
 
-    /** 子类需要稳定排序时覆盖此方法。 */
+    /** 默认不排序。分批分页导出通常应由子类指定稳定排序，例如主键升序。 */
     protected Sort sort(P payload) {
         return Sort.unsorted();
     }
 
+    /**
+     * 同线程完成分批查询、写 Excel、关闭文件、上传和本地清理。
+     * 停止检查位于入口、批次写入前后及上传前；已经进入的查询或上传不会被强制中断。
+     * 正常返回后由 Worker 保存成功状态，本方法不直接更新任务状态。
+     *
+     * @return export/ 下的文件服务路径，保存到任务 result
+     * @throws Exception 生成或上传失败，或者在检查点响应停止请求
+     */
     @Override
     public final String execute(TaskContext context, P payload) throws Exception {
         context.checkStop();
@@ -48,6 +59,7 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
         Files.createDirectories(dir);
         Path path = Files.createTempFile(dir, "task-" + context.task().id + "-", ".xlsx");
         try {
+            // 先关闭 ExcelWriter，确保文件完整写出后再交给上传逻辑。
             try (ExcelWriter writer = FesodSheet.write().file(path.toFile()).build()) {
                 WriteSheet sheet = FesodSheet.writerSheet(0).build();
                 boolean empty = true;
@@ -57,6 +69,7 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
                     empty = false;
                     context.checkStop();
                 }
+                // 空结果仍生成可下载的工作表。
                 if (empty) {
                     writer.write(List.of(), sheet);
                 }

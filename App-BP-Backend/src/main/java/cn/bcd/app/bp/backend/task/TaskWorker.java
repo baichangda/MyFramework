@@ -19,16 +19,21 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 每个长期运行的虚拟线程自行领取并完整处理一个任务，不预取、不使用本地等待队列。
- * 进程异常退出后，已领取任务保留 EXECUTING，交由人工排查。
+ * 执行线程数就是节点总并发上限，各任务类型共享；执行和所有收尾完成后才再次领取。
+ * 进程异常退出后，已领取任务保留 EXECUTING，交由人工排查，不自动重试或恢复。
  */
 @Component
 public class TaskWorker implements SmartLifecycle {
     private static final Logger logger = LoggerFactory.getLogger(TaskWorker.class);
     private final TaskService taskService;
     private final TaskProperties properties;
+    /** 启动时构建且不可变；Handler 单例会同时处理不同任务。 */
     private final Map<String, TaskHandler<?>> handlers;
+    /** 本节点允许领取的类型，配置留空时取全部已注册类型。 */
     private final List<String> types;
+    /** 仅保存已领取且尚未完成收尾的任务，供停止请求线程查找。 */
     private final ConcurrentHashMap<Long, TaskContext> runningTasks = new ConcurrentHashMap<>();
+    /** 生命周期线程写，所有轮询线程读；关闭时不再进入下一轮领取。 */
     private volatile boolean running;
     private ExecutorService executor;
 
@@ -55,6 +60,7 @@ public class TaskWorker implements SmartLifecycle {
         }
     }
 
+    /** 按类型查找处理器，提交和执行共用；未部署的类型直接拒绝。 */
     TaskHandler<?> handler(String type) {
         TaskHandler<?> handler = type == null ? null : handlers.get(type);
         if (handler == null) {
@@ -63,6 +69,10 @@ public class TaskWorker implements SmartLifecycle {
         return handler;
     }
 
+    /**
+     * Spring 上下文就绪后启动固定数量的长期 Worker，而不是为每个任务另开线程。
+     * 未注册 Handler 时不启动扫描；重复启动不会重复增加并发。
+     */
     @Override
     public synchronized void start() {
         if (running || types.isEmpty()) {
@@ -75,6 +85,10 @@ public class TaskWorker implements SmartLifecycle {
         }
     }
 
+    /**
+     * 关闭领取循环并等待已有任务及回调收尾，不发停止请求、不调用线程 interrupt。
+     * 阻塞业务可能延长关闭时间，任务应自行设置合理的 I/O 超时。
+     */
     @Override
     public synchronized void stop() {
         running = false;
@@ -90,6 +104,10 @@ public class TaskWorker implements SmartLifecycle {
         return running;
     }
 
+    /**
+     * 每个 Worker 独立维护空闲阶梯；领取成功立即重置，竞争失败立即重查。
+     * 无候选或基础设施异常时退避，附加约 10% 内的抖动，分散多节点扫描时间。
+     */
     private void poll() {
         int idleStep = 0;
         while (running) {
@@ -100,7 +118,7 @@ public class TaskWorker implements SmartLifecycle {
                         idleStep = 0;
                         execute(taskService.get(id));
                     }
-                    // 竞争失败表示有任务在被处理，立即重新查询，不增加空闲退避。
+                    // 候选已被领取或取消，立即重新查询，不增加空闲退避。
                     continue;
                 }
             } catch (Exception ex) {
@@ -118,6 +136,7 @@ public class TaskWorker implements SmartLifecycle {
         }
     }
 
+    /** 由请求线程或 Redis 订阅线程调用，只置位本机标记；不移除映射或更新数据库。 */
     void requestStop(long id) {
         TaskContext context = runningTasks.get(id);
         if (context != null) {
@@ -125,10 +144,15 @@ public class TaskWorker implements SmartLifecycle {
         }
     }
 
+    /** 仅处理已领取的任务，调用方必须已通过 claim 取得执行权。 */
     void execute(TaskBean task) {
         execute(task, handler(task.type));
     }
 
+    /**
+     * 整个生命周期在当前 Worker 内串行推进。终态回调完成后才保存结果并移除运行映射。
+     * 业务正常返回优先认定成功；只有停止异常走 STOPPED，其他 Exception 走 FAILED。
+     */
     private <P> void execute(TaskBean task, TaskHandler<P> handler) {
         TaskContext context = new TaskContext(task, taskService);
         runningTasks.put(task.id, context);
@@ -164,6 +188,7 @@ public class TaskWorker implements SmartLifecycle {
             }
         } finally {
             try {
+                // 即使参数解析失败也保存 FAILED；保存异常交给轮询层记录，不再次执行该任务。
                 taskService.finish(task);
             } finally {
                 runningTasks.remove(task.id, context);
@@ -176,12 +201,14 @@ public class TaskWorker implements SmartLifecycle {
         canceled(task, handler(task.type));
     }
 
+    /** 在取消请求线程中解析参数并回调，最后仅保存 result/message，不再次转换状态。 */
     private <P> void canceled(TaskBean task, TaskHandler<P> handler) {
         callback(task, () -> handler.onCanceled(new TaskContext(task, taskService),
                 JsonUtil.fromJson(task.payload, handler.payloadType())));
         taskService.saveCanceled(task);
     }
 
+    /** 在内存中整理失败状态，截断错误信息以适配数据库列，稍后统一保存。 */
     private void failed(TaskBean task, Exception ex) {
         task.status = TaskStatus.FAILED.getStatus();
         task.finishTime = new Date();
@@ -190,6 +217,7 @@ public class TaskWorker implements SmartLifecycle {
         logger.error("Task {} failed", task.id, ex);
     }
 
+    /** 同步调用且隔离回调异常，避免回调失败覆盖业务执行的最终结论。 */
     private void callback(TaskBean task, Callback callback) {
         try {
             callback.run();

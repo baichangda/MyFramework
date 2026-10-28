@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
 
+/**
+ * 任务记录查询和停止入口。任务提交由 Java 业务代码调用 TaskService.submit 完成，
+ * HTTP 接口只查询记录和发起停止请求，业务任务由 Worker 执行。
+ */
 @RestController
 @RequestMapping("/api/task")
 @Tag(name = "任务-TaskController")
@@ -30,9 +34,8 @@ public class TaskController {
     TaskService taskService;
 
     /**
-     * 查询任务分页
-     *
-     * @return
+     * 查询数据库中的任务快照，页码从 1 开始。
+     * 执行进度按节流周期保存，返回值可能稍晚于 Worker 中的内存进度。
      */
     @RequestMapping(value = "/page", method = RequestMethod.GET)
     @Operation(summary = "查询任务分页")
@@ -64,6 +67,10 @@ public class TaskController {
     }
 
 
+    /**
+     * 按输入顺序返回停止处理结果。执行中任务只受理停止请求，
+     * 调用方应继续查询记录，以终态判断业务是否真正退出。
+     */
     @RequestMapping(value = "/stop", method = RequestMethod.GET)
     @Operation(summary = "停止任务")
     @ApiResponse(responseCode = "200", description = "停止任务结果")

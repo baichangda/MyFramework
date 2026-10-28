@@ -16,6 +16,7 @@ import java.util.List;
 /**
  * 集中提供任务提交、领取、停止及状态保存。领取和取消用条件 UPDATE 竞争处理权。
  * 执行数据更新只写指定字段，不覆盖停止请求；不使用覆盖整个业务过程的长事务。
+ * 提交方只持久化参数，执行方再查询业务数据；创建时间和创建人复用 BaseService.insert 填充。
  */
 @Service
 public class TaskService extends BaseService<TaskBean> {
@@ -29,6 +30,15 @@ public class TaskService extends BaseService<TaskBean> {
         this.fileService = fileService;
     }
 
+    /**
+     * 保存 WAITING 记录并返回 ID，不在请求线程执行任务或提前查询导出数据。
+     * 存在调用方事务时随其提交，Worker 只能领取已经提交的记录。
+     *
+     * @param name 展示名称，长度 1 到 50
+     * @param type 本节点已注册的 Handler 类型，消费节点也必须部署对应 Handler
+     * @param payload 仅包含业务参数、可 JSON 序列化为对应 DTO 的对象
+     * @return 新建任务 ID，不表示任务已经开始执行
+     */
     public long submit(String name, String type, Object payload) {
         if (name == null || name.isBlank() || name.length() > 50 || payload == null) {
             throw new IllegalArgumentException("Task name (1-50 characters) and payload are required");
@@ -47,6 +57,10 @@ public class TaskService extends BaseService<TaskBean> {
     /**
      * 暂停调用方事务，确保停止意图已经提交再广播。
      * 取消与领取只竞争 WAITING 状态；已领取任务的终态只能由原 Worker 保存。
+     * 等待任务取消后在当前请求线程执行取消回调；执行中任务只保存停止意图并广播通知。
+     *
+     * @param ids 要处理的任务 ID
+     * @return 与输入顺序一一对应的处理结果；STOP_REQUESTED 不代表业务已经退出
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public StopResult[] stop(Long... ids) {
@@ -76,7 +90,10 @@ public class TaskService extends BaseService<TaskBean> {
         return results;
     }
 
-    /** 仅删除终态任务，保留仍在执行或等待的任务现场。 */
+    /**
+     * 先删除终态记录，再清理其 export/ 路径下的文件，支持子类自定义的导出类型。
+     * 文件清理不与数据库删除组成事务，外部文件服务异常会向调用方传播。
+     */
     public void deleteTaskAndDeleteFile(long... ids) {
         List<TaskBean> deleted = deleteFinished(ids);
         String[] paths = deleted.stream().filter(task -> task.result != null && task.result.startsWith("export/"))
@@ -86,7 +103,11 @@ public class TaskService extends BaseService<TaskBean> {
         }
     }
 
-    /** 普通读取候选 ID；被其他节点抢先处理时调用方立即重新查询。 */
+    /**
+     * 按 ID 读取一个候选，不申请行锁，也不代表已取得执行权。
+     * types 由 Worker 保证非空；返回 null 才表示本次扫描没有候选。
+     * 多节点可能读到同一 ID，必须继续调用 claim，以更新结果判断归属。
+     */
     Long findWaiting(Collection<String> types) {
         String placeholders = String.join(",", Collections.nCopies(types.size(), "?"));
         List<Long> ids = getJdbcTemplate().queryForList(
@@ -95,6 +116,10 @@ public class TaskService extends BaseService<TaskBean> {
         return ids.isEmpty() ? null : ids.getFirst();
     }
 
+    /**
+     * Worker 在自动提交模式下竞争 WAITING → EXECUTING，同时记录领取节点和开始时间。
+     * 返回 true 才能执行；返回 false 表示已经被领取或取消，应重新扫描。
+     */
     boolean claim(long id, String nodeId) {
         return getJdbcTemplate().update("""
                 update t_sys_task set status=2, node_id=?, start_time=?
@@ -102,30 +127,43 @@ public class TaskService extends BaseService<TaskBean> {
                 """, nodeId, new Date(), id) == 1;
     }
 
+    /**
+     * 与 claim 竞争同一个旧状态。更新成功即取得取消处理权，任务不再可被领取。
+     * 返回 false 时不能根据先前查询的状态判断结果，应继续尝试处理执行中的停止请求。
+     */
     boolean cancelWaiting(long id) {
         return getJdbcTemplate().update("""
                 update t_sys_task set status=5, finish_time=? where id=? and status=1
                 """, new Date(), id) == 1;
     }
 
-    /** 不依赖 UPDATE 返回行数，兼容重复停止和驱动的 matched/changed rows 配置。 */
+    /**
+     * 仅记录停止意图，保留 EXECUTING。重复请求仍允许再次广播。
+     * 不依赖 UPDATE 行数，兼容驱动的 matched/changed rows 差异；
+     * 随后若发现任务已结束，则不再通知执行节点。
+     */
     boolean requestStop(long id) {
         getJdbcTemplate().update("update t_sys_task set stop_requested=true where id=? and status=2", id);
         TaskBean current = get(id);
         return current != null && current.status == TaskStatus.EXECUTING.getStatus() && current.stopRequested;
     }
 
+    /** 领取后、登记本机上下文后读取一次，用于衔接登记前到达的停止请求。 */
     boolean isStopRequested(long id) {
         return Boolean.TRUE.equals(getJdbcTemplate().queryForObject(
                 "select stop_requested from t_sys_task where id=?", Boolean.class, id));
     }
 
+    /** 由任务所属线程保存进度，不改状态、节点归属或外部写入的停止意图。 */
     void saveProgress(TaskBean task) {
         getJdbcTemplate().update("update t_sys_task set percent=? where id=? and status=2",
                 task.percent, task.id);
     }
 
-    /** 终态只能由拥有执行权的 Worker 保存，且只允许从 EXECUTING 转换。 */
+    /**
+     * 由原 Worker 在终态回调后保存执行结果，只允许从 EXECUTING 转换。
+     * 使用明确字段更新，避免旧实体覆盖 stop_requested；保存失败时不自动重跑任务。
+     */
     void finish(TaskBean task) {
         getJdbcTemplate().update("""
                 update t_sys_task set status=?, percent=?, result=?, message=?, finish_time=?
@@ -133,14 +171,17 @@ public class TaskService extends BaseService<TaskBean> {
                 """, task.status, task.percent, task.result, task.message, task.finishTime, task.id);
     }
 
-    /** 取消回调仅保存业务输出，不修改已经确定的取消状态。 */
+    /** 取消请求线程在回调后仅保存业务输出，不修改已经落库的 CANCELED 状态。 */
     void saveCanceled(TaskBean task) {
         getJdbcTemplate().update("""
                 update t_sys_task set result=?, message=? where id=? and status=5
                 """, task.result, task.message, task.id);
     }
 
-    /** 活跃任务必须先停止，避免删掉其他节点正在使用的记录。 */
+    /**
+     * 条件删除保证等待或执行中的记录不会被移除；返回实际删除的记录供调用方清理结果文件。
+     * 对不存在或非终态的 ID 直接跳过，不负责停止任务。
+     */
     public List<TaskBean> deleteFinished(long... ids) {
         List<TaskBean> deleted = new ArrayList<>();
         for (TaskBean task : list(ids)) {
