@@ -1,4 +1,4 @@
-package cn.bcd.app.bp.backend.base.support_task;
+package cn.bcd.app.bp.backend.task;
 
 public enum TaskStatus {
     WAITING(1, "任务等待中"),

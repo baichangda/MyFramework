@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS t_sys_task
 (
     id               bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
     name             varchar(50)     NOT NULL COMMENT '任务名称',
-    status           int             NOT NULL COMMENT '任务状态(1:等待中;2:执行中;3:任务被终止;4:已完成;5:执行失败)',
-    type             int             NULL COMMENT '任务类型(1:导出任务)',
+    status           int             NOT NULL COMMENT '任务状态(1:等待;2:执行;3:成功;4:失败;5:取消;6:停止)',
+    type             varchar(64)     NOT NULL COMMENT '任务类型，例如 export',
     percent          FLOAT           NOT NULL COMMENT '任务处理进度',
     message          varchar(255)    NULL COMMENT '任务信息(失败时记录失败原因)',
     start_time       datetime(3)        NULL COMMENT '任务开始时间',
@@ -124,6 +124,13 @@ CREATE TABLE IF NOT EXISTS t_sys_task
     result           varchar(255)    NULL COMMENT '任务执行结果(不同的任务类型结果不同、记录导出任务这里存储的是导出文件在文件服务器的路径)',
     create_user_id   bigint COMMENT '创建人id',
     create_user_name varchar(50) COMMENT '创建人姓名',
+    update_time      datetime(3) NULL COMMENT '更新时间',
+    update_user_id   bigint COMMENT '更新人id',
+    update_user_name varchar(50) COMMENT '更新人姓名',
+    payload          LONGTEXT NULL COMMENT '任务参数(JSON)',
+    node_id          varchar(128) NULL COMMENT '领取节点',
+    stop_requested   boolean NOT NULL DEFAULT FALSE COMMENT '已请求停止',
+    INDEX idx_task_waiting (status, id),
     PRIMARY KEY (id)
 );
 

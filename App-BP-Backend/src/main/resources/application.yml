@@ -154,3 +154,10 @@ lib:
       bucket: test
 
 
+
+# 集群任务：节点所有类型共享并发上限，空闲时阶梯轮询 MySQL
+task:
+  concurrency: 2
+  types: []
+  poll-intervals: [100ms, 250ms, 500ms, 1s, 2s, 5s]
+  stop-topic: task-stop

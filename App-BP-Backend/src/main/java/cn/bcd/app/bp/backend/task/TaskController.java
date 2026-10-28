@@ -5,7 +5,7 @@ import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
-import cn.bcd.app.bp.backend.base.support_task.StopResult;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,7 +41,7 @@ public class TaskController {
             @Parameter(description = "主键") @RequestParam(required = false) Long id,
             @Parameter(description = "任务名称") @RequestParam(required = false) String name,
             @Parameter(description = "任务状态") @RequestParam(required = false) Long status,
-            @Parameter(description = "任务类型") @RequestParam(required = false) Long type,
+            @Parameter(description = "任务类型") @RequestParam(required = false) String type,
             @Parameter(description = "开始时间开始", schema = @Schema(type = "integer")) @RequestParam(required = false) Date startTimeBegin,
             @Parameter(description = "开始时间结束", schema = @Schema(type = "integer")) @RequestParam(required = false) Date startTimeEnd,
             @Parameter(description = "结束时间开始", schema = @Schema(type = "integer")) @RequestParam(required = false) Date finishTimeBegin,
@@ -55,7 +55,7 @@ public class TaskController {
                 NumberCondition.EQUAL("id", id),
                 StringCondition.ALL_LIKE("name", name),
                 NumberCondition.EQUAL("status", status),
-                NumberCondition.EQUAL("type", type),
+                StringCondition.EQUAL("type", type),
                 DateCondition.BETWEEN("startTime", startTimeBegin, startTimeEnd),
                 DateCondition.BETWEEN("finishTime", finishTimeBegin, finishTimeEnd),
                 DateCondition.BETWEEN("createTime", createTimeBegin, createTimeEnd)
@@ -68,7 +68,7 @@ public class TaskController {
     @Operation(summary = "停止任务")
     @ApiResponse(responseCode = "200", description = "停止任务结果")
     public Result<StopResult[]> stop(@Parameter(description = "停止任务的主键") @RequestParam(required = true) Long[] ids) {
-        StopResult[] results = taskService.taskBuilder.stop(ids);
+        StopResult[] results = taskService.stop(ids);
         return Result.success(results);
     }
 }
