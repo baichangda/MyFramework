@@ -1,6 +1,7 @@
 package cn.bcd.app.bp.backend.base.support_spring_cache;
 
 import cn.bcd.lib.spring.redis.RedisUtil;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cache.Cache;
 import org.springframework.context.annotation.Bean;
@@ -23,11 +24,18 @@ public class RedisCacheConfig {
     @Bean(CacheConst.REDIS_CACHE)
     public Cache redisCache(RedisConnectionFactory factory) {
         RedisCacheManager redisCacheManager = new RedisCacheManager(
-                RedisCacheWriter.nonLockingRedisCacheWriter(factory),
+                // sync=true requires the writer to hold a Redis lock while loading.
+                RedisCacheWriter.lockingRedisCacheWriter(factory),
                 RedisCacheConfiguration.defaultCacheConfig()
                         .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisUtil.SERIALIZER_KEY_STRING))
                         .entryTtl(Duration.ofSeconds(5))
         );
         return redisCacheManager.getCache(CacheConst.REDIS_CACHE);
+    }
+
+    @Bean(CacheConst.MULTI_CACHE)
+    public Cache multiCache(@Qualifier(CacheConst.LOCAL_CACHE) Cache localCache,
+                            @Qualifier(CacheConst.REDIS_CACHE) Cache redisCache) {
+        return new MultiCache(localCache, redisCache);
     }
 }
