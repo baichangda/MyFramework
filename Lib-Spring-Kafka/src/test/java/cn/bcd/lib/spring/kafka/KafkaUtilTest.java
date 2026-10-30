@@ -4,10 +4,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.NoOffsetForPartitionException;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -17,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,6 +34,40 @@ class KafkaUtilTest {
             KafkaUtil::consumerSeekToBeginning,
             KafkaUtil::consumerSeekToEnd,
             consumer -> KafkaUtil.consumerSeekToTimestamp(consumer, TIMESTAMP));
+
+    @Test
+    void stringTemplateDestroyClosesItsOwnedProducer() {
+        assertTemplateClosesOwnedProducer(KafkaUtil.newKafkaTemplate_string_string(
+                Map.of("bootstrap.servers", "127.0.0.1:1")));
+    }
+
+    @Test
+    void bytesTemplateDestroyClosesItsOwnedProducer() {
+        assertTemplateClosesOwnedProducer(KafkaUtil.newKafkaTemplate_string_bytes(
+                Map.of("bootstrap.servers", "127.0.0.1:1")));
+    }
+
+    private static <V> void assertTemplateClosesOwnedProducer(KafkaTemplate<String, V> template) {
+        var factory = (DefaultKafkaProducerFactory<String, V>) template.getProducerFactory();
+        AtomicInteger removed = new AtomicInteger();
+        factory.addListener(new ProducerFactory.Listener<>() {
+            @Override
+            public void producerRemoved(String id, Producer<String, V> producer) {
+                removed.incrementAndGet();
+            }
+        });
+        try {
+            // 只创建客户端，不发送消息，不需要实际 Kafka 服务；监听物理 Producer 的释放。
+            factory.createProducer();
+            template.destroy();
+            assertEquals(1, removed.get(), "Template destruction must release its factory's producer");
+            template.destroy();
+            assertEquals(1, removed.get(), "Repeated destruction must not release the same producer twice");
+        } finally {
+            // 修复失效时也清理测试创建的真实客户端线程。
+            factory.destroy();
+        }
+    }
 
     @Test
     void alreadyAssignedPartitionsCanSeekWithoutPollingUninitializedOffsets() {

@@ -28,7 +28,17 @@ public class KafkaUtil {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         DefaultKafkaProducerFactory<String, String> producerFactory = new DefaultKafkaProducerFactory<>(config);
-        return new KafkaTemplate<>(producerFactory);
+        return new KafkaTemplate<>(producerFactory) {
+            @Override
+            public void destroy() {
+                try {
+                    super.destroy();
+                } finally {
+                    // 工厂由当前模板独占；即使模板自身清理失败，也必须关闭工厂缓存的 Producer。
+                    producerFactory.destroy();
+                }
+            }
+        };
     }
 
     public static KafkaTemplate<String, byte[]> newKafkaTemplate_string_bytes(Map<String, Object> properties) {
@@ -36,7 +46,17 @@ public class KafkaUtil {
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         DefaultKafkaProducerFactory<String, byte[]> producerFactory = new DefaultKafkaProducerFactory<>(config);
-        return new KafkaTemplate<>(producerFactory);
+        return new KafkaTemplate<>(producerFactory) {
+            @Override
+            public void destroy() {
+                try {
+                    super.destroy();
+                } finally {
+                    // 工厂由当前模板独占；即使模板自身清理失败，也必须关闭工厂缓存的 Producer。
+                    producerFactory.destroy();
+                }
+            }
+        };
     }
 
     public static KafkaProducer<String, String> newKafkaProducer_string_string(Map<String, Object> properties) {
