@@ -44,38 +44,52 @@ public final class KafkaConsumerGroup implements AutoCloseable {
         List<CompletableFuture<Void>> startupResults = new ArrayList<>(tasks.size());
         for (ConsumerTask task : tasks) {
             CompletableFuture<Void> startupResult = new CompletableFuture<>();
-            threads.add(new Thread(() -> {
-                KafkaConsumer<String, byte[]> consumer;
-                try {
-                    consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
-                } catch (Exception ex) {
-                    completeStartupExceptionally(startupResult, ex);
-                    return;
-                }
-
-                try (consumer) {
-                    try {
-                        task.initializer().accept(consumer);
-                        seek(consumer, consumerParam.seekTimestamp);
-                    } catch (Exception ex) {
-                        completeStartupExceptionally(startupResult, ex);
-                        return;
-                    }
-                    startupResult.complete(null);
-
-                    try {
-                        consumerLoop.accept(consumer);
-                    } catch (Exception ex) {
-                        logger.error("kafka consumer run error", ex);
-                    }
-                } catch (Exception ex) {
-                    logger.error("kafka consumer close error", ex);
-                }
-            }, task.threadName()));
+            threads.add(new Thread(
+                    () -> runConsumer(config, consumerParam.seekTimestamp, task, consumerLoop, startupResult),
+                    task.threadName()));
             startupResults.add(startupResult);
             logger.info("create consumer[{}]", task.threadName());
         }
         return new KafkaConsumerGroup(threads, CompletableFuture.allOf(startupResults.toArray(CompletableFuture[]::new)));
+    }
+
+    /** 每个 Kafka 连接的创建、初始化、消费和关闭都在同一线程完成。 */
+    private static void runConsumer(Map<String, Object> config, long seekTimestamp, ConsumerTask task,
+                                    Consumer<KafkaConsumer<String, byte[]>> consumerLoop,
+                                    CompletableFuture<Void> startupResult) {
+        KafkaConsumer<String, byte[]> consumer;
+        try {
+            consumer = KafkaUtil.newKafkaConsumer_string_bytes(config);
+        } catch (Exception ex) {
+            completeStartupExceptionally(startupResult, ex);
+            return;
+        }
+
+        try (consumer) {
+            if (!initializeConsumer(consumer, seekTimestamp, task, startupResult)) {
+                return;
+            }
+            try {
+                consumerLoop.accept(consumer);
+            } catch (Exception ex) {
+                logger.error("kafka consumer run error", ex);
+            }
+        } catch (Exception ex) {
+            logger.error("kafka consumer close error", ex);
+        }
+    }
+
+    private static boolean initializeConsumer(KafkaConsumer<String, byte[]> consumer, long seekTimestamp,
+                                               ConsumerTask task, CompletableFuture<Void> startupResult) {
+        try {
+            task.initializer().accept(consumer);
+            seek(consumer, seekTimestamp);
+            startupResult.complete(null);
+            return true;
+        } catch (Exception ex) {
+            completeStartupExceptionally(startupResult, ex);
+            return false;
+        }
     }
 
     public synchronized CompletableFuture<Void> start() {

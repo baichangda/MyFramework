@@ -1,6 +1,7 @@
 package cn.bcd.lib.spring.kafka.ext.threaddriven;
 
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
+
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -10,7 +11,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
@@ -108,10 +108,8 @@ class ThreadDrivenConsumerLoopTest {
 
     private static void runLoop(ThreadDrivenKafkaConsumer consumer, KafkaConsumer<String, byte[]> kafka)
             throws Exception {
-        Method method = ThreadDrivenKafkaConsumer.class.getDeclaredMethod("consume", KafkaConsumer.class);
-        method.setAccessible(true);
         consumer.running_consume = true;
-        method.invoke(consumer, kafka);
+        consumer.consume(kafka);
     }
 
     private static class StubKafkaConsumer extends KafkaConsumer<String, byte[]> {
