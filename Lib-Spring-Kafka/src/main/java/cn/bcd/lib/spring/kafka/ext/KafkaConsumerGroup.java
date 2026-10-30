@@ -75,8 +75,7 @@ public final class KafkaConsumerGroup implements AutoCloseable {
             startupResults.add(startupResult);
             logger.info("create consumer[{}]", task.threadName());
         }
-        return new KafkaConsumerGroup(threads,
-                CompletableFuture.allOf(startupResults.toArray(CompletableFuture[]::new)));
+        return new KafkaConsumerGroup(threads, CompletableFuture.allOf(startupResults.toArray(CompletableFuture[]::new)));
     }
 
     public synchronized CompletableFuture<Void> start() {
