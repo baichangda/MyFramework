@@ -71,24 +71,26 @@ public class KafkaUtil {
 
     public static void consumerSeekToBeginning(KafkaConsumer<String, byte[]> consumer) {
         logger.info("start consumer seekToBeginning");
-        Set<TopicPartition> assigment = new HashSet<>();
-        while (assigment.isEmpty()) {
+        // 已 assign 的分区直接定位，避免先 poll 因尚无消费位点（例如 reset=none）而失败。
+        Set<TopicPartition> assignment = consumer.assignment();
+        while (assignment.isEmpty()) {
             consumer.poll(Duration.ofSeconds(1));
-            assigment = consumer.assignment();
+            assignment = consumer.assignment();
         }
-        consumer.seekToBeginning(assigment);
+        consumer.seekToBeginning(assignment);
         logger.info("finish consumer seekToBeginning");
     }
 
     public static void consumerSeekToEnd(KafkaConsumer<String, byte[]> consumer) {
         logger.info("start consumer seekToEnd");
-        Set<TopicPartition> assignment = new HashSet<>();
+        // 只有尚未获得分区时才 poll，订阅模式仍通过 poll 等待消费组分配。
+        Set<TopicPartition> assignment = consumer.assignment();
         while (assignment.isEmpty()) {
             consumer.poll(Duration.ofSeconds(1));
             assignment = consumer.assignment();
         }
         consumer.seekToEnd(assignment);
-        // Resolve the lazy seek before reporting startup completion.
+        // seekToEnd 是惰性定位，立即解析，避免方法返回后新增的消息也被跳过。
         for (TopicPartition partition : assignment) {
             consumer.position(partition);
         }
@@ -97,17 +99,17 @@ public class KafkaUtil {
 
     public static void consumerSeekToTimestamp(KafkaConsumer<String, byte[]> consumer, long seekTimestamp) {
         logger.info("start consumer seekToTimestamp[{}]", DateUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
-        Set<TopicPartition> assigment = new HashSet<>();
-        while (assigment.isEmpty()) {
+        Set<TopicPartition> assignment = consumer.assignment();
+        while (assignment.isEmpty()) {
             consumer.poll(Duration.ofSeconds(1));
-            assigment = consumer.assignment();
+            assignment = consumer.assignment();
         }
         Map<TopicPartition, Long> partition_seekTimestamp = new HashMap<>();
-        for (TopicPartition partition : assigment) {
+        for (TopicPartition partition : assignment) {
             partition_seekTimestamp.put(partition, seekTimestamp);
         }
         Map<TopicPartition, OffsetAndTimestamp> partition_offset = consumer.offsetsForTimes(partition_seekTimestamp);
-        for (TopicPartition partition : assigment) {
+        for (TopicPartition partition : assignment) {
             OffsetAndTimestamp offsetAndTimestamp = partition_offset.get(partition);
             if (offsetAndTimestamp != null) {
                 logger.info("consumer seek topic[{}] partition[{}] offset[{}]",
@@ -120,6 +122,8 @@ public class KafkaUtil {
                         partition.topic(),
                         partition.partition());
                 consumer.seekToEnd(Collections.singletonList(partition));
+                // 回退到末尾也要在返回前固定位置，与 consumerSeekToEnd 保持一致。
+                consumer.position(partition);
             }
         }
         logger.info("finish consumer seekToTimestamp[{}]", DateUtil.dateToStr_yyyyMMddHHmmss(new Date(seekTimestamp)));
