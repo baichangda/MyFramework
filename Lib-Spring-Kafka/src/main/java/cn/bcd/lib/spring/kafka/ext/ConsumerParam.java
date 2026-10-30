@@ -6,6 +6,7 @@ import org.apache.kafka.common.TopicPartition;
 import java.util.Arrays;
 import java.util.Collection;
 
+/** 消费模式、订阅目标和起始位置的参数构建。 */
 public class ConsumerParam {
     /**
      * 1、启动单线程、一个消费者、使用{@link KafkaConsumer#subscribe(Collection)}消费{@link #topics}

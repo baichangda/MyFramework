@@ -44,7 +44,7 @@ class ThreadDrivenConsumerLoopTest {
             };
             runLoop(consumer, kafka);
             assertEquals(2, kafka.pollCount);
-            assertEquals(0, kafka.closeCount, "KafkaConsumerGroup owns the native consumer");
+            assertEquals(0, kafka.closeCount, "runConsumer owns the native consumer");
         }
     }
 
