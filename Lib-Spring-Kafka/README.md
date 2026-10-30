@@ -36,15 +36,15 @@ ThreadDrivenKafkaConsumer 通过 `id(record)` 获取业务 ID（默认为消息 
 ## 扩展消费者的职责划分
 
 - `ConsumerParam`：构建消费模式、topic/分区和起始位置参数。
-- `ConsumerGroup`：拆分参数快照、创建和初始化连接，管理一次启动的消费线程、结果汇总和失败清理。
+- `ConsumerGroup`：拆分参数快照，管理独立消费线程的连接初始化、启动和统一关闭。
 - `ThreadDrivenKafkaConsumer`：按 ID 路由消息，执行 `onMessage(record, executor)`。
 - `DataDrivenKafkaConsumer`：按 ID 维护 `WorkHandler`，负责创建、初始化、消息处理、过期扫描和销毁。
 
 两个 Consumer 各自维护完整的启动、暂停/恢复、限速、拉取、调度和关闭流程，独立实现，便于分别阅读和调整。构造参数及现有调用方式保持兼容。
 
-`startConsume()` 检查状态后，创建并保存 `ConsumerGroup`，再调用 `start()`。`ConsumerGroup` 在各消费线程内创建连接、订阅或指定分区、执行 seek，然后执行具体 Consumer 的 `consume()`。启动协调线程等待全部初始化完成；任意线程启动失败时，先停止并等待本轮全部消费线程退出，再返回失败结果，允许重新启动。关闭和内部线程识别也通过本次 `ConsumerGroup` 完成。
+`startConsume()` 检查状态后，创建并保存 `ConsumerGroup`，再调用 `start()` 发起各线程启动。每个线程独立创建连接、订阅或指定分区、执行 seek，然后进入具体 Consumer 的 `consume()`，退出时关闭自己的连接。线程之间不等待初始化完成，也不因其他线程初始化失败或退出而停止。
 
-`startConsume(properties)` 返回全部消费者的启动结果，不代表消息处理完成或消费循环结束。默认订阅模式的分区分配在后续 `poll()` 时发生。调用 `.join()` 可等待启动成功并获知启动失败。
+`startConsume(properties)` 返回 void，发起启动后立即返回，不等待 Kafka 初始化，也不提供整体启动成功的确认。线程初始化失败只打印异常并退出；poll 的普通异常记录后退避 3 秒继续，中断或统一关闭时退出当前消费线程。重复启动不会重建失败或已退出的线程，需要恢复时重建 Consumer 或重启应用。
 
 关闭顺序为停止消费线程、停止调度任务、排空工作任务、销毁 Handler。工作线程、消费线程和调度线程调用 `close()` 时只发起关闭；外部线程调用时等待关闭完成，重复调用等待同一次关闭。
 

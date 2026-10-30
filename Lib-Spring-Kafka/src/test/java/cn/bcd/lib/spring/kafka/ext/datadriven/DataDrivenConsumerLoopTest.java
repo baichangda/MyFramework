@@ -50,6 +50,27 @@ class DataDrivenConsumerLoopTest {
         }
     }
 
+    @Test
+    void pollFailureRetriesWithoutStoppingTheConsumer() throws Exception {
+        try (DataDrivenKafkaConsumer consumer = new DataDrivenKafkaConsumer(
+                "poll-retry-test", 1, 1000, true, 0, null, 0, ConsumerParam.get_singleConsumer("topic")) {
+            @Override
+            public WorkHandler newHandler(String id, ConsumerRecord<String, byte[]> first) {
+                throw new AssertionError("No records should be dispatched");
+            }
+        }; StubKafkaConsumer kafka = new StubKafkaConsumer()) {
+            kafka.pollAction = timeout -> {
+                if (++kafka.pollCount == 1) {
+                    throw new IllegalStateException("temporary poll failure");
+                }
+                consumer.running_consume = false;
+                return ConsumerRecords.empty();
+            };
+            assertTimeoutPreemptively(Duration.ofSeconds(6), () -> runLoop(consumer, kafka));
+            assertEquals(2, kafka.pollCount);
+        }
+    }
+
     private static void runLoop(DataDrivenKafkaConsumer consumer, KafkaConsumer<String, byte[]> kafka) {
         consumer.running_consume = true;
         consumer.consume(kafka);

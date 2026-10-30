@@ -10,6 +10,7 @@ import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.InterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,18 +52,16 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     public final LongAdder monitor_workCount = new LongAdder();
     /** 独立于工作执行器，避免业务阻塞时连带阻塞限速重置或监控；无调度任务时为 null。 */
     public final ScheduledExecutorService scheduledPool;
-    /** 本轮 Kafka 线程及启动结果的持有者，供关闭线程和内部线程识别使用。 */
+    /** 本组独立消费线程的持有者，供关闭线程和内部线程识别使用。 */
     private volatile ConsumerGroup consumerGroup;
 
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration PAUSED_POLL_TIMEOUT = Duration.ofMillis(100);
-    /** 由 synchronized 的 startConsume() 保护；启动完成后不随运行期异常重新完成。 */
-    private CompletableFuture<Void> startupResult;
     /** 由 synchronized(this) 保护，所有外部关闭调用等待同一个完成结果。 */
     private CompletableFuture<Void> closeResult;
     /** 只在生命周期锁内读写，一旦置为 true 就不再允许启动。 */
     private boolean closed;
-    /** 供启动、消费、失败回调和关闭线程共同使用，volatile 保证停止请求可见。 */
+    /** 组级消费开关，启动时打开、关闭时停止；单个线程退出不会修改，也不代表线程均已初始化。 */
     volatile boolean running_consume;
     /** 暂停只控制后续拉取，已经入队的工作任务仍会继续执行。 */
     private volatile boolean pauseConsume;
@@ -126,31 +125,27 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     }
 
     /**
-     * 返回全部消费者的启动结果，包括创建、订阅/分区指定和 seek 初始化。
-     * 默认 subscribe 模式的分区分配在后续 poll 中发生；此 Future 不代表消费结束。
+     * 发起各消费线程的启动后返回，不等待初始化，也不提供启动 Future。
+     * 各线程初始化失败只记录日志并退出，其他线程继续运行；重复调用不会重建失败线程。
+     * 关闭后禁止启动；准备线程前的配置异常在当前线程记录，准备失败时允许再次调用。
      */
-    public synchronized CompletableFuture<Void> startConsume(Map<String, Object> consumerProp) {
+    public synchronized void startConsume(Map<String, Object> consumerProp) {
         if (closed) {
             throw new IllegalStateException("consumer already closed");
         }
-        // 成功启动后重复调用返回同一结果；失败结果在本轮线程清理完成后才发布，允许重试。
-        if (startupResult != null && !startupResult.isCompletedExceptionally()) {
-            return startupResult;
+        if (consumerGroup != null) {
+            return;
         }
 
-        // 必须先设置运行标志，再启动线程，避免消费循环刚进入就退出。
         running_consume = true;
         try {
-            // 先发布 consumerGroup 再 start，使启动/消费回调中发起的 close() 能识别当前线程归属。
-            consumerGroup = new ConsumerGroup(name, consumerProp, consumerParam, this::consume,
-                    () -> running_consume = false);
-            startupResult = consumerGroup.start();
+            // 先发布 consumerGroup 再 start，使消费回调内的 close() 能识别所属线程。
+            consumerGroup = new ConsumerGroup(name, consumerProp, consumerParam, this::consume);
+            consumerGroup.start();
         } catch (RuntimeException | Error ex) {
             running_consume = false;
             logger.error("kafka consumer start error", ex);
-            startupResult = CompletableFuture.failedFuture(ex);
         }
-        return startupResult;
     }
 
     /** 请求暂停后续拉取；消费线程在下一轮检查，不会撤回本轮 poll 已返回的消息。 */
@@ -165,18 +160,20 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
     /** 在所属 Kafka 消费线程运行，原生消费者由 ConsumerGroup 关闭。 */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
-        try {
-            while (running_consume) {
-                try {
-                    pollAndDispatch(consumer);
-                } catch (Exception ex) {
-                    if (!running_consume || !retryAfterFailure(ex)) {
-                        break;
-                    }
+        // 中断只结束当前线程；组级 running_consume 只由统一启动/关闭流程维护。
+        while (running_consume && !Thread.currentThread().isInterrupted()) {
+            try {
+                pollAndDispatch(consumer);
+            } catch (Exception ex) {
+                // Kafka 的中断异常与普通 poll 错误区别处理，防止关闭后继续退避和轮询。
+                if (ex instanceof InterruptException) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                if (!running_consume || Thread.currentThread().isInterrupted() || !retryAfterFailure(ex)) {
+                    break;
                 }
             }
-        } finally {
-            running_consume = false;
         }
     }
 
@@ -303,7 +300,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
     /**
      * 内部线程只发起关闭，外部线程等待同一次关闭完成。
-     * 统一交给独立线程执行资源回收，避免消费、工作、调度和启动协调线程等待自身退出。
+     * 统一交给独立线程执行资源回收，避免消费、工作和调度线程等待自身退出。
      */
     @Override
     public void close() {
@@ -357,7 +354,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         }
     }
 
-    /** 包含启动协调线程，因为 start() 返回的 Future 完成回调也可能在该线程执行。 */
+    /** 消费、工作和调度线程均只能发起关闭，不能同步等待包含自己的资源回收。 */
     private boolean isCurrentOwnedThread() {
         Thread current = Thread.currentThread();
         if (current == schedulerThread || (consumerGroup != null && consumerGroup.contains(current))) {

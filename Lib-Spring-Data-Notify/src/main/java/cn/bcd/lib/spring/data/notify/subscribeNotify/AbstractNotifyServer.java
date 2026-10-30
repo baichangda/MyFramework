@@ -95,7 +95,8 @@ public abstract class AbstractNotifyServer extends ThreadDrivenKafkaConsumer {
         checkAndUpdateCache().join();
         //开始消费
         try {
-            startConsume(consumerProp.buildProperties()).join();
+            // 缓存已加载，消费线程独立初始化，不再等待整体启动结果。
+            startConsume(consumerProp.buildProperties());
         } catch (Exception ex) {
             close();
             logger.error("error", ex);

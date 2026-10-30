@@ -14,164 +14,104 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * 管理一次 Kafka 消费启动：复制参数、创建消费线程、汇总初始化结果，并处理停止和启动失败。
- * 每个实例只启动一次；失败后重试应新建实例，避免旧线程影响下一次启动。
- * <p>
- * 连接的创建、订阅、seek、消费和关闭均在各自消费线程中执行。
- * 协调线程只负责启动和等待结果；业务消息如何派发给工作执行器，由 consume 回调决定。
+ * 管理一组独立运行的 Kafka 消费线程，不汇总启动结果，也不等待全部初始化后统一放行。
+ * 每个线程自己创建连接、订阅、seek、进入消费循环，并在退出时关闭自己的连接。
+ * 单个线程初始化失败或消费循环退出时只记录异常，不停止其他线程，也不自动重建失败线程。
  */
 public final class ConsumerGroup implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(ConsumerGroup.class);
 
-    /** 本次启动的全部消费线程；构造后数组内容固定，可供关闭和线程归属判断使用。 */
+    /** 构造时准备全部线程，调用方保存本组对象后再 start，便于内部回调正确识别线程归属。 */
     private final Thread[] consumerThreads;
-    /** 短生命周期的协调线程，避免启动调用方等待网络初始化或失败清理。 */
-    private final Thread startupThread;
-    /** 内部初始化信号：全部成功才完成，任意初始化失败即可唤醒协调线程。 */
-    private final CompletableFuture<Void> initializationResult = new CompletableFuture<>();
-    /** 对外结果：成功表示全部初始化完成；失败时还保证本轮消费线程已退出。 */
-    private final CompletableFuture<Void> startResult = new CompletableFuture<>();
-    private final Runnable onStartupFailure;
-    /** 由本对象的监视器保护，防止重复启动协调线程。 */
+    /** 由本对象的监视器保护，重复 start 不会再次启动线程或重建失败的消费者。 */
     private boolean started;
-    /** 由关闭或失败路径写入，消费线程在进入业务消费前检查。 */
+    /** 只由 close 设置；消费线程在网络初始化后再次检查，避免关闭后进入消费循环。 */
     private volatile boolean stopped;
 
     /**
-     * 只准备线程和参数快照；调用方保存本对象后，再调用 start()。
-     * 先保存再启动，才能让消费回调中的 close() 正确识别所属线程，避免等待自己退出。
+     * 只创建参数快照和线程对象，不创建 Kafka 连接。
      *
-     * @param name 消费线程和协调线程的名称前缀
-     * @param properties 原生消费者配置，构造时复制，后续修改原 Map 不影响本次启动
-     * @param consumerParam 消费模式、订阅目标和起始位置，构造时拆分为独立快照
-     * @param consume 在所属消费线程内执行的消费循环，返回后关闭该线程的 Kafka 连接
-     * @param onStartupFailure 失败或未启动即关闭时通知调用方停止消费；必须快速返回，不能抛异常
-     *                         或等待本次启动完成，否则会阻塞失败清理
+     * @param name 线程名称前缀
+     * @param properties 原生消费者配置，构造时复制
+     * @param consumerParam 消费模式、topic/分区和起始位置，构造时拆分为独立快照
+     * @param consume 在所属消费线程运行的消费循环，返回后关闭该线程的连接
      */
     public ConsumerGroup(String name, Map<String, Object> properties, ConsumerParam consumerParam,
-                           Consumer<KafkaConsumer<String, byte[]>> consume, Runnable onStartupFailure) {
+                         Consumer<KafkaConsumer<String, byte[]>> consume) {
         Map<String, Object> config = new HashMap<>(properties);
         List<ConsumerParam> params = split(Objects.requireNonNull(consumerParam, "consumerParam"));
         Objects.requireNonNull(consume, "consume");
-        this.onStartupFailure = Objects.requireNonNull(onStartupFailure, "onStartupFailure");
-        // 多个消费线程并行初始化，最后一个成功者发布 initializationResult 的成功结果。
-        AtomicInteger remaining = new AtomicInteger(params.size());
         consumerThreads = new Thread[params.size()];
         for (int i = 0; i < consumerThreads.length; i++) {
             ConsumerParam param = params.get(i);
-            consumerThreads[i] = new Thread(() -> runConsumer(param, config, consume, remaining),
+            consumerThreads[i] = new Thread(() -> runConsumer(param, config, consume),
                     name + "-consumer(" + (i + 1) + "/" + consumerThreads.length + ")");
         }
-        startupThread = Thread.ofVirtual().name(name + "-startup").unstarted(() -> {
-            try {
-                // 与 close() 使用同一把锁，保证关闭后不会再启动尚未启动的消费线程。
-                synchronized (this) {
-                    if (stopped) {
-                        throw new IllegalStateException("consumer closed during startup");
-                    }
-                    for (Thread thread : consumerThreads) {
-                        thread.start();
-                    }
-                }
-                // 等待发生在协调线程，不占用调用 start() 的线程或任何消费线程。
-                initializationResult.join();
-                // 非 Async 的完成回调可能在这里同步执行，调用方不应在回调中长时间阻塞。
-                startResult.complete(null);
-            } catch (RuntimeException | Error ex) {
-                stopped = true;
-                // 先让业务消费循环停止，再中断并等待所有线程，最后才允许调用方看到失败并重试。
-                onStartupFailure.run();
-                ExecutorUtil.shutdownAllThenAwait(true, (Object) consumerThreads);
-                Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
-                logger.error("kafka consumer start error", cause);
-                startResult.completeExceptionally(cause);
-            }
-        });
     }
 
     /**
-     * 非阻塞地发起启动，重复调用返回同一次结果，不重新创建连接。
-     * 成功仅表示连接创建、订阅/分区指定和 seek 完成，不代表消费结束或消息处理成功。
-     * 默认 subscribe 模式不主动等待分区分配；分配发生在消费循环后续的 poll 中。
-     * 失败结果在全部消费线程退出后发布，调用方可安全创建新的 ConsumerGroup 重试。
+     * 发起各线程的启动后立即返回，不等待 Kafka 初始化完成。
+     * 与 close 使用同一把锁，保证关闭后不会再启动线程；单个线程无法启动时记录并继续启动其他线程。
      */
-    public synchronized CompletableFuture<Void> start() {
-        if (!started && !stopped) {
-            started = true;
+    public synchronized void start() {
+        if (stopped) {
+            throw new IllegalStateException("consumer group already closed");
+        }
+        if (started) {
+            return;
+        }
+        started = true;
+        for (Thread thread : consumerThreads) {
             try {
-                startupThread.start();
+                thread.start();
             } catch (RuntimeException | Error ex) {
-                // 协调线程本身未能启动，此时尚未启动任何消费线程，无需等待网络资源清理。
-                stopped = true;
-                onStartupFailure.run();
-                startResult.completeExceptionally(ex);
+                logger.error("kafka consumer thread start error thread[{}]", thread.getName(), ex);
             }
         }
-        return startResult;
     }
 
+    /** 所有连接操作保持在所属线程内；异常只影响当前线程，组级停止标志不在这里修改。 */
     private void runConsumer(ConsumerParam param, Map<String, Object> config,
-                             Consumer<KafkaConsumer<String, byte[]>> consume, AtomicInteger remaining) {
-        // 区分本线程初始化失败与进入消费后的异常，后者不会改写已经发布的启动成功结果。
-        boolean ready = false;
+                             Consumer<KafkaConsumer<String, byte[]>> consume) {
         try (KafkaConsumer<String, byte[]> consumer = newConsumer(param, config)) {
-            // 初始化可能涉及网络等待，其间已收到关闭请求时不再进入业务消费。
+            // 初始化可能等待网络；期间已关闭或中断时，不再进入消费循环。
             if (stopped || Thread.currentThread().isInterrupted()) {
-                throw new IllegalStateException("consumer stopped during startup");
-            }
-            ready = true;
-            if (remaining.decrementAndGet() == 0) {
-                initializationResult.complete(null);
+                return;
             }
             consume.accept(consumer);
         } catch (Exception | Error ex) {
-            if (!ready) {
-                initializationResult.completeExceptionally(ex);
-            } else {
-                logger.error("kafka consumer run or close error", ex);
-            }
+            logger.error("kafka consumer thread error thread[{}]", Thread.currentThread().getName(), ex);
         }
     }
 
-    /** 包含协调线程，保证启动完成回调中发起关闭时也能被识别为内部调用。 */
+    /** 判断是否为本组消费线程，外层 Consumer 据此避免内部关闭调用等待自身退出。 */
     public boolean contains(Thread thread) {
-        return thread == startupThread || Arrays.asList(consumerThreads).contains(thread);
+        return Arrays.asList(consumerThreads).contains(thread);
     }
 
-    /** 返回不可修改的消费线程列表，用于诊断；不包含协调线程。 */
+    /** 返回不可修改的消费线程列表，用于诊断线程数量和存活状态。 */
     public List<Thread> threads() {
         return List.of(consumerThreads);
     }
 
     /**
-     * 阻止继续启动并中断所有消费线程；外部调用等待消费线程和协调线程全部退出。
-     * 内部线程调用只发出停止请求，由线程退出及协调线程的失败路径继续收尾，避免自等待。
-     * 本方法只处理 Kafka 线程和连接，业务工作队列由外层 Consumer 负责关闭。
+     * 阻止继续启动，先中断所有消费线程，再在锁外等待退出。
+     * 内部线程调用只发出停止请求，避免等待自己；业务工作队列仍由外层 Consumer 关闭。
+     * 连接通过消费线程的资源块关闭，因此消费循环应在中断时及时返回。
      */
     @Override
     public void close() {
         synchronized (this) {
             stopped = true;
-            IllegalStateException error = new IllegalStateException("consumer stopped during startup");
-            // 即使尚无线程报告初始化结果，也要唤醒正在等待的协调线程。
-            initializationResult.completeExceptionally(error);
-            if (!started && !startResult.isDone()) {
-                onStartupFailure.run();
-                startResult.completeExceptionally(error);
-            }
             for (Thread thread : consumerThreads) {
                 thread.interrupt();
             }
         }
-        // join 必须放在锁外，否则协调线程可能拿不到同一把锁而无法退出。
         if (!contains(Thread.currentThread())) {
-            ExecutorUtil.await((Object) consumerThreads, startupThread);
+            ExecutorUtil.await((Object) consumerThreads);
         }
     }
 

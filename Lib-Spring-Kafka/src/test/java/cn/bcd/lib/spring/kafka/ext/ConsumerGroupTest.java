@@ -6,47 +6,47 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConsumerGroupTest {
     @Test
-    void preparedStartupCanBeClosedBeforeStartAndRepeatedCloseIsSafe() {
-        AtomicInteger failures = new AtomicInteger();
+    void groupCanBeClosedBeforeStartAndRepeatedCloseIsSafe() {
         ConsumerParam param = ConsumerParam.get_singleConsumer("topic");
-        try (var startup = new ConsumerGroup("unstarted-test", Map.of(), param,
-                consumer -> fail("Closed startup must not consume"), failures::incrementAndGet)) {
-            startup.close();
-            startup.close();
-            assertThrows(ExecutionException.class, () -> startup.start().get(1, TimeUnit.SECONDS));
-            assertEquals(1, failures.get());
-            for (Thread thread : startup.threads()) {
+        try (var group = new ConsumerGroup("unstarted-test", Map.of(), param,
+                consumer -> fail("Closed group must not consume"))) {
+            group.close();
+            group.close();
+            assertThrows(IllegalStateException.class, group::start);
+            for (Thread thread : group.threads()) {
                 assertEquals(Thread.State.NEW, thread.getState());
             }
         }
     }
 
     @Test
-    void oneParameterCanPrepareIndependentStartups() throws Exception {
+    void oneParameterCanPrepareIndependentGroups() throws Exception {
         ConsumerParam param = ConsumerParam.get_singleConsumer("topic");
         Map<String, Object> properties = Map.of("bootstrap.servers", "127.0.0.1:1",
-                "group.id", "independent-startups", "enable.auto.commit", false);
+                "group.id", "independent-groups", "enable.auto.commit", false);
+        CountDownLatch entered = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
         Consumer<KafkaConsumer<String, byte[]>> consume = consumer -> {
+            entered.countDown();
             try {
                 release.await();
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
         };
-        try (var first = new ConsumerGroup("first-test", properties, param, consume, () -> {});
-             var second = new ConsumerGroup("second-test", properties, param, consume, () -> {})) {
-            first.start().get(10, TimeUnit.SECONDS);
-            second.start().get(10, TimeUnit.SECONDS);
+        try (var first = new ConsumerGroup("first-test", properties, param, consume);
+             var second = new ConsumerGroup("second-test", properties, param, consume)) {
+            first.start();
+            second.start();
+            assertTrue(entered.await(10, TimeUnit.SECONDS));
+            assertDoesNotThrow(first::start);
             assertNotSame(first.threads().getFirst(), second.threads().getFirst());
             first.close();
             assertFalse(first.threads().getFirst().isAlive());

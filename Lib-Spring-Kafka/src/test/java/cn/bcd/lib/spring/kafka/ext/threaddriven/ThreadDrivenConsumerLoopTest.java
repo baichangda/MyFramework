@@ -106,6 +106,22 @@ class ThreadDrivenConsumerLoopTest {
         };
     }
 
+    @Test
+    void pollFailureRetriesWithoutStoppingTheConsumer() throws Exception {
+        try (ThreadDrivenKafkaConsumer consumer = newConsumer(0, 0);
+             StubKafkaConsumer kafka = new StubKafkaConsumer()) {
+            kafka.pollAction = timeout -> {
+                if (++kafka.pollCount == 1) {
+                    throw new IllegalStateException("temporary poll failure");
+                }
+                consumer.running_consume = false;
+                return ConsumerRecords.empty();
+            };
+            assertTimeoutPreemptively(Duration.ofSeconds(6), () -> runLoop(consumer, kafka));
+            assertEquals(2, kafka.pollCount);
+        }
+    }
+
     private static void runLoop(ThreadDrivenKafkaConsumer consumer, KafkaConsumer<String, byte[]> kafka)
             throws Exception {
         consumer.running_consume = true;

@@ -93,7 +93,8 @@ public abstract class AbstractNotifyClient extends ThreadDrivenKafkaConsumer {
         }, 1, 1, TimeUnit.MINUTES);
         //开始消费
         try {
-            startConsume(consumerProp.buildProperties()).join();
+            // 消费线程独立初始化，发起启动后继续，不等待 Kafka 连接完成。
+            startConsume(consumerProp.buildProperties());
         } catch (Exception ex) {
             close();
             logger.error("error", ex);
