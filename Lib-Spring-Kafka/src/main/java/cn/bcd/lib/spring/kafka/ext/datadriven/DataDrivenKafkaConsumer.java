@@ -130,7 +130,13 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 String workerName = name + "-worker(" + (i + 1) + "/" + this.workExecutorNum + ")";
                 workExecutors[i] = new WorkExecutor(r -> new Thread(r, workerName));
             }
-            startMaintenance();
+            if (maxConsumeSpeed > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> consumeCount.set(0), 1, 1, TimeUnit.SECONDS);
+            }
+            if (monitor_period > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> logger.info(monitor_log()),
+                        monitor_period, monitor_period, TimeUnit.SECONDS);
+            }
             if (workHandlerScanner != null) {
                 scheduledPool.scheduleAtFixedRate(
                         () -> scanAndDestroyWorkHandler(workHandlerScanner.expiredInSecond),
@@ -145,17 +151,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
     private static void validateScanner(WorkHandlerScanner scanner) {
         if (scanner != null && (scanner.periodInSecond <= 0 || scanner.expiredInSecond <= 0)) {
             throw new IllegalArgumentException("workHandlerScanner periods must be positive");
-        }
-    }
-
-    /** 工作执行器创建完成后再启动调度任务。 */
-    private void startMaintenance() {
-        if (maxConsumeSpeed > 0) {
-            scheduledPool.scheduleAtFixedRate(() -> consumeCount.set(0), 1, 1, TimeUnit.SECONDS);
-        }
-        if (monitor_period > 0) {
-            scheduledPool.scheduleAtFixedRate(() -> logger.info(monitor_log()),
-                    monitor_period, monitor_period, TimeUnit.SECONDS);
         }
     }
 

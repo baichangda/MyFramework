@@ -94,21 +94,16 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                 String workerName = name + "-worker(" + (i + 1) + "/" + workPool.length + ")";
                 workPool[i] = new DefaultEventExecutor((ThreadFactory) task -> new Thread(task, workerName));
             }
-            startMaintenance();
+            if (maxConsumeSpeed > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> consumeCount.set(0), 1, 1, TimeUnit.SECONDS);
+            }
+            if (monitor_period > 0) {
+                scheduledPool.scheduleAtFixedRate(() -> logger.info(monitor_log()),
+                        monitor_period, monitor_period, TimeUnit.SECONDS);
+            }
         } catch (Exception ex) {
             closeInternal();
             throw BaseException.get(ex);
-        }
-    }
-
-    /** 工作执行器创建完成后再启动调度任务。 */
-    private void startMaintenance() {
-        if (maxConsumeSpeed > 0) {
-            scheduledPool.scheduleAtFixedRate(() -> consumeCount.set(0), 1, 1, TimeUnit.SECONDS);
-        }
-        if (monitor_period > 0) {
-            scheduledPool.scheduleAtFixedRate(() -> logger.info(monitor_log()),
-                    monitor_period, monitor_period, TimeUnit.SECONDS);
         }
     }
 
