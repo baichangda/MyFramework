@@ -46,7 +46,6 @@ class ConsumerGroupTest {
             first.start();
             second.start();
             assertTrue(entered.await(10, TimeUnit.SECONDS));
-            assertDoesNotThrow(first::start);
             assertNotSame(first.threads().getFirst(), second.threads().getFirst());
             first.close();
             assertFalse(first.threads().getFirst().isAlive());

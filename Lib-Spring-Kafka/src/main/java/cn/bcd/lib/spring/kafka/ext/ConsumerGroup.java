@@ -26,8 +26,6 @@ public final class ConsumerGroup implements AutoCloseable {
 
     /** 构造时准备全部线程，调用方保存本组对象后再 start，便于内部回调正确识别线程归属。 */
     private final Thread[] consumerThreads;
-    /** 由本对象的监视器保护，重复 start 不会再次启动线程或重建失败的消费者。 */
-    private boolean started;
     /** 只由 close 设置；消费线程在网络初始化后再次检查，避免关闭后进入消费循环。 */
     private volatile boolean stopped;
 
@@ -54,22 +52,15 @@ public final class ConsumerGroup implements AutoCloseable {
 
     /**
      * 发起各线程的启动后立即返回，不等待 Kafka 初始化完成。
-     * 与 close 使用同一把锁，保证关闭后不会再启动线程；单个线程无法启动时记录并继续启动其他线程。
+     * 由外层 Consumer 保证每个 ConsumerGroup 只调用一次，不在这里维护重复启动状态。
+     * 与 close 使用同一把锁，保证关闭后不会再启动线程。
      */
     public synchronized void start() {
         if (stopped) {
             throw new IllegalStateException("consumer group already closed");
         }
-        if (started) {
-            return;
-        }
-        started = true;
         for (Thread thread : consumerThreads) {
-            try {
-                thread.start();
-            } catch (RuntimeException | Error ex) {
-                logger.error("kafka consumer thread start error thread[{}]", thread.getName(), ex);
-            }
+            thread.start();
         }
     }
 
