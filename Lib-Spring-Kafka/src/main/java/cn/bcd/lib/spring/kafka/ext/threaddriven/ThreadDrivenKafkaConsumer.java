@@ -4,7 +4,7 @@ import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.StringUtil;
 import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
-import cn.bcd.lib.spring.kafka.ext.ConsumerStartup;
+import cn.bcd.lib.spring.kafka.ext.ConsumerGroup;
 import io.netty.util.concurrent.DefaultEventExecutor;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -40,7 +40,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /**
      * 尚未释放的消息数量，包含等待执行和正在处理的消息。
      * autoReleaseBlocking=false 时，业务必须在异步完成或失败后恰好释放一次；
-     * 该计数只用于积压控制，不表示 Kafka offset 已提交。
+     * LongAdder 的 sum 用于近似积压判断，不是严格的容量预留，也不表示 Kafka offset 已提交。
      */
     public final LongAdder blockingNum = new LongAdder();
     /** 多个消费线程共用的秒级计数，由调度线程每秒归零，属于按批检查的固定窗口限速。 */
@@ -52,7 +52,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /** 独立于工作执行器，避免业务阻塞时连带阻塞限速重置或监控；无调度任务时为 null。 */
     public final ScheduledExecutorService scheduledPool;
     /** 本轮 Kafka 线程及启动结果的持有者，供关闭线程和内部线程识别使用。 */
-    private volatile ConsumerStartup startup;
+    private volatile ConsumerGroup consumerGroup;
 
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration PAUSED_POLL_TIMEOUT = Duration.ofMillis(100);
@@ -141,10 +141,10 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         // 必须先设置运行标志，再启动线程，避免消费循环刚进入就退出。
         running_consume = true;
         try {
-            // 先发布 startup 再 start，使启动/消费回调中发起的 close() 能识别当前线程归属。
-            startup = new ConsumerStartup(name, consumerProp, consumerParam, this::consume,
+            // 先发布 consumerGroup 再 start，使启动/消费回调中发起的 close() 能识别当前线程归属。
+            consumerGroup = new ConsumerGroup(name, consumerProp, consumerParam, this::consume,
                     () -> running_consume = false);
-            startupResult = startup.start();
+            startupResult = consumerGroup.start();
         } catch (RuntimeException | Error ex) {
             running_consume = false;
             logger.error("kafka consumer start error", ex);
@@ -163,7 +163,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         pauseConsume = false;
     }
 
-    /** 在所属 Kafka 消费线程运行，原生消费者由 ConsumerStartup 关闭。 */
+    /** 在所属 Kafka 消费线程运行，原生消费者由 ConsumerGroup 关闭。 */
     public void consume(KafkaConsumer<String, byte[]> consumer) {
         try {
             while (running_consume) {
@@ -198,7 +198,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         if (maxConsumeSpeed > 0) {
             consumeCount.addAndGet(records.count());
         }
-        // 限制在 poll 前按批检查，批内不逐条限流，因此积压或速度可能超过阈值一批。
+        // 限制在 poll 前按批检查，批内不逐条限流；多消费线程可同时拉取，积压或速度可超出阈值。
         // 入队后不等待工作完成；业务完成和 offset 提交需要使用方另行设计。
         for (ConsumerRecord<String, byte[]> record : records) {
             if (!running_consume) {
@@ -337,9 +337,9 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /** 也用于构造失败后的资源清理。 */
     private void closeInternal() {
         running_consume = false;
-        if (startup != null) {
+        if (consumerGroup != null) {
             // 先停止并等待 Kafka 线程，不再产生新的工作任务。
-            startup.close();
+            consumerGroup.close();
         }
         // 再停止调度任务，避免关闭工作执行器时仍有监控或扫描任务提交。
         ExecutorUtil.shutdownThenAwait(true, scheduledPool);
@@ -360,7 +360,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     /** 包含启动协调线程，因为 start() 返回的 Future 完成回调也可能在该线程执行。 */
     private boolean isCurrentOwnedThread() {
         Thread current = Thread.currentThread();
-        if (current == schedulerThread || (startup != null && startup.contains(current))) {
+        if (current == schedulerThread || (consumerGroup != null && consumerGroup.contains(current))) {
             return true;
         }
         for (SingleThreadEventExecutor executor : workPool) {

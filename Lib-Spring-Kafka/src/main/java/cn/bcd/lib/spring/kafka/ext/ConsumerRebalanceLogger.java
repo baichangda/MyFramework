@@ -8,6 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
+/**
+ * 记录 subscribe 模式下的分区分配变化，由 Kafka 在消费线程中调用。
+ * 只负责日志，不等待业务工作队列排空，也不提交 offset 或转移 Handler 状态。
+ * assign 模式不使用该监听器进行自动分区协调。
+ */
 public class ConsumerRebalanceLogger implements ConsumerRebalanceListener {
     static final Logger logger = LoggerFactory.getLogger(ConsumerRebalanceLogger.class);
 

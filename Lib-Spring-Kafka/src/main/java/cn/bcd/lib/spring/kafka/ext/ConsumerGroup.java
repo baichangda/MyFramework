@@ -26,17 +26,17 @@ import java.util.function.Consumer;
  * 连接的创建、订阅、seek、消费和关闭均在各自消费线程中执行。
  * 协调线程只负责启动和等待结果；业务消息如何派发给工作执行器，由 consume 回调决定。
  */
-public final class ConsumerStartup implements AutoCloseable {
-    private static final Logger logger = LoggerFactory.getLogger(ConsumerStartup.class);
+public final class ConsumerGroup implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerGroup.class);
 
     /** 本次启动的全部消费线程；构造后数组内容固定，可供关闭和线程归属判断使用。 */
-    private final Thread[] threads;
+    private final Thread[] consumerThreads;
     /** 短生命周期的协调线程，避免启动调用方等待网络初始化或失败清理。 */
-    private final Thread coordinator;
+    private final Thread startupThread;
     /** 内部初始化信号：全部成功才完成，任意初始化失败即可唤醒协调线程。 */
-    private final CompletableFuture<Void> initialized = new CompletableFuture<>();
+    private final CompletableFuture<Void> initializationResult = new CompletableFuture<>();
     /** 对外结果：成功表示全部初始化完成；失败时还保证本轮消费线程已退出。 */
-    private final CompletableFuture<Void> result = new CompletableFuture<>();
+    private final CompletableFuture<Void> startResult = new CompletableFuture<>();
     private final Runnable onStartupFailure;
     /** 由本对象的监视器保护，防止重复启动协调线程。 */
     private boolean started;
@@ -54,43 +54,43 @@ public final class ConsumerStartup implements AutoCloseable {
      * @param onStartupFailure 失败或未启动即关闭时通知调用方停止消费；必须快速返回，不能抛异常
      *                         或等待本次启动完成，否则会阻塞失败清理
      */
-    public ConsumerStartup(String name, Map<String, Object> properties, ConsumerParam consumerParam,
+    public ConsumerGroup(String name, Map<String, Object> properties, ConsumerParam consumerParam,
                            Consumer<KafkaConsumer<String, byte[]>> consume, Runnable onStartupFailure) {
         Map<String, Object> config = new HashMap<>(properties);
         List<ConsumerParam> params = split(Objects.requireNonNull(consumerParam, "consumerParam"));
         Objects.requireNonNull(consume, "consume");
         this.onStartupFailure = Objects.requireNonNull(onStartupFailure, "onStartupFailure");
-        // 多个消费线程并行初始化，最后一个成功者发布 initialized 的成功结果。
+        // 多个消费线程并行初始化，最后一个成功者发布 initializationResult 的成功结果。
         AtomicInteger remaining = new AtomicInteger(params.size());
-        threads = new Thread[params.size()];
-        for (int i = 0; i < threads.length; i++) {
+        consumerThreads = new Thread[params.size()];
+        for (int i = 0; i < consumerThreads.length; i++) {
             ConsumerParam param = params.get(i);
-            threads[i] = new Thread(() -> runConsumer(param, config, consume, remaining),
-                    name + "-consumer(" + (i + 1) + "/" + threads.length + ")");
+            consumerThreads[i] = new Thread(() -> runConsumer(param, config, consume, remaining),
+                    name + "-consumer(" + (i + 1) + "/" + consumerThreads.length + ")");
         }
-        coordinator = Thread.ofVirtual().name(name + "-startup").unstarted(() -> {
+        startupThread = Thread.ofVirtual().name(name + "-startup").unstarted(() -> {
             try {
                 // 与 close() 使用同一把锁，保证关闭后不会再启动尚未启动的消费线程。
                 synchronized (this) {
                     if (stopped) {
                         throw new IllegalStateException("consumer closed during startup");
                     }
-                    for (Thread thread : threads) {
+                    for (Thread thread : consumerThreads) {
                         thread.start();
                     }
                 }
                 // 等待发生在协调线程，不占用调用 start() 的线程或任何消费线程。
-                initialized.join();
+                initializationResult.join();
                 // 非 Async 的完成回调可能在这里同步执行，调用方不应在回调中长时间阻塞。
-                result.complete(null);
+                startResult.complete(null);
             } catch (RuntimeException | Error ex) {
                 stopped = true;
                 // 先让业务消费循环停止，再中断并等待所有线程，最后才允许调用方看到失败并重试。
                 onStartupFailure.run();
-                ExecutorUtil.shutdownAllThenAwait(true, (Object) threads);
+                ExecutorUtil.shutdownAllThenAwait(true, (Object) consumerThreads);
                 Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
                 logger.error("kafka consumer start error", cause);
-                result.completeExceptionally(cause);
+                startResult.completeExceptionally(cause);
             }
         });
     }
@@ -99,21 +99,21 @@ public final class ConsumerStartup implements AutoCloseable {
      * 非阻塞地发起启动，重复调用返回同一次结果，不重新创建连接。
      * 成功仅表示连接创建、订阅/分区指定和 seek 完成，不代表消费结束或消息处理成功。
      * 默认 subscribe 模式不主动等待分区分配；分配发生在消费循环后续的 poll 中。
-     * 失败结果在全部消费线程退出后发布，调用方可安全创建新的 ConsumerStartup 重试。
+     * 失败结果在全部消费线程退出后发布，调用方可安全创建新的 ConsumerGroup 重试。
      */
     public synchronized CompletableFuture<Void> start() {
         if (!started && !stopped) {
             started = true;
             try {
-                coordinator.start();
+                startupThread.start();
             } catch (RuntimeException | Error ex) {
                 // 协调线程本身未能启动，此时尚未启动任何消费线程，无需等待网络资源清理。
                 stopped = true;
                 onStartupFailure.run();
-                result.completeExceptionally(ex);
+                startResult.completeExceptionally(ex);
             }
         }
-        return result;
+        return startResult;
     }
 
     private void runConsumer(ConsumerParam param, Map<String, Object> config,
@@ -127,12 +127,12 @@ public final class ConsumerStartup implements AutoCloseable {
             }
             ready = true;
             if (remaining.decrementAndGet() == 0) {
-                initialized.complete(null);
+                initializationResult.complete(null);
             }
             consume.accept(consumer);
         } catch (Exception | Error ex) {
             if (!ready) {
-                initialized.completeExceptionally(ex);
+                initializationResult.completeExceptionally(ex);
             } else {
                 logger.error("kafka consumer run or close error", ex);
             }
@@ -141,12 +141,12 @@ public final class ConsumerStartup implements AutoCloseable {
 
     /** 包含协调线程，保证启动完成回调中发起关闭时也能被识别为内部调用。 */
     public boolean contains(Thread thread) {
-        return thread == coordinator || Arrays.asList(threads).contains(thread);
+        return thread == startupThread || Arrays.asList(consumerThreads).contains(thread);
     }
 
     /** 返回不可修改的消费线程列表，用于诊断；不包含协调线程。 */
     public List<Thread> threads() {
-        return List.of(threads);
+        return List.of(consumerThreads);
     }
 
     /**
@@ -160,18 +160,18 @@ public final class ConsumerStartup implements AutoCloseable {
             stopped = true;
             IllegalStateException error = new IllegalStateException("consumer stopped during startup");
             // 即使尚无线程报告初始化结果，也要唤醒正在等待的协调线程。
-            initialized.completeExceptionally(error);
-            if (!started && !result.isDone()) {
+            initializationResult.completeExceptionally(error);
+            if (!started && !startResult.isDone()) {
                 onStartupFailure.run();
-                result.completeExceptionally(error);
+                startResult.completeExceptionally(error);
             }
-            for (Thread thread : threads) {
+            for (Thread thread : consumerThreads) {
                 thread.interrupt();
             }
         }
         // join 必须放在锁外，否则协调线程可能拿不到同一把锁而无法退出。
         if (!contains(Thread.currentThread())) {
-            ExecutorUtil.await((Object) threads, coordinator);
+            ExecutorUtil.await((Object) consumerThreads, startupThread);
         }
     }
 

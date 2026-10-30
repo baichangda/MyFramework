@@ -1,7 +1,7 @@
 package cn.bcd.lib.spring.kafka.ext.threaddriven;
 
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
-import cn.bcd.lib.spring.kafka.ext.ConsumerStartup;
+import cn.bcd.lib.spring.kafka.ext.ConsumerGroup;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
@@ -92,9 +92,9 @@ class ThreadDrivenStartupTest {
     }
 
     private static Thread[] consumerThreads(ThreadDrivenKafkaConsumer consumer) throws Exception {
-        var field = ThreadDrivenKafkaConsumer.class.getDeclaredField("startup");
+        var field = ThreadDrivenKafkaConsumer.class.getDeclaredField("consumerGroup");
         field.setAccessible(true);
-        return ((ConsumerStartup) field.get(consumer)).threads().toArray(Thread[]::new);
+        return ((ConsumerGroup) field.get(consumer)).threads().toArray(Thread[]::new);
     }
 
     private static ThreadDrivenKafkaConsumer newConsumer(ConsumerParam param) {

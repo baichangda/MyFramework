@@ -13,12 +13,12 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ConsumerStartupTest {
+class ConsumerGroupTest {
     @Test
     void preparedStartupCanBeClosedBeforeStartAndRepeatedCloseIsSafe() {
         AtomicInteger failures = new AtomicInteger();
         ConsumerParam param = ConsumerParam.get_singleConsumer("topic");
-        try (var startup = new ConsumerStartup("unstarted-test", Map.of(), param,
+        try (var startup = new ConsumerGroup("unstarted-test", Map.of(), param,
                 consumer -> fail("Closed startup must not consume"), failures::incrementAndGet)) {
             startup.close();
             startup.close();
@@ -43,8 +43,8 @@ class ConsumerStartupTest {
                 Thread.currentThread().interrupt();
             }
         };
-        try (var first = new ConsumerStartup("first-test", properties, param, consume, () -> {});
-             var second = new ConsumerStartup("second-test", properties, param, consume, () -> {})) {
+        try (var first = new ConsumerGroup("first-test", properties, param, consume, () -> {});
+             var second = new ConsumerGroup("second-test", properties, param, consume, () -> {})) {
             first.start().get(10, TimeUnit.SECONDS);
             second.start().get(10, TimeUnit.SECONDS);
             assertNotSame(first.threads().getFirst(), second.threads().getFirst());
@@ -61,8 +61,8 @@ class ConsumerStartupTest {
         String[] topics = {"first", "second"};
         ConsumerParam single = ConsumerParam.get_singleConsumer_subscribeTopics(topics).seekToTimestamp(123);
         ConsumerParam multiple = ConsumerParam.get_multipleConsumer_subscribeTopics(topics).seekToEnd();
-        var singleSnapshot = ConsumerStartup.split(single);
-        var multipleSnapshot = ConsumerStartup.split(multiple);
+        var singleSnapshot = ConsumerGroup.split(single);
+        var multipleSnapshot = ConsumerGroup.split(multiple);
         topics[0] = "changed";
         single.seekToBeginning();
         multiple.seekToBeginning();
@@ -76,8 +76,8 @@ class ConsumerStartupTest {
         TopicPartition first = new TopicPartition("topic", 0);
         TopicPartition second = new TopicPartition("topic", 1);
         TopicPartition[] partitions = {first, second};
-        var assigned = ConsumerStartup.split(ConsumerParam.get_singleConsumer_assignTopicPartitions(partitions));
-        var separatelyAssigned = ConsumerStartup.split(ConsumerParam.get_multipleConsumer_assignTopicPartitions(partitions));
+        var assigned = ConsumerGroup.split(ConsumerParam.get_singleConsumer_assignTopicPartitions(partitions));
+        var separatelyAssigned = ConsumerGroup.split(ConsumerParam.get_multipleConsumer_assignTopicPartitions(partitions));
         partitions[0] = new TopicPartition("changed", 0);
         assertArrayEquals(new TopicPartition[]{first, second}, assigned.getFirst().topicPartitions);
         assertArrayEquals(new TopicPartition[]{first}, separatelyAssigned.getFirst().topicPartitions);
@@ -87,8 +87,8 @@ class ConsumerStartupTest {
     @Test
     void emptyMultiConsumerModesFailBeforeStartingThreads() {
         assertThrows(IllegalArgumentException.class,
-                () -> ConsumerStartup.split(ConsumerParam.get_multipleConsumer_subscribeTopics()));
+                () -> ConsumerGroup.split(ConsumerParam.get_multipleConsumer_subscribeTopics()));
         assertThrows(IllegalArgumentException.class,
-                () -> ConsumerStartup.split(ConsumerParam.get_multipleConsumer_assignTopicPartitions()));
+                () -> ConsumerGroup.split(ConsumerParam.get_multipleConsumer_assignTopicPartitions()));
     }
 }

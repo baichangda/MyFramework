@@ -1,7 +1,7 @@
 package cn.bcd.lib.spring.kafka.ext.datadriven;
 
 import cn.bcd.lib.spring.kafka.ext.ConsumerParam;
-import cn.bcd.lib.spring.kafka.ext.ConsumerStartup;
+import cn.bcd.lib.spring.kafka.ext.ConsumerGroup;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
@@ -91,9 +91,9 @@ class DataDrivenStartupTest {
     }
 
     private static Thread[] consumerThreads(DataDrivenKafkaConsumer consumer) throws Exception {
-        var field = DataDrivenKafkaConsumer.class.getDeclaredField("startup");
+        var field = DataDrivenKafkaConsumer.class.getDeclaredField("consumerGroup");
         field.setAccessible(true);
-        return ((ConsumerStartup) field.get(consumer)).threads().toArray(Thread[]::new);
+        return ((ConsumerGroup) field.get(consumer)).threads().toArray(Thread[]::new);
     }
 
     private static DataDrivenKafkaConsumer newConsumer(ConsumerParam param) {
