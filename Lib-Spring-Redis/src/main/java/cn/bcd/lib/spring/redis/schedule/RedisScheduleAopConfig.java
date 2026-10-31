@@ -51,20 +51,17 @@ public class RedisScheduleAopConfig {
         SingleFailedScheduleHandler handler = methodToHandler.computeIfAbsent(method, k ->
                 new SingleFailedScheduleHandler(method.getAnnotation(SingleFailedSchedule.class), redisConnectionFactory)
         );
-        boolean flag = handler.doBeforeStart();
-        if (flag) {
-            Object[] args = joinPoint.getArgs();
-            try {
-                Object res = joinPoint.proceed(args);
-                handler.doOnSuccess();
-                return res;
-            } catch (Throwable throwable) {
-                handler.doOnFailed();
-                logger.error("schedule error", throwable);
-                return null;
-            }
-        } else {
+        String taskId = handler.doBeforeStart();
+        if (taskId == null) {
             return null;
+        }
+        try {
+            return joinPoint.proceed(joinPoint.getArgs());
+        } catch (Throwable throwable) {
+            logger.error("schedule error taskId[{}]", taskId, throwable);
+            return null;
+        } finally {
+            handler.doAfterFinish(taskId);
         }
     }
 
