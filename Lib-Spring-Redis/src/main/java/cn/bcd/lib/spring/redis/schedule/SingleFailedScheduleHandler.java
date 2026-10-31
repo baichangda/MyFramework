@@ -10,20 +10,19 @@ import org.springframework.data.redis.core.ValueOperations;
 import java.time.Duration;
 
 /**
- * 单机失败执行模式,只会有一个终端执行定时任务,结果取决于这个终端执行结果
+ * 固定时间窗口内由获取到锁的实例执行任务，结果取决于该实例的执行结果。
  * <p>
  * 原理:
  * 1、到达任务时间点,集群多个实例开始争夺redis锁
- * 2、获取到锁的实例开始执行任务,并设置标记redis锁状态,时间为aliveTime
- * 3、其他实例会直接不执行任务
+ * 2、成功获取锁时设置有效期 aliveTime，随后执行任务；成功或失败均不重置有效期。
+ * 3、锁有效期内其他实例跳过任务；锁过期不代表原任务已完成，本实现不自动续期。
  */
 public class SingleFailedScheduleHandler {
 
     static Logger logger = LoggerFactory.getLogger(SingleFailedScheduleHandler.class);
 
     /**
-     * 锁获取后存活时间
-     * 单位(毫秒)
+     * 从成功获取锁开始计算的有效期，任务执行结果不改变该有效期。
      */
     private final Duration aliveTime;
     protected ValueOperations<String, String> valueOperations;

@@ -22,7 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RedisScheduleAopConfig {
 
-    private final static Map<Method, SingleFailedScheduleHandler> METHOD_TO_HANDLER = new ConcurrentHashMap<>();
+    /** 缓存属于当前 AOP 实例，Handler 使用当前上下文的 Redis 连接工厂。 */
+    private final Map<Method, SingleFailedScheduleHandler> methodToHandler = new ConcurrentHashMap<>();
 
     private final static Logger logger = LoggerFactory.getLogger(RedisScheduleAopConfig.class);
 
@@ -47,7 +48,7 @@ public class RedisScheduleAopConfig {
     public Object doAroundSchedule(ProceedingJoinPoint joinPoint) {
         //1、获取aop执行的方法
         Method method = getAopMethod(joinPoint);
-        SingleFailedScheduleHandler handler = METHOD_TO_HANDLER.computeIfAbsent(method, k ->
+        SingleFailedScheduleHandler handler = methodToHandler.computeIfAbsent(method, k ->
                 new SingleFailedScheduleHandler(method.getAnnotation(SingleFailedSchedule.class), redisConnectionFactory)
         );
         boolean flag = handler.doBeforeStart();

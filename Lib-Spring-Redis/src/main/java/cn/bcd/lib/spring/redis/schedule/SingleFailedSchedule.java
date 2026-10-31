@@ -16,7 +16,8 @@ public @interface SingleFailedSchedule {
     String lockId();
 
     /**
-     * 任务执行完毕key存活时间(ms)
+     * 从成功获取锁开始计算的有效期（毫秒），执行成功或失败均不重置。
+     * 有效期内其他实例跳过任务；任务尚未结束但锁已过期时，其他实例可能再次获取锁。
      *
      * @return
      */
