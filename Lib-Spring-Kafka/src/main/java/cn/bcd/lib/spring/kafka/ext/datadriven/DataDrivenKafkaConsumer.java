@@ -308,25 +308,10 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         WorkExecutor executor = getWorkExecutor(id);
         if (executor.inEventLoop()) {
             // 允许业务在当前回调中 removeHandler(id).get()，避免向自己排队后再等待。
-            destroyHandler(id, executor);
+            executor.destroyHandler(id);
             return CompletableFuture.completedFuture(null);
         }
-        return executor.submit(() -> destroyHandler(id, executor));
-    }
-
-    /** 只在所属执行器中调用；先从 Map 移除，再释放资源，重复移除不重复销毁。 */
-    private void destroyHandler(String id, WorkExecutor executor) {
-        WorkHandler workHandler = executor.workHandlers.remove(id);
-        if (workHandler != null) {
-            try {
-                workHandler.destroy();
-            } catch (Exception ex) {
-                logger.error("workHandler destroy error id[{}]", workHandler.id, ex);
-            }
-            if (monitor_period > 0) {
-                monitor_workHandlerCount.decrement();
-            }
-        }
+        return executor.submit(() -> executor.destroyHandler(id));
     }
 
     /**
@@ -451,7 +436,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
                 for (String id : new ArrayList<>(executor.workHandlers.keySet())) {
                     WorkHandler handler = executor.workHandlers.get(id);
                     if (handler != null && handler.lastMessageTime < ts) {
-                        destroyHandler(id, executor);
+                        executor.destroyHandler(id);
                     }
                 }
             });
@@ -492,12 +477,7 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
         ExecutorUtil.shutdownThenAwait(true, scheduledPool);
         for (WorkExecutor executor : workExecutors) {
             if (executor != null) {
-                // 让 Netty 在运行待执行任务后执行销毁钩子，避免 Handler 先销毁而消息仍在排队。
-                executor.addShutdownHook(() -> {
-                    for (String id : new ArrayList<>(executor.workHandlers.keySet())) {
-                        destroyHandler(id, executor);
-                    }
-                });
+                // 排空已入队任务后，由 WorkExecutor.cleanup() 在所属线程内销毁 Handler。
                 executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
             }
         }

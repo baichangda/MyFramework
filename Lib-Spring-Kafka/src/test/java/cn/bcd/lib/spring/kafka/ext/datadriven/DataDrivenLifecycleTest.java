@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -212,6 +213,77 @@ class DataDrivenLifecycleTest {
         }
     }
 
+    @Test
+    void directExecutorShutdownDestroysRemainingHandlersAndUpdatesMonitoring() throws Exception {
+        AtomicInteger destroyed = new AtomicInteger();
+        TestConsumer consumer = new TestConsumer(true, (id, first) -> new WorkHandler(id) {
+            @Override
+            public void onMessage(ConsumerRecord<String, byte[]> record) {
+            }
+
+            @Override
+            public void destroy() {
+                assertTrue(executor.inEventLoop());
+                assertFalse(executor.workHandlers.containsKey(id));
+                destroyed.incrementAndGet();
+                if ("a".equals(id)) {
+                    throw new IllegalStateException("destroy failure");
+                }
+            }
+        }, 60);
+        try {
+            consumer.enqueue(record("a", 0));
+            consumer.enqueue(record("b", 1));
+            consumer.enqueue(record(null, 2));
+            consumer.drain();
+            assertEquals(3, consumer.monitor_workHandlerCount.sum());
+
+            consumer.workExecutors[0].shutdownGracefully(0, 5, TimeUnit.SECONDS)
+                    .get(5, TimeUnit.SECONDS);
+            assertEquals(3, destroyed.get());
+            assertEquals(0, consumer.monitor_workHandlerCount.sum());
+            assertTrue(consumer.workExecutors[0].workHandlers.isEmpty());
+        } finally {
+            consumer.close();
+            awaitClosed(consumer);
+            assertTrue(consumer.scheduledPool.awaitTermination(5, TimeUnit.SECONDS));
+        }
+        assertEquals(3, destroyed.get());
+    }
+
+    @Test
+    void unexpectedExecutorExitStillDestroysRemainingHandlers() throws Exception {
+        AtomicInteger destroyed = new AtomicInteger();
+        TestConsumer consumer = new TestConsumer(true, (id, first) -> new WorkHandler(id) {
+            @Override
+            public void onMessage(ConsumerRecord<String, byte[]> record) {
+            }
+
+            @Override
+            public void destroy() {
+                assertTrue(executor.inEventLoop());
+                destroyed.incrementAndGet();
+            }
+        });
+        RuntimeException failure = new IllegalStateException("executor task failure");
+        try {
+            consumer.enqueue(record("a", 0));
+            consumer.drain();
+            WorkExecutor executor = consumer.workExecutors[0];
+            executor.execute(() -> {
+                throw failure;
+            });
+            ExecutionException thrown = assertThrows(ExecutionException.class,
+                    () -> executor.terminationFuture().get(5, TimeUnit.SECONDS));
+            assertSame(failure, thrown.getCause());
+            assertEquals(1, destroyed.get());
+            assertTrue(executor.workHandlers.isEmpty());
+        } finally {
+            consumer.close();
+        }
+        assertEquals(1, destroyed.get());
+    }
+
     private static ConsumerRecord<String, byte[]> record(String id, long offset) {
         return new ConsumerRecord<>("topic", 0, offset, id, new byte[0]);
     }
@@ -232,7 +304,13 @@ class DataDrivenLifecycleTest {
 
         TestConsumer(boolean autoRelease,
                      BiFunction<String, ConsumerRecord<String, byte[]>, WorkHandler> factory) {
-            super("handler-test", 1, 1000, autoRelease, 0, null, 0,
+            this(autoRelease, factory, 0);
+        }
+
+        TestConsumer(boolean autoRelease,
+                     BiFunction<String, ConsumerRecord<String, byte[]>, WorkHandler> factory,
+                     int monitorPeriod) {
+            super("handler-test", 1, 1000, autoRelease, 0, null, monitorPeriod,
                     ConsumerParam.get_singleConsumer("topic"));
             this.factory = factory;
         }
