@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class DataDrivenStartupTest {
     private static final Map<String, Object> PROPERTIES = Map.of(
@@ -40,6 +41,7 @@ class DataDrivenStartupTest {
                 assertTrue(consumer.initialized.await(10, TimeUnit.SECONDS));
                 assertEquals(mode.mode == 2 || mode.mode == 4 ? 2 : 1, threads.length);
             }
+            awaitClosed(consumer);
             for (Thread thread : threads) {
                 assertFalse(thread.isAlive());
             }
@@ -83,6 +85,7 @@ class DataDrivenStartupTest {
                 ConsumerParam.get_singleConsumer("topic").seekToBeginning(), false, false)) {
             consumer.startConsume(PROPERTIES);
             CompletableFuture.runAsync(consumer::close).get(10, TimeUnit.SECONDS);
+            awaitClosed(consumer);
             for (Thread thread : consumerThreads(consumer)) {
                 assertFalse(thread.isAlive());
             }
@@ -95,6 +98,7 @@ class DataDrivenStartupTest {
             consumer.startConsume(PROPERTIES);
             assertTrue(consumer.anyConsumerEntered.await(10, TimeUnit.SECONDS));
             CompletableFuture.runAsync(consumer::close).get(10, TimeUnit.SECONDS);
+            awaitClosed(consumer);
             for (Thread thread : consumerThreads(consumer)) {
                 assertFalse(thread.isAlive());
             }
