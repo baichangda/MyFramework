@@ -5,12 +5,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConsumeExecutorGroupTest {
@@ -80,50 +81,46 @@ class ConsumeExecutorGroupTest {
 
     @Test
     @Timeout(10)
-    void interruptedCloseShouldStillTerminateExecutors() throws Exception {
-        CountDownLatch messageStarted = new CountDownLatch(1);
-        CountDownLatch releaseMessage = new CountDownLatch(1);
+    void externalCloseShouldReturnBeforeMessagesAndCleanupComplete() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
         CountDownLatch destroyed = new CountDownLatch(1);
-        TestGroup group = new TestGroup(1, 0,
-                message -> {
-                    messageStarted.countDown();
-                    releaseMessage.await();
-                },
-                destroyed);
-        group.onMessage("a");
-        assertTrue(messageStarted.await(5, TimeUnit.SECONDS));
-
-        AtomicReference<Throwable> closeError = new AtomicReference<>();
-        Thread closeThread = new Thread(() -> {
-            try {
+        TestGroup group = new TestGroup(1, 0, message -> {
+            started.countDown();
+            release.await();
+        }, destroyed);
+        try {
+            group.onMessage("a");
+            assertTrue(started.await(5, TimeUnit.SECONDS));
+            CompletableFuture.runAsync(() -> {
                 group.close();
-            } catch (Throwable ex) {
-                closeError.set(ex);
-            }
-        });
-        closeThread.start();
-        awaitWaiting(closeThread);
-        closeThread.interrupt();
-        releaseMessage.countDown();
-        closeThread.join(5000);
-
-        assertFalse(closeThread.isAlive());
-        assertTrue(closeThread.isInterrupted());
-        assertNull(closeError.get());
+                group.close();
+            }).get(5, TimeUnit.SECONDS);
+            var completion = group.closeAsync();
+            assertSame(completion, group.closeAsync());
+            assertFalse(completion.isDone());
+            assertFalse(group.executors[0].isTerminated());
+            assertThrows(IllegalStateException.class, () -> group.onMessage("b"));
+        } finally {
+            release.countDown();
+            group.closeAsync().get(5, TimeUnit.SECONDS);
+        }
         assertTrue(destroyed.await(5, TimeUnit.SECONDS));
         assertTrue(group.executors[0].isTerminated());
     }
 
-    private static void awaitWaiting(Thread thread) throws InterruptedException {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (System.nanoTime() < deadline) {
-            Thread.State state = thread.getState();
-            if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
-                return;
-            }
-            Thread.sleep(1);
+    @Test
+    @Timeout(10)
+    void monitorThreadCanCloseWithoutWaitingForItself() throws Exception {
+        TestGroup group = new TestGroup(1, 0, message -> {}, new CountDownLatch(0), 60);
+        try {
+            group.monitorPool.submit(group::close).get(5, TimeUnit.SECONDS);
+            group.closeAsync().get(5, TimeUnit.SECONDS);
+            assertTrue(group.monitorPool.isTerminated());
+            assertTrue(group.executors[0].isTerminated());
+        } finally {
+            group.closeAsync().get(5, TimeUnit.SECONDS);
         }
-        throw new AssertionError("close thread did not enter a waiting state");
     }
 
     @FunctionalInterface
@@ -140,7 +137,15 @@ class ConsumeExecutorGroupTest {
                           int executorQueueSize,
                           MessageAction messageAction,
                           CountDownLatch destroyed) {
-            super("test-consume", executorNum, executorQueueSize, null, 0);
+            this(executorNum, executorQueueSize, messageAction, destroyed, 0);
+        }
+
+        private TestGroup(int executorNum,
+                          int executorQueueSize,
+                          MessageAction messageAction,
+                          CountDownLatch destroyed,
+                          int monitorPeriod) {
+            super("test-consume", executorNum, executorQueueSize, null, monitorPeriod);
             this.messageAction = messageAction;
             this.destroyed = destroyed;
         }

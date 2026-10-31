@@ -5,11 +5,13 @@ import io.netty.util.concurrent.EventExecutor;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,15 +45,43 @@ class IdEventExecutorGroupTest {
     }
 
     @Test
-    void closeShouldTerminateExecutorsAndRejectNewTasks() {
+    void closeShouldTerminateExecutorsAndRejectNewTasks() throws Exception {
         IdEventExecutorGroup group = new IdEventExecutorGroup(1);
         EventExecutor executor = group.getEventExecutor("vehicle-001");
 
         group.close();
 
+        executor.terminationFuture().get(5, TimeUnit.SECONDS);
         assertTrue(executor.isTerminated());
         assertThrows(RejectedExecutionException.class, () -> executor.execute(() -> {
         }));
+    }
+
+    @Test
+    void externalCloseShouldReturnBeforePendingTasksComplete() throws Exception {
+        IdEventExecutorGroup group = new IdEventExecutorGroup(1);
+        EventExecutor executor = group.getEventExecutor(0);
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var task = executor.submit(() -> {
+            started.countDown();
+            release.await();
+            return null;
+        });
+        try {
+            assertTrue(started.await(5, TimeUnit.SECONDS));
+            CompletableFuture.runAsync(() -> {
+                group.close();
+                group.close();
+            }).get(5, TimeUnit.SECONDS);
+            assertTrue(executor.isShuttingDown());
+            assertFalse(executor.isTerminated());
+        } finally {
+            release.countDown();
+            group.close();
+            executor.terminationFuture().get(5, TimeUnit.SECONDS);
+        }
+        task.get(5, TimeUnit.SECONDS);
     }
 
     private static final class CustomIdEventExecutorGroup extends IdEventExecutorGroup {

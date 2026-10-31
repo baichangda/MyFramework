@@ -102,21 +102,13 @@ public class IdEventExecutorGroup implements AutoCloseable {
     }
 
     /**
-     * 优雅关闭全部执行器，并等待已有任务执行完成。
-     * 从任意内部执行器线程调用时，只发起关闭，不等待执行器终止，以避免相互等待。
+     * 异步发起全部执行器的优雅关闭，不等待已有任务执行完成或执行器终止。
+     * 已入队任务继续执行；需要观察完成状态时，可使用各执行器的 terminationFuture()。
      */
     @Override
     public void close() {
-        boolean inEventLoop = false;
         for (EventExecutor executor : executors) {
-            inEventLoop |= executor.inEventLoop();
             executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
-        }
-        if (inEventLoop) {
-            return;
-        }
-        for (EventExecutor executor : executors) {
-            executor.terminationFuture().syncUninterruptibly();
         }
     }
 }

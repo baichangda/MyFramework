@@ -1,6 +1,5 @@
 package cn.bcd.lib.base.executor.consume;
 
-import cn.bcd.lib.base.exception.BaseException;
 import cn.bcd.lib.base.util.*;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -151,18 +149,15 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
     }
 
     /**
-     * 停止扫描和监控，消费已入队消息后销毁全部实体，并关闭所有消费执行器。
+     * 异步发起关闭，停止扫描和监控，消费已入队消息后销毁全部实体并退出。
      * <p>
      * 允许从任意线程调用，包括某个消费执行器自身的线程；重复调用不会重复关闭。
-     * 消费执行器线程内调用时只发起关闭，调用方可通过 {@link #closeAsync()} 观察完成状态。
+     * 所有调用方均不等待资源回收完成，可通过 {@link #closeAsync()} 观察完成状态。
      * </p>
      */
     @Override
-    public void close() throws Exception {
-        CompletableFuture<Void> future = closeAsync();
-        if (!inConsumeExecutorThread()) {
-            awaitClose(future);
-        }
+    public void close() {
+        closeAsync();
     }
 
     /**
@@ -210,15 +205,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             future.completeExceptionally(ex);
         }
         return future;
-    }
-
-    private boolean inConsumeExecutorThread() {
-        for (ConsumeExecutor<T> executor : executors) {
-            if (executor.inEventLoop()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void checkClosed() {
@@ -391,33 +377,6 @@ public abstract class ConsumeExecutorGroup<T> implements AutoCloseable {
             entity.destroy();
         } catch (Exception ex) {
             logger.error("entity destroy error id[{}]", entity.id, ex);
-        }
-    }
-
-    private void awaitClose(CompletableFuture<Void> future) throws Exception {
-        boolean interrupted = false;
-        try {
-            for (; ; ) {
-                try {
-                    future.get();
-                    return;
-                } catch (InterruptedException ex) {
-                    interrupted = true;
-                } catch (ExecutionException ex) {
-                    Throwable cause = ex.getCause();
-                    if (cause instanceof Exception exception) {
-                        throw exception;
-                    }
-                    if (cause instanceof Error error) {
-                        throw error;
-                    }
-                    throw BaseException.get(cause);
-                }
-            }
-        } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
