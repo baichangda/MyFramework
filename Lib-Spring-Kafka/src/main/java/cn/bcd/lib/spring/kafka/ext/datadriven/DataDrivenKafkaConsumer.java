@@ -222,7 +222,9 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
 
     /** 只在所属 Kafka 消费线程调用；所有原生 pause/resume/poll 操作保持同线程。 */
     private void pollAndDispatch(KafkaConsumer<String, byte[]> consumer) {
-        boolean throttled = isThrottled();
+        boolean throttled = pauseConsume
+                || (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum)
+                || (maxConsumeSpeed > 0 && consumeCount.get() >= maxConsumeSpeed);
         // pause/resume 只改变客户端拉取状态，暂停时仍需继续 poll。
         // 每轮按实际 assignment/paused 集合操作，避免依赖重平衡前的旧分区状态。
         if (throttled) {
@@ -246,12 +248,6 @@ public abstract class DataDrivenKafkaConsumer implements AutoCloseable {
             }
             submitRecord(record);
         }
-    }
-
-    private boolean isThrottled() {
-        return pauseConsume
-                || (maxBlockingNum > 0 && blockingNum.sum() >= maxBlockingNum)
-                || (maxConsumeSpeed > 0 && consumeCount.get() >= maxConsumeSpeed);
     }
 
     /** 拉取或派发异常后退避；只重试下一轮循环，不自动重放本轮未派发的记录。 */
