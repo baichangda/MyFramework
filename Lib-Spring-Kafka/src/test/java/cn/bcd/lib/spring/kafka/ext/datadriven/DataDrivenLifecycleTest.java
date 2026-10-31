@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class DataDrivenLifecycleTest {
 
@@ -49,6 +50,7 @@ class DataDrivenLifecycleTest {
                 consumer.enqueue(record("id", i));
             }
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(1, created.get());
             assertEquals(1, initialized.get());
             assertEquals(100, messages.get());
@@ -79,6 +81,7 @@ class DataDrivenLifecycleTest {
             consumer.enqueue(record("id", 0));
             consumer.enqueue(record("id", 1));
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(2, attempts.get());
             assertEquals(1, messages.get());
             assertEquals(0, consumer.blockingNum.sum());
@@ -126,6 +129,7 @@ class DataDrivenLifecycleTest {
             }).get(5, TimeUnit.SECONDS);
             assertNull(consumer.getHandler("id"));
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(1, destroyed.get());
         }
     }
@@ -203,6 +207,7 @@ class DataDrivenLifecycleTest {
                 release.countDown();
             }
             closing.get(5, TimeUnit.SECONDS);
+            awaitClosed(consumer);
             assertEquals(List.of("init", "message", "followup", "destroy"), List.copyOf(events));
         }
     }

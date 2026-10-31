@@ -9,12 +9,14 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class ThreadDrivenInfrastructureTest {
     @Test
     void rejectedSubmissionDoesNotLeaveAnOutstandingMessage() {
         try (ThreadDrivenKafkaConsumer consumer = newConsumer()) {
             consumer.close();
+            awaitClosed(consumer);
             assertThrows(RejectedExecutionException.class, () -> consumer.submitRecord(
                     new ConsumerRecord<>("topic", 0, 0, "id", new byte[0])));
             assertEquals(0, consumer.blockingNum.sum());
@@ -27,6 +29,7 @@ class ThreadDrivenInfrastructureTest {
         try (ThreadDrivenKafkaConsumer consumer = newConsumer()) {
             consumer.scheduledPool.submit(consumer::close).get(5, TimeUnit.SECONDS);
             consumer.close();
+            awaitClosed(consumer);
             assertTrue(consumer.scheduledPool.isTerminated());
             for (var executor : consumer.workPool) {
                 assertTrue(executor.isTerminated());

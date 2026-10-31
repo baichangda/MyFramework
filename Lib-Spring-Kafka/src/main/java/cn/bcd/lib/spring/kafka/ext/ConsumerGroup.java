@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 public final class ConsumerGroup implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(ConsumerGroup.class);
 
-    /** 构造时准备全部线程，调用方保存本组对象后再 start，便于内部回调正确识别线程归属。 */
+    /** 构造时准备全部线程，启动和停止统一操作本组线程。 */
     private final Thread[] consumerThreads;
     /** 只由 close 设置；消费线程在网络初始化后再次检查，避免关闭后进入消费循环。 */
     private volatile boolean stopped;
@@ -78,8 +78,8 @@ public final class ConsumerGroup implements AutoCloseable {
         }
     }
 
-    /** 判断是否为本组消费线程，外层 Consumer 据此避免内部关闭调用等待自身退出。 */
-    public boolean contains(Thread thread) {
+    /** 判断是否为本组消费线程，避免关闭时等待自身退出。 */
+    private boolean contains(Thread thread) {
         return Arrays.asList(consumerThreads).contains(thread);
     }
 

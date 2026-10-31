@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class KafkaLifecycleTest {
 
@@ -182,6 +183,7 @@ class KafkaLifecycleTest {
         try {
             assertDoesNotThrow(() -> consumer.startConsume(Map.of()));
             consumer.close();
+            awaitClosed(consumer);
             assertTrue(consumer.workExecutors[0].isTerminated());
         } finally {
             consumer.close();

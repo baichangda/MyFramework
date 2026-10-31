@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.LongStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class ThreadDrivenExecutorTest {
 
@@ -84,6 +85,7 @@ class ThreadDrivenExecutorTest {
                 consumer.enqueue(record(i));
             }
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(Set.of(consumer.getWorkExecutor("same-key")), executors);
             assertEquals(LongStream.range(0, 100).boxed().toList(), List.copyOf(offsets));
             assertEquals(0, consumer.blockingNum.sum());
@@ -97,6 +99,7 @@ class ThreadDrivenExecutorTest {
             assertSame(consumer.workPool[0], consumer.getWorkExecutor(null));
             consumer.enqueue(record(0, null));
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(List.of(consumer.workPool[0]), List.copyOf(executors));
             assertEquals(0, consumer.blockingNum.sum());
         }
@@ -121,6 +124,7 @@ class ThreadDrivenExecutorTest {
             consumer.enqueue(record(1));
             consumer.enqueue(record(2));
             consumer.close();
+            awaitClosed(consumer);
             assertSame(consumer.workPool[1], executors.get(0L));
             assertSame(consumer.workPool[0], executors.get(1L));
             assertSame(consumer.workPool[1], executors.get(2L));
@@ -177,6 +181,7 @@ class ThreadDrivenExecutorTest {
             consumer.enqueue(record(2));
             assertTrue(completed.await(5, TimeUnit.SECONDS));
             consumer.close();
+            awaitClosed(consumer);
             assertEquals(0, consumer.blockingNum.sum());
         }
     }

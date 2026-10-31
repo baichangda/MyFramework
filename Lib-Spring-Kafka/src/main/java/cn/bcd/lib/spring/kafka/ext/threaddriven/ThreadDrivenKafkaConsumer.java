@@ -52,21 +52,17 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     public final LongAdder monitor_workCount = new LongAdder();
     /** 独立于工作执行器，避免业务阻塞时连带阻塞限速重置或监控；无调度任务时为 null。 */
     public final ScheduledExecutorService scheduledPool;
-    /** 本组独立消费线程的持有者，供关闭线程和内部线程识别使用。 */
+    /** 本组独立消费线程的持有者，供关闭线程停止消费使用。 */
     private volatile ConsumerGroup consumerGroup;
 
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration PAUSED_POLL_TIMEOUT = Duration.ofMillis(100);
-    /** 由 synchronized(this) 保护，所有外部关闭调用等待同一个完成结果。 */
-    private CompletableFuture<Void> closeResult;
     /** 只在生命周期锁内读写，一旦置为 true 就不再允许启动。 */
     private boolean closed;
     /** 组级消费开关，启动时打开、关闭时停止；单个线程退出不会修改，也不代表线程均已初始化。 */
     volatile boolean running_consume;
     /** 暂停只控制后续拉取，已经入队的工作任务仍会继续执行。 */
     private volatile boolean pauseConsume;
-    /** 用于识别调度回调中的关闭请求，避免调度线程等待自己退出。 */
-    private volatile Thread schedulerThread;
 
     public final int workThreadNum;
     public final SingleThreadEventExecutor[] workPool;
@@ -99,10 +95,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
         this.monitor_period = monitor_period;
         this.consumerParam = Objects.requireNonNull(consumerParam, "consumerParam");
         scheduledPool = maxConsumeSpeed == 0 && monitor_period == 0 ? null
-                : Executors.newSingleThreadScheduledExecutor(task -> {
-                    schedulerThread = new Thread(task, name + "-schedule");
-                    return schedulerThread;
-                });
+                : Executors.newSingleThreadScheduledExecutor(task -> new Thread(task, name + "-schedule"));
         this.workThreadNum = workerCount(workThreadNum);
         workPool = new SingleThreadEventExecutor[this.workThreadNum];
         try {
@@ -139,7 +132,7 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
 
         running_consume = true;
         try {
-            // 先发布 consumerGroup 再 start，使消费回调内的 close() 能识别所属线程。
+            // 启动与关闭共用生命周期锁，确保关闭线程能访问已启动的消费线程。
             consumerGroup = new ConsumerGroup(name, consumerProp, consumerParam, this::consume);
             consumerGroup.start();
         } catch (RuntimeException | Error ex) {
@@ -299,35 +292,25 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
     }
 
     /**
-     * 内部线程只发起关闭，外部线程等待同一次关闭完成。
-     * 统一交给独立线程执行资源回收，避免消费、工作和调度线程等待自身退出。
+     * 异步发起关闭后立即返回，不等待资源回收完成；重复调用不会重复关闭。
+     * 独立线程先停止消费和调度，再通知工作执行器排空任务并退出；关闭异常记录到日志。
      */
     @Override
-    public void close() {
-        boolean ownedThread = isCurrentOwnedThread();
-        CompletableFuture<Void> result;
-        synchronized (this) {
-            if (!closed) {
-                // 与 startConsume() 互斥；先封住新启动入口，再发布唯一的关闭结果。
-                closed = true;
-                closeResult = CompletableFuture.runAsync(this::closeResources,
-                        task -> new Thread(task, name + "-shutdown").start());
-            }
-            result = closeResult;
+    public synchronized void close() {
+        if (closed) {
+            return;
         }
-        // 等待必须放在生命周期锁外，且内部线程不能等待关闭线程反过来等待自己。
-        if (!ownedThread) {
-            result.join();
-        }
+        closed = true;
+        running_consume = false;
+        new Thread(this::closeResources, name + "-shutdown").start();
     }
 
-    /** 保留关闭异常供 closeResult 的等待者感知，同时记录异步关闭路径中的异常。 */
+    /** 记录异步关闭过程中出现的异常。 */
     private void closeResources() {
         try {
             closeInternal();
         } catch (RuntimeException | Error ex) {
             logger.error("kafka consumer close error", ex);
-            throw ex;
         }
     }
 
@@ -346,25 +329,5 @@ public abstract class ThreadDrivenKafkaConsumer implements AutoCloseable {
                 executor.shutdownGracefully(0, 5, TimeUnit.SECONDS);
             }
         }
-        // 超时并不能强行终止正在阻塞的业务回调，因此回调仍应避免长期阻塞。
-        for (SingleThreadEventExecutor executor : workPool) {
-            if (executor != null) {
-                executor.terminationFuture().syncUninterruptibly();
-            }
-        }
-    }
-
-    /** 消费、工作和调度线程均只能发起关闭，不能同步等待包含自己的资源回收。 */
-    private boolean isCurrentOwnedThread() {
-        Thread current = Thread.currentThread();
-        if (current == schedulerThread || (consumerGroup != null && consumerGroup.contains(current))) {
-            return true;
-        }
-        for (SingleThreadEventExecutor executor : workPool) {
-            if (executor != null && executor.inEventLoop()) {
-                return true;
-            }
-        }
-        return false;
     }
 }

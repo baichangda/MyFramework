@@ -8,14 +8,14 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.bcd.lib.spring.kafka.ConsumerTestUtil.awaitClosed;
 
 class ThreadDrivenCloseTest {
     @Test
-    void synchronousCallersWaitForAnEarlierAsynchronousClose() throws Exception {
+    void allCallersReturnBeforeShutdownCompletes() throws Exception {
         ThreadDrivenKafkaConsumer consumer = newConsumer();
         SingleThreadEventExecutor executor = consumer.workPool[0];
         CountDownLatch callbackReturnedFromClose = new CountDownLatch(1);
@@ -39,12 +39,14 @@ class ThreadDrivenCloseTest {
             CompletableFuture<Void> first = async(close);
             CompletableFuture<Void> second = async(close);
             await(callersEntered);
-            assertThrows(TimeoutException.class, () -> first.get(100, TimeUnit.MILLISECONDS));
-            assertThrows(TimeoutException.class, () -> second.get(100, TimeUnit.MILLISECONDS));
+            first.get(5, TimeUnit.SECONDS);
+            second.get(5, TimeUnit.SECONDS);
+            assertFalse(executor.isTerminated());
 
             releaseCallback.countDown();
             first.get(5, TimeUnit.SECONDS);
             second.get(5, TimeUnit.SECONDS);
+            awaitClosed(consumer);
             assertTrue(executor.isTerminated());
             assertEquals(1, shutdownHooks.get());
             consumer.close();
@@ -56,7 +58,7 @@ class ThreadDrivenCloseTest {
     }
 
     @Test
-    void ownedThreadNeverWaitsWhenAnExternalCallerAlreadyStartedClosing() throws Exception {
+    void callbackCanCloseAgainAfterAnExternalCallerStartedClosing() throws Exception {
         ThreadDrivenKafkaConsumer consumer = newConsumer();
         SingleThreadEventExecutor executor = consumer.workPool[0];
         CountDownLatch handling = new CountDownLatch(1);
@@ -79,14 +81,16 @@ class ThreadDrivenCloseTest {
                 assertTrue(System.nanoTime() < deadline, "Timed out waiting for shutdown to start");
                 Thread.sleep(1);
             }
-            assertFalse(first.isDone());
+            first.get(5, TimeUnit.SECONDS);
             CompletableFuture<Void> second = async(consumer::close);
-            assertThrows(TimeoutException.class, () -> second.get(100, TimeUnit.MILLISECONDS));
+            second.get(5, TimeUnit.SECONDS);
+            assertFalse(executor.isTerminated());
 
             callClose.countDown();
             await(callbackReturned);
             first.get(5, TimeUnit.SECONDS);
             second.get(5, TimeUnit.SECONDS);
+            awaitClosed(consumer);
             assertTrue(executor.isTerminated());
             assertEquals(1, shutdownHooks.get());
         } finally {
