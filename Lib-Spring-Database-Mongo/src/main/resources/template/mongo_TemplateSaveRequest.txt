@@ -1,0 +1,19 @@
+package ${packagePre};
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
+
+/** ${moduleNameCN}完整编辑表单，按业务需要补充校验或删除字段。 */
+@Getter
+@Setter
+public class ${moduleName}SaveRequest {
+    @Schema(description = "主键；新增时不传，修改时必填")
+    public String id;
+
+<#list saveFields as field>
+    @Schema(description = "${field.comment?j_string}")
+    public ${field.type} ${field.name};
+
+</#list>
+}

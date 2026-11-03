@@ -1,0 +1,20 @@
+package ${packagePre};
+
+import ${beanClassName};
+import io.swagger.v3.oas.annotations.media.Schema;
+
+/** ${moduleNameCN}查询结果，与持久化实体独立。 */
+public class ${moduleName}QueryResponse {
+<#list queryResponseFields as field>
+    @Schema(description = "${field.comment?j_string}")
+    public ${field.type} ${field.name};
+
+</#list>
+    public static ${moduleName}QueryResponse fromBean(${beanSimpleName} bean) {
+        ${moduleName}QueryResponse queryResponse = new ${moduleName}QueryResponse();
+<#list queryResponseFields as field>
+        queryResponse.${field.name} = ${field.beanExpression};
+</#list>
+        return queryResponse;
+    }
+}

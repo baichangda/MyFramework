@@ -11,4 +11,5 @@ dependencies {
     api libs.springdoc.openapi.starter.webmvc.scalar
     api libs.spring.boot.starter.web
     testImplementation libs.spring.boot.starter.test
+    testImplementation libs.lombok
 }

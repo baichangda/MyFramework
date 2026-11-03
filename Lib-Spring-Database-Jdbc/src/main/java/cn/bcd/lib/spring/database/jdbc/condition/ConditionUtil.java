@@ -16,6 +16,7 @@ public class ConditionUtil {
 
     static {
         CONDITION_CONVERTER_MAP.put(NumberCondition.class, new NumberConditionConverter());
+        CONDITION_CONVERTER_MAP.put(BooleanCondition.class, new BooleanConditionConverter());
         CONDITION_CONVERTER_MAP.put(StringCondition.class, new StringConditionConverter());
         CONDITION_CONVERTER_MAP.put(DateCondition.class, new DateConditionConverter());
         CONDITION_CONVERTER_MAP.put(NullCondition.class, new NullConditionConverter());

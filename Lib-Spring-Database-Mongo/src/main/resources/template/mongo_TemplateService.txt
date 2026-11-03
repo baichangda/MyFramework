@@ -1,10 +1,62 @@
 package ${packagePre};
 
+import ${beanClassName};
 import cn.bcd.lib.spring.database.mongo.service.BaseService;
+import cn.bcd.lib.spring.database.mongo.service.UserGetter;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import ${beanPackage}.${moduleName?cap_first}Bean;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 @Service
-public class ${moduleName?cap_first}Service extends BaseService<${moduleName?cap_first}Bean> {
+public class ${moduleName}Service extends BaseService<${beanSimpleName}> {
+    public List<${moduleName}QueryResponse> list${moduleName}(${moduleName}QueryRequest query) {
+        return list(query.toCondition()).stream().map(${moduleName}QueryResponse::fromBean).toList();
+    }
 
+    public Page<${moduleName}QueryResponse> page${moduleName}(${moduleName}QueryRequest query, int pageNum, int pageSize) {
+        return page(query.toCondition(), PageRequest.of(pageNum - 1, pageSize)).map(${moduleName}QueryResponse::fromBean);
+    }
+
+    public void save${moduleName}(${moduleName}SaveRequest request) {
+        if (request.id == null) {
+            ${beanSimpleName} bean = new ${beanSimpleName}();
+<#list saveFields as field>
+            ${field.createStatement}
+</#list>
+            // 在此补充服务端默认值和新增业务规则。
+            save(bean);
+        } else {
+            // 在此补充操作权限和修改业务规则；只更新明确列出的字段。
+            Update update = new Update();
+<#list saveFields as field>
+            update.set("${field.name}", request.${field.name});
+</#list>
+            if (getBeanInfo().autoSetUpdateInfo) {
+                update.set("updateTime", new Date());
+                var user = UserGetter.getUser();
+                if (user != null) {
+                    update.set("updateUserId", user.getId());
+                    update.set("updateUserName", user.getUsername());
+                }
+            }
+            if (update.getUpdateObject().isEmpty()) {
+                if (get(request.id) == null) throw new IllegalArgumentException("Record not found");
+                return;
+            }
+            var result = getMongoTemplate().updateFirst(
+                    Query.query(Criteria.where("id").is(request.id)), update, ${beanSimpleName}.class);
+            if (result.getMatchedCount() == 0) throw new IllegalArgumentException("Record not found");
+        }
+    }
+
+    public void delete${moduleName}(String[] ids) {
+        // 在此补充操作权限和关联数据检查。
+        delete(Arrays.stream(ids).distinct().toArray(String[]::new));
+    }
 }

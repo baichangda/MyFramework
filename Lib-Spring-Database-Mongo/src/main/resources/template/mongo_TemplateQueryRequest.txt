@@ -1,0 +1,42 @@
+package ${packagePre};
+
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.*;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.Setter;
+
+/** ${moduleNameCN}基础类型筛选条件，复杂字段查询按业务补充。 */
+@Getter
+@Setter
+public class ${moduleName}QueryRequest {
+<#list queryFields as field>
+<#if field.queryKind == "DATE">
+    @Schema(description = "${field.comment?j_string}开始")
+    public ${field.type} ${field.name}Begin;
+    @Schema(description = "${field.comment?j_string}结束")
+    public ${field.type} ${field.name}End;
+<#else>
+    @Schema(description = "${field.comment?j_string}")
+    public ${field.type} ${field.name};
+</#if>
+
+</#list>
+    public Condition toCondition() {
+        return Condition.and(
+<#list queryFields as field>
+<#if field.queryKind == "DATE">
+                DateCondition.BETWEEN("${field.name}", this.${field.name}Begin, this.${field.name}End)<#sep>,</#sep>
+<#elseif field.queryKind == "STRING">
+                StringCondition.EQUAL("${field.name}", this.${field.name})<#sep>,</#sep>
+<#elseif field.queryKind == "CHARACTER">
+                StringCondition.EQUAL("${field.name}", this.${field.name} == null ? null : this.${field.name}.toString())<#sep>,</#sep>
+<#elseif field.queryKind == "BOOLEAN">
+                BooleanCondition.EQUAL("${field.name}", this.${field.name})<#sep>,</#sep>
+<#else>
+                NumberCondition.EQUAL("${field.name}", this.${field.name})<#sep>,</#sep>
+</#if>
+</#list>
+        );
+    }
+}
