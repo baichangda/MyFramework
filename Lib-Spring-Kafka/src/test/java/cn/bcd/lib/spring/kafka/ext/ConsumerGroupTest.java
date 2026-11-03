@@ -34,10 +34,15 @@ class ConsumerGroupTest {
                 "group.id", "independent-groups", "enable.auto.commit", false);
         CountDownLatch entered = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch releaseFirst = new CountDownLatch(1);
         Consumer<KafkaConsumer<String, byte[]>> consume = consumer -> {
             entered.countDown();
             try {
-                release.await();
+                if (Thread.currentThread().getName().startsWith("first-test")) {
+                    releaseFirst.await();
+                } else {
+                    release.await();
+                }
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
@@ -49,35 +54,30 @@ class ConsumerGroupTest {
             assertTrue(entered.await(10, TimeUnit.SECONDS));
             assertNotSame(first.threads().getFirst(), second.threads().getFirst());
             first.close();
+            releaseFirst.countDown();
             first.threads().getFirst().join(10_000);
             assertFalse(first.threads().getFirst().isAlive());
             assertTrue(second.threads().getFirst().isAlive());
         } finally {
+            releaseFirst.countDown();
             release.countDown();
         }
     }
 
     @Test
-    void closeReturnsBeforeConsumerThreadExits() throws Exception {
+    void closeReturnsWithoutInterruptingConsumerThread() throws Exception {
         ConsumerParam param = ConsumerParam.get_singleConsumer("topic");
         Map<String, Object> properties = Map.of("bootstrap.servers", "127.0.0.1:1",
                 "group.id", "async-close", "enable.auto.commit", false);
         CountDownLatch entered = new CountDownLatch(1);
-        CountDownLatch interrupted = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch exitedNormally = new CountDownLatch(1);
         var group = new ConsumerGroup("async-close-test", properties, param, consumer -> {
             entered.countDown();
-            boolean restoreInterrupt = false;
-            while (true) {
-                try {
-                    release.await();
-                    break;
-                } catch (InterruptedException ex) {
-                    restoreInterrupt = true;
-                    interrupted.countDown();
-                }
-            }
-            if (restoreInterrupt) {
+            try {
+                release.await();
+                exitedNormally.countDown();
+            } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
         });
@@ -85,8 +85,8 @@ class ConsumerGroupTest {
             group.start();
             assertTrue(entered.await(10, TimeUnit.SECONDS));
             assertTimeoutPreemptively(Duration.ofSeconds(5), group::close);
-            assertTrue(interrupted.await(5, TimeUnit.SECONDS));
             assertTrue(group.threads().getFirst().isAlive());
+            assertFalse(group.threads().getFirst().isInterrupted());
             assertThrows(IllegalStateException.class, group::start);
         } finally {
             release.countDown();
@@ -94,6 +94,7 @@ class ConsumerGroupTest {
             group.threads().getFirst().join(10_000);
         }
         assertFalse(group.threads().getFirst().isAlive());
+        assertEquals(0, exitedNormally.getCount(), "Consumer must finish without interruption");
     }
 
     @Test

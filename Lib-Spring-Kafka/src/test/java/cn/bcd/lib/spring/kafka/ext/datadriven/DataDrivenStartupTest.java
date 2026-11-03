@@ -81,9 +81,10 @@ class DataDrivenStartupTest {
     }
 
     @Test
-    void closeDuringInitializationStopsAllThreads() throws Exception {
+    void closeImmediatelyAfterStartStopsAllThreads() throws Exception {
         try (TestConsumer consumer = new TestConsumer(
-                ConsumerParam.get_singleConsumer("topic").seekToBeginning(), false, false)) {
+                ConsumerParam.get_singleConsumer_assignTopicPartitions(new TopicPartition("topic", 0))
+                        .seekToBeginning(), false, false)) {
             consumer.startConsume(PROPERTIES);
             CompletableFuture.runAsync(consumer::close).get(10, TimeUnit.SECONDS);
             awaitClosed(consumer);

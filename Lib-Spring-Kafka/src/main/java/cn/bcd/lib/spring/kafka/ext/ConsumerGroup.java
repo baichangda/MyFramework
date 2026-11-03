@@ -83,18 +83,13 @@ public final class ConsumerGroup implements AutoCloseable {
     }
 
     /**
-     * 阻止继续启动，中断所有消费线程后立即返回，不等待线程退出。
-     * 业务工作队列仍由外层 Consumer 关闭。
-     * 连接通过消费线程的资源块关闭，因此消费循环应在中断时及时返回。
+     * 阻止继续启动后立即返回，不中断消费线程，也不等待线程退出。
+     * 外层 Consumer 负责通知消费循环停止并关闭业务工作队列。
+     * 初始化和消费循环自然结束后，由消费线程的资源块关闭连接。
      */
     @Override
-    public void close() {
-        synchronized (this) {
-            stopped = true;
-            for (Thread thread : consumerThreads) {
-                thread.interrupt();
-            }
-        }
+    public synchronized void close() {
+        stopped = true;
     }
 
     /**
