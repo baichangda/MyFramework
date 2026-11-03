@@ -5,7 +5,6 @@ import cn.bcd.lib.spring.database.mongo.bean.BaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.UserInterface;
 import cn.bcd.lib.spring.database.mongo.util.ConditionUtil;
-import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +12,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.mongodb.core.query.UpdateDefinition;
-import org.springframework.data.util.Pair;
 
 import org.springframework.core.ResolvableType;
 
@@ -225,26 +221,25 @@ public class BaseService<T extends SuperBaseBean> {
     }
 
     /**
-     * 批量修改
-     * 不会修改更新时间
-     *
-     * @param condition
-     * @param updates
-     * @return
+     * 使用一个 Update 更新全部匹配记录，不使用 upsert，直接返回 MongoTemplate 的更新结果。
+     * 自动维护开启时补充尚未显式操作的更新信息，会修改传入的 Update。
+     * 空 Update 或无有效条件时不访问数据库、不设置更新信息，返回零值 UpdateResult。
      */
-    public BulkWriteResult updateMulti(Condition condition, Update... updates) {
-        if (updates.length == 0) {
-            return null;
-        } else {
-            Query query = ConditionUtil.toQueryForUpdate(condition);
-            if (query == null) {
-                return null;
-            }
-            List<Pair<Query, UpdateDefinition>> collect = Arrays.stream(updates).map(e -> Pair.of(query, (UpdateDefinition) e)).toList();
-            return getMongoTemplate().bulkOps(BulkOperations.BulkMode.UNORDERED, getBeanInfo().clazz).updateMulti(collect).execute();
+    public UpdateResult updateMulti(Condition condition, Update update) {
+        Objects.requireNonNull(update, "update");
+        if (update.getUpdateObject().isEmpty()) {
+            return UpdateResult.acknowledged(0, 0L, null);
         }
+        Query query = ConditionUtil.toQueryForUpdate(condition);
+        if (query == null) {
+            return UpdateResult.acknowledged(0, 0L, null);
+        }
+        BeanInfo<T> info = getBeanInfo();
+        if (info.autoSetUpdateInfo) {
+            setUpdateInfo(update);
+        }
+        return getMongoTemplate().updateMulti(query, update, info.clazz);
     }
-
 
     private void setCreateInfo(T t) {
         BaseBean bean = (BaseBean) t;

@@ -1,5 +1,6 @@
 package cn.bcd.lib.spring.database.mongo.anno;
 
+import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.mongo.bean.BaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.mongo.service.BaseService;
@@ -36,6 +37,7 @@ public @interface DocumentExt {
      * 影响的方法如下
      * {@link BaseService#save(SuperBaseBean)}
      * {@link BaseService#update(String, Update)}
+     * {@link BaseService#updateMulti(Condition, Update)}
      */
     boolean autoSetUpdateInfo() default true;
 }
