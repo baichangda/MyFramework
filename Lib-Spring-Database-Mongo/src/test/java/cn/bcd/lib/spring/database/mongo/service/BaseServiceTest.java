@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Query;
 
-import java.util.Date;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -87,42 +86,36 @@ class BaseServiceTest {
     }
 
     @Test
-    void assignedIdForMissingDocumentGetsCreateAuditFields() {
+    void assignedIdSaveDelegatesToUpdate() {
+        Service spy = spy(service);
         Bean bean = new Bean();
         bean.id = "assigned-id";
-        when(mongoTemplate.exists(any(Query.class), eq(Bean.class))).thenReturn(false);
-        when(mongoTemplate.save(bean)).thenReturn(bean);
+        doReturn(com.mongodb.client.result.UpdateResult.acknowledged(0, 0L, null)).when(spy).update(bean);
+        assertSame(bean, spy.save(bean));
+        verify(spy).update(bean);
+        verify(spy, never()).insert(any(Bean.class));
+        verifyNoInteractions(mongoTemplate);
+    }
 
-        assertSame(bean, service.save(bean));
+    @Test
+    void saveWithoutIdDelegatesToInsert() {
+        Service spy = spy(service);
+        Bean bean = new Bean();
+        doReturn(bean).when(spy).insert(bean);
+        assertSame(bean, spy.save(bean));
+        verify(spy).insert(bean);
+        verify(spy, never()).update(any(Bean.class));
+        verifyNoInteractions(mongoTemplate);
+    }
 
+    @Test
+    void insertFillsCreationInfoAndUsesInsertWithoutExistenceQuery() {
+        Bean bean = new Bean();
+        when(mongoTemplate.insert(bean)).thenReturn(bean);
+        assertSame(bean, service.insert(bean));
         assertNotNull(bean.createTime);
         assertNull(bean.updateTime);
-        verify(mongoTemplate).exists(any(Query.class), eq(Bean.class));
-        verify(mongoTemplate).save(bean);
-    }
-
-    @Test
-    void assignedIdForExistingDocumentGetsUpdateAuditFields() {
-        Bean bean = new Bean();
-        bean.id = "existing-id";
-        bean.createTime = new Date(1);
-        when(mongoTemplate.exists(any(Query.class), eq(Bean.class))).thenReturn(true);
-        when(mongoTemplate.save(bean)).thenReturn(bean);
-
-        service.save(bean);
-
-        assertEquals(new Date(1), bean.createTime);
-        assertNotNull(bean.updateTime);
-    }
-
-    @Test
-    void generatedIdInsertDoesNotQueryForExistence() {
-        Bean bean = new Bean();
-        when(mongoTemplate.save(bean)).thenReturn(bean);
-
-        service.save(bean);
-
-        assertNotNull(bean.createTime);
-        verify(mongoTemplate, never()).exists(any(Query.class), any(Class.class));
+        verify(mongoTemplate).insert(bean);
+        verifyNoMoreInteractions(mongoTemplate);
     }
 }

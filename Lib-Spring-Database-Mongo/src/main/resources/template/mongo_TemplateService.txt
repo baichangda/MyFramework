@@ -27,7 +27,7 @@ public class ${moduleName}Service extends BaseService<${beanSimpleName}> {
             ${field.createStatement}
 </#list>
             // 在此补充服务端默认值和新增业务规则。
-            save(bean);
+            insert(bean);
         } else {
             // 在此补充操作权限和修改业务规则；只更新明确列出的字段。
 <#if saveFields?has_content>

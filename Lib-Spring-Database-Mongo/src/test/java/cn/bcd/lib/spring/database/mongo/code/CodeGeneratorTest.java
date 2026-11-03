@@ -117,13 +117,13 @@ class CodeGeneratorTest {
         try (Generated generated = generate(FixtureBean.class, "Fixture")) {
             MongoTemplate mongo = mock(MongoTemplate.class);
             BaseService<?> service = generated.service(mongo);
-            when(mongo.save(any(FixtureBean.class))).thenAnswer(call -> call.getArgument(0));
+            when(mongo.insert(any(FixtureBean.class))).thenAnswer(call -> call.getArgument(0));
             Object request = generated.model("SaveRequest");
             request.getClass().getField("name").set(request, "created");
             request.getClass().getField("amount").set(request, new BigDecimal("1.25"));
             generated.save(service, request);
             ArgumentCaptor<FixtureBean> inserted = ArgumentCaptor.forClass(FixtureBean.class);
-            verify(mongo).save(inserted.capture());
+            verify(mongo).insert(inserted.capture());
             assertEquals("created", inserted.getValue().name);
             assertEquals(new BigDecimal("1.25"), inserted.getValue().getAmount());
             assertEquals(0, inserted.getValue().count);
@@ -243,6 +243,8 @@ class CodeGeneratorTest {
         String serviceSource = Files.readString(Path.of(config.targetDirPath, module + "Service.java"));
         assertFalse(serviceSource.contains("getMongoTemplate()"));
         assertFalse(serviceSource.contains("UserGetter"));
+        assertTrue(serviceSource.contains("insert(bean);"));
+        assertFalse(serviceSource.contains("save(bean);"));
         if (FixtureBean.class.isAssignableFrom(bean)) {
             assertTrue(saveSource.contains("public List<Map<String, "));
             assertTrue(saveSource.contains("import java.util.*;"));

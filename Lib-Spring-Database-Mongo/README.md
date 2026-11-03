@@ -59,7 +59,7 @@ CollectionConfig 只提供模块、类型、目录和文件生成开关，不提
 
 ## 保存与字段映射
 
-- ID 为 null 时构造新 Bean，调用现有 `BaseService.save(bean)`，由原逻辑维护创建信息。未提交的基本类型字段使用 Bean 的默认值。
+- ID 为 null 时构造新 Bean，直接调用 `BaseService.insert(bean)`，由新增逻辑维护创建信息。未提交的基本类型字段使用 Bean 的默认值。
 - ID 非 null 时生成明确的 `Update.set()`，调用 `BaseService.update(id, update)`，由其执行实体感知的 `MongoTemplate.updateFirst(query, update, Bean.class)`，不使用 upsert 或整个文档替换。
 - 修改时可空编辑字段缺失或为 null 表示写入 null，不自动转为 `$unset`；需要必填的字段应在 SaveRequest 中添加校验。
 - 主键、创建信息和只读字段不参与更新。更新信息由 BaseService 按 `DocumentExt.autoSetUpdateInfo` 配置补齐，操作人通过现有 UserGetter 获取；Update 已显式操作的更新信息不会被覆盖。
@@ -75,3 +75,11 @@ CollectionConfig 只提供模块、类型、目录和文件生成开关，不提
 `BaseService.updateMulti(Condition condition, Update update)` 使用一个 Update 更新全部匹配记录，直接返回 MongoTemplate 的 UpdateResult，不使用 upsert。
 审计规则与按 ID 更新一致。空 Update、null 条件或转换后无有效条件时不访问数据库、不补充审计字段，返回 `UpdateResult.acknowledged(0, 0L, null)`。
 旧的 `Update...` 无序批量写入入口已替换为此方法。
+
+## Bean 保存、新增与更新
+
+- `save(bean)` 按 ID 是否为 null 分派：空 ID 调用 insert，非空 ID 调用 update，不查询文档存在性；返回保存的 Bean。
+- `insert(bean)` 调用 MongoTemplate.insert 并按配置填充创建信息，支持显式 ID；重复 ID 由数据库报错。
+- `update(bean)` 要求 ID 非 null，使用 BeanInfo 初始化时缓存的字段构建 Update，按配置维护更新信息，再调用 update(id, update)，直接返回 UpdateResult。可更新字段包含创建信息和 null 值，排除主键、只读和非持久化字段；创建信息按 Bean 传入值写入，不自动补齐。
+- 带 ID 的 save 只更新已有文档，不替换整个文档、不插入缺失文档；显式指定 ID 新增时调用 insert。
+- 生成 Service 的新增分支调用 insert(bean)，修改分支继续调用 update(id, update)。

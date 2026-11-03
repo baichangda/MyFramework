@@ -23,6 +23,7 @@ public @interface DocumentExt {
      *
      * 影响的方法如下
      * {@link BaseService#save(SuperBaseBean)}
+     * {@link BaseService#insert(SuperBaseBean)}
      * {@link BaseService#insertAll(List)}
      */
     boolean autoSetCreateInfo() default true;
@@ -36,6 +37,7 @@ public @interface DocumentExt {
      *
      * 影响的方法如下
      * {@link BaseService#save(SuperBaseBean)}
+     * {@link BaseService#update(SuperBaseBean)}
      * {@link BaseService#update(String, Update)}
      * {@link BaseService#updateMulti(Condition, Update)}
      */

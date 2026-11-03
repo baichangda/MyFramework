@@ -131,24 +131,36 @@ public class BaseService<T extends SuperBaseBean> {
         return getMongoTemplate().findOne(query, getBeanInfo().clazz);
     }
 
-    /**
-     * 会设置创建信息或更新信息
-     *
-     * @param t
-     * @return
-     */
+    /** ID 为空时调用 insert，否则调用 update；不查询文档存在性。 */
     public T save(T t) {
-        BeanInfo<T> info = getBeanInfo();
-        if (info.autoSetCreateInfo || info.autoSetUpdateInfo) {
-            boolean isNew = t.getId() == null || !getMongoTemplate().exists(
-                    Query.query(Criteria.where("id").is(t.getId())), info.clazz);
-            if (isNew && info.autoSetCreateInfo) {
-                setCreateInfo(t);
-            } else if (!isNew && info.autoSetUpdateInfo) {
-                setUpdateInfo(t);
-            }
+        Objects.requireNonNull(t, "bean");
+        if (t.getId() == null) {
+            return insert(t);
         }
-        return getMongoTemplate().save(t);
+        update(t);
+        return t;
+    }
+
+    /** 新增文档并按配置填充创建信息；允许显式指定 ID，重复 ID 由 MongoDB 报错。 */
+    public T insert(T t) {
+        Objects.requireNonNull(t, "bean");
+        if (getBeanInfo().autoSetCreateInfo) {
+            setCreateInfo(t);
+        }
+        return getMongoTemplate().insert(t);
+    }
+
+    /**
+     * 使用 BeanInfo 缓存的字段按 ID 更新，包含 null 值，返回 MongoTemplate 的更新结果。
+     * 允许更新创建信息，不更新主键和只读字段，不替换文档、不使用 upsert。
+     */
+    public UpdateResult update(T t) {
+        Objects.requireNonNull(t, "bean");
+        Objects.requireNonNull(t.getId(), "bean id");
+        if (getBeanInfo().autoSetUpdateInfo) {
+            setUpdateInfo(t);
+        }
+        return update(t.getId(), getBeanInfo().toUpdate(t));
     }
 
     /**
