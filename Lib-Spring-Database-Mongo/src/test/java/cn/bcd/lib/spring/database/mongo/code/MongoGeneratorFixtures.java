@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 public final class MongoGeneratorFixtures {
+    @Document("empty")
+    public static class EmptyBean extends cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean {
+    }
+
     public static class GenericBean<T> extends BaseBean {
         public T inherited;
         public T[] inheritedArray;

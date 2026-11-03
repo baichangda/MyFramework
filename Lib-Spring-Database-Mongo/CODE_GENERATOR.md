@@ -32,10 +32,12 @@ CollectionConfig 只提供模块、类型、目录和文件生成开关，不提
 ## 保存与字段映射
 
 - ID 为 null 时构造新 Bean，调用现有 `BaseService.save(bean)`，由原逻辑维护创建信息。未提交的基本类型字段使用 Bean 的默认值。
-- ID 非 null 时生成明确的 `Update.set()`，调用实体感知的 `MongoTemplate.updateFirst(query, update, Bean.class)`，不使用 upsert 或整个文档替换。
+- ID 非 null 时生成明确的 `Update.set()`，调用 `BaseService.update(id, update)`，由其执行实体感知的 `MongoTemplate.updateFirst(query, update, Bean.class)`，不使用 upsert 或整个文档替换。
 - 修改时可空编辑字段缺失或为 null 表示写入 null，不自动转为 `$unset`；需要必填的字段应在 SaveRequest 中添加校验。
-- 主键、创建信息和只读字段不参与更新。更新信息按 `DocumentExt.autoSetUpdateInfo` 配置维护，操作人通过现有 UserGetter 获取。
+- 主键、创建信息和只读字段不参与更新。更新信息由 BaseService 按 `DocumentExt.autoSetUpdateInfo` 配置补齐，操作人通过现有 UserGetter 获取；Update 已显式操作的更新信息不会被覆盖。
 - 使用 matchedCount 判断目标是否存在，修改值相同不会误报记录不存在。
 - 条件和更新使用 Java 属性名，实体感知的 MongoTemplate 调用负责 `_id` 和 `@Field` 等映射。
 
-生成器不修改原 Bean，也不新增 BaseService 方法。服务端默认值、数据权限、字段取舍和关联删除规则在生成后人工补充。
+`BaseService.update(String id, Update update)` 直接返回 MongoTemplate 的 UpdateResult；空 Update 不执行数据库操作，返回 `UpdateResult.acknowledged(0, 0L, null)`。传入的 Update 会被补充审计字段，每次调用应新建对象。
+
+生成器不修改原 Bean。服务端默认值、数据权限、字段取舍和关联删除规则在生成后人工补充。

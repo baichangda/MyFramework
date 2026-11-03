@@ -2,15 +2,12 @@ package ${packagePre};
 
 import ${beanClassName};
 import cn.bcd.lib.spring.database.mongo.service.BaseService;
-import cn.bcd.lib.spring.database.mongo.service.UserGetter;
+import com.mongodb.client.result.UpdateResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -33,25 +30,16 @@ public class ${moduleName}Service extends BaseService<${beanSimpleName}> {
             save(bean);
         } else {
             // 在此补充操作权限和修改业务规则；只更新明确列出的字段。
+<#if saveFields?has_content>
             Update update = new Update();
 <#list saveFields as field>
             update.set("${field.name}", request.${field.name});
 </#list>
-            if (getBeanInfo().autoSetUpdateInfo) {
-                update.set("updateTime", new Date());
-                var user = UserGetter.getUser();
-                if (user != null) {
-                    update.set("updateUserId", user.getId());
-                    update.set("updateUserName", user.getUsername());
-                }
-            }
-            if (update.getUpdateObject().isEmpty()) {
-                if (get(request.id) == null) throw new IllegalArgumentException("Record not found");
-                return;
-            }
-            var result = getMongoTemplate().updateFirst(
-                    Query.query(Criteria.where("id").is(request.id)), update, ${beanSimpleName}.class);
+            UpdateResult result = update(request.id, update);
             if (result.getMatchedCount() == 0) throw new IllegalArgumentException("Record not found");
+<#else>
+            if (get(request.id) == null) throw new IllegalArgumentException("Record not found");
+</#if>
         }
     }
 

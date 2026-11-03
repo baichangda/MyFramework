@@ -6,6 +6,7 @@ import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.UserInterface;
 import cn.bcd.lib.spring.database.mongo.util.ConditionUtil;
 import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.result.UpdateResult;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.data.util.Pair;
 
 import org.springframework.core.ResolvableType;
+
 import java.util.*;
 
 /**
@@ -205,6 +207,24 @@ public class BaseService<T extends SuperBaseBean> {
 
 
     /**
+     * 根据 id 执行部分更新，不使用 upsert，直接返回 MongoTemplate 的更新结果。
+     * 自动维护开启时，补充 Update 中尚未显式操作的更新信息，因此会修改传入的 Update。
+     * 空 Update 不设置更新信息、不访问数据库，返回匹配数和修改数均为 0 的已确认结果。
+     */
+    public UpdateResult update(String id, Update update) {
+        Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(update, "update");
+        if (update.getUpdateObject().isEmpty()) {
+            return UpdateResult.acknowledged(0, 0L, null);
+        }
+        BeanInfo<T> info = getBeanInfo();
+        if (info.autoSetUpdateInfo) {
+            setUpdateInfo(update);
+        }
+        return getMongoTemplate().updateFirst(Query.query(Criteria.where("id").is(id)), update, info.clazz);
+    }
+
+    /**
      * 批量修改
      * 不会修改更新时间
      *
@@ -233,6 +253,21 @@ public class BaseService<T extends SuperBaseBean> {
         if (user != null) {
             bean.createUserId = user.getId();
             bean.createUserName = user.getUsername();
+        }
+    }
+
+    private void setUpdateInfo(Update update) {
+        if (!update.modifies("updateTime")) {
+            update.set("updateTime", new Date());
+        }
+        UserInterface user = getLoginUser();
+        if (user != null) {
+            if (!update.modifies("updateUserId")) {
+                update.set("updateUserId", user.getId());
+            }
+            if (!update.modifies("updateUserName")) {
+                update.set("updateUserName", user.getUsername());
+            }
         }
     }
 

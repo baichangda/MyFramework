@@ -192,6 +192,22 @@ class CodeGeneratorTest {
     }
 
     @Test
+    void modelWithoutEditableFieldsOnlyChecksTargetExistence() throws Exception {
+        try (Generated generated = generate(EmptyBean.class, "Empty")) {
+            MongoTemplate mongo = mock(MongoTemplate.class);
+            BaseService<?> service = generated.service(mongo);
+            Object request = generated.model("SaveRequest");
+            request.getClass().getField("id").set(request, "missing");
+            InvocationTargetException error = assertThrows(InvocationTargetException.class, () -> generated.save(service, request));
+            assertInstanceOf(IllegalArgumentException.class, error.getCause());
+            request.getClass().getField("id").set(request, "existing");
+            when(mongo.findById("existing", EmptyBean.class)).thenReturn(new EmptyBean());
+            generated.save(service, request);
+            verify(mongo, never()).updateFirst(any(Query.class), any(Update.class), any(Class.class));
+        }
+    }
+
+    @Test
     void generationOverwritesByDefaultAndHonorsIndividualFileSwitches() throws Exception {
         CollectionConfig config = config(FixtureBean.class, "Fixture");
         CodeGenerator.generate(config);
@@ -224,10 +240,16 @@ class CodeGeneratorTest {
         assertFalse(querySource.contains("pageNum"));
         assertFalse(saveSource.contains("createTime"));
         assertFalse(saveSource.contains("updateTime"));
-                assertTrue(saveSource.contains("public List<Map<String, "));
-        assertTrue(saveSource.contains("import java.util.*;"));
-        assertTrue(saveSource.contains("public BigDecimal amount;"));
-        assertTrue(querySource.contains("public Date timeEnd;"));
+        String serviceSource = Files.readString(Path.of(config.targetDirPath, module + "Service.java"));
+        assertFalse(serviceSource.contains("getMongoTemplate()"));
+        assertFalse(serviceSource.contains("UserGetter"));
+        if (FixtureBean.class.isAssignableFrom(bean)) {
+            assertTrue(saveSource.contains("public List<Map<String, "));
+            assertTrue(saveSource.contains("import java.util.*;"));
+            assertTrue(saveSource.contains("public BigDecimal amount;"));
+            assertTrue(querySource.contains("public Date timeEnd;"));
+            assertTrue(serviceSource.contains("UpdateResult result = update(request.id, update);"));
+        }
         assertFalse(querySource.contains("public java.util.Date"));
         assertFalse(saveSource.contains("java.lang.String"));
 

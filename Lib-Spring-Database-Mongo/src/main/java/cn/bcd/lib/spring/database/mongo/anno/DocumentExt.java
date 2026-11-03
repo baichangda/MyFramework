@@ -3,6 +3,7 @@ package cn.bcd.lib.spring.database.mongo.anno;
 import cn.bcd.lib.spring.database.mongo.bean.BaseBean;
 import cn.bcd.lib.spring.database.mongo.bean.SuperBaseBean;
 import cn.bcd.lib.spring.database.mongo.service.BaseService;
+import org.springframework.data.mongodb.core.query.Update;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -34,6 +35,7 @@ public @interface DocumentExt {
      *
      * 影响的方法如下
      * {@link BaseService#save(SuperBaseBean)}
+     * {@link BaseService#update(String, Update)}
      */
     boolean autoSetUpdateInfo() default true;
 }
