@@ -6,15 +6,6 @@ import java.util.Date;
 
 /** 权限接口返回模型，与数据库实体独立。 */
 public class PermissionQueryResponse {
-    @Schema(description = "主键")
-    public Long id;
-
-    @Schema(description = "权限名称")
-    public String name;
-
-    @Schema(description = "资源")
-    public String resource;
-
     @Schema(description = "创建时间")
     public Date createTime;
 
@@ -23,6 +14,15 @@ public class PermissionQueryResponse {
 
     @Schema(description = "创建人姓名")
     public String createUserName;
+
+    @Schema(description = "id")
+    public Long id;
+
+    @Schema(description = "权限名称")
+    public String name;
+
+    @Schema(description = "资源")
+    public String resource;
 
     @Schema(description = "更新时间")
     public Date updateTime;
@@ -35,12 +35,12 @@ public class PermissionQueryResponse {
 
     public static PermissionQueryResponse fromBean(PermissionBean bean) {
         PermissionQueryResponse queryResponse = new PermissionQueryResponse();
-        queryResponse.id = bean.id;
-        queryResponse.name = bean.name;
-        queryResponse.resource = bean.resource;
         queryResponse.createTime = bean.createTime;
         queryResponse.createUserId = bean.createUserId;
         queryResponse.createUserName = bean.createUserName;
+        queryResponse.id = bean.id;
+        queryResponse.name = bean.name;
+        queryResponse.resource = bean.resource;
         queryResponse.updateTime = bean.updateTime;
         queryResponse.updateUserId = bean.updateUserId;
         queryResponse.updateUserName = bean.updateUserName;

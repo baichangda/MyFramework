@@ -13,7 +13,7 @@ import java.util.Date;
 @Getter
 @Setter
 public class PermissionQueryRequest {
-    @Schema(description = "主键")
+    @Schema(description = "id")
     public Long id;
 
     @Schema(description = "权限名称")
