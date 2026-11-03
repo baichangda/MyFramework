@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -48,11 +49,51 @@ class ConsumerGroupTest {
             assertTrue(entered.await(10, TimeUnit.SECONDS));
             assertNotSame(first.threads().getFirst(), second.threads().getFirst());
             first.close();
+            first.threads().getFirst().join(10_000);
             assertFalse(first.threads().getFirst().isAlive());
             assertTrue(second.threads().getFirst().isAlive());
         } finally {
             release.countDown();
         }
+    }
+
+    @Test
+    void closeReturnsBeforeConsumerThreadExits() throws Exception {
+        ConsumerParam param = ConsumerParam.get_singleConsumer("topic");
+        Map<String, Object> properties = Map.of("bootstrap.servers", "127.0.0.1:1",
+                "group.id", "async-close", "enable.auto.commit", false);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch interrupted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var group = new ConsumerGroup("async-close-test", properties, param, consumer -> {
+            entered.countDown();
+            boolean restoreInterrupt = false;
+            while (true) {
+                try {
+                    release.await();
+                    break;
+                } catch (InterruptedException ex) {
+                    restoreInterrupt = true;
+                    interrupted.countDown();
+                }
+            }
+            if (restoreInterrupt) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        try {
+            group.start();
+            assertTrue(entered.await(10, TimeUnit.SECONDS));
+            assertTimeoutPreemptively(Duration.ofSeconds(5), group::close);
+            assertTrue(interrupted.await(5, TimeUnit.SECONDS));
+            assertTrue(group.threads().getFirst().isAlive());
+            assertThrows(IllegalStateException.class, group::start);
+        } finally {
+            release.countDown();
+            group.close();
+            group.threads().getFirst().join(10_000);
+        }
+        assertFalse(group.threads().getFirst().isAlive());
     }
 
     @Test

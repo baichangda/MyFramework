@@ -44,6 +44,7 @@ class ThreadDrivenStartupTest {
             }
             awaitClosed(consumer);
             for (Thread thread : threads) {
+                thread.join(10_000);
                 assertFalse(thread.isAlive());
             }
         }
@@ -88,6 +89,7 @@ class ThreadDrivenStartupTest {
             CompletableFuture.runAsync(consumer::close).get(10, TimeUnit.SECONDS);
             awaitClosed(consumer);
             for (Thread thread : consumerThreads(consumer)) {
+                thread.join(10_000);
                 assertFalse(thread.isAlive());
             }
         }
@@ -101,6 +103,7 @@ class ThreadDrivenStartupTest {
             CompletableFuture.runAsync(consumer::close).get(10, TimeUnit.SECONDS);
             awaitClosed(consumer);
             for (Thread thread : consumerThreads(consumer)) {
+                thread.join(10_000);
                 assertFalse(thread.isAlive());
             }
         }

@@ -1,6 +1,5 @@
 package cn.bcd.lib.spring.kafka.ext;
 
-import cn.bcd.lib.base.util.ExecutorUtil;
 import cn.bcd.lib.spring.kafka.KafkaUtil;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -78,19 +77,14 @@ public final class ConsumerGroup implements AutoCloseable {
         }
     }
 
-    /** 判断是否为本组消费线程，避免关闭时等待自身退出。 */
-    private boolean contains(Thread thread) {
-        return Arrays.asList(consumerThreads).contains(thread);
-    }
-
     /** 返回不可修改的消费线程列表，用于诊断线程数量和存活状态。 */
     public List<Thread> threads() {
         return List.of(consumerThreads);
     }
 
     /**
-     * 阻止继续启动，先中断所有消费线程，再在锁外等待退出。
-     * 内部线程调用只发出停止请求，避免等待自己；业务工作队列仍由外层 Consumer 关闭。
+     * 阻止继续启动，中断所有消费线程后立即返回，不等待线程退出。
+     * 业务工作队列仍由外层 Consumer 关闭。
      * 连接通过消费线程的资源块关闭，因此消费循环应在中断时及时返回。
      */
     @Override
@@ -100,9 +94,6 @@ public final class ConsumerGroup implements AutoCloseable {
             for (Thread thread : consumerThreads) {
                 thread.interrupt();
             }
-        }
-        if (!contains(Thread.currentThread())) {
-            ExecutorUtil.await((Object) consumerThreads);
         }
     }
 
