@@ -1,0 +1,21 @@
+package ${packagePre};
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
+import java.util.Date;
+
+/** ${moduleNameCN}接口返回模型，与数据库实体独立。 */
+public class ${moduleName?cap_first}QueryResponse {
+<#list queryResponseFields as field>
+    @Schema(description = "${(field.comment!'')?j_string}")
+    public ${field.type} ${field.name};
+
+</#list>
+    public static ${moduleName?cap_first}QueryResponse fromBean(${moduleName?cap_first}Bean bean) {
+        ${moduleName?cap_first}QueryResponse queryResponse = new ${moduleName?cap_first}QueryResponse();
+<#list queryResponseFields as field>
+        queryResponse.${field.name} = bean.${field.name};
+</#list>
+        return queryResponse;
+    }
+}

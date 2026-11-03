@@ -25,14 +25,14 @@ public class UserController {
 
     @GetMapping("/list")
     @Operation(summary = "查询用户列表")
-    public Result<List<UserResponse>> list(
+    public Result<List<UserQueryResponse>> list(
             @Valid @ParameterObject @ModelAttribute UserQueryRequest query) {
         return Result.success(service.listUser(query));
     }
 
     @GetMapping("/page")
     @Operation(summary = "查询用户分页")
-    public Result<Page<UserResponse>> page(
+    public Result<Page<UserQueryResponse>> page(
             @Valid @ParameterObject @ModelAttribute UserQueryRequest query,
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") int pageNum,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int pageSize) {

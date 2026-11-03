@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /** 任务接口返回模型，与数据库实体独立。 */
-public class TaskResponse {
+public class TaskQueryResponse {
     @Schema(description = "主键")
     public Long id;
 
@@ -60,4 +60,26 @@ public class TaskResponse {
     @Schema(description = "更新人姓名")
     public String updateUserName;
 
+    public static TaskQueryResponse fromBean(TaskBean bean) {
+        TaskQueryResponse queryResponse = new TaskQueryResponse();
+        queryResponse.id = bean.id;
+        queryResponse.name = bean.name;
+        queryResponse.status = bean.status;
+        queryResponse.type = bean.type;
+        queryResponse.payload = bean.payload;
+        queryResponse.nodeId = bean.nodeId;
+        queryResponse.stopRequested = bean.stopRequested;
+        queryResponse.message = bean.message;
+        queryResponse.percent = bean.percent;
+        queryResponse.startTime = bean.startTime;
+        queryResponse.finishTime = bean.finishTime;
+        queryResponse.result = bean.result;
+        queryResponse.createTime = bean.createTime;
+        queryResponse.createUserId = bean.createUserId;
+        queryResponse.createUserName = bean.createUserName;
+        queryResponse.updateTime = bean.updateTime;
+        queryResponse.updateUserId = bean.updateUserId;
+        queryResponse.updateUserName = bean.updateUserName;
+        return queryResponse;
+    }
 }

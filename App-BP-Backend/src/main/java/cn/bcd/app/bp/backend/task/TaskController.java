@@ -22,7 +22,7 @@ public class TaskController {
 
     @GetMapping("/page")
     @Operation(summary = "查询任务分页")
-    public Result<Page<TaskResponse>> page(
+    public Result<Page<TaskQueryResponse>> page(
             @Valid @ParameterObject @ModelAttribute TaskQueryRequest query,
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") int pageNum,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int pageSize) {

@@ -1,9 +1,6 @@
 package cn.bcd.app.bp.backend.permission;
 
 import cn.bcd.app.bp.backend.user.UserConst;
-import cn.bcd.lib.spring.database.common.condition.Condition;
-import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
-import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -48,23 +45,16 @@ public class PermissionService extends BaseService<PermissionBean>{
             inner join t_sys_permission p on p.id = mp.permission_id
             """;
 
-    public List<PermissionResponse> listPermission(PermissionQueryRequest query) {
-        return list(buildCondition(query)).stream()
-                .map(this::toResponse).toList();
+    public List<PermissionQueryResponse> listPermission(PermissionQueryRequest query) {
+        return list(query.toCondition()).stream()
+                .map(PermissionQueryResponse::fromBean).toList();
     }
 
-    public Page<PermissionResponse> pagePermission(
+    public Page<PermissionQueryResponse> pagePermission(
             PermissionQueryRequest query, int pageNum, int pageSize) {
-        return page(buildCondition(query), PageRequest.of(pageNum - 1, pageSize)).map(this::toResponse);
+        return page(query.toCondition(), PageRequest.of(pageNum - 1, pageSize)).map(PermissionQueryResponse::fromBean);
     }
 
-    protected Condition buildCondition(PermissionQueryRequest query) {
-        return Condition.and(
-                NumberCondition.EQUAL("id", query.id),
-                StringCondition.EQUAL("name", query.name),
-                StringCondition.EQUAL("resource", query.resource)
-        );
-    }
 
     public void savePermission(PermissionSaveRequest request) {
         if (request.id == null) {
@@ -88,17 +78,4 @@ public class PermissionService extends BaseService<PermissionBean>{
         delete(Arrays.stream(ids).distinct().toArray());
     }
 
-    protected PermissionResponse toResponse(PermissionBean bean) {
-        PermissionResponse response = new PermissionResponse();
-        response.id = bean.id;
-        response.name = bean.name;
-        response.resource = bean.resource;
-        response.createTime = bean.createTime;
-        response.createUserId = bean.createUserId;
-        response.createUserName = bean.createUserName;
-        response.updateTime = bean.updateTime;
-        response.updateUserId = bean.updateUserId;
-        response.updateUserName = bean.updateUserName;
-        return response;
-    }
 }

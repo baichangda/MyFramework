@@ -118,7 +118,7 @@ public class CodeGeneratorContext {
         data.moduleName = tableConfig.moduleName;
         data.moduleNameCN = tableConfig.moduleNameCN;
         data.packagePre = getModulePackage();
-        data.responseFields = List.copyOf(all);
+        data.queryResponseFields = List.copyOf(all);
         data.queryFields = all.stream()
                 .filter(field -> !CodeConst.CREATE_INFO_FIELD_NAME.contains(field.name))
                 .toList();

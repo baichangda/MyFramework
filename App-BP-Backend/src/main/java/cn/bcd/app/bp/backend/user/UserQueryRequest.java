@@ -1,5 +1,7 @@
 package cn.bcd.app.bp.backend.user;
 
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -46,4 +48,17 @@ public class UserQueryRequest {
     @Schema(description = "是否可用(0:禁用,1:可用)")
     public Integer status;
 
+    public Condition toCondition() {
+        return Condition.and(
+                NumberCondition.EQUAL("id", this.id),
+                StringCondition.ALL_LIKE("username", this.username),
+                StringCondition.ALL_LIKE("email", this.email),
+                StringCondition.ALL_LIKE("phone", this.phone),
+                StringCondition.ALL_LIKE("realName", this.realName),
+                StringCondition.ALL_LIKE("sex", this.sex),
+                DateCondition.BETWEEN("birthday", this.birthdayBegin, this.birthdayEnd),
+                StringCondition.ALL_LIKE("cardNumber", this.cardNumber),
+                NumberCondition.EQUAL("status", this.status)
+        );
+    }
 }

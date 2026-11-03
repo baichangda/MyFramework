@@ -22,14 +22,14 @@ public class PermissionController {
 
     @GetMapping("/list")
     @Operation(summary = "查询权限列表")
-    public Result<List<PermissionResponse>> list(
+    public Result<List<PermissionQueryResponse>> list(
             @Valid @ParameterObject @ModelAttribute PermissionQueryRequest query) {
         return Result.success(service.listPermission(query));
     }
 
     @GetMapping("/page")
     @Operation(summary = "查询权限分页")
-    public Result<Page<PermissionResponse>> page(
+    public Result<Page<PermissionQueryResponse>> page(
             @Valid @ParameterObject @ModelAttribute PermissionQueryRequest query,
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") int pageNum,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "20") int pageSize) {

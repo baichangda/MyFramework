@@ -61,7 +61,7 @@ class CodeGeneratorTest {
                 data.queryFields.stream().map(field -> field.name).toList());
         assertEquals(List.of("name", "email", "birthday", "amount", "password"),
                 data.saveFields.stream().map(field -> field.name).toList());
-        assertEquals(12, data.responseFields.size());
+        assertEquals(12, data.queryResponseFields.size());
     }
 
     @Test
@@ -73,7 +73,7 @@ class CodeGeneratorTest {
         generator.generateBean(generator.initBeanData(context), templates.toString(), directory.toString());
         generator.generateQueryRequest(data, templates.toString(), directory.toString());
         generator.generateSaveRequest(data, templates.toString(), directory.toString());
-        generator.generateResponse(data, templates.toString(), directory.toString());
+        generator.generateQueryResponse(data, templates.toString(), directory.toString());
         generator.generateService(data, templates.toString(), directory.toString());
         generator.generateController(generator.initControllerData(context), templates.toString(), directory.toString());
 
@@ -85,8 +85,14 @@ class CodeGeneratorTest {
         assertFalse(query.contains("pageNum"));
         assertTrue(query.contains("birthdayBegin"));
         assertTrue(query.contains("birthdayEnd"));
+        assertTrue(query.contains("public Condition toCondition()"));
+        assertFalse(service.contains("buildCondition"));
+        assertFalse(service.contains("Response toResponse("));
+        assertTrue(service.contains("ExampleQueryResponse::fromBean"));
+        assertTrue(Files.readString(module.resolve("ExampleQueryResponse.java")).contains("public static ExampleQueryResponse fromBean(ExampleBean bean)"));
+
         assertTrue(save.contains("password"));
-        assertTrue(service.contains("return list(buildCondition(query)).stream()"));
+        assertTrue(service.contains("return list(query.toCondition()).stream()"));
         assertFalse(service.contains("maxPageSize"));
         assertFalse(service.contains("Invalid pagination parameters"));
         String controllerSource = Files.readString(module.resolve("ExampleController.java"));
@@ -144,7 +150,7 @@ class CodeGeneratorTest {
         fixture.tableConfig.needCreateControllerFile = false;
         fixture.tableConfig.needCreateQueryRequestFile = false;
         fixture.tableConfig.needCreateSaveRequestFile = false;
-        fixture.tableConfig.needCreateResponseFile = false;
+        fixture.tableConfig.needCreateQueryResponseFile = false;
         Path query = target.resolve("example/ExampleQueryRequest.java");
         Files.writeString(query, "custom query");
         generator.generate(config);

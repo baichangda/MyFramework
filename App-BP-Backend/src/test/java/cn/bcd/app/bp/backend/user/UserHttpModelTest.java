@@ -39,10 +39,10 @@ class UserHttpModelTest {
     }
 
     @Test
-    void listUsesSameQueryAndResponseModel() throws Exception {
-        UserResponse response = new UserResponse();
-        response.username = "alice";
-        when(service.listUser(any())).thenReturn(List.of(response));
+    void listUsesSameQueryAndQueryResponseModel() throws Exception {
+        UserQueryResponse queryResponse = new UserQueryResponse();
+        queryResponse.username = "alice";
+        when(service.listUser(any())).thenReturn(List.of(queryResponse));
         mvc.perform(get("/api/user/list").param("username", "alice"))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("alice")));
         verify(service).listUser(argThat(query -> "alice".equals(query.username)));

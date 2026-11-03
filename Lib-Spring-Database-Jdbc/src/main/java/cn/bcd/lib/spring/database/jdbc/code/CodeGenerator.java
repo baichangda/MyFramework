@@ -64,8 +64,8 @@ public class CodeGenerator {
         render(data, data.moduleName, "SaveRequest", templates, target);
     }
 
-    public void generateResponse(ApiData data, String templates, String target) {
-        render(data, data.moduleName, "Response", templates, target);
+    public void generateQueryResponse(ApiData data, String templates, String target) {
+        render(data, data.moduleName, "QueryResponse", templates, target);
     }
 
     public BeanData initBeanData(CodeGeneratorContext context) {
@@ -100,7 +100,7 @@ public class CodeGenerator {
                 if (table.needCreateBeanFile) render(initBeanData(context), table.moduleName, "Bean", templates, config.targetDirPath);
                 if (table.needCreateQueryRequestFile) render(data, table.moduleName, "QueryRequest", templates, config.targetDirPath);
                 if (table.needCreateSaveRequestFile) render(data, table.moduleName, "SaveRequest", templates, config.targetDirPath);
-                if (table.needCreateResponseFile) render(data, table.moduleName, "Response", templates, config.targetDirPath);
+                if (table.needCreateQueryResponseFile) render(data, table.moduleName, "QueryResponse", templates, config.targetDirPath);
                 if (table.needCreateServiceFile) render(data, table.moduleName, "Service", templates, config.targetDirPath);
                 if (table.needCreateControllerFile) render(initControllerData(context), table.moduleName, "Controller", templates, config.targetDirPath);
             }

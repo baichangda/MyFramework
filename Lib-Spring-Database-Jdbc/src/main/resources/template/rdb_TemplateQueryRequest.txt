@@ -1,5 +1,7 @@
 package ${packagePre};
 
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -26,4 +28,17 @@ public class ${moduleName?cap_first}QueryRequest {
 </#if>
 
 </#list>
+    public Condition toCondition() {
+        return Condition.and(
+<#list queryFields as field>
+<#if field.type == "Date">
+                DateCondition.BETWEEN("${field.name}", this.${field.name}Begin, this.${field.name}End)<#sep>,</#sep>
+<#elseif field.type == "String">
+                StringCondition.EQUAL("${field.name}", this.${field.name})<#sep>,</#sep>
+<#else>
+                NumberCondition.EQUAL("${field.name}", this.${field.name})<#sep>,</#sep>
+</#if>
+</#list>
+        );
+    }
 }

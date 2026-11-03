@@ -9,5 +9,5 @@ public class ApiData {
     public String packagePre;
     public List<BeanField> queryFields;
     public List<BeanField> saveFields;
-    public List<BeanField> responseFields;
+    public List<BeanField> queryResponseFields;
 }

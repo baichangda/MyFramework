@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /** 用户接口返回模型，与数据库实体独立。 */
-public class UserResponse {
+public class UserQueryResponse {
     @Schema(description = "主键")
     public Long id;
 
@@ -51,4 +51,23 @@ public class UserResponse {
     @Schema(description = "更新人姓名")
     public String updateUserName;
 
+    public static UserQueryResponse fromBean(UserBean bean) {
+        UserQueryResponse queryResponse = new UserQueryResponse();
+        queryResponse.id = bean.id;
+        queryResponse.username = bean.username;
+        queryResponse.email = bean.email;
+        queryResponse.phone = bean.phone;
+        queryResponse.realName = bean.realName;
+        queryResponse.sex = bean.sex;
+        queryResponse.birthday = bean.birthday;
+        queryResponse.cardNumber = bean.cardNumber;
+        queryResponse.status = bean.status;
+        queryResponse.createTime = bean.createTime;
+        queryResponse.createUserId = bean.createUserId;
+        queryResponse.createUserName = bean.createUserName;
+        queryResponse.updateTime = bean.updateTime;
+        queryResponse.updateUserId = bean.updateUserId;
+        queryResponse.updateUserName = bean.updateUserName;
+        return queryResponse;
+    }
 }

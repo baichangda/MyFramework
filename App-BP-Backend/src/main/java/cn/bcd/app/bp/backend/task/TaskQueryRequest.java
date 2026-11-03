@@ -1,5 +1,7 @@
 package cn.bcd.app.bp.backend.task;
 
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -35,4 +37,13 @@ public class TaskQueryRequest {
     @Schema(description = "结束时间结束")
     public Date finishTimeEnd;
 
+    public Condition toCondition() {
+        return Condition.and(
+                NumberCondition.EQUAL("id", this.id),
+                StringCondition.ALL_LIKE("name", this.name),
+                NumberCondition.EQUAL("status", this.status),
+                StringCondition.EQUAL("type", this.type),
+                DateCondition.BETWEEN("startTime", this.startTimeBegin, this.startTimeEnd),
+                DateCondition.BETWEEN("finishTime", this.finishTimeBegin, this.finishTimeEnd));
+    }
 }

@@ -28,11 +28,11 @@ class TaskQueryTest {
         query.status = 2;
         query.startTimeBegin = new Date(100);
 
-        var response = service.pageTasks(query, 2, 5);
-        assertEquals(6, response.getTotalElements());
-        assertEquals(7L, response.getContent().getFirst().id);
-        assertTrue(response.getContent().getFirst().stopRequested);
-        assertEquals(bean.createTime, response.getContent().getFirst().createTime);
+        var queryResponsePage = service.pageTasks(query, 2, 5);
+        assertEquals(6, queryResponsePage.getTotalElements());
+        assertEquals(7L, queryResponsePage.getContent().getFirst().id);
+        assertTrue(queryResponsePage.getContent().getFirst().stopRequested);
+        assertEquals(bean.createTime, queryResponsePage.getContent().getFirst().createTime);
         verify(service).page(argThat((Condition condition) -> {
             var converted = ConditionUtil.convertCondition(condition, service.getBeanInfo());
             return converted.sql.contains("status=?") && converted.sql.contains("start_time>=?")

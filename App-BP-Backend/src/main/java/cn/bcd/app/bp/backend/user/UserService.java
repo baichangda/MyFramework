@@ -2,9 +2,6 @@ package cn.bcd.app.bp.backend.user;
 
 import cn.bcd.app.bp.backend.permission.PermissionService;
 import cn.bcd.app.bp.backend.role.RoleService;
-import cn.bcd.lib.spring.database.common.condition.Condition;
-import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
-import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import org.springframework.context.ApplicationListener;
@@ -60,29 +57,16 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
         update(userId, Map.of("password", encrypt(UserConst.INITIAL_PASSWORD)));
     }
 
-    public List<UserResponse> listUser(UserQueryRequest query) {
-        return list(buildCondition(query)).stream()
-                .map(this::toResponse).toList();
+    public List<UserQueryResponse> listUser(UserQueryRequest query) {
+        return list(query.toCondition()).stream()
+                .map(UserQueryResponse::fromBean).toList();
     }
 
-    public Page<UserResponse> pageUser(
+    public Page<UserQueryResponse> pageUser(
             UserQueryRequest query, int pageNum, int pageSize) {
-        return page(buildCondition(query), PageRequest.of(pageNum - 1, pageSize)).map(this::toResponse);
+        return page(query.toCondition(), PageRequest.of(pageNum - 1, pageSize)).map(UserQueryResponse::fromBean);
     }
 
-    protected Condition buildCondition(UserQueryRequest query) {
-        return Condition.and(
-                NumberCondition.EQUAL("id", query.id),
-                StringCondition.ALL_LIKE("username", query.username),
-                StringCondition.ALL_LIKE("email", query.email),
-                StringCondition.ALL_LIKE("phone", query.phone),
-                StringCondition.ALL_LIKE("realName", query.realName),
-                StringCondition.ALL_LIKE("sex", query.sex),
-                DateCondition.BETWEEN("birthday", query.birthdayBegin, query.birthdayEnd),
-                StringCondition.ALL_LIKE("cardNumber", query.cardNumber),
-                NumberCondition.EQUAL("status", query.status)
-        );
-    }
 
     public void saveUser(UserSaveRequest request) {
         if (request.id == null) {
@@ -120,25 +104,6 @@ public class UserService extends BaseService<UserBean> implements ApplicationLis
         delete(Arrays.stream(ids).distinct().toArray());
     }
 
-    protected UserResponse toResponse(UserBean bean) {
-        UserResponse response = new UserResponse();
-        response.id = bean.id;
-        response.username = bean.username;
-        response.email = bean.email;
-        response.phone = bean.phone;
-        response.realName = bean.realName;
-        response.sex = bean.sex;
-        response.birthday = bean.birthday;
-        response.cardNumber = bean.cardNumber;
-        response.status = bean.status;
-        response.createTime = bean.createTime;
-        response.createUserId = bean.createUserId;
-        response.createUserName = bean.createUserName;
-        response.updateTime = bean.updateTime;
-        response.updateUserId = bean.updateUserId;
-        response.updateUserName = bean.updateUserName;
-        return response;
-    }
 
     public List<String> getUserRoles(String username, String loginType) {
         return roleService.findRolesByUsername(username).stream().map(role -> role.code).toList();
