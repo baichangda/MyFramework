@@ -3,7 +3,6 @@ package ${packagePre};
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import java.io.Serial;
@@ -19,7 +18,7 @@ public class ${moduleName?cap_first}Bean extends <#if containCreateAndUpdateFiel
     private static final long serialVersionUID = 1L;
 
 <#list fieldList as field>
-    @Schema(description = "${(field.comment!'')?j_string}")
+    // ${(field.comment!'')?replace("\r", " ")?replace("\n", " ")}
     public ${field.type} ${field.name};
 
 </#list>

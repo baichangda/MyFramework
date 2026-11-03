@@ -103,7 +103,14 @@ class CodeGeneratorTest {
         assertFalse(save.contains("updateTime"));
         assertTrue(service.contains("update(request.id, changes)"));
         assertFalse(service.contains("updateFieldsById"));
-        assertFalse(Files.readString(module.resolve("ExampleBean.java")).contains("jakarta.validation"));
+        String beanSource = Files.readString(module.resolve("ExampleBean.java"));
+        assertFalse(beanSource.contains("jakarta.validation"));
+        assertFalse(beanSource.contains("@Schema"));
+        assertFalse(beanSource.contains("io.swagger"));
+        assertTrue(beanSource.contains("// 字段"));
+        assertTrue(query.contains("@Schema"));
+        assertTrue(save.contains("@Schema"));
+        assertTrue(Files.readString(module.resolve("ExampleQueryResponse.java")).contains("@Schema"));
 
         var compiler = ToolProvider.getSystemJavaCompiler();
         assertNotNull(compiler);

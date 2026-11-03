@@ -2,6 +2,7 @@
 
 每张表默认生成 `Bean`、`QueryRequest`、`SaveRequest`、`QueryResponse`、`Service`、`Controller` 六个文件。
 
+- Bean 不使用 `@Schema` 或字段校验注解，字段描述保留为 Java 注释；接口文档注解放在 Request、QueryResponse 中，参数校验放在 Request 中。
 - `/list`、`/page` 使用同一个 QueryRequest。`pageNum`、`pageSize` 仍是独立 GET 参数，默认 1、20。
 - QueryRequest 默认包含全部非审计字段，日期展开为 `Begin`、`End`；不包含分页参数。
 - SaveRequest 默认包含全部非审计业务字段和可空的 `id`。ID 为空新增，否则修改；ID 不参与 SET。

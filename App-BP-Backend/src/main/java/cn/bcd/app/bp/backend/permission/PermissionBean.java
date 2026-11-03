@@ -3,7 +3,6 @@ package cn.bcd.app.bp.backend.permission;
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.SuperBaseBean;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import java.io.Serial;
@@ -18,10 +17,10 @@ public class PermissionBean extends BaseBean {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "权限名称")
+    // 权限名称
     public String name;
 
-    @Schema(description = "资源")
+    // 资源
     public String resource;
 
 }

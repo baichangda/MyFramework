@@ -4,7 +4,6 @@ import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
 import cn.bcd.lib.spring.database.jdbc.bean.UserInterface;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,32 +21,32 @@ public class UserBean extends BaseBean implements UserInterface {
     private final static long serialVersionUID = 1L;
 
     //field
-    @Schema(description = "用户名", maxLength = 50, requiredMode = Schema.RequiredMode.REQUIRED)
+    // 用户名
     public String username;
 
     @JsonIgnore
-    @Schema(description = "密码", maxLength = 100)
+    // 密码
     public String password;
 
-    @Schema(description = "邮箱", maxLength = 100)
+    // 邮箱
     public String email;
 
-    @Schema(description = "手机号", maxLength = 11)
+    // 手机号
     public String phone;
 
-    @Schema(description = "真实姓名", maxLength = 50)
+    // 真实姓名
     public String realName;
 
-    @Schema(description = "性别", maxLength = 5)
+    // 性别
     public String sex;
 
-    @Schema(description = "生日")
+    // 生日
     public Date birthday;
 
-    @Schema(description = "身份证号", maxLength = 20)
+    // 身份证号
     public String cardNumber;
 
-    @Schema(description = "是否可用(0:禁用,1:可用)",requiredMode = Schema.RequiredMode.REQUIRED)
+    // 是否可用(0:禁用,1:可用)
     public Integer status;
 
 }

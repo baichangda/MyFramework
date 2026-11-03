@@ -2,9 +2,6 @@ package cn.bcd.app.bp.backend.role;
 
 import cn.bcd.lib.spring.database.jdbc.anno.Table;
 import cn.bcd.lib.spring.database.jdbc.bean.BaseBean;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,17 +14,12 @@ import lombok.Setter;
 public class RoleBean extends BaseBean {
 
     //field
-    @NotBlank(message = "[角色名称]不能为空")
-    @Size(max = 20, message = "[角色名称]长度不能超过20")
-    @Schema(description = "角色名称", requiredMode = Schema.RequiredMode.REQUIRED, maxLength = 20)
+    // 角色名称
     public String name;
 
-    @NotBlank(message = "[编码]不能为空")
-    @Size(max = 50, message = "[编码]长度不能超过50")
-    @Schema(description = "编码", requiredMode = Schema.RequiredMode.REQUIRED, maxLength = 50)
+    // 编码
     public String code;
 
-    @Size(max = 256, message = "[备注]长度不能超过256")
-    @Schema(description = "备注", maxLength = 256)
+    // 备注
     public String remark;
 }
