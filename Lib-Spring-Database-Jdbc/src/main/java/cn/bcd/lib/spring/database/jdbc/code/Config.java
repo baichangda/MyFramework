@@ -22,7 +22,9 @@ public class Config {
     }
 
     public static Config newConfig(String targetDirPath, DBInfo dbInfo) {
-        return new Config(targetDirPath);
+        Config config = new Config(targetDirPath);
+        config.dbInfo = dbInfo;
+        return config;
     }
 
     public static Config newConfig(String targetDirPath) {

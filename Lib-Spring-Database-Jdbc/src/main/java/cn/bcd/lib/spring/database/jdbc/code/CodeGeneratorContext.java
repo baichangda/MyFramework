@@ -1,10 +1,12 @@
 package cn.bcd.lib.spring.database.jdbc.code;
 
 import cn.bcd.lib.base.exception.BaseException;
+import cn.bcd.lib.spring.database.jdbc.code.data.ApiData;
 import cn.bcd.lib.spring.database.jdbc.code.data.BeanField;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -105,6 +107,34 @@ public class CodeGeneratorContext {
      */
     public String getRequestMappingPre() {
         return "/" + getPackagePre().substring(getPackagePre().lastIndexOf('.') + 1);
+    }
+
+    /** 请求包含全部非审计字段，响应包含全部字段；生成后按业务需要手工调整。 */
+    public <D extends ApiData> D initApiData(D data) {
+        List<BeanField> all = getAllBeanFields();
+        if (all.stream().noneMatch(field -> field.name.equals("id"))) {
+            throw new IllegalArgumentException("CRUD generation requires an id property");
+        }
+        data.moduleName = tableConfig.moduleName;
+        data.moduleNameCN = tableConfig.moduleNameCN;
+        data.packagePre = getModulePackage();
+        data.responseFields = List.copyOf(all);
+        data.queryFields = all.stream()
+                .filter(field -> !CodeConst.CREATE_INFO_FIELD_NAME.contains(field.name))
+                .toList();
+        data.saveFields = data.queryFields.stream().filter(field -> !field.name.equals("id")).toList();
+        Set<String> queryNames = new HashSet<>();
+        for (BeanField field : data.queryFields) {
+            if (field.name.equals("pageNum") || field.name.equals("pageSize")) {
+                throw new IllegalArgumentException("Query field conflicts with pagination: " + field.name);
+            }
+            List<String> properties = field.type.equals("Date")
+                    ? List.of(field.name + "Begin", field.name + "End") : List.of(field.name);
+            for (String property : properties) {
+                if (!queryNames.add(property)) throw new IllegalArgumentException("Duplicate query property: " + property);
+            }
+        }
+        return data;
     }
 
     public boolean getContainCreateAndUpdateField() {

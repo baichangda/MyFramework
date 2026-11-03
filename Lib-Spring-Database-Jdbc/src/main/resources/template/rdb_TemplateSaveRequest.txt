@@ -1,0 +1,33 @@
+package ${packagePre};
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+import java.math.BigDecimal;
+import java.util.Date;
+
+/** ${moduleNameCN}完整编辑表单；可空字段缺失或为 null 时表示清空。 */
+@Getter
+@Setter
+public class ${moduleName?cap_first}SaveRequest {
+    @Positive
+    @Schema(description = "主键；新增时不传，修改时必填")
+    public Long id;
+
+<#list saveFields as field>
+    @Schema(description = "${(field.comment!'')?j_string}")
+<#if !field.nullable>
+<#if field.type == "String">
+    @NotBlank
+<#else>
+    @NotNull
+</#if>
+</#if>
+<#if field.type == "String" && field.strLen?? && field.strLen gt 0>
+    @Size(max = ${field.strLen?c})
+</#if>
+    public ${field.type} ${field.name};
+
+</#list>
+}

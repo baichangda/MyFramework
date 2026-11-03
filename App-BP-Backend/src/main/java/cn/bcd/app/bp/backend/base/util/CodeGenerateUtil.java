@@ -13,7 +13,11 @@ public class CodeGenerateUtil {
         helper.needCreateControllerFile = true;
         helper
                 .addModule("PermissionTest", "权限", "t_sys_permission");
+        // 默认生成 Bean、QueryRequest、SaveRequest、Response、Service、Controller。
+        // Request 默认包含全部非审计字段；id 只用于查询和区分新增/修改。
         Config config = Config.newConfig(path).addTableConfig(helper.toTableConfigs());
+        // 生成时覆盖目标目录中的同名文件。
+        // 生成后直接编辑 Request、Response 和 Service，删除不需要的字段或调整业务规则。
         CodeGenerator.MYSQL.generate(config);
 //        CodeGenerator.PGSQL.generate(config);
     }

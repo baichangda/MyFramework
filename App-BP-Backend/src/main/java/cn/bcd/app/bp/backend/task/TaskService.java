@@ -2,7 +2,13 @@ package cn.bcd.app.bp.backend.task;
 
 import cn.bcd.app.bp.backend.file.FileService;
 import cn.bcd.lib.base.json.JsonUtil;
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -190,5 +196,39 @@ public class TaskService extends BaseService<TaskBean> {
             }
         }
         return deleted;
+    }
+
+    public Page<TaskResponse> pageTasks(TaskQueryRequest query, int pageNum, int pageSize) {
+        var condition = Condition.and(
+                NumberCondition.EQUAL("id", query.id),
+                StringCondition.ALL_LIKE("name", query.name),
+                NumberCondition.EQUAL("status", query.status),
+                StringCondition.EQUAL("type", query.type),
+                DateCondition.BETWEEN("startTime", query.startTimeBegin, query.startTimeEnd),
+                DateCondition.BETWEEN("finishTime", query.finishTimeBegin, query.finishTimeEnd));
+        return page(condition, PageRequest.of(pageNum - 1, pageSize)).map(this::toResponse);
+    }
+
+    protected TaskResponse toResponse(TaskBean bean) {
+        TaskResponse response = new TaskResponse();
+        response.id = bean.id;
+        response.name = bean.name;
+        response.status = bean.status;
+        response.type = bean.type;
+        response.payload = bean.payload;
+        response.nodeId = bean.nodeId;
+        response.stopRequested = bean.stopRequested;
+        response.message = bean.message;
+        response.percent = bean.percent;
+        response.startTime = bean.startTime;
+        response.finishTime = bean.finishTime;
+        response.result = bean.result;
+        response.createTime = bean.createTime;
+        response.createUserId = bean.createUserId;
+        response.createUserName = bean.createUserName;
+        response.updateTime = bean.updateTime;
+        response.updateUserId = bean.updateUserId;
+        response.updateUserName = bean.updateUserName;
+        return response;
     }
 }

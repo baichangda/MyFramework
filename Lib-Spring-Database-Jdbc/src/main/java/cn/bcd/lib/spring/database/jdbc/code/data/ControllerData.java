@@ -1,32 +1,6 @@
 package cn.bcd.lib.spring.database.jdbc.code.data;
 
-
-import java.util.List;
-
-public class ControllerData {
-    /**
-     * 模块名
-     */
-    public String moduleName;
-
-    /**
-     * 模块中文名
-     */
-    public String moduleNameCN;
-
-    /**
-     * 包路径
-     */
-    public String packagePre;
-
-    /**
-     * controller映射路径
-     */
+public class ControllerData extends ApiData {
     public String requestMappingPre;
-
-    /**
-     * 字段集合
-     */
-    public List<BeanField> fieldList;
-
+    public java.util.List<BeanField> fieldList;
 }

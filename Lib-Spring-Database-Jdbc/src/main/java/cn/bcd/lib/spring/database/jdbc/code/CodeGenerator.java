@@ -1,132 +1,73 @@
 package cn.bcd.lib.spring.database.jdbc.code;
 
 import cn.bcd.lib.base.exception.BaseException;
-import cn.bcd.lib.spring.database.jdbc.code.data.BeanData;
-import cn.bcd.lib.spring.database.jdbc.code.data.ControllerData;
-import cn.bcd.lib.spring.database.jdbc.code.data.ServiceData;
+import cn.bcd.lib.spring.database.jdbc.code.data.*;
 import cn.bcd.lib.spring.database.jdbc.code.mysql.MysqlDBSupport;
 import cn.bcd.lib.spring.database.jdbc.code.pgsql.PgsqlDBSupport;
-import freemarker.template.Configuration;
-import freemarker.template.DefaultObjectWrapper;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
+import freemarker.template.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.nio.file.*;
+import java.sql.*;
 
 public class CodeGenerator {
-
-    public final static CodeGenerator MYSQL = new CodeGenerator(new MysqlDBSupport());
-    public final static CodeGenerator PGSQL = new CodeGenerator(new PgsqlDBSupport());
-    static Logger logger = LoggerFactory.getLogger(CodeGenerator.class);
+    public static final CodeGenerator MYSQL = new CodeGenerator(new MysqlDBSupport());
+    public static final CodeGenerator PGSQL = new CodeGenerator(new PgsqlDBSupport());
+    private static final Logger logger = LoggerFactory.getLogger(CodeGenerator.class);
     final DBSupport dbSupport;
 
     public CodeGenerator(DBSupport dbSupport) {
         this.dbSupport = dbSupport;
     }
 
-    /**
-     * 生成bean文件
-     *
-     * @param data
-     * @param templateDir
-     * @param destDir
-     */
-    public void generateBean(BeanData data, String templateDir, String destDir) {
-        Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = getModuleDir(destDir, data.moduleName);
+    private void render(Object data, String moduleName, String suffix, String templateDir,
+                        String targetDir) {
+        Path moduleDir = Path.of(targetDir, Character.toLowerCase(moduleName.charAt(0)) + moduleName.substring(1));
+        Path target = moduleDir.resolve(Character.toUpperCase(moduleName.charAt(0)) + moduleName.substring(1) + suffix + ".java");
         try {
-            Files.createDirectories(Paths.get(fileDir));
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        }
-        String destBeanPath = fileDir + "/" + data.moduleName.substring(0, 1).toUpperCase() + data.moduleName.substring(1) + "Bean.java";
-        try (FileWriter out = new FileWriter(destBeanPath, StandardCharsets.UTF_8)) {
-            configuration.setDirectoryForTemplateLoading(Paths.get(templateDir).toFile());
-            Template template = configuration.getTemplate("rdb_TemplateBean.txt", StandardCharsets.UTF_8.name());
-            final DefaultObjectWrapper objectWrapper = new DefaultObjectWrapper(CodeConst.FREEMARKER_VERSION);
-            objectWrapper.setExposeFields(true);
-            template.process(data, out, objectWrapper);
+            Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
+            configuration.setDirectoryForTemplateLoading(Path.of(templateDir).toFile());
+            configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());
+            DefaultObjectWrapper wrapper = new DefaultObjectWrapper(CodeConst.FREEMARKER_VERSION);
+            wrapper.setExposeFields(true);
+            // 先在内存中渲染，模板错误不会清空已有文件。
+            java.io.StringWriter buffer = new java.io.StringWriter();
+            configuration.getTemplate("rdb_Template" + suffix + ".txt").process(data, buffer, wrapper);
+            Files.createDirectories(moduleDir);
+            Files.writeString(target, buffer.toString(), StandardCharsets.UTF_8);
+            logger.info("generated {}", target);
         } catch (IOException | TemplateException ex) {
             throw BaseException.get(ex);
         }
-        logger.info("{} generate succeed", destBeanPath);
     }
 
-    /**
-     * 生成service文件
-     *
-     * @param data
-     * @param templateDir
-     * @param destDir
-     */
-    public void generateService(ServiceData data, String templateDir, String destDir) {
-        Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = getModuleDir(destDir, data.moduleName);
-        try {
-            Files.createDirectories(Paths.get(fileDir));
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        }
-        String destBeanPath = fileDir + "/" + data.moduleName.substring(0, 1).toUpperCase() + data.moduleName.substring(1) + "Service.java";
-        try (FileWriter out = new FileWriter(destBeanPath, StandardCharsets.UTF_8)) {
-            configuration.setDirectoryForTemplateLoading(Paths.get(templateDir).toFile());
-            Template template = configuration.getTemplate("rdb_TemplateService.txt", StandardCharsets.UTF_8.name());
-            final DefaultObjectWrapper objectWrapper = new DefaultObjectWrapper(CodeConst.FREEMARKER_VERSION);
-            objectWrapper.setExposeFields(true);
-            template.process(data, out, objectWrapper);
-        } catch (IOException | TemplateException ex) {
-            throw BaseException.get(ex);
-        }
-        logger.info("{} generate succeed", destBeanPath);
+    public void generateBean(BeanData data, String templates, String target) {
+        render(data, data.moduleName, "Bean", templates, target);
     }
 
-    /**
-     * 生成controller文件
-     *
-     * @param data
-     * @param templateDir
-     * @param destDir
-     */
-    public void generateController(ControllerData data, String templateDir, String destDir) {
-        Configuration configuration = new Configuration(CodeConst.FREEMARKER_VERSION);
-        String fileDir = getModuleDir(destDir, data.moduleName);
-        try {
-            Files.createDirectories(Paths.get(fileDir));
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        }
-        String destBeanPath = fileDir + "/" + data.moduleName.substring(0, 1).toUpperCase() + data.moduleName.substring(1) + "Controller.java";
-        try (FileWriter out = new FileWriter(destBeanPath, StandardCharsets.UTF_8)) {
-            configuration.setDirectoryForTemplateLoading(Paths.get(templateDir).toFile());
-            Template template = configuration.getTemplate("rdb_TemplateController.txt", StandardCharsets.UTF_8.name());
-            final DefaultObjectWrapper objectWrapper = new DefaultObjectWrapper(CodeConst.FREEMARKER_VERSION);
-            objectWrapper.setExposeFields(true);
-            template.process(data, out, objectWrapper);
-        } catch (IOException | TemplateException ex) {
-            throw BaseException.get(ex);
-        }
-        logger.info("{} generate succeed", destBeanPath);
+    public void generateService(ServiceData data, String templates, String target) {
+        render(data, data.moduleName, "Service", templates, target);
     }
 
-    private String getModuleDir(String destDir, String moduleName) {
-        return Paths.get(destDir, moduleName.substring(0, 1).toLowerCase() + moduleName.substring(1)).toString();
+    public void generateController(ControllerData data, String templates, String target) {
+        render(data, data.moduleName, "Controller", templates, target);
     }
 
-    /**
-     * 根据配置和数据库信息初始化bean数据
-     *
-     * @param context
-     * @return
-     */
+    public void generateQueryRequest(ApiData data, String templates, String target) {
+        render(data, data.moduleName, "QueryRequest", templates, target);
+    }
+
+    public void generateSaveRequest(ApiData data, String templates, String target) {
+        render(data, data.moduleName, "SaveRequest", templates, target);
+    }
+
+    public void generateResponse(ApiData data, String templates, String target) {
+        render(data, data.moduleName, "Response", templates, target);
+    }
+
     public BeanData initBeanData(CodeGeneratorContext context) {
         BeanData data = new BeanData();
         data.moduleNameCN = context.tableConfig.moduleNameCN;
@@ -138,75 +79,30 @@ public class CodeGenerator {
         return data;
     }
 
-    /**
-     * 根据配置和数据库信息初始化service数据
-     *
-     * @param context
-     * @return
-     */
     public ServiceData initServiceData(CodeGeneratorContext context) {
-        final TableConfig tableConfig = context.tableConfig;
-        ServiceData data = new ServiceData();
-        data.moduleNameCN = tableConfig.moduleNameCN;
-        data.moduleName = tableConfig.moduleName;
-        data.packagePre = context.getModulePackage();
-        return data;
+        return context.initApiData(new ServiceData());
     }
 
-    /**
-     * 根据配置和数据库信息初始化controller数据
-     *
-     * @param context
-     * @return
-     */
     public ControllerData initControllerData(CodeGeneratorContext context) {
-        final TableConfig tableConfig = context.tableConfig;
-        ControllerData data = new ControllerData();
-        data.moduleNameCN = tableConfig.moduleNameCN;
-        data.moduleName = tableConfig.moduleName;
-        data.packagePre = context.getModulePackage();
+        ControllerData data = context.initApiData(new ControllerData());
         data.fieldList = context.getAllBeanFields();
         data.requestMappingPre = context.getRequestMappingPre();
         return data;
     }
 
-    /**
-     * 初始化config属性
-     * 1、数据库名称
-     * 2、模版文件路径
-     *
-     * @param config
-     */
-    private void initConfig(Config config) {
-        //如果配置了dbInfo、则不读取spring yml配置
-        if (config.dbInfo == null) {
-            config.dbInfo = dbSupport.getSpringDBConfig();
-        }
-        config.templateDirPath = Paths.get(config.templateDirPath == null ? CodeConst.TEMPLATE_DIR_PATH : config.templateDirPath).toString();
-    }
-
-    /**
-     * 根据配置、application.yml数据库信息生成 bean/repository/service/controller 文件
-     *
-     * @param config
-     */
     public void generate(Config config) {
-        initConfig(config);
+        if (config.dbInfo == null) config.dbInfo = dbSupport.getSpringDBConfig();
+        String templates = config.templateDirPath == null ? CodeConst.TEMPLATE_DIR_PATH : config.templateDirPath;
         try (Connection connection = getConnection(config.dbInfo.url, config.dbInfo.username, config.dbInfo.password)) {
-            for (TableConfig tableConfig : config.tableConfigs) {
-                CodeGeneratorContext context = new CodeGeneratorContext(tableConfig, dbSupport, connection);
-                if (tableConfig.needCreateBeanFile) {
-                    BeanData beanData = initBeanData(context);
-                    generateBean(beanData, config.templateDirPath, config.targetDirPath);
-                }
-                if (tableConfig.needCreateServiceFile) {
-                    ServiceData serviceData = initServiceData(context);
-                    generateService(serviceData, config.templateDirPath, config.targetDirPath);
-                }
-                if (tableConfig.needCreateControllerFile) {
-                    ControllerData controllerData = initControllerData(context);
-                    generateController(controllerData, config.templateDirPath, config.targetDirPath);
-                }
+            for (TableConfig table : config.tableConfigs) {
+                CodeGeneratorContext context = new CodeGeneratorContext(table, dbSupport, connection);
+                ServiceData data = initServiceData(context);
+                if (table.needCreateBeanFile) render(initBeanData(context), table.moduleName, "Bean", templates, config.targetDirPath);
+                if (table.needCreateQueryRequestFile) render(data, table.moduleName, "QueryRequest", templates, config.targetDirPath);
+                if (table.needCreateSaveRequestFile) render(data, table.moduleName, "SaveRequest", templates, config.targetDirPath);
+                if (table.needCreateResponseFile) render(data, table.moduleName, "Response", templates, config.targetDirPath);
+                if (table.needCreateServiceFile) render(data, table.moduleName, "Service", templates, config.targetDirPath);
+                if (table.needCreateControllerFile) render(initControllerData(context), table.moduleName, "Controller", templates, config.targetDirPath);
             }
         } catch (SQLException ex) {
             throw BaseException.get(ex);
@@ -216,10 +112,8 @@ public class CodeGenerator {
     public Connection getConnection(String url, String username, String password) {
         try {
             return DriverManager.getConnection(url, username, password);
-        } catch (SQLException e) {
-            throw BaseException.get(e);
+        } catch (SQLException ex) {
+            throw BaseException.get(ex);
         }
     }
-
-
 }

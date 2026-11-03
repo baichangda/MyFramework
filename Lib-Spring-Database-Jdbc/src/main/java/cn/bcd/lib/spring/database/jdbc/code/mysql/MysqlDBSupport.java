@@ -34,7 +34,7 @@ public class MysqlDBSupport implements DBSupport {
             mysqlDbColumn.type = e.data_type;
             mysqlDbColumn.comment = e.column_comment;
             mysqlDbColumn.isNull = e.is_nullable;
-            mysqlDbColumn.strLen = e.character_maximum_length.intValue();
+            mysqlDbColumn.strLen = e.character_maximum_length == null ? null : e.character_maximum_length.intValue();
             BeanField beanField = mysqlDbColumn.toBeanField();
             if (beanField == null) {
                 logger.warn("不支持[table:{}] [name:{}] [type:{}]类型数据库字段,忽略此字段!", config.tableName, mysqlDbColumn.name, mysqlDbColumn.type);
@@ -54,7 +54,7 @@ public class MysqlDBSupport implements DBSupport {
                 mysqlDbColumn.type = pk.data_type;
                 mysqlDbColumn.comment = pk.column_comment;
                 mysqlDbColumn.isNull = pk.is_nullable;
-                mysqlDbColumn.strLen = pk.character_maximum_length.intValue();
+                mysqlDbColumn.strLen = pk.character_maximum_length == null ? null : pk.character_maximum_length.intValue();
                 BeanField beanField = mysqlDbColumn.toBeanField();
                 if (beanField == null) {
                     logger.warn("不支持[table:{}] [name:{}] [type:{}]类型数据库字段,忽略此字段!", config.tableName, mysqlDbColumn.name, mysqlDbColumn.type);

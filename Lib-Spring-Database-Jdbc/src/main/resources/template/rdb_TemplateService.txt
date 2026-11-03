@@ -1,8 +1,68 @@
 package ${packagePre};
 
+import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.lib.spring.database.common.condition.impl.*;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import java.util.*;
+
 @Service
 public class ${moduleName?cap_first}Service extends BaseService<${moduleName?cap_first}Bean> {
+    public List<${moduleName?cap_first}Response> list${moduleName?cap_first}(${moduleName?cap_first}QueryRequest query) {
+        return list(buildCondition(query)).stream()
+                .map(this::toResponse).toList();
+    }
 
+    public Page<${moduleName?cap_first}Response> page${moduleName?cap_first}(
+            ${moduleName?cap_first}QueryRequest query, int pageNum, int pageSize) {
+        return page(buildCondition(query), PageRequest.of(pageNum - 1, pageSize)).map(this::toResponse);
+    }
+
+    protected Condition buildCondition(${moduleName?cap_first}QueryRequest query) {
+        return Condition.and(
+<#list queryFields as field>
+<#if field.type == "Date">
+                DateCondition.BETWEEN("${field.name}", query.${field.name}Begin, query.${field.name}End)<#sep>,</#sep>
+<#elseif field.type == "String">
+                StringCondition.EQUAL("${field.name}", query.${field.name})<#sep>,</#sep>
+<#else>
+                NumberCondition.EQUAL("${field.name}", query.${field.name})<#sep>,</#sep>
+</#if>
+</#list>
+        );
+    }
+
+    public void save${moduleName?cap_first}(${moduleName?cap_first}SaveRequest request) {
+        if (request.id == null) {
+            ${moduleName?cap_first}Bean bean = new ${moduleName?cap_first}Bean();
+<#list saveFields as field>
+            bean.${field.name} = request.${field.name};
+</#list>
+            // 在此补充服务端默认值和新增业务规则。
+            insert(bean);
+        } else {
+            if (get(request.id) == null) throw new IllegalArgumentException("Record not found");
+            // 在此补充操作权限和修改业务规则。
+            Map<String, Object> changes = new LinkedHashMap<>();
+<#list saveFields as field>
+            changes.put("${field.name}", request.${field.name});
+</#list>
+            update(request.id, changes);
+        }
+    }
+
+    public void delete${moduleName?cap_first}(long[] ids) {
+        // 在此补充操作权限和关联数据检查。
+        delete(Arrays.stream(ids).distinct().toArray());
+    }
+
+    protected ${moduleName?cap_first}Response toResponse(${moduleName?cap_first}Bean bean) {
+        ${moduleName?cap_first}Response response = new ${moduleName?cap_first}Response();
+<#list responseFields as field>
+        response.${field.name} = bean.${field.name};
+</#list>
+        return response;
+    }
 }

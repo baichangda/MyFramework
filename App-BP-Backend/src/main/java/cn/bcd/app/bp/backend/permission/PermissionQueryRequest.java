@@ -1,0 +1,25 @@
+package cn.bcd.app.bp.backend.permission;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+import java.math.BigDecimal;
+import java.util.Date;
+
+/** 权限筛选条件，不包含分页参数和审计信息。 */
+@Getter
+@Setter
+public class PermissionQueryRequest {
+    @Schema(description = "主键")
+    public Long id;
+
+    @Schema(description = "权限名称")
+    @Size(max = 20)
+    public String name;
+
+    @Schema(description = "资源")
+    @Size(max = 100)
+    public String resource;
+
+}

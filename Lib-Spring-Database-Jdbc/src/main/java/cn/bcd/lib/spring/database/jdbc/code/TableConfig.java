@@ -7,6 +7,9 @@ import java.util.List;
 
 public class TableConfig {
     public Config config;
+    public boolean needCreateQueryRequestFile = true;
+    public boolean needCreateSaveRequestFile = true;
+    public boolean needCreateResponseFile = true;
     //模块名(英文)
     public String moduleName;
     //模块名(中文)
@@ -26,6 +29,10 @@ public class TableConfig {
 
 
     public static class Helper {
+        public boolean needCreateQueryRequestFile = true;
+        public boolean needCreateSaveRequestFile = true;
+        public boolean needCreateResponseFile = true;
+
         //是否创建bean文件(默认是)
         public boolean needCreateBeanFile = true;
         //是否创建service文件(默认是)
@@ -61,6 +68,9 @@ public class TableConfig {
                 tableConfig.needCreateBeanFile = this.needCreateBeanFile;
                 tableConfig.needCreateServiceFile = this.needCreateServiceFile;
                 tableConfig.needCreateControllerFile = this.needCreateControllerFile;
+                tableConfig.needCreateQueryRequestFile = this.needCreateQueryRequestFile;
+                tableConfig.needCreateSaveRequestFile = this.needCreateSaveRequestFile;
+                tableConfig.needCreateResponseFile = this.needCreateResponseFile;
                 res.add(tableConfig);
             }
             return res;
