@@ -18,6 +18,7 @@ CollectionConfig 只提供模块、类型、目录和文件生成开关，不提
 
 - Bean、BaseBean、SuperBaseBean 不使用 `@Schema` 和校验注解；保留 Mongo 映射注解与字段注释。
 - 生成器通过反射读取字段，不依赖 Bean 上的文档或校验注解。描述默认使用字段名，生成后人工完善。
+- 常用的 java.util、java.math、java.time 类型通过 import 使用简写，java.lang 类型省略包名；自定义类型保留完整名称。
 - 静态字段、Java transient 字段、Spring `@Transient` 字段不进入接口模型。
 - SaveRequest 保留可写的非审计业务字段和可空 String ID；复杂对象、集合、Map、数组保留完整泛型类型。
 - QueryResponse 保留持久化字段，包括审计信息；通过静态 `fromBean(bean)` 转换。映射按字段或公开 getter 读取。

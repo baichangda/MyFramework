@@ -121,7 +121,7 @@ public class CodeGenerator {
             if (resolved instanceof Class<?> type) rawType = type;
             rawType = ClassUtils.resolvePrimitiveIfNecessary(rawType);
             data.type = resolved instanceof Class<?> type && type.isPrimitive()
-                    ? ClassUtils.resolvePrimitiveIfNecessary(type).getCanonicalName() : javaType(resolved, config.clazz);
+                    ? javaType(ClassUtils.resolvePrimitiveIfNecessary(type), config.clazz) : javaType(resolved, config.clazz);
             data.setComment(data.name);
             if (rawType == String.class) data.queryKind = "STRING";
             else if (rawType == Character.class) data.queryKind = "CHARACTER";
@@ -170,7 +170,14 @@ public class CodeGenerator {
         if (type instanceof Class<?> clazz) {
             if (clazz.isArray()) return javaType(clazz.getComponentType(), context) + "[]";
             String name = clazz.getCanonicalName();
-            if (name != null) return name;
+            if (name != null) {
+                String packageName = clazz.getPackageName();
+                if (Set.of("java.lang", "java.util", "java.math", "java.time").contains(packageName)
+                        && name.startsWith(packageName + ".")) {
+                    return name.substring(packageName.length() + 1);
+                }
+                return name;
+            }
         }
         throw new IllegalArgumentException("Unsupported Java type: " + type);
     }

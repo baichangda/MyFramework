@@ -3,6 +3,10 @@ package ${packagePre};
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.*;
+import java.math.*;
+import java.time.*;
+
 import lombok.Getter;
 import lombok.Setter;
 

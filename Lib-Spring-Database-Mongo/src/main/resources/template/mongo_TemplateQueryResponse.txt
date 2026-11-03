@@ -2,6 +2,10 @@ package ${packagePre};
 
 import ${beanClassName};
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.*;
+import java.math.*;
+import java.time.*;
+
 
 /** ${moduleNameCN}查询结果，与持久化实体独立。 */
 public class ${moduleName}QueryResponse {

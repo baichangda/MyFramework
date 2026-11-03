@@ -53,12 +53,12 @@ class CodeGeneratorTest {
         var data = CodeGenerator.initServiceData(config(FixtureBean.class, "Fixture"));
         Map<String, BeanField> fields = new HashMap<>();
         data.fieldList.forEach(field -> fields.put(field.name, field));
-        assertEquals("java.lang.String", fields.get("inherited").type);
-        assertEquals("java.lang.String[]", fields.get("inheritedArray").type);
+        assertEquals("String", fields.get("inherited").type);
+        assertEquals("String[]", fields.get("inheritedArray").type);
         assertEquals("int[]", fields.get("samples").type);
-        assertEquals("java.lang.Boolean", fields.get("enabled").type);
-        assertEquals("java.lang.Character", fields.get("grade").type);
-        assertTrue(fields.get("details").type.startsWith("java.util.List<java.util.Map<java.lang.String, "));
+        assertEquals("Boolean", fields.get("enabled").type);
+        assertEquals("Character", fields.get("grade").type);
+        assertTrue(fields.get("details").type.startsWith("List<Map<String, "));
         assertTrue(fields.get("polymorphic").type.contains("? extends "));
         assertEquals("bean.getAmount()", fields.get("amount").beanExpression);
         assertTrue(fields.get("amount").createStatement.contains("bean.setAmount("));
@@ -224,7 +224,13 @@ class CodeGeneratorTest {
         assertFalse(querySource.contains("pageNum"));
         assertFalse(saveSource.contains("createTime"));
         assertFalse(saveSource.contains("updateTime"));
-        assertTrue(saveSource.contains("java.util.List<java.util.Map<"));
+                assertTrue(saveSource.contains("public List<Map<String, "));
+        assertTrue(saveSource.contains("import java.util.*;"));
+        assertTrue(saveSource.contains("public BigDecimal amount;"));
+        assertTrue(querySource.contains("public Date timeEnd;"));
+        assertFalse(querySource.contains("public java.util.Date"));
+        assertFalse(saveSource.contains("java.lang.String"));
+
         return new Generated(module, new URLClassLoader(new java.net.URL[]{output.toUri().toURL()}, getClass().getClassLoader()));
     }
 
