@@ -12,7 +12,7 @@ public class CodeGenerateUtil {
         helper.needCreateServiceFile = true;
         helper.needCreateControllerFile = true;
         helper
-                .addModule("PermissionTest", "权限", "t_sys_permission");
+                .addModule("Permission", "权限", "t_sys_permission");
         // 默认生成 Bean、QueryRequest、SaveRequest、QueryResponse、Service、Controller。
         // Request 默认包含全部非审计字段；id 只用于查询和区分新增/修改。
         Config config = Config.newConfig(path).addTableConfig(helper.toTableConfigs());
