@@ -237,7 +237,7 @@ public class BaseService<T extends SuperBaseBean> {
      * 自动维护开启时补充尚未显式操作的更新信息，会修改传入的 Update。
      * 空 Update 或无有效条件时不访问数据库、不设置更新信息，返回零值 UpdateResult。
      */
-    public UpdateResult updateMulti(Condition condition, Update update) {
+    public UpdateResult update(Condition condition, Update update) {
         Objects.requireNonNull(update, "update");
         if (update.getUpdateObject().isEmpty()) {
             return UpdateResult.acknowledged(0, 0L, null);

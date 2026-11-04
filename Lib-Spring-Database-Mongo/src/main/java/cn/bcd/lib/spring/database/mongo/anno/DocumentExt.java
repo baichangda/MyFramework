@@ -39,7 +39,7 @@ public @interface DocumentExt {
      * {@link BaseService#save(SuperBaseBean)}
      * {@link BaseService#update(SuperBaseBean)}
      * {@link BaseService#update(String, Update)}
-     * {@link BaseService#updateMulti(Condition, Update)}
+     * {@link BaseService#update(Condition, Update)}
      */
     boolean autoSetUpdateInfo() default true;
 }

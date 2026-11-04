@@ -75,7 +75,7 @@ class BaseServiceUpdateMultiTest {
         UpdateResult result = UpdateResult.acknowledged(5, 0L, null);
         when(mongo.updateMulti(any(Query.class), same(update), eq(Bean.class))).thenReturn(result);
 
-        assertSame(result, service.updateMulti(StringCondition.EQUAL("name", "old"), update));
+        assertSame(result, service.update(StringCondition.EQUAL("name", "old"), update));
 
         ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
         verify(mongo).updateMulti(query.capture(), same(update), eq(Bean.class));
@@ -106,7 +106,7 @@ class BaseServiceUpdateMultiTest {
             Update update = new Update().set("name", "new");
             String original = update.getUpdateObject().toJson();
 
-            assertZeroResult(service.updateMulti(condition, update));
+            assertZeroResult(service.update(condition, update));
 
             assertEquals(original, update.getUpdateObject().toJson());
         }
@@ -118,8 +118,8 @@ class BaseServiceUpdateMultiTest {
         UpdateResult result = UpdateResult.acknowledged(2, 2L, null);
         when(mongo.updateMulti(any(Query.class), any(Update.class), eq(Bean.class))).thenReturn(result);
 
-        assertSame(result, service.updateMulti(NullCondition.NULL("name"), new Update().set("count", 1)));
-        assertSame(result, service.updateMulti(BooleanCondition.EQUAL("enabled", false), new Update().set("count", 1)));
+        assertSame(result, service.update(NullCondition.NULL("name"), new Update().set("count", 1)));
+        assertSame(result, service.update(BooleanCondition.EQUAL("enabled", false), new Update().set("count", 1)));
 
         ArgumentCaptor<Query> query = ArgumentCaptor.forClass(Query.class);
         verify(mongo, times(2)).updateMulti(query.capture(), any(Update.class), eq(Bean.class));
@@ -133,7 +133,7 @@ class BaseServiceUpdateMultiTest {
     void emptyUpdateDoesNotAddAuditOrAccessDatabase() {
         Update update = new Update();
 
-        assertZeroResult(service.updateMulti(StringCondition.EQUAL("name", "old"), update));
+        assertZeroResult(service.update(StringCondition.EQUAL("name", "old"), update));
 
         assertTrue(update.getUpdateObject().isEmpty());
         verifyNoInteractions(mongo);
@@ -141,7 +141,7 @@ class BaseServiceUpdateMultiTest {
 
     @Test
     void rejectsNullUpdateBeforeDatabaseAccess() {
-        assertThrows(NullPointerException.class, () -> service.updateMulti(StringCondition.EQUAL("name", "old"), null));
+        assertThrows(NullPointerException.class, () -> service.update(StringCondition.EQUAL("name", "old"), null));
         verifyNoInteractions(mongo);
     }
 
@@ -156,7 +156,7 @@ class BaseServiceUpdateMultiTest {
         when(mongo.updateMulti(any(Query.class), same(update), eq(Bean.class)))
                 .thenReturn(UpdateResult.acknowledged(1, 1L, null));
 
-        service.updateMulti(NumberCondition.EQUAL("count", 0), update);
+        service.update(NumberCondition.EQUAL("count", 0), update);
 
         Document set = (Document) update.getUpdateObject().get("$set");
         assertSame(explicitTime, set.get("updateTime"));
@@ -178,8 +178,8 @@ class BaseServiceUpdateMultiTest {
         when(mongo.updateMulti(any(Query.class), same(update), eq(PlainBean.class))).thenReturn(result);
         Condition condition = NumberCondition.EQUAL("count", 0);
 
-        assertSame(result, manual.updateMulti(condition, update));
-        assertSame(result, plain.updateMulti(condition, update));
+        assertSame(result, manual.update(condition, update));
+        assertSame(result, plain.update(condition, update));
         assertEquals(original, update.getUpdateObject().toJson());
     }
 
