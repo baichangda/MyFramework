@@ -9,7 +9,7 @@ import java.util.Date;
  * Created by Administrator on 2017/8/14.
  */
 public class CodeConst {
-    public final static Version FREEMARKER_VERSION = Configuration.VERSION_2_3_31;
+    public final static Version FREEMARKER_VERSION = Configuration.VERSION_2_3_34;
 
     public final static String CLASS_OUT_DIR_PATH = "out/production/classes";
     public final static String CLASS_BUILD_DIR_PATH = "build/classes/java/main";
