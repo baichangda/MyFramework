@@ -3,8 +3,6 @@ package cn.bcd.lib.spring.database.mongo.code.data;
 import freemarker.template.Configuration;
 import freemarker.template.Version;
 
-import java.util.Date;
-
 /**
  * Created by Administrator on 2017/8/14.
  */
@@ -18,9 +16,4 @@ public class CodeConst {
     public final static String MODULE_DIR_PATH = System.getProperty("user.dir") + "/Lib-Spring-Database-Mongo";
 
     public final static String TEMPLATE_DIR_PATH = MODULE_DIR_PATH + "/src/main/resources/template";
-
-    public final static Class[] SUPPORT_FIELD_TYPE = new Class[]{
-            Integer.class, String.class, Double.class, Character.class, Byte.class, Float.class,
-            Long.class, Short.class, Boolean.class, Date.class,
-            int.class, byte.class, short.class, char.class, double.class, float.class, long.class, boolean.class};
 }
