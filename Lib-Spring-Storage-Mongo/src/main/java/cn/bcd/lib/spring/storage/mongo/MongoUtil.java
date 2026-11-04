@@ -18,7 +18,6 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,15 +67,15 @@ public class MongoUtil {
         Query query = new Query();
         query.skip(skip);
         query.limit(limit);
-        query.with(Sort.by(desc ? Sort.Direction.DESC : Sort.Direction.ASC, "id"));
-        final Criteria criteria = Criteria.where("id");
+        query.with(Sort.by(desc ? Sort.Direction.DESC : Sort.Direction.ASC, "_id"));
+        final Criteria criteria = Criteria.where("_id");
         criteria.gte(startId);
         criteria.lt(endId);
         query.addCriteria(criteria);
         List<Document> documents = mongoTemplate.find(query, Document.class, collection);
         return documents.stream().map(document -> {
             QueryData<T> queryData = new QueryData<>();
-            queryData.id = document.getString("id");
+            queryData.id = document.getString("_id");
             queryData.value = JsonUtil.fromJson(document.getString("value"), clazz);
             return queryData;
         }).toList();
@@ -91,12 +90,12 @@ public class MongoUtil {
      * @return
      */
     public static <T extends MongoData> QueryData<T> get(String partitionId, String id, Class<T> clazz, String collection) {
-        Document document = getMongoTemplate(partitionId).findOne(Query.query(Criteria.where("id").is(id)), Document.class, collection);
+        Document document = getMongoTemplate(partitionId).findOne(Query.query(Criteria.where("_id").is(id)), Document.class, collection);
         if (document == null) {
             return null;
         } else {
             QueryData<T> queryData = new QueryData<>();
-            queryData.id = document.getString("id");
+            queryData.id = document.getString("_id");
             queryData.value = JsonUtil.fromJson(document.getString("value"), clazz);
             return queryData;
         }
@@ -106,16 +105,21 @@ public class MongoUtil {
         if (list.isEmpty()) {
             return;
         }
-        Map<String, List<Pair<Query, Update>>> map = new HashMap<>();
+        Map<Integer, Map<String, Update>> map = new HashMap<>();
 
         for (MongoData mongoData : list) {
-            List<Pair<Query, Update>> pairs = map.computeIfAbsent(mongoData.getPartitionId(), k -> new ArrayList<>());
+            int dbIndex = getDbIndex(mongoData.getPartitionId(), dbNum);
+            Map<String, Update> updates = map.computeIfAbsent(dbIndex, k -> new HashMap<>());
             String id = mongoData.getId();
-            pairs.add(Pair.of(Query.query(Criteria.where("id").is(id)), Update.update("value", JsonUtil.toJson(mongoData))));
+            // 同库同主键只保留最后一条，避免无序批量写入的覆盖顺序不确定。
+            updates.put(id, Update.update("value", JsonUtil.toJson(mongoData)));
         }
         map.forEach((k, v) -> {
-            MongoUtil.getMongoTemplate(k).bulkOps(BulkOperations.BulkMode.UNORDERED, collection)
-                    .upsert(v).execute();
+            List<Pair<Query, Update>> pairs = v.entrySet().stream()
+                    .map(entry -> Pair.of(Query.query(Criteria.where("_id").is(entry.getKey())), entry.getValue()))
+                    .toList();
+            mongoTemplates[k].bulkOps(BulkOperations.BulkMode.UNORDERED, collection)
+                    .upsert(pairs).execute();
         });
     }
 }
