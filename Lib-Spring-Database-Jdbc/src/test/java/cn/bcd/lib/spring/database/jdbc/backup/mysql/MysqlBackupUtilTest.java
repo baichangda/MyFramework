@@ -7,6 +7,12 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -86,36 +92,74 @@ class MysqlBackupUtilTest {
     }
 
     @Test
-    void credentialFileEscapesQuotesBackslashesAndLineBreaks() throws Exception {
-        Path credentials = MysqlBackupUtil.createCredentials("a\"b\\c\n\r\t\b");
-        try {
-            assertEquals("[client]\npassword=\"a\\\"b\\\\c\\n\\r\\t\\b\"\n", Files.readString(credentials));
-            var posix = Files.getFileAttributeView(credentials, java.nio.file.attribute.PosixFileAttributeView.class);
-            if (posix != null) {
-                assertEquals(java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"),
-                        posix.readAttributes().permissions());
-            } else {
-                var acl = Files.getFileAttributeView(credentials, java.nio.file.attribute.AclFileAttributeView.class);
-                assertEquals(1, acl.getAcl().size());
-                assertEquals(Files.getOwner(credentials), acl.getAcl().getFirst().principal());
+    void concurrentBackupsKeepOneCompleteFile() throws Exception {
+        // 同时启动多个任务，验证发布和清理不会互删所有备份。
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(6)) {
+            List<Future<String>> tasks = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                tasks.add(executor.submit(() -> {
+                    start.await();
+                    return MysqlBackupUtil.backup(directory, 1, process("success"));
+                }));
             }
-        } finally {
-            Files.deleteIfExists(credentials);
+            start.countDown();
+            for (Future<String> task : tasks) {
+                task.get(20, TimeUnit.SECONDS);
+            }
         }
+        try (var entries = Files.list(directory)) {
+            List<Path> backups = entries.filter(p -> p.toString().endsWith(".bak")).toList();
+            assertEquals(1, backups.size());
+            assertEquals("CREATE TABLE example(id INT);", Files.readString(backups.getFirst()));
+        }
+        assertEquals(1, files().size()); // 只保留一个正式备份。
     }
 
     @Test
-    void commandSeparatesArgumentsAndDoesNotContainPassword() throws Exception {
-        String password = "p a ss;&$";
-        Path credentials = MysqlBackupUtil.createCredentials(password);
-        try {
-            ProcessBuilder builder = MysqlBackupUtil.dumpProcess("localhost", 3306, "test user", credentials, "test db");
-            assertEquals(List.of("mysqldump", "--defaults-extra-file=" + credentials.toAbsolutePath(),
-                    "--host=localhost", "--port=3306", "--user=test user", "--databases", "--", "test db"), builder.command());
-            assertFalse(builder.command().toString().contains(password));
-            assertTrue(Files.readString(credentials).contains(password));
-        } finally {
-            Files.deleteIfExists(credentials);
-        }
+    void streamBackupIsIsolatedAndCleansUpAfterConsumer() throws Exception {
+        ProcessBuilder builder = process("success");
+        AtomicReference<Path> temporary = new AtomicReference<>();
+        MysqlBackupUtil.backupStream(builder, stream -> {
+            Path file = builder.redirectOutput().file().toPath();
+            temporary.set(file);
+            assertNotEquals(directory, file.getParent());
+            assertTrue(Files.exists(file));
+            assertDoesNotThrow(() -> assertEquals("CREATE TABLE example(id INT);",
+                    new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)));
+            // 流消费期间执行磁盘备份和清理，不应影响流文件。
+            assertDoesNotThrow(() -> MysqlBackupUtil.backup(directory, 1, process("success")));
+            assertTrue(Files.exists(file));
+        });
+        assertFalse(Files.exists(temporary.get().getParent()));
+        assertEquals(1, files().size());
+    }
+
+    @Test
+    void streamConsumerFailureClosesStreamAndRemovesTemporaryDirectory() throws Exception {
+        ProcessBuilder builder = process("success");
+        IllegalStateException failure = new IllegalStateException("consumer failed");
+        assertSame(failure, assertThrows(IllegalStateException.class,
+                () -> MysqlBackupUtil.backupStream(builder, stream -> { throw failure; })));
+        assertFalse(Files.exists(builder.redirectOutput().file().toPath().getParent()));
+    }
+
+    @Test
+    void streamDumpFailureCleansDirectoryWithoutCallingConsumer() throws Exception {
+        ProcessBuilder builder = process("failure");
+        assertThrows(BaseException.class, () -> MysqlBackupUtil.backupStream(builder,
+                stream -> fail("Consumer must not receive an incomplete dump")));
+        assertFalse(Files.exists(builder.redirectOutput().file().toPath().getParent()));
+    }
+
+    @Test
+    void commandPassesPasswordAsOneArgument() {
+        // 空格、引号及 shell 特殊字符应原样保留在同一个密码参数内。
+        String password = "p a ss\";&$";
+        ProcessBuilder builder = MysqlBackupUtil.dumpProcess("localhost", 3306, "test user", password, "test db");
+        assertEquals(List.of("mysqldump",
+                "--host=localhost", "--port=3306", "--user=test user", "--password=" + password,
+                "--single-transaction", "--skip-lock-tables", "--quick",
+                "--routines", "--events", "--triggers", "--databases", "--", "test db"), builder.command());
     }
 }

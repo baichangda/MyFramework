@@ -10,8 +10,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.*;
-import java.util.EnumSet;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -21,11 +19,13 @@ import java.util.stream.Stream;
 
 public class MysqlBackupUtil {
 
-    static Logger logger = LoggerFactory.getLogger(MysqlBackupUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(MysqlBackupUtil.class);
 
     /**
      * 备份mysql数据库到指定目录
-     * 服务器必须安装mysqldump命令
+     * 服务器必须安装mysqldump命令。
+     * 使用事务快照，要求业务表采用 InnoDB，备份期间应避免执行 DDL。
+     * 发布及清理在当前 JVM 内串行执行。
      *
      * @param host       mysql地址
      * @param port       mysql端口
@@ -48,49 +48,33 @@ public class MysqlBackupUtil {
         if (database.isBlank() || !root.equals(databaseDir.getParent())) {
             throw BaseException.get("database must be a directory name");
         }
-        Path credentials = null;
-        try {
-            credentials = createCredentials(password);
-            return backup(databaseDir, maxFileNum, dumpProcess(host, port, username, credentials, database));
-        } catch (IOException ex) {
-            throw BaseException.get(ex);
-        } finally {
-            deleteTemporaryFile(credentials);
-        }
+        return backup(databaseDir, maxFileNum, dumpProcess(host, port, username, password, database));
     }
 
-    static ProcessBuilder dumpProcess(String host, int port, String username, Path credentials, String database) {
-        return new ProcessBuilder("mysqldump", "--defaults-extra-file=" + credentials.toAbsolutePath(),
-                "--host=" + host, "--port=" + port, "--user=" + username, "--databases", "--", database);
-    }
-
-    static Path createCredentials(String password) throws IOException {
-        Path path = Files.createTempFile("mysql-backup-", ".cnf");
-        try {
-            PosixFileAttributeView posix = Files.getFileAttributeView(path, PosixFileAttributeView.class);
-            if (posix != null) {
-                posix.setPermissions(PosixFilePermissions.fromString("rw-------"));
-            } else {
-                AclFileAttributeView acl = Files.getFileAttributeView(path, AclFileAttributeView.class);
-                if (acl == null) {
-                    throw new IOException("cannot restrict backup credential file permissions");
-                }
-                acl.setAcl(List.of(AclEntry.newBuilder().setType(AclEntryType.ALLOW)
-                        .setPrincipal(Files.getOwner(path))
-                        .setPermissions(EnumSet.allOf(AclEntryPermission.class)).build()));
-            }
-            String escaped = password.replace("\\", "\\\\").replace("\"", "\\\"")
-                    .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
-                    .replace("\b", "\\b");
-            Files.writeString(path, "[client]\npassword=\"" + escaped + "\"\n");
-            return path;
-        } catch (IOException | RuntimeException ex) {
-            deleteTemporaryFile(path);
-            throw ex;
-        }
+    static ProcessBuilder dumpProcess(String host, int port, String username, String password, String database) {
+        // 每个参数单独传给进程，密码中的空格等字符不经过 shell 解析。
+        // 事务快照避免长时间锁表，并包含存储过程、函数、事件和触发器。
+        return new ProcessBuilder("mysqldump",
+                "--host=" + host, "--port=" + port, "--user=" + username, "--password=" + password,
+                "--single-transaction", "--skip-lock-tables", "--quick",
+                "--routines", "--events", "--triggers", "--databases", "--", database);
     }
 
     static String backup(Path directory, int maxFileNum, ProcessBuilder builder) {
+        Path partial = dump(directory, builder);
+        try {
+            Path completed = publish(directory, partial, maxFileNum);
+            logger.info("database backup complete: {}", completed);
+            return completed.toString();
+        } catch (IOException ex) {
+            throw BaseException.get(ex);
+        } finally {
+            deleteTemporaryFile(partial);
+        }
+    }
+
+    /** 导出成功且输出非空后，将临时文件的清理责任交给调用方。 */
+    private static Path dump(Path directory, ProcessBuilder builder) {
         Path partial = null;
         Path errors = null;
         Process process = null;
@@ -99,22 +83,21 @@ public class MysqlBackupUtil {
             String prefix = DateUtil.dateToStr_yyyyMMddHHmmss(new Date()) + "-";
             partial = Files.createTempFile(directory, prefix, ".part");
             errors = Files.createTempFile(directory, prefix, ".err");
-            // Redirect both streams before waiting, so neither pipe can fill up.
-            process = builder.redirectOutput(partial.toFile()).redirectError(errors.toFile()).start();
+            // 直接重定向两个输出流，避免等待进程时管道缓冲区填满而死锁。
+            builder.redirectOutput(partial.toFile()).redirectError(errors.toFile());
+            // 按配置打印完整命令，包含明文密码，便于核对实际执行参数。
+            logger.info("execute database backup command: {}", String.join(" ", builder.command()));
+            process = builder.start();
             if (!process.waitFor(30, TimeUnit.MINUTES)) {
                 throw BaseException.get("database backup timed out");
             }
             if (process.exitValue() != 0 || Files.size(partial) == 0) {
-                // Do not log arbitrary process output, which may contain credentials.
+                // 进程输出可能包含敏感信息，不直接写入日志。
                 throw BaseException.get("database backup failed, exitCode[{}]", process.exitValue());
             }
-            String name = partial.getFileName().toString().replace(".part", ".bak");
-            Path completed = directory.resolve(name);
-            Files.move(partial, completed);
+            Path result = partial;
             partial = null;
-            pruneBackups(directory, completed, maxFileNum);
-            logger.info("database backup complete: {}", completed);
-            return completed.toString();
+            return result;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw BaseException.get(ex);
@@ -123,7 +106,7 @@ public class MysqlBackupUtil {
         } finally {
             if (process != null && process.isAlive()) {
                 process.destroyForcibly();
-                // Wait for file handles to close even when the caller was interrupted.
+                // 即使线程已中断，也要等待文件句柄关闭后再清理临时文件。
                 boolean interrupted = Thread.interrupted();
                 try {
                     while (process.isAlive()) {
@@ -144,6 +127,23 @@ public class MysqlBackupUtil {
         }
     }
 
+    /**
+     * 发布和保留清理处于同一临界区，防止并发任务互删新备份。
+     * synchronized 协调当前 JVM 内的并发调用，数据库导出不持有此锁。
+     */
+    private static synchronized Path publish(Path directory, Path partial, int maxFileNum) throws IOException {
+        String name = partial.getFileName().toString().replace(".part", ".bak");
+        Path completed = directory.resolve(name);
+        Files.move(partial, completed);
+        try {
+            pruneBackups(directory, completed, maxFileNum);
+        } catch (IOException ex) {
+            // 新备份已成功落盘；清理失败只告警，允许下次任务重试。
+            logger.warn("cannot prune old backups: {}", directory, ex);
+        }
+        return completed;
+    }
+
     private static void pruneBackups(Path directory, Path completed, int maxFileNum) throws IOException {
         if (maxFileNum <= 0) {
             return;
@@ -156,7 +156,7 @@ public class MysqlBackupUtil {
                     .sorted(Comparator.comparing(Path::getFileName).reversed())
                     .toList();
         }
-        // The just-completed backup always occupies one retention slot.
+        // 本次完成的备份始终占一个保留名额。
         for (int i = maxFileNum - 1; i < previous.size(); i++) {
             Files.deleteIfExists(previous.get(i));
         }
@@ -172,24 +172,34 @@ public class MysqlBackupUtil {
         }
     }
 
+    /**
+     * 导出完成后同步消费 SQL 流，回调返回时关闭流并清理文件。
+     * 每次使用独立临时目录，与磁盘备份的保留清理隔离。
+     */
     public static void backup_stream(String host,
                                      int port,
                                      String username,
                                      String password,
                                      String database,
                                      Consumer<InputStream> consumer) {
-        String filePath = backup_disk(host, port, username, password, database, "temp", 0);
-        Path p = Paths.get(filePath);
-        try (InputStream is = Files.newInputStream(p)) {
-            consumer.accept(is);
-        } catch (IOException e) {
-            throw BaseException.get(e);
-        } finally {
-            try {
-                Files.deleteIfExists(p);
-            } catch (IOException e) {
-                logger.error("error", e);
+        backupStream(dumpProcess(host, port, username, password, database), consumer);
+    }
+
+    static void backupStream(ProcessBuilder builder, Consumer<InputStream> consumer) {
+        Path directory = null;
+        Path file = null;
+        try {
+            directory = Files.createTempDirectory("mysql-backup-stream-");
+            file = dump(directory, builder);
+            try (InputStream stream = Files.newInputStream(file)) {
+                consumer.accept(stream);
             }
+        } catch (IOException ex) {
+            throw BaseException.get(ex);
+        } finally {
+            // 回调抛出异常时同样清理；先关闭流，再删除文件及独立目录。
+            deleteTemporaryFile(file);
+            deleteTemporaryFile(directory);
         }
     }
 }
