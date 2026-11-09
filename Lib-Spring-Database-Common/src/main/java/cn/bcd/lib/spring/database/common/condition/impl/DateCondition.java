@@ -1,9 +1,13 @@
 package cn.bcd.lib.spring.database.common.condition.impl;
 
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.database.common.condition.Condition;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
 import java.util.Date;
+import java.util.Objects;
 
 /** 日期类型条件；BETWEEN 使用前闭后开区间。 */
 public final class DateCondition implements Condition {
@@ -20,6 +24,19 @@ public final class DateCondition implements Condition {
         this.fieldName = fieldName;
         this.val = val;
         this.handler = handler;
+    }
+
+    @JsonCreator
+    private static DateCondition fromJson(@JsonProperty("fieldName") String fieldName,
+                                          @JsonProperty("val") Object val,
+                                          @JsonProperty(value = "handler", required = true) Handler handler) {
+        Objects.requireNonNull(handler, "handler");
+        Class<?> valueType = handler == Handler.BETWEEN ? Date[].class : Date.class;
+        Object value = JsonUtil.MAPPER.convertValue(val, valueType);
+        if (handler == Handler.BETWEEN && (value == null || ((Date[]) value).length != 2)) {
+            throw new IllegalArgumentException("BETWEEN requires exactly two dates");
+        }
+        return new DateCondition(fieldName, value, handler);
     }
 
     public static DateCondition EQUAL(String fieldName, Date val) { return new DateCondition(fieldName, val, Handler.EQUAL); }

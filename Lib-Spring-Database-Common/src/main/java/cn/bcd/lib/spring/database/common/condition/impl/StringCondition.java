@@ -1,8 +1,12 @@
 package cn.bcd.lib.spring.database.common.condition.impl;
 
+import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.database.common.condition.Condition;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
+import java.util.Objects;
 
 /** 字符串类型条件；val 为 null 时下游转换器忽略此条件。 */
 public final class StringCondition implements Condition {
@@ -19,6 +23,15 @@ public final class StringCondition implements Condition {
         this.fieldName = fieldName;
         this.val = val;
         this.handler = handler;
+    }
+
+    @JsonCreator
+    private static StringCondition fromJson(@JsonProperty("fieldName") String fieldName,
+                                            @JsonProperty("val") Object val,
+                                            @JsonProperty(value = "handler", required = true) Handler handler) {
+        Objects.requireNonNull(handler, "handler");
+        Class<?> valueType = handler == Handler.IN || handler == Handler.NOT_IN ? String[].class : String.class;
+        return new StringCondition(fieldName, JsonUtil.MAPPER.convertValue(val, valueType), handler);
     }
 
     public static StringCondition EQUAL(String fieldName, String val) { return new StringCondition(fieldName, val, Handler.EQUAL); }

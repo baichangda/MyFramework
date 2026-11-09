@@ -1,8 +1,11 @@
 package cn.bcd.lib.spring.database.common.condition.impl;
 
 import cn.bcd.lib.spring.database.common.condition.Condition;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
+import java.util.Objects;
 
 /** null 判断条件。 */
 public final class NullCondition implements Condition {
@@ -11,12 +14,14 @@ public final class NullCondition implements Condition {
     public final Handler handler;
     public final String fieldName;
 
-    private NullCondition(String fieldName, Handler handler) {
+    @JsonCreator
+    private NullCondition(@JsonProperty("fieldName") String fieldName,
+                          @JsonProperty(value = "handler", required = true) Handler handler) {
         if (fieldName == null || fieldName.isBlank()) {
             throw new IllegalArgumentException("fieldName must not be blank");
         }
         this.fieldName = fieldName;
-        this.handler = handler;
+        this.handler = Objects.requireNonNull(handler, "handler");
     }
 
     public static NullCondition NULL(String fieldName) { return new NullCondition(fieldName, Handler.NULL); }

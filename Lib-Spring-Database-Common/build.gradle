@@ -1,0 +1,3 @@
+dependencies {
+    api project(":Lib-Base-Json")
+}

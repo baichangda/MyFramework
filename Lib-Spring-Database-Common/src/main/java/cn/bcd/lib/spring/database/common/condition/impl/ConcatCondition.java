@@ -1,6 +1,8 @@
 package cn.bcd.lib.spring.database.common.condition.impl;
 
 import cn.bcd.lib.spring.database.common.condition.Condition;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
 import java.util.List;
@@ -13,7 +15,9 @@ public final class ConcatCondition implements Condition {
     public final ConcatWay concatWay;
     public final List<Condition> conditions;
 
-    public ConcatCondition(ConcatWay concatWay, List<Condition> conditions) {
+    @JsonCreator
+    public ConcatCondition(@JsonProperty("concatWay") ConcatWay concatWay,
+                           @JsonProperty("conditions") List<Condition> conditions) {
         this.concatWay = Objects.requireNonNull(concatWay, "concatWay");
         this.conditions = Objects.requireNonNull(conditions, "conditions");
         if (this.conditions.isEmpty()) {

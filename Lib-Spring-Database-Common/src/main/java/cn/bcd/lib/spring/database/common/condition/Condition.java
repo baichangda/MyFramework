@@ -1,13 +1,29 @@
 package cn.bcd.lib.spring.database.common.condition;
 
+import cn.bcd.lib.spring.database.common.condition.impl.BooleanCondition;
 import cn.bcd.lib.spring.database.common.condition.impl.ConcatCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.DateCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.NullCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.NumberCondition;
+import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-/** 查询条件的公共类型。 */
+/** 查询条件的公共类型；JSON 使用固定 type 标识还原具体条件，支持嵌套组合。 */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = StringCondition.class, name = "string"),
+        @JsonSubTypes.Type(value = NumberCondition.class, name = "number"),
+        @JsonSubTypes.Type(value = DateCondition.class, name = "date"),
+        @JsonSubTypes.Type(value = BooleanCondition.class, name = "boolean"),
+        @JsonSubTypes.Type(value = NullCondition.class, name = "null"),
+        @JsonSubTypes.Type(value = ConcatCondition.class, name = "concat")
+})
 public interface Condition extends Serializable {
     static Condition and(List<Condition> conditions) {
         return concat(ConcatCondition.ConcatWay.AND, conditions);

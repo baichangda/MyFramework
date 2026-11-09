@@ -1,6 +1,8 @@
 package cn.bcd.lib.spring.database.common.condition.impl;
 
 import cn.bcd.lib.spring.database.common.condition.Condition;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serial;
 
@@ -11,7 +13,8 @@ public final class BooleanCondition implements Condition {
     public final String fieldName;
     public final Boolean val;
 
-    private BooleanCondition(String fieldName, Boolean val) {
+    @JsonCreator
+    private BooleanCondition(@JsonProperty("fieldName") String fieldName, @JsonProperty("val") Boolean val) {
         if (fieldName == null || fieldName.isBlank()) {
             throw new IllegalArgumentException("fieldName must not be blank");
         }
