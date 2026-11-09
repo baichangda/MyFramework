@@ -44,15 +44,17 @@ Worker 先登记上下文再读取 stop_requested，衔接领取后尚未登记�
 
 ## 导出
 
-导出任务继承 `ExportHandler<P>` 并注册为 Spring Bean。payload 只包含业务查询参数，
-不包含 Service、Condition、排序对象或查询结果。子类在执行阶段提供数据 Service，
-将参数转换为 Condition，按需覆盖 sort。抽象类负责分批查询、写 Excel、上传和清理。
+导出任务继承 `ExportHandler` 并注册为 Spring Bean。参数统一使用 `ExportPayload(Condition, Sort)`，
+相关类位于 `cn.bcd.app.bp.backend.task.export` 包中。
+提交方构建条件和排序，任务框架自动完成 JSON 持久化及还原，调用方不需要处理序列化。
+payload 不包含 Service 或查询结果。子类提供任务类型和数据 Service，
+抽象类负责领取任务后的分批查询、写 Excel、上传和清理。
 
-例如定义 `record UserQuery(String username) {}`，子类的核心实现为：
+子类的核心实现为：
 
 ```java
 @Component
-public class UserExportHandler extends ExportHandler<UserQuery> {
+public class UserExportHandler extends ExportHandler {
     private final UserService userService;
 
     public UserExportHandler(FileService fileService, UserService userService) {
@@ -61,18 +63,22 @@ public class UserExportHandler extends ExportHandler<UserQuery> {
     }
 
     public String type() { return "user-export"; }
-    public Class<UserQuery> payloadType() { return UserQuery.class; }
     protected BaseService<?> service() { return userService; }
-
-    protected Condition condition(UserQuery query) {
-        return StringCondition.EQUAL("username", query.username());
-    }
-
-    protected Sort sort(UserQuery query) { return Sort.by("id"); }
 }
 ```
 
-Java 代码统一提交：`taskService.submit("用户导出", "user-export", new UserQuery("Alice"))`。
+Java 代码统一提交：
+
+```java
+ExportPayload payload = new ExportPayload(
+        StringCondition.EQUAL("username", "Alice"),
+        Sort.by("id"));
+taskService.submit("用户导出", "user-export", payload);
+```
+
+condition 为 null 时不限制查询，sort 为 null 时默认不排序；分批导出应指定稳定排序。
+条件和排序在提交时固定，后续业务条件构造逻辑的变化不会影响已排队任务。
+旧版自定义查询 DTO 参数与新的 ExportPayload 格式不兼容，升级前应处理完旧格式的等待任务。
 所有消费节点必须部署对应子类。没有内置的固定导出类型，也没有专门的导出提交入口。
 每批读取 1000 条，写入临时 Excel 后上传 S3，结果保存 export/ 下的文件路径，
 最终清理临时文件。删除任务时按导出路径识别文件，不依赖具体业务任务类型。

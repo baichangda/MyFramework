@@ -1,6 +1,8 @@
 package cn.bcd.app.bp.backend.task;
 
 import cn.bcd.app.bp.backend.file.FileService;
+import cn.bcd.app.bp.backend.task.export.ExportHandler;
+import cn.bcd.app.bp.backend.task.export.ExportPayload;
 import cn.bcd.lib.base.json.JsonUtil;
 import cn.bcd.lib.spring.database.common.condition.Condition;
 import cn.bcd.lib.spring.database.common.condition.impl.StringCondition;
@@ -24,7 +26,7 @@ class ExportHandlerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void workerBuildsQueryFromParametersThenExportsUploadsAndCleansUp() throws Exception {
+    void workerRestoresQueryThenExportsUploadsAndCleansUp() throws Exception {
         BatchIterable<TaskBean> batches = mock(BatchIterable.class);
         when(dataService.batchIterable(eq(1000), any(), any())).thenReturn(batches);
         TaskBean row = new TaskBean("Alice", "user-export");
@@ -39,8 +41,9 @@ class ExportHandlerTest {
         }).when(fileService).upload(anyString(), any(Path.class));
 
         TaskBean task = task();
-        // 数据库中只有查询参数，Service、Condition 和查询结果由执行节点生成。
-        task.payload = JsonUtil.toJson(new Query("Alice"));
+        // 提交方构建条件和排序；Worker 从 JSON 还原，随后才查询导出数据。
+        task.payload = JsonUtil.toJson(new ExportPayload(
+                StringCondition.EQUAL("name", "Alice"), Sort.by("id")));
         TaskService persistence = mock(TaskService.class);
         new TaskWorker(persistence, new TaskProperties(), List.of(handler())).execute(task);
 
@@ -61,17 +64,15 @@ class ExportHandlerTest {
     void stoppedExportDoesNotQueryOrUpload() {
         TaskContext context = new TaskContext(task(), mock(TaskService.class));
         context.requestStop();
-        assertThrows(TaskStopException.class, () -> handler().execute(context, new Query("Alice")));
+        assertThrows(TaskStopException.class, () -> handler().execute(context,
+                new ExportPayload(StringCondition.EQUAL("name", "Alice"), Sort.by("id"))));
         verifyNoInteractions(dataService, fileService);
     }
 
-    private ExportHandler<Query> handler() {
-        return new ExportHandler<>(fileService) {
+    private ExportHandler handler() {
+        return new ExportHandler(fileService) {
             public String type() { return "user-export"; }
-            public Class<Query> payloadType() { return Query.class; }
             protected BaseService<?> service() { return dataService; }
-            protected Condition condition(Query query) { return StringCondition.EQUAL("name", query.name()); }
-            protected Sort sort(Query query) { return Sort.by("id"); }
         };
     }
 
@@ -82,5 +83,4 @@ class ExportHandlerTest {
         return task;
     }
 
-    public record Query(String name) {}
 }

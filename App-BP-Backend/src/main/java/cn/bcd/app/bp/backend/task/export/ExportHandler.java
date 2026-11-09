@@ -1,14 +1,14 @@
-package cn.bcd.app.bp.backend.task;
+package cn.bcd.app.bp.backend.task.export;
 
 import cn.bcd.app.bp.backend.file.FileService;
-import cn.bcd.lib.spring.database.common.condition.Condition;
+import cn.bcd.app.bp.backend.task.TaskContext;
+import cn.bcd.app.bp.backend.task.TaskHandler;
 import cn.bcd.lib.spring.database.jdbc.service.BaseService;
 import org.apache.fesod.sheet.ExcelWriter;
 import org.apache.fesod.sheet.FesodSheet;
 import org.apache.fesod.sheet.write.metadata.WriteSheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Sort;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,13 +16,11 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * 通用导出流程。子类注册为 Spring Bean，提供任务类型、查询参数类型和数据 Service。
- * payload 仅包含业务查询参数；Condition、排序和查询结果都在领取任务后由执行线程生成。
+ * 通用导出流程。子类注册为 Spring Bean，提供任务类型和数据 Service。
+ * payload 包含提交时构建的 Condition 和 Sort，查询结果在领取任务后由执行线程生成。
  * 子类是共享单例，查询参数、计数等单次执行数据应保存在局部变量中。
- *
- * @param <P> 可持久化为 JSON 的业务查询参数 DTO
  */
-public abstract class ExportHandler<P> implements TaskHandler<P> {
+public abstract class ExportHandler implements TaskHandler<ExportPayload> {
     private static final Logger logger = LoggerFactory.getLogger(ExportHandler.class);
     private final FileService fileService;
 
@@ -30,16 +28,13 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
         this.fileService = fileService;
     }
 
-    /** 返回子类注入的共享数据 Service；单次查询参数通过 condition/sort 传递。 */
-    protected abstract BaseService<?> service();
-
-    /** 执行时根据参数构造查询条件，返回 null 表示不限制；此处只准备条件，不预取结果。 */
-    protected abstract Condition condition(P payload);
-
-    /** 默认不排序。分批分页导出通常应由子类指定稳定排序，例如主键升序。 */
-    protected Sort sort(P payload) {
-        return Sort.unsorted();
+    @Override
+    public final Class<ExportPayload> payloadType() {
+        return ExportPayload.class;
     }
+
+    /** 返回子类注入的共享数据 Service。 */
+    protected abstract BaseService<?> service();
 
     /**
      * 同线程完成分批查询、写 Excel、关闭文件、上传和本地清理。
@@ -50,11 +45,9 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
      * @throws Exception 生成或上传失败，或者在检查点响应停止请求
      */
     @Override
-    public final String execute(TaskContext context, P payload) throws Exception {
+    public final String execute(TaskContext context, ExportPayload payload) throws Exception {
         context.checkStop();
         BaseService<?> service = service();
-        Condition condition = condition(payload);
-        Sort sort = sort(payload);
         Path dir = Path.of("temp/export");
         Files.createDirectories(dir);
         Path path = Files.createTempFile(dir, "task-" + context.task().id + "-", ".xlsx");
@@ -63,7 +56,7 @@ public abstract class ExportHandler<P> implements TaskHandler<P> {
             try (ExcelWriter writer = FesodSheet.write().file(path.toFile()).build()) {
                 WriteSheet sheet = FesodSheet.writerSheet(0).build();
                 boolean empty = true;
-                for (List<?> batch : service.batchIterable(1000, condition, sort)) {
+                for (List<?> batch : service.batchIterable(1000, payload.condition, payload.sort.toSort())) {
                     context.checkStop();
                     writer.write(batch, sheet);
                     empty = false;
